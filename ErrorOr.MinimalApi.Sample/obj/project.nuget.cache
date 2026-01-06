@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "Y6GUNdHQkLA=",
+  "success": true,
+  "projectFilePath": "/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi.Sample/ErrorOr.MinimalApi.Sample.csproj",
+  "expectedPackageFiles": [
+    "/Users/ancplua/.nuget/packages/ancplua.roslyn.utilities/1.2.0/ancplua.roslyn.utilities.1.2.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.aspnetcore.openapi/10.0.0/microsoft.aspnetcore.openapi.10.0.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.bcl.hashcode/6.0.0/microsoft.bcl.hashcode.6.0.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.codeanalysis.analyzers/3.11.0/microsoft.codeanalysis.analyzers.3.11.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.codeanalysis.common/5.0.0/microsoft.codeanalysis.common.5.0.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg.sha512",
+    "/Users/ancplua/.nuget/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>latest</LangVersion>
+        <!-- TODO: Add XML docs and remove this -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PackageId>ErrorOr.Core</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>ANcpLua</Authors>
+        <PackageIcon>icon-square.png</PackageIcon>
+        <PackageTags>Result,Results,ErrorOr,Error,Handling,DiscriminatedUnion,Railway</PackageTags>
+        <Description>Modernized ErrorOr for .NET 10. Fluent discriminated union with ElseDo, hybrid FailIfAsync, immutable collections, zero allocations.</Description>
+        <PackageProjectUrl>https://github.com/ANcpLua/ErrorOr.Core</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/ANcpLua/ErrorOr.Core</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="../README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
+</Project>

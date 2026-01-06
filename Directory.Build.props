@@ -1,0 +1,27 @@
+<Project>
+  <!-- Import versioning -->
+  <Import Project="$(MSBuildThisFileDirectory)version.props" />
+
+  <!-- Repo-wide build settings -->
+  <PropertyGroup>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Package metadata defaults -->
+    <Authors>ANcpLua</Authors>
+    <Copyright>Copyright (c) 2025 Alexander Nachtmann</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ANcpLua/ErrorOrX</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ANcpLua/ErrorOrX</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <!-- Suppress known SDK-related warnings -->
+  <PropertyGroup>
+    <!-- SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
+    <NoWarn>$(NoWarn);NETSDK1023</NoWarn>
+  </PropertyGroup>
+</Project>

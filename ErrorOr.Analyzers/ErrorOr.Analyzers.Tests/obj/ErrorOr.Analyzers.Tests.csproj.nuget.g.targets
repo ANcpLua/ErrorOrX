@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.platform/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Platform.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.platform/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Platform.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.platform.msbuild/2.0.2/buildTransitive/Microsoft.Testing.Platform.MSBuild.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.platform.msbuild/2.0.2/buildTransitive/Microsoft.Testing.Platform.MSBuild.targets')" />
+    <Import Project="$(NuGetPackageRoot)xunit.v3.core.mtp-v2/3.2.1/buildTransitive/xunit.v3.core.mtp-v2.targets" Condition="Exists('$(NuGetPackageRoot)xunit.v3.core.mtp-v2/3.2.1/buildTransitive/xunit.v3.core.mtp-v2.targets')" />
+    <Import Project="$(NuGetPackageRoot)xunit.core/2.9.2/build/xunit.core.targets" Condition="Exists('$(NuGetPackageRoot)xunit.core/2.9.2/build/xunit.core.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.sbom.targets/4.1.5/build/Microsoft.Sbom.Targets.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.sbom.targets/4.1.5/build/Microsoft.Sbom.Targets.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.analyzers/3.11.0/buildTransitive/Microsoft.CodeAnalysis.Analyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.analyzers/3.11.0/buildTransitive/Microsoft.CodeAnalysis.Analyzers.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.targets')" />
+    <Import Project="$(NuGetPackageRoot)meziantou.xunit.v3.paralleltestframework/1.0.6/build/Meziantou.Xunit.v3.ParallelTestFramework.targets" Condition="Exists('$(NuGetPackageRoot)meziantou.xunit.v3.paralleltestframework/1.0.6/build/Meziantou.Xunit.v3.ParallelTestFramework.targets')" />
+  </ImportGroup>
+</Project>

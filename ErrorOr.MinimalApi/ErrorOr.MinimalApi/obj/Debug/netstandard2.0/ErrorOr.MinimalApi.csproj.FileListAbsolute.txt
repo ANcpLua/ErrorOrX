@@ -1,0 +1,10 @@
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/bin/Debug/netstandard2.0/ErrorOr.MinimalApi.deps.json
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/bin/Debug/netstandard2.0/ErrorOr.MinimalApi.dll
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/bin/Debug/netstandard2.0/ErrorOr.MinimalApi.pdb
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.csproj.AssemblyReference.cache
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.AssemblyInfoInputs.cache
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.AssemblyInfo.cs
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.csproj.CoreCompileInputs.cache
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.dll
+/Users/ancplua/ErrorOrX/ErrorOr.MinimalApi/ErrorOr.MinimalApi/obj/Debug/netstandard2.0/ErrorOr.MinimalApi.pdb

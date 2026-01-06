@@ -1,0 +1,25 @@
+<Project Sdk="ANcpLua.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <RootNamespace>ErrorOr.Analyzers</RootNamespace>
+        <AssemblyName>ErrorOr.Analyzers</AssemblyName>
+        <NeutralLanguage>en</NeutralLanguage>
+        <!-- Suppress: SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
+        <NoWarn>$(NoWarn);NETSDK1023</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
+        <!-- SDK adds this implicitly; VersionOverride needed for CPM compatibility -->
+        <PackageReference Include="JonSkeet.RoslynAnalyzers" VersionOverride="1.0.0-beta.6"/>
+    </ItemGroup>
+
+</Project>

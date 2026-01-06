@@ -1,0 +1,14 @@
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.csproj.AssemblyReference.cache
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.Resources.resources
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.csproj.GenerateResource.cache
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.AssemblyInfoInputs.cache
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.AssemblyInfo.cs
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.csproj.CoreCompileInputs.cache
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.xml
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/bin/Debug/netstandard2.0/ErrorOr.Analyzers.deps.json
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/bin/Debug/netstandard2.0/ErrorOr.Analyzers.dll
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/bin/Debug/netstandard2.0/ErrorOr.Analyzers.pdb
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/bin/Debug/netstandard2.0/ErrorOr.Analyzers.xml
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.dll
+/Users/ancplua/ErrorOrX/ErrorOr.Analyzers/ErrorOr.Analyzers/obj/Debug/netstandard2.0/ErrorOr.Analyzers.pdb

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="ErrorOr.Analyzers/ErrorOr.Analyzers.Tests/ErrorOr.Analyzers.Tests.csproj" />
+  <Project Path="ErrorOr.Analyzers/ErrorOr.Analyzers/ErrorOr.Analyzers.csproj" />
+  <Project Path="ErrorOr.Core.Tests/ErrorOr.Core.Tests.csproj" />
+  <Project Path="ErrorOr.Core/ErrorOr.Core.csproj" />
+  <Project Path="ErrorOr.MinimalApi.Sample\ErrorOr.MinimalApi.Sample.csproj" />
+  <Project Path="ErrorOr.MinimalApi/ErrorOr.MinimalApi/ErrorOr.MinimalApi.csproj" />
+</Solution>

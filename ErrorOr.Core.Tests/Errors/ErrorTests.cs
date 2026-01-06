@@ -1,0 +1,331 @@
+using ErrorOr;
+using FluentAssertions;
+
+namespace Tests;
+
+public class ErrorTests
+{
+    private const string ErrorCode = "ErrorCode";
+    private const string ErrorDescription = "ErrorDescription";
+    private static readonly Dictionary<string, object> Dictionary = new()
+    {
+        { "key1", "value1" },
+        { "key2", 21 },
+    };
+
+    #region Factory Methods with Custom Parameters
+
+    [Fact]
+    public void CreateError_WhenFailureError_ShouldHaveErrorTypeFailure()
+    {
+        // Act
+        Error error = Error.Failure(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Failure);
+    }
+
+    [Fact]
+    public void CreateError_WhenUnexpectedError_ShouldHaveErrorTypeFailure()
+    {
+        // Act
+        Error error = Error.Unexpected(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Unexpected);
+    }
+
+    [Fact]
+    public void CreateError_WhenValidationError_ShouldHaveErrorTypeValidation()
+    {
+        // Act
+        Error error = Error.Validation(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Validation);
+    }
+
+    [Fact]
+    public void CreateError_WhenConflictError_ShouldHaveErrorTypeConflict()
+    {
+        // Act
+        Error error = Error.Conflict(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Conflict);
+    }
+
+    [Fact]
+    public void CreateError_WhenNotFoundError_ShouldHaveErrorTypeNotFound()
+    {
+        // Act
+        Error error = Error.NotFound(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.NotFound);
+    }
+
+    [Fact]
+    public void CreateError_WhenNotAuthorizedError_ShouldHaveErrorTypeUnauthorized()
+    {
+        // Act
+        Error error = Error.Unauthorized(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Unauthorized);
+    }
+
+    [Fact]
+    public void CreateError_WhenForbiddenError_ShouldHaveErrorTypeForbidden()
+    {
+        // Act
+        Error error = Error.Forbidden(ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: ErrorType.Forbidden);
+    }
+
+    [Fact]
+    public void CreateError_WhenCustomType_ShouldHaveCustomErrorType()
+    {
+        // Act
+        Error error = Error.Custom(1232, ErrorCode, ErrorDescription, Dictionary);
+
+        // Assert
+        ValidateError(error, expectedErrorType: (ErrorType)1232);
+    }
+
+    private static void ValidateError(Error error, ErrorType expectedErrorType)
+    {
+        error.Code.Should().Be(ErrorCode);
+        error.Description.Should().Be(ErrorDescription);
+        error.Type.Should().Be(expectedErrorType);
+        error.NumericType.Should().Be((int)expectedErrorType);
+        error.Metadata.Should().BeEquivalentTo(Dictionary);
+    }
+
+    #endregion
+
+    #region Factory Methods with Default Parameters
+
+    [Fact]
+    public void CreateError_WhenFailureWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Failure();
+
+        // Assert
+        error.Code.Should().Be("General.Failure");
+        error.Description.Should().Be("A failure has occurred.");
+        error.Type.Should().Be(ErrorType.Failure);
+        error.NumericType.Should().Be((int)ErrorType.Failure);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenUnexpectedWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Unexpected();
+
+        // Assert
+        error.Code.Should().Be("General.Unexpected");
+        error.Description.Should().Be("An unexpected error has occurred.");
+        error.Type.Should().Be(ErrorType.Unexpected);
+        error.NumericType.Should().Be((int)ErrorType.Unexpected);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenValidationWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Validation();
+
+        // Assert
+        error.Code.Should().Be("General.Validation");
+        error.Description.Should().Be("A validation error has occurred.");
+        error.Type.Should().Be(ErrorType.Validation);
+        error.NumericType.Should().Be((int)ErrorType.Validation);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenConflictWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Conflict();
+
+        // Assert
+        error.Code.Should().Be("General.Conflict");
+        error.Description.Should().Be("A conflict error has occurred.");
+        error.Type.Should().Be(ErrorType.Conflict);
+        error.NumericType.Should().Be((int)ErrorType.Conflict);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenNotFoundWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.NotFound();
+
+        // Assert
+        error.Code.Should().Be("General.NotFound");
+        error.Description.Should().Be("A 'Not Found' error has occurred.");
+        error.Type.Should().Be(ErrorType.NotFound);
+        error.NumericType.Should().Be((int)ErrorType.NotFound);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenUnauthorizedWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Unauthorized();
+
+        // Assert
+        error.Code.Should().Be("General.Unauthorized");
+        error.Description.Should().Be("An 'Unauthorized' error has occurred.");
+        error.Type.Should().Be(ErrorType.Unauthorized);
+        error.NumericType.Should().Be((int)ErrorType.Unauthorized);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenForbiddenWithDefaults_ShouldHaveDefaultValues()
+    {
+        // Act
+        Error error = Error.Forbidden();
+
+        // Assert
+        error.Code.Should().Be("General.Forbidden");
+        error.Description.Should().Be("A 'Forbidden' error has occurred.");
+        error.Type.Should().Be(ErrorType.Forbidden);
+        error.NumericType.Should().Be((int)ErrorType.Forbidden);
+        error.Metadata.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Custom Error Type Tests
+
+    [Fact]
+    public void CreateError_WhenCustomWithNegativeType_ShouldHandleNegativeNumericType()
+    {
+        // Arrange
+        const int negativeType = -1;
+        const string code = "Custom.Negative";
+        const string description = "Negative type error";
+
+        // Act
+        Error error = Error.Custom(negativeType, code, description);
+
+        // Assert
+        error.NumericType.Should().Be(negativeType);
+        error.Type.Should().Be((ErrorType)negativeType);
+        error.Code.Should().Be(code);
+        error.Description.Should().Be(description);
+        error.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateError_WhenCustomWithExistingEnumValue_ShouldMapToCorrectErrorType()
+    {
+        // Arrange - using the numeric value of ErrorType.Validation
+        int validationTypeValue = (int)ErrorType.Validation;
+        const string code = "Custom.MappedToValidation";
+        const string description = "Custom error that maps to validation";
+
+        // Act
+        Error error = Error.Custom(validationTypeValue, code, description);
+
+        // Assert
+        error.Type.Should().Be(ErrorType.Validation);
+        error.NumericType.Should().Be(validationTypeValue);
+    }
+
+    [Fact]
+    public void CreateError_WhenCustomWithoutMetadata_ShouldHaveNullMetadata()
+    {
+        // Act
+        Error error = Error.Custom(999, "Custom.Code", "Custom description");
+
+        // Assert
+        error.Metadata.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Properties Tests
+
+    [Theory]
+    [InlineData(ErrorType.Failure)]
+    [InlineData(ErrorType.Unexpected)]
+    [InlineData(ErrorType.Validation)]
+    [InlineData(ErrorType.Conflict)]
+    [InlineData(ErrorType.NotFound)]
+    [InlineData(ErrorType.Unauthorized)]
+    [InlineData(ErrorType.Forbidden)]
+    public void AllErrorTypes_ShouldHaveMatchingNumericTypeValue(ErrorType expectedType)
+    {
+        // Arrange
+        Error error = expectedType switch
+        {
+            ErrorType.Failure => Error.Failure(),
+            ErrorType.Unexpected => Error.Unexpected(),
+            ErrorType.Validation => Error.Validation(),
+            ErrorType.Conflict => Error.Conflict(),
+            ErrorType.NotFound => Error.NotFound(),
+            ErrorType.Unauthorized => Error.Unauthorized(),
+            ErrorType.Forbidden => Error.Forbidden(),
+            _ => throw new ArgumentOutOfRangeException(nameof(expectedType)),
+        };
+
+        // Act & Assert
+        error.Type.Should().Be(expectedType);
+        error.NumericType.Should().Be((int)expectedType);
+    }
+
+    [Fact]
+    public void Metadata_WhenAccessedMultipleTimes_ShouldReturnSameReference()
+    {
+        // Arrange
+        var metadata = new Dictionary<string, object> { { "key", "value" } };
+        Error error = Error.Failure(metadata: metadata);
+
+        // Act
+        var firstAccess = error.Metadata;
+        var secondAccess = error.Metadata;
+
+        // Assert
+        firstAccess.Should().BeSameAs(secondAccess);
+        firstAccess.Should().BeSameAs(metadata);
+    }
+
+    [Fact]
+    public void Metadata_WhenContainsComplexObjects_ShouldPreserveValues()
+    {
+        // Arrange
+        var complexMetadata = new Dictionary<string, object>
+        {
+            { "stringValue", "test" },
+            { "intValue", 42 },
+            { "boolValue", true },
+            { "doubleValue", 3.14 },
+            { "arrayValue", new[] { 1, 2, 3 } },
+            { "nestedDict", new Dictionary<string, object> { { "nested", "value" } } },
+        };
+
+        // Act
+        Error error = Error.Validation(metadata: complexMetadata);
+
+        // Assert
+        error.Metadata.Should().BeEquivalentTo(complexMetadata);
+        error.Metadata!["stringValue"].Should().Be("test");
+        error.Metadata["intValue"].Should().Be(42);
+        error.Metadata["boolValue"].Should().Be(true);
+    }
+
+    #endregion
+}

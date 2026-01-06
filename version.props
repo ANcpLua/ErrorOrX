@@ -1,0 +1,20 @@
+<Project>
+  <!-- Centralized semantic version properties -->
+  <PropertyGroup>
+    <!-- Major.Minor.Patch -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+
+    <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
+    <VersionSuffix></VersionSuffix>
+
+    <!-- Effective Version -->
+    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
+    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
+
+    <!-- Derived versions -->
+    <PackageVersion>$(Version)</PackageVersion>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+</Project>
