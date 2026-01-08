@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "dotnet-sdk"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      roslyn:
+        patterns: ["Microsoft.CodeAnalysis*"]
+      testing:
+        patterns: ["xunit*", "Microsoft.NET.Test*", "coverlet*", "Microsoft.Testing*"]
+      aspnetcore:
+        patterns: ["Microsoft.AspNetCore*", "Microsoft.Extensions*"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
