@@ -44,9 +44,6 @@ jobs:
       - name: Pack ErrorOr.Endpoints
         run: dotnet pack src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Pack ErrorOr.Endpoints.CodeFixes
-        run: dotnet pack src/ErrorOr.Endpoints.CodeFixes/ErrorOr.Endpoints.CodeFixes.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
-
       - name: Push to NuGet
         run: |
           dotnet nuget push artifacts/*.nupkg \

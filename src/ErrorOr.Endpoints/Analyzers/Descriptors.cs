@@ -269,17 +269,6 @@ public static class Descriptors
         DiagnosticSeverity.Error,
         true);
 
-    /// <summary>
-    ///     Endpoint methods should use expression bodies for brevity.
-    /// </summary>
-    public static readonly DiagnosticDescriptor UseExpressionBody = new(
-        "EOE025",
-        "Use expression body",
-        "Endpoint method '{0}' can use expression body for better readability",
-        Category,
-        DiagnosticSeverity.Info,
-        true);
-
     // ═══════════════════════════════════════════════════════════════════════════
     // OpenAPI / Documentation Diagnostics (EOE030-EOE039)
     // Generator-only: require cross-file or complex analysis

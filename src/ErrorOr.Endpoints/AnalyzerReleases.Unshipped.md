@@ -25,8 +25,7 @@
  EOE021  | ErrorOr.Endpoints | Warning  | Unknown route constraint             
  EOE022  | ErrorOr.Endpoints | Warning  | Optional route parameter not at end  
  EOE023  | ErrorOr.Endpoints | Warning  | Route constraint type mismatch       
- EOE024  | ErrorOr.Endpoints | Error    | Catch-all must be string             
- EOE025  | ErrorOr.Endpoints | Info     | Use expression body                  
+ EOE024  | ErrorOr.Endpoints | Error    | Catch-all must be string
  EOE030  | ErrorOr.Endpoints | Info     | Too many result types                
  EOE031  | ErrorOr.Endpoints | Warning  | ProducesError status mismatch        
  EOE032  | ErrorOr.Endpoints | Warning  | Unknown error factory                

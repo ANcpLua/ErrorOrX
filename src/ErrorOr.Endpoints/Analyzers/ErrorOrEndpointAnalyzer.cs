@@ -81,8 +81,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         Descriptors.MultipleBodySources,
         Descriptors.BodyOnReadOnlyMethod,
         Descriptors.AcceptedOnReadOnlyMethod,
-        Descriptors.RouteConstraintTypeMismatch,
-        Descriptors.UseExpressionBody
+        Descriptors.RouteConstraintTypeMismatch
     ];
 
     public override void Initialize(AnalysisContext context)
