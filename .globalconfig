@@ -1,0 +1,6 @@
+# ErrorOrX Global Analyzer Config
+is_global = true
+global_level = 100
+
+# AL0017: Hardcoded version rule is for SDK development, not consumer projects using CPM
+dotnet_diagnostic.AL0017.severity = none

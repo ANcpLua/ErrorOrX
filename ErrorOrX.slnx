@@ -1,8 +1,16 @@
 <Solution>
-  <Project Path="ErrorOr.Analyzers/ErrorOr.Analyzers.Tests/ErrorOr.Analyzers.Tests.csproj" />
-  <Project Path="ErrorOr.Analyzers/ErrorOr.Analyzers/ErrorOr.Analyzers.csproj" />
-  <Project Path="ErrorOr.Core.Tests/ErrorOr.Core.Tests.csproj" />
-  <Project Path="ErrorOr.Core/ErrorOr.Core.csproj" />
-  <Project Path="ErrorOr.MinimalApi.Sample\ErrorOr.MinimalApi.Sample.csproj" />
-  <Project Path="ErrorOr.MinimalApi/ErrorOr.MinimalApi/ErrorOr.MinimalApi.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/ErrorOr.Core/ErrorOr.Core.csproj" />
+    <Project Path="src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj" />
+    <Project Path="src/ErrorOr.Endpoints.CodeFixes/ErrorOr.Endpoints.CodeFixes.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/ErrorOr.Endpoints.Sample/ErrorOr.Endpoints.Sample.csproj" />
+    <Project Path="samples/ProblemDetailsAutoValidation/ProblemDetailsAutoValidation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ErrorOr.Core.Tests/ErrorOr.Core.Tests.csproj" />
+    <Project Path="tests/ErrorOr.Endpoints.Tests/ErrorOr.Endpoints.Tests.csproj" />
+    <Project Path="tests/ErrorOr.Endpoints.CodeFixes.Tests/ErrorOr.Endpoints.CodeFixes.Tests.csproj" />
+  </Folder>
 </Solution>

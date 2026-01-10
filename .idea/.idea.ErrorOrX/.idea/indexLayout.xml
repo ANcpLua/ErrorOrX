@@ -3,7 +3,14 @@
   <component name="UserContentModel">
     <attachedFolders />
     <explicitIncludes>
+      <Path>CHANGELOG.md</Path>
+      <Path>CLAUDE.md</Path>
+      <Path>ErrorOr.Analyzers</Path>
+      <Path>ErrorOr.Core</Path>
+      <Path>ErrorOr.Core.Tests</Path>
+      <Path>ErrorOr.MinimalApi</Path>
       <Path>global.json</Path>
+      <Path>releasenotes.props</Path>
       <Path>version.props</Path>
     </explicitIncludes>
     <explicitExcludes />

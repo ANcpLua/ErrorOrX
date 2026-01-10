@@ -13,9 +13,12 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
-    <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.2.0" />
+    <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="0.0.1-local" />
 
-    <!-- Code Quality Analyzers -->
+    <!-- Code Quality Analyzers (including SDK-injected) -->
+    <PackageVersion Include="ANcpLua.Analyzers" Version="1.5.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.0.2" />
     <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6" />
     <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.6.1-beta.1" />
     <PackageVersion Include="ErrorProne.NET.Structs" Version="0.6.1-beta.1" />
@@ -26,6 +29,8 @@
     <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
 
     <!-- Testing -->
+    <PackageVersion Include="Verify.XunitV3" Version="29.6.5" />
+    <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
@@ -37,6 +42,6 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
 
     <!-- ASP.NET Core -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1-servicing.25567.7" />
   </ItemGroup>
 </Project>

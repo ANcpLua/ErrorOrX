@@ -22,6 +22,7 @@
   <!-- Suppress known SDK-related warnings -->
   <PropertyGroup>
     <!-- SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
-    <NoWarn>$(NoWarn);NETSDK1023</NoWarn>
+    <!-- AL0017: Hardcoded version rule is for SDK development, not consumer projects -->
+    <NoWarn>$(NoWarn);NETSDK1023;AL0017</NoWarn>
   </PropertyGroup>
 </Project>

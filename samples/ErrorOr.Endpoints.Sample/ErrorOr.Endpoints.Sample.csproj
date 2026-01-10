@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+        <!-- Suppress EOE003 for test cases demonstrating known analyzer limitation with [AsParameters] -->
+        <NoWarn>$(NoWarn);EOE003</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Global usings for ErrorOr types -->
+        <Using Include="ErrorOr.Core.ErrorOr"/>
+        <Using Include="ErrorOr.Core.Results"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../src/ErrorOr.Core/ErrorOr.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Reference generator as ProjectReference with analyzer pattern -->
+        <PackageReference Include="ANcpLua.Roslyn.Utilities" GeneratePathProperty="true" PrivateAssets="all"/>
+        <ProjectReference Include="../../src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"
+                          SetTargetFramework="TargetFramework=netstandard2.0"
+                          PrivateAssets="all"/>
+        <Analyzer Include="$(PkgANcpLua_Roslyn_Utilities)\lib\netstandard2.0\ANcpLua.Roslyn.Utilities.dll"/>
+    </ItemGroup>
+
+</Project>

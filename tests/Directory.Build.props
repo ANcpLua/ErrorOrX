@@ -1,0 +1,11 @@
+<Project>
+  <!-- Import root build settings -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Allow SDK to inject packages even with CPM -->
+  <PropertyGroup>
+    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+    <!-- NU1009: SDK-injected ANcpLua.Analyzers conflicts with CPM PackageVersion (known SDK limitation) -->
+    <NoWarn>$(NoWarn);NU1009</NoWarn>
+  </PropertyGroup>
+</Project>

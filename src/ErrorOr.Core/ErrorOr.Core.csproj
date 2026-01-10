@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>ErrorOr.Core</PackageId>
+        <PackageTags>Result,Results,ErrorOr,Error,Handling,DiscriminatedUnion,Railway</PackageTags>
+        <Description>Modernized ErrorOr for .NET 10. Fluent discriminated union with ElseDo, hybrid FailIfAsync, immutable collections, zero allocations.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <!-- TODO: Add XML docs and remove this -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath=""/>
+    </ItemGroup>
+    <!-- ANcpLua.Analyzers applied globally via Directory.Packages.props -->
+</Project>

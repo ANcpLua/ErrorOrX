@@ -1,0 +1,31 @@
+<Project Sdk="ANcpLua.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>ErrorOr.Endpoints.Tests</RootNamespace>
+        <!-- Suppress code analysis warnings in test code -->
+        <NoWarn>$(NoWarn);CA1820;CA2201;CA1826;CA1859;CA1812;CA1852;NU1603</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="xunit.v3.mtp-v2"/>
+        <PackageReference Include="AwesomeAssertions"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing"/>
+        <PackageReference Include="Verify.XunitV3"/>
+        <PackageReference Include="Verify.SourceGenerators"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit"/>
+        <Using Include="AwesomeAssertions"/>
+    </ItemGroup>
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="../../src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj"/>
+        <ProjectReference Include="../../src/ErrorOr.Core/ErrorOr.Core.csproj"/>
+    </ItemGroup>
+</Project>

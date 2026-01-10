@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright (c) 2025 Alexander Nachtmann")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cc20915ee4f96b41063106f4aed3f77e838d389f")]
 [assembly: System.Reflection.AssemblyProductAttribute("ErrorOr.MinimalApi.Sample")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ErrorOr.MinimalApi.Sample")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

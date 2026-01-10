@@ -1135,8 +1135,10 @@
         "net10.0"
       ],
       "sources": {
+        "/Users/ancplua/ErrorOrX/nupkgs": {},
         "/usr/local/share/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {},
+        "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json": {},
         "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet10/nuget/v3/index.json": {}
       },
       "frameworks": {
@@ -1180,6 +1182,7 @@
           }
         },
         "centralPackageVersions": {
+          "ANcpLua.Analyzers": "1.5.1",
           "ANcpLua.Roslyn.Utilities": "1.2.0",
           "AwesomeAssertions": "9.3.0",
           "ErrorOr": "2.1.0",
@@ -1189,6 +1192,7 @@
           "Microsoft.AspNetCore.OpenApi": "10.0.0",
           "Microsoft.Bcl.HashCode": "6.0.0",
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.BannedApiAnalyzers": "3.11.0",
           "Microsoft.CodeAnalysis.CSharp": "5.0.0",
           "Microsoft.CodeAnalysis.CSharp.Analyzer.Testing": "1.1.2",
           "Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit": "1.1.2",
@@ -1196,8 +1200,10 @@
           "Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit": "1.1.2",
           "Microsoft.CodeAnalysis.CSharp.Workspaces": "5.0.0",
           "Microsoft.NET.Test.Sdk": "17.12.0",
+          "Microsoft.Sbom.Targets": "4.0.1",
           "PolySharp": "1.15.0",
           "Roslynator.CodeAnalysis.Analyzers": "4.12.10",
+          "Verify.XunitV3": "29.6.5",
           "xunit": "2.9.2",
           "xunit.runner.visualstudio": "3.0.2",
           "xunit.v3.mtp-v2": "3.2.1"
