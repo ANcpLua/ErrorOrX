@@ -1,24 +1,15 @@
-# ErrorOr
+# ErrorOrX
 
-[![NuGet](https://img.shields.io/nuget/v/ErrorOr.svg)](https://www.nuget.org/packages/ErrorOr/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOr.svg)](https://www.nuget.org/packages/ErrorOr/)
+[![NuGet](https://img.shields.io/nuget/v/ErrorOrX.svg)](https://www.nuget.org/packages/ErrorOrX/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOrX.svg)](https://www.nuget.org/packages/ErrorOrX/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A discriminated union type for .NET with source-generated ASP.NET Core Minimal API integration. One package, zero boilerplate, full AOT support.
 
-## Features
-
-- **ErrorOr\<T\>** - Type-safe error handling without exceptions
-- **Source-Generated Endpoints** - Attribute-based routing with automatic registration
-- **Automatic HTTP Mapping** - Errors map to appropriate status codes (NotFound -> 404, etc.)
-- **Middleware Support** - `[Authorize]`, `[EnableRateLimiting]`, `[OutputCache]`, `[EnableCors]`
-- **OpenAPI Integration** - Typed results for accurate API documentation
-- **Native AOT Ready** - Zero reflection, fully trimmer-safe
-
 ## Installation
 
 ```bash
-dotnet add package ErrorOr
+dotnet add package ErrorOrX
 ```
 
 ## Quick Start

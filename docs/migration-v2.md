@@ -10,12 +10,12 @@ ErrorOr v2.0.0 consolidates the previous two-package structure into a single uni
 
 | v1.x | v2.0.0 |
 |------|--------|
-| `ErrorOr.Core` | `ErrorOr` |
-| `ErrorOr.Endpoints` | `ErrorOr` |
+| `ErrorOrX` | `ErrorOrX` |
+| `ErrorOrX` | `ErrorOrX` |
 
 ### Namespace Simplification
 
-All types are now under the `ErrorOr` namespace. The `.Core` and `.Endpoints` namespace segments have been removed.
+All types are now under the `ErrorOrX` namespace. The `.Core` and `.Endpoints` namespace segments have been removed.
 
 ### Automatic AOT Support
 
@@ -32,8 +32,8 @@ Remove the old packages and add the new unified package.
 **Before (csproj):**
 ```xml
 <ItemGroup>
-  <PackageReference Include="ErrorOr.Core" Version="1.x.x" />
-  <PackageReference Include="ErrorOr.Endpoints" Version="1.x.x" />
+  <PackageReference Include="ErrorOrX" Version="1.x.x" />
+  <PackageReference Include="ErrorOrX" Version="1.x.x" />
 </ItemGroup>
 ```
 
@@ -46,8 +46,8 @@ Remove the old packages and add the new unified package.
 
 **Using CLI:**
 ```bash
-dotnet remove package ErrorOr.Core
-dotnet remove package ErrorOr.Endpoints
+dotnet remove package ErrorOrX
+dotnet remove package ErrorOrX
 dotnet add package ErrorOr --version 2.0.0
 ```
 
@@ -61,10 +61,10 @@ Replace the old namespaces with the new unified namespace.
 
 | Find | Replace With |
 |------|--------------|
-| `using ErrorOr.Core.ErrorOr;` | `using ErrorOr;` |
-| `using ErrorOr.Core.Errors;` | `using ErrorOr;` |
-| `using ErrorOr.Core.Results;` | `using ErrorOr;` |
-| `using ErrorOr.Endpoints.Generated;` | `using ErrorOr.Generated;` |
+| `using ErrorOrX.ErrorOr;` | `using ErrorOr;` |
+| `using ErrorOrX.Errors;` | `using ErrorOr;` |
+| `using ErrorOrX.Results;` | `using ErrorOr;` |
+| `using ErrorOrX.Generated;` | `using ErrorOr.Generated;` |
 
 **Regex for IDE Find/Replace:**
 
@@ -169,7 +169,7 @@ Check that:
 
 ### Q: I get "namespace not found" errors after migration
 
-**A:** Ensure you have replaced all old using statements. Run the regex find/replace from Step 2 across your entire solution. Also verify the new `ErrorOr` package is installed by checking your `.csproj` file.
+**A:** Ensure you have replaced all old using statements. Run the regex find/replace from Step 2 across your entire solution. Also verify the new `ErrorOrX` package is installed by checking your `.csproj` file.
 
 ### Q: My JSON serialization stopped working
 
@@ -183,11 +183,11 @@ Check that:
 
 **A:** The API surface remains the same. Your endpoint handlers should work without modification after updating the namespaces.
 
-### Q: What happened to the source generators from ErrorOr.Endpoints?
+### Q: What happened to the source generators from ErrorOrX?
 
-**A:** The source generators are now included in the main `ErrorOr` package. Generated types are under the `ErrorOr.Generated` namespace instead of `ErrorOr.Endpoints.Generated`.
+**A:** The source generators are now included in the main `ErrorOrX` package. Generated types are under the `ErrorOr.Generated` namespace instead of `ErrorOrX.Generated`.
 
-### Q: I was using internal types from ErrorOr.Core. Are they still available?
+### Q: I was using internal types from ErrorOrX. Are they still available?
 
 **A:** Some internal implementation details may have changed. If you were relying on internal types, review the v2.0.0 API surface. The public API remains stable and backward-compatible.
 
