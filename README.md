@@ -266,17 +266,6 @@ public static ErrorOr<Order> Create(CreateOrderRequest request, IOrderService se
     => service.CreateOrder(request);
 ```
 
-## Documentation
-
-- [Migration Guide (v1.x to v2.0)](docs/migration-v2.md)
-- [Error Mapping Reference](docs/error-mapping.md)
-- [Diagnostic Codes](docs/diagnostics.md)
-- [AOT Setup](docs/aot-setup.md)
-
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
-
-## License
-
-MIT License.
