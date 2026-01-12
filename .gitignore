@@ -7,8 +7,12 @@ TestResults/
 
 # IDE
 .vs/
+.idea/
 *.user
 *.suo
+
+# Claude Code
+.claude/
 
 # OS
 .DS_Store

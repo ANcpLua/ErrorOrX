@@ -1,7 +1,0 @@
-{
-  "enabledPlugins": {
-    "ancplua-docs-librarian@ancplua-claude-plugins": true,
-    "code-review@ancplua-claude-plugins": true,
-    "dotnet-architecture-lint@ancplua-claude-plugins": true
-  }
-}
