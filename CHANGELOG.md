@@ -42,6 +42,13 @@ Update your package reference:
 
 No code changes required - all namespaces remain `ErrorOr`.
 
+### Internal Changes
+
+- Consolidated test projects: `ErrorOr.Core.Tests` + `ErrorOr.Endpoints.Tests` → `ErrorOrX.Tests` + `ErrorOrX.Generators.Tests`
+- Renamed sample project: `ErrorOr.Endpoints.Sample` → `ErrorOrX.Sample`
+- Test count increased from 218 to 267 (merged comprehensive tests from both projects)
+- Updated solution file to use new project structure
+
 ---
 
 ## [2.1.1] - 2026-01-12
