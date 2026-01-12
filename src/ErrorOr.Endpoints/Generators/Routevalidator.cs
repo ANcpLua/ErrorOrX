@@ -121,14 +121,14 @@ internal static class RouteValidator
         string attributeName)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var syntax = method.DeclaringSyntaxReferences[0].GetSyntax();
+        var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // Check for empty pattern
         if (string.IsNullOrWhiteSpace(pattern))
         {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
-                syntax,
+                location,
                 pattern,
                 "Route pattern cannot be empty"));
             return diagnostics.ToImmutable();
@@ -138,7 +138,7 @@ internal static class RouteValidator
         if (pattern.Contains("{}"))
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
-                syntax,
+                location,
                 pattern,
                 "Route contains empty parameter '{}'. Parameter names are required."));
 
@@ -148,7 +148,7 @@ internal static class RouteValidator
         if (openCount != closeCount)
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
-                syntax,
+                location,
                 pattern,
                 $"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'"));
 
@@ -159,7 +159,7 @@ internal static class RouteValidator
             if (!seen.Add(param.Name))
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.InvalidRoutePattern,
-                    syntax,
+                    location,
                     pattern,
                     $"Route contains duplicate parameter '{{{param.Name}}}'"));
 
@@ -176,7 +176,7 @@ internal static class RouteValidator
         IMethodSymbol method)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var syntax = method.DeclaringSyntaxReferences[0].GetSyntax();
+        var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // Build lookup of method parameters by their bound route name
         var boundRouteNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -189,7 +189,7 @@ internal static class RouteValidator
             if (!boundRouteNames.Contains(rp.Name))
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.RouteParameterNotBound,
-                    syntax,
+                    location,
                     pattern,
                     rp.Name));
 
@@ -205,13 +205,13 @@ internal static class RouteValidator
         IMethodSymbol method)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var syntax = method.DeclaringSyntaxReferences[0].GetSyntax();
+        var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // Build lookup of method parameters by their bound route name
         var methodParamsByRouteName = BuildMethodParamsByRouteName(methodParams);
 
         foreach (var rp in routeParams)
-            ValidateRouteConstraint(rp, methodParamsByRouteName, syntax, diagnostics);
+            ValidateRouteConstraint(rp, methodParamsByRouteName, location, diagnostics);
 
         return diagnostics.ToImmutable();
     }
@@ -230,7 +230,7 @@ internal static class RouteValidator
     private static void ValidateRouteConstraint(
         RouteParameterInfo routeParam,
         IReadOnlyDictionary<string, MethodParameterInfo> methodParamsByRouteName,
-        SyntaxNode syntax,
+        Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (!TryGetConstraintContext(routeParam, methodParamsByRouteName, out var methodParam, out var typeFqn,
@@ -244,7 +244,7 @@ internal static class RouteValidator
         // Catch-all parameters must be string
         if (routeParam.IsCatchAll)
         {
-            AddCatchAllMismatch(routeParam, methodParam, typeFqn, syntax, diagnostics);
+            AddCatchAllMismatch(routeParam, methodParam, typeFqn, location, diagnostics);
             return;
         }
 
@@ -257,7 +257,7 @@ internal static class RouteValidator
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
-            syntax,
+            location,
             routeParam.Name,
             constraint,
             expectedTypes[0],
@@ -295,7 +295,7 @@ internal static class RouteValidator
         RouteParameterInfo routeParam,
         MethodParameterInfo methodParam,
         string typeFqn,
-        SyntaxNode syntax,
+        Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (IsStringType(typeFqn))
@@ -303,7 +303,7 @@ internal static class RouteValidator
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
-            syntax,
+            location,
             routeParam.Name,
             "*",
             "string",

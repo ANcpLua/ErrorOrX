@@ -44,6 +44,10 @@ internal sealed class ErrorOrContext
         CancellationToken = compilation.GetBestTypeByMetadataName(WellKnownTypes.CancellationToken);
         NullableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.NullableT)?.ConstructedFrom;
 
+        // BCL Validation types (for automatic validation detection)
+        ValidationAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ValidationAttribute);
+        IValidatableObject = compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableObject);
+
         // Result markers
         SuccessMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Success);
         CreatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Created);
@@ -157,6 +161,10 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? ObsoleteAttribute { get; }
     public INamedTypeSymbol? CancellationToken { get; }
 
+    // BCL Validation types
+    public INamedTypeSymbol? ValidationAttribute { get; }
+    public INamedTypeSymbol? IValidatableObject { get; }
+
     // Convenience accessors that delegate to AspNetContext
     public INamedTypeSymbol? FromBody => AspNet.FromBodyAttribute;
     public INamedTypeSymbol? FromServices => AspNet.FromServicesAttribute;
@@ -237,5 +245,65 @@ internal sealed class ErrorOrContext
         return type?
             .GetMembers(name).OfType<IMethodSymbol>()
             .FirstOrDefault(m => m.IsStatic && m.Parameters.Length == paramCount);
+    }
+
+    /// <summary>
+    ///     Determines if a type requires BCL validation.
+    ///     Returns true if the type:
+    ///     1. Has any property with an attribute deriving from ValidationAttribute, OR
+    ///     2. Implements IValidatableObject
+    ///     This enables automatic validation detection without hardcoding specific attributes.
+    /// </summary>
+    public bool RequiresValidation(ITypeSymbol? type)
+    {
+        try
+        {
+            if (type is null || ValidationAttribute is null)
+                return false;
+
+            // Skip primitives and strings - they don't need object-level validation
+            if (type.SpecialType is not SpecialType.None ||
+                type.TypeKind is TypeKind.Enum or TypeKind.Interface)
+                return false;
+
+            // Check if type implements IValidatableObject
+            if (IValidatableObject is not null &&
+                type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, IValidatableObject)))
+                return true;
+
+            // Check if any property has a ValidationAttribute descendant
+            foreach (var member in type.GetMembers())
+            {
+                if (member is not IPropertySymbol property)
+                    continue;
+
+                foreach (var attribute in property.GetAttributes())
+                {
+                    if (attribute.AttributeClass is not null &&
+                        InheritsFrom(attribute.AttributeClass, ValidationAttribute))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            // Gracefully degrade if validation detection fails
+            return false;
+        }
+    }
+
+    private static bool InheritsFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
+    {
+        var current = type;
+        while (current is not null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+                return true;
+            current = current.BaseType;
+        }
+
+        return false;
     }
 }

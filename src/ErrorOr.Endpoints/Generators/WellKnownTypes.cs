@@ -53,6 +53,13 @@ internal static class WellKnownTypes
     public const string FromKeyedServicesAttribute =
         "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 
+    // BCL Validation (base types for automatic detection)
+    public const string ValidationAttribute = "System.ComponentModel.DataAnnotations.ValidationAttribute";
+    public const string IValidatableObject = "System.ComponentModel.DataAnnotations.IValidatableObject";
+    public const string Validator = "System.ComponentModel.DataAnnotations.Validator";
+    public const string ValidationContext = "System.ComponentModel.DataAnnotations.ValidationContext";
+    public const string ValidationResult = "System.ComponentModel.DataAnnotations.ValidationResult";
+
     // System
     public const string CancellationToken = "System.Threading.CancellationToken";
     public const string ObsoleteAttribute = "System.ObsoleteAttribute";
@@ -161,6 +168,11 @@ internal static class WellKnownTypes
         // DI
         public const string FromKeyedServicesAttribute =
             "global::Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
+
+        // BCL Validation
+        public const string Validator = "global::System.ComponentModel.DataAnnotations.Validator";
+        public const string ValidationContext = "global::System.ComponentModel.DataAnnotations.ValidationContext";
+        public const string ValidationResult = "global::System.ComponentModel.DataAnnotations.ValidationResult";
 
         // System
         public const string CancellationToken = "global::System.Threading.CancellationToken";

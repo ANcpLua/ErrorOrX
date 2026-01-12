@@ -2,27 +2,170 @@
 
 All notable changes to this project are documented in this file.
 
-## [3.0.0] - 2026-01-06
-
-### Breaking Changes
-
-- **Target framework**: Changed from `netstandard2.0` to `net10.0` only. This library now requires .NET 10+.
-- **Immutable error collections**: Changed `List<Error>` to `IReadOnlyList<Error>` in public API. The `Errors` and `ErrorsOrEmptyList` properties now return `IReadOnlyList<Error>` instead of `List<Error>`.
-
-### Changed
-
-- `EmptyErrors.Instance` now returns `Array.Empty<Error>()` instead of a mutable `List<Error>`, preventing accidental mutation of the shared empty instance.
-- Uses modern throw helpers (`ArgumentNullException.ThrowIfNull`) instead of manual null checks.
-
-### Removed
-
-- Removed polyfill packages (`Microsoft.Bcl.HashCode`, `Nullable`) - no longer needed with .NET 10.
-- Removed `StyleCop.Analyzers` in favor of `ErrorProne.NET` analyzers.
+## [2.1.0] - 2026-01-10
 
 ### Added
 
-- Added `ErrorProne.NET.CoreAnalyzers` and `ErrorProne.NET.Structs` for improved code quality analysis.
-- Added `JonSkeet.RoslynAnalyzers` for additional code quality checks.
+- **BCL Middleware Attribute Detection**: Generator now recognizes and emits fluent calls for standard ASP.NET Core middleware attributes:
+
+  | Attribute | Emitted Call |
+  |-----------|--------------|
+  | `[Authorize]` | `.RequireAuthorization()` |
+  | `[Authorize("Policy")]` | `.RequireAuthorization("Policy")` |
+  | `[AllowAnonymous]` | `.AllowAnonymous()` |
+  | `[EnableRateLimiting("policy")]` | `.RequireRateLimiting("policy")` |
+  | `[DisableRateLimiting]` | `.DisableRateLimiting()` |
+  | `[OutputCache]` | `.CacheOutput()` |
+  | `[OutputCache(Duration = 60)]` | `.CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)))` |
+  | `[OutputCache(PolicyName = "x")]` | `.CacheOutput("x")` |
+  | `[EnableCors("policy")]` | `.RequireCors("policy")` |
+  | `[DisableCors]` | `.DisableCors()` |
+
+- **Automatic Results<> Union Updates**: When middleware attributes are detected, the union type automatically includes appropriate HTTP result types:
+  - `[Authorize]` adds `UnauthorizedHttpResult` (401) and `ForbidHttpResult` (403)
+  - `[EnableRateLimiting]` adds `StatusCodeHttpResult` (429)
+
+### Example
+
+```csharp
+// Before v2.1
+app.MapMethods(@"/todos", new[] { "POST" }, (Delegate)Invoke_Ep3)
+    .WithName("TodoApi_Create")
+    .Accepts<CreateTodoRequest>("application/json");
+
+// After v2.1 with [Authorize("Admin")] and [EnableRateLimiting("fixed")]
+app.MapMethods(@"/todos", new[] { "POST" }, (Delegate)Invoke_Ep3)
+    .WithName("TodoApi_Create")
+    .Accepts<CreateTodoRequest>("application/json")
+    .RequireAuthorization("Admin")      // NEW
+    .RequireRateLimiting("fixed");      // NEW
+```
+
+### Internal Changes
+
+- Added `MiddlewareInfo` record to track detected middleware configuration
+- Added `ExtractMiddlewareAttributes()` to detect BCL attributes on endpoints
+- Added `EmitMiddlewareCalls()` to emit corresponding fluent method calls
+- Updated `ResultsUnionTypeBuilder` to include 401/403/429 in union when relevant
+- Fallback to `IResult` when union exceeds 8 type parameters still works correctly
+
+---
+
+## [2.0.0] - 2026-01-10
+
+### Breaking Changes
+
+#### Single Package Architecture
+
+Replaced two packages with one unified package:
+
+```diff
+- <PackageReference Include="ErrorOr.Core" Version="1.x" />
+- <PackageReference Include="ErrorOr.Endpoints" Version="1.x" />
++ <PackageReference Include="ErrorOr" Version="2.0.0" />
+```
+
+#### Namespace Simplification
+
+| Before (v1.x) | After (v2.0.0) |
+|---------------|----------------|
+| `using ErrorOr;`<br>`using ErrorOr.Core.ErrorOr;`<br>`using ErrorOr.Core.Errors;`<br>`using ErrorOr.Core.Results;` | `using ErrorOr;` |
+| `ErrorOr.Core.ErrorOr.ErrorOr<T>` | `ErrorOr.ErrorOr<T>` |
+| `ErrorOr.Core.Errors.Error` | `ErrorOr.Error` |
+| `ErrorOr.Endpoints.GetAttribute` | `ErrorOr.GetAttribute` |
+
+#### Parameter Binding Attributes Now Optional
+
+`[FromRoute]`, `[FromBody]`, `[FromQuery]` attributes are now automatically inferred:
+
+```csharp
+// Before (v1.x)
+[Get("/todos/{id:int}")]
+public static ErrorOr<Todo> GetById([FromRoute] int id) => ...
+
+[Post("/todos")]
+public static ErrorOr<Todo> Create([FromBody] CreateTodoRequest request) => ...
+
+// After (v2.0.0) - attributes optional, inferred automatically
+[Get("/todos/{id:int}")]
+public static ErrorOr<Todo> GetById(int id) => ...
+
+[Post("/todos")]
+public static ErrorOr<Todo> Create(CreateTodoRequest request) => ...
+```
+
+### Added
+
+#### Automatic AOT JSON Context Generation
+
+No longer requires manual `JsonSerializerContext` definition. The generator automatically creates `ErrorOrJsonContext` with all endpoint types:
+
+```csharp
+// Before (v1.x) - Manual context required
+builder.Services.AddErrorOrEndpointJson<AppJsonSerializerContext>().AddOpenApi();
+
+[JsonSerializable(typeof(Todo))]
+[JsonSerializable(typeof(List<Todo>))]
+internal partial class AppJsonSerializerContext : JsonSerializerContext;
+
+// After (v2.0.0) - Automatic, zero config
+builder.Services.AddOpenApi();
+// ErrorOrJsonContext is auto-generated with all types
+```
+
+#### Automatic Location Header for POST Endpoints
+
+POST endpoints returning 201 Created now automatically include Location header when the response type has an `Id` property:
+
+```csharp
+[Post("/todos")]
+public static ErrorOr<Todo> Create(CreateTodoRequest req)
+{
+    var todo = new Todo(nextId++, req.Title);
+    return todo;
+}
+// Returns: 201 Created
+// Location: /todos/{Id}  <- Automatic!
+```
+
+#### Added `IsSuccess` Property
+
+```csharp
+ErrorOr<int> result = 42;
+if (result.IsSuccess)  // NEW - inverse of IsError
+{
+    Console.WriteLine(result.Value);
+}
+```
+
+#### Added `ToString()` Override
+
+```csharp
+ErrorOr<int> success = 42;
+Console.WriteLine(success);  // "ErrorOr { IsError = False, Value = 42 }"
+
+ErrorOr<int> error = Error.NotFound("Not.Found", "Item not found");
+Console.WriteLine(error);  // "ErrorOr { IsError = True, FirstError = Not.Found }"
+```
+
+### Changed
+
+- **Target Framework**: Now multi-targets `net10.0` (runtime) and `netstandard2.0` (generator)
+- **Package Structure**: Single package contains both runtime DLL and analyzer/generator
+- **JSON Serialization**: Automatic context generation replaces opt-in approach
+
+### Removed
+
+- `ErrorOr.Core` package (merged into `ErrorOr`)
+- `ErrorOr.Endpoints` package (merged into `ErrorOr`)
+- Manual `AddErrorOrEndpointJson<T>()` requirement
+- Requirement for explicit `[FromRoute]`/`[FromBody]` attributes
+
+### Migration Guide
+
+See [docs/migration-v2.md](docs/migration-v2.md) for detailed migration instructions.
+
+---
 
 ## [1.10.0] - 2024-02-14
 
@@ -37,7 +180,7 @@ All notable changes to this project are documented in this file.
 
 - `ToErrorOr`
 
-## [2.0.0] - 2024-03-26
+## [1.0.0] - 2024-03-26
 
 ### Added
 

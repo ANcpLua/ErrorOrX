@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+        <PackageId>ErrorOr</PackageId>
+        <Version>2.0.0</Version>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsPackable>true</IsPackable>
+        <IncludeBuildOutput>true</IncludeBuildOutput>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <DevelopmentDependency>false</DevelopmentDependency>
+        <NoWarn>$(NoWarn);NU5128;CS1591;RS2008</NoWarn>
+    </PropertyGroup>
+
+    <!-- net10.0: Runtime library only -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <DefineConstants>$(DefineConstants);RUNTIME</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <!-- Exclude generators and analyzers from runtime build -->
+        <Compile Remove="Generators/**/*.cs"/>
+        <Compile Remove="Analyzers/**/*.cs"/>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <!-- netstandard2.0: Analyzers and Generators only -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <DefineConstants>$(DefineConstants);ANALYZER</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <!-- Exclude runtime from analyzer build -->
+        <Compile Remove="Runtime/**/*.cs"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
+        <PackageReference Include="PolySharp" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <!-- Packaging: Pack analyzer/generator output to analyzers/dotnet/cs/ -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false"/>
+        <None Include="$(PkgANcpLua_Roslyn_Utilities)\lib\netstandard2.0\ANcpLua.Roslyn.Utilities.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false"/>
+    </ItemGroup>
+
+    <!-- Include build props -->
+    <ItemGroup>
+        <None Include="build\ErrorOr.props" Pack="true" PackagePath="build\"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities"/>
+    </ItemGroup>
+
+</Project>
