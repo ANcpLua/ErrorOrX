@@ -71,55 +71,59 @@ These work natively when you pass the handler directly (but NOT through our wrap
 ## Source Files
 
 ```
-src/ErrorOr/
-├── Analyzers/
-│   ├── Descriptors.cs
-│   └── ErrorOrEndpointAnalyzer.cs
-├── Generators/
-│   ├── Core/
-│   │   ├── ErrorOrEndpointGenerator.Analyzer.cs
-│   │   ├── ErrorOrEndpointGenerator.Emitter.cs
-│   │   ├── ErrorOrEndpointGenerator.Extractor.cs
-│   │   ├── ErrorOrEndpointGenerator.Initialize.cs
-│   │   └── ErrorOrEndpointGenerator.ParameterBinding.cs
-│   ├── Models/
-│   │   ├── EndpointModels.cs
-│   │   ├── Enums.cs
-│   │   └── ErrorMapping.cs
-│   ├── TypeResolution/
-│   │   ├── ErrorOrContext.cs
-│   │   ├── ResultsUnionTypeBuilder.cs
-│   │   └── WellKnownTypes.cs
-│   ├── Validation/
-│   │   ├── DuplicateRouteDetector.cs
-│   │   └── RouteValidator.cs
-│   ├── Helpers/
-│   │   ├── EndpointIdentityHelper.cs
-│   │   ├── IncrementalProviderExtensions.cs
-│   │   └── TypeNameHelper.cs
-│   └── OpenApiTransformerGenerator.cs
-└── Runtime/
-    ├── EmptyErrors.cs
-    ├── Error.cs
-    ├── ErrorOr.cs
-    ├── ErrorOr.Else.cs
-    ├── ErrorOr.ElseExtensions.cs
-    ├── ErrorOr.Equality.cs
-    ├── ErrorOr.FailIf.cs
-    ├── ErrorOr.FailIfExtensions.cs
-    ├── ErrorOr.ImplicitConverters.cs
-    ├── ErrorOr.Match.cs
-    ├── ErrorOr.MatchExtensions.cs
-    ├── ErrorOr.Switch.cs
-    ├── ErrorOr.SwitchExtensions.cs
-    ├── ErrorOr.Then.cs
-    ├── ErrorOr.ThenExtensions.cs
-    ├── ErrorOr.ToErrorOrExtensions.cs
-    ├── ErrorOrFactory.cs
-    ├── ErrorType.cs
-    ├── IErrorOr.cs
-    ├── Results.cs
-    └── TypedResults.cs
+src/
+├── ErrorOrX/                    # Runtime library (net10.0)
+│   ├── EmptyErrors.cs
+│   ├── Error.cs
+│   ├── ErrorOr.cs
+│   ├── ErrorOr.Else.cs
+│   ├── ErrorOr.ElseExtensions.cs
+│   ├── ErrorOr.Equality.cs
+│   ├── ErrorOr.FailIf.cs
+│   ├── ErrorOr.FailIfExtensions.cs
+│   ├── ErrorOr.ImplicitConverters.cs
+│   ├── ErrorOr.Match.cs
+│   ├── ErrorOr.MatchExtensions.cs
+│   ├── ErrorOr.Switch.cs
+│   ├── ErrorOr.SwitchExtensions.cs
+│   ├── ErrorOr.Then.cs
+│   ├── ErrorOr.ThenExtensions.cs
+│   ├── ErrorOr.ToErrorOrExtensions.cs
+│   ├── ErrorOrFactory.cs
+│   ├── ErrorType.cs
+│   ├── IErrorOr.cs
+│   ├── Results.cs
+│   └── TypedResults.cs
+│
+└── ErrorOrX.Generators/         # Source generator (netstandard2.0)
+    ├── Analyzers/
+    │   ├── Descriptors.cs
+    │   └── ErrorOrEndpointAnalyzer.cs
+    ├── Generators/
+    │   ├── Core/
+    │   │   ├── ErrorOrEndpointGenerator.Analyzer.cs
+    │   │   ├── ErrorOrEndpointGenerator.Emitter.cs
+    │   │   ├── ErrorOrEndpointGenerator.Extractor.cs
+    │   │   ├── ErrorOrEndpointGenerator.Initialize.cs
+    │   │   └── ErrorOrEndpointGenerator.ParameterBinding.cs
+    │   ├── Models/
+    │   │   ├── EndpointModels.cs
+    │   │   ├── Enums.cs
+    │   │   └── ErrorMapping.cs
+    │   ├── TypeResolution/
+    │   │   ├── ErrorOrContext.cs
+    │   │   ├── ResultsUnionTypeBuilder.cs
+    │   │   └── WellKnownTypes.cs
+    │   ├── Validation/
+    │   │   ├── DuplicateRouteDetector.cs
+    │   │   └── RouteValidator.cs
+    │   ├── Helpers/
+    │   │   ├── EndpointIdentityHelper.cs
+    │   │   ├── IncrementalProviderExtensions.cs
+    │   │   └── TypeNameHelper.cs
+    │   └── OpenApiTransformerGenerator.cs
+    └── build/
+        └── ErrorOrX.Generators.props
 ```
 
 ## Single Source of Truth
@@ -147,6 +151,16 @@ src/ErrorOr/
 
 ```bash
 dotnet build ErrorOrX.slnx
-dotnet test ErrorOrX.slnx
-dotnet pack src/ErrorOr/ErrorOr.csproj -o ./nupkgs
+dotnet test --solution ErrorOrX.slnx
+dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release
+dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release
 ```
+
+## Package Structure
+
+| Package | Target | NuGet Location |
+|---------|--------|----------------|
+| `ErrorOrX` | `net10.0` | `lib/net10.0/ErrorOrX.dll` |
+| `ErrorOrX.Generators` | `netstandard2.0` | `analyzers/dotnet/cs/ErrorOrX.Generators.dll` |
+
+Consumers reference `ErrorOrX.Generators` which declares a dependency on `ErrorOrX`.

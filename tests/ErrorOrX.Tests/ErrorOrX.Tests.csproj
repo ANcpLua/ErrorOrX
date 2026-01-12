@@ -1,0 +1,21 @@
+<Project Sdk="ANcpLua.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>ErrorOrX.Tests</RootNamespace>
+        <!-- Suppress code analysis warnings in test code -->
+        <NoWarn>$(NoWarn);CA1820;CA2201;CA1826;CA1859;CA1812;CA1852</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="xunit.v3.mtp-v2"/>
+        <PackageReference Include="AwesomeAssertions"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit"/>
+        <Using Include="AwesomeAssertions"/>
+        <Using Include="ErrorOr"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
+    </ItemGroup>
+</Project>

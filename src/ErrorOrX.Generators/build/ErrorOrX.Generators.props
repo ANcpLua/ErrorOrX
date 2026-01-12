@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable JSON context generation by default -->
+    <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">true</ErrorOrGenerateJsonContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Make MSBuild properties visible to the source generator -->
+    <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext" />
+  </ItemGroup>
+</Project>

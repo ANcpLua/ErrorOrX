@@ -35,5 +35,8 @@
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0"/>
         <!-- ASP.NET Core -->
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
+        <!-- ErrorOrX (local development) -->
+        <PackageVersion Include="ErrorOrX" Version="2.2.0"/>
+        <PackageVersion Include="ErrorOrX.Generators" Version="2.2.0"/>
     </ItemGroup>
 </Project>

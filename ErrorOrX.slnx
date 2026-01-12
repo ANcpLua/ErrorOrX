@@ -1,11 +1,13 @@
 <Solution>
     <Folder Name="/src/">
-        <Project Path="src/ErrorOr/ErrorOr.csproj"/>
+        <Project Path="src/ErrorOrX/ErrorOrX.csproj"/>
+        <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj"/>
     </Folder>
     <Folder Name="/samples/">
-        <Project Path="samples/ErrorOr.Endpoints.Sample/ErrorOr.Endpoints.Sample.csproj"/>
+        <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj"/>
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="tests/ErrorOr.Tests/ErrorOr.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj"/>
     </Folder>
 </Solution>

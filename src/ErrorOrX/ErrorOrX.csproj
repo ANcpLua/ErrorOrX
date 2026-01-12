@@ -1,0 +1,31 @@
+<Project Sdk="ANcpLua.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>ErrorOrX</PackageId>
+    <!-- Suppress intentional API design choices -->
+    <NoWarn>$(NoWarn);CA1040;CA1000;CA1002;CA1859;RS0030</NoWarn>
+    <Description>A discriminated union type for .NET. ErrorOr&lt;T&gt; with railway-oriented programming, immutable error collections, and rich error types.</Description>
+    <PackageTags>ErrorOr;Result;Either;Discriminated;Union;Monad;Railway;Error;Handling;DDD;Domain;Driven;Design</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+    <!-- Source Link -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+      </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

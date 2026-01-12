@@ -2,6 +2,48 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.2.0] - 2026-01-12
+
+### Breaking Changes
+
+#### Split Package Architecture
+
+The single `ErrorOrX` package has been split into two packages for cleaner separation:
+
+```diff
+- <PackageReference Include="ErrorOrX" Version="2.1.1" />
++ <PackageReference Include="ErrorOrX.Generators" Version="2.2.0" />
+```
+
+**Note:** `ErrorOrX.Generators` automatically brings in `ErrorOrX` as a dependency - you only need to reference the generators package.
+
+| Package | Target | Contents |
+|---------|--------|----------|
+| `ErrorOrX` | `net10.0` | Runtime types: `ErrorOr<T>`, `Error`, `ErrorType`, fluent API extensions |
+| `ErrorOrX.Generators` | `netstandard2.0` | Source generator for ASP.NET Core Minimal API endpoints |
+
+### Why Split?
+
+- **Cleaner NuGet package structure**: Runtime DLL in `lib/net10.0/`, generator in `analyzers/dotnet/cs/`
+- **Proper dependency flow**: Consumers get runtime types transitively via generator package dependency
+- **Better tooling support**: IDE analyzers load from standard locations
+
+### Migration
+
+Update your package reference:
+
+```xml
+<!-- Before -->
+<PackageReference Include="ErrorOrX" Version="2.1.1" />
+
+<!-- After -->
+<PackageReference Include="ErrorOrX.Generators" Version="2.2.0" />
+```
+
+No code changes required - all namespaces remain `ErrorOr`.
+
+---
+
 ## [2.1.1] - 2026-01-12
 
 ### Changed
