@@ -7,6 +7,6 @@
     "runner": "Microsoft.Testing.Platform"
   },
   "msbuild-sdks": {
-    "ANcpLua.NET.Sdk": "1.3.31"
+    "ANcpLua.NET.Sdk": "1.6.2"
   }
 }

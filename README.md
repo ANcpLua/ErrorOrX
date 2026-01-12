@@ -4,7 +4,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOrX.svg)](https://www.nuget.org/packages/ErrorOrX/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A discriminated union type for .NET with source-generated ASP.NET Core Minimal API integration. One package, zero boilerplate, full AOT support.
+A discriminated union type for .NET with source-generated ASP.NET Core Minimal API integration. One package, zero
+boilerplate, full AOT support.
 
 ## Installation
 
@@ -103,15 +104,15 @@ ErrorOr<Success> DoSomething()      => Result.Success;   // 200 OK
 
 ## Error Types and HTTP Mapping
 
-| Error Factory | HTTP Status | TypedResult |
-|---------------|-------------|-------------|
-| `Error.Validation()` | 400 | `ValidationProblem` |
-| `Error.Unauthorized()` | 401 | `UnauthorizedHttpResult` |
-| `Error.Forbidden()` | 403 | `ForbidHttpResult` |
-| `Error.NotFound()` | 404 | `NotFound<ProblemDetails>` |
-| `Error.Conflict()` | 409 | `Conflict<ProblemDetails>` |
-| `Error.Failure()` | 500 | `InternalServerError<ProblemDetails>` |
-| `Error.Unexpected()` | 500 | `InternalServerError<ProblemDetails>` |
+| Error Factory          | HTTP Status | TypedResult                           |
+|------------------------|-------------|---------------------------------------|
+| `Error.Validation()`   | 400         | `ValidationProblem`                   |
+| `Error.Unauthorized()` | 401         | `UnauthorizedHttpResult`              |
+| `Error.Forbidden()`    | 403         | `ForbidHttpResult`                    |
+| `Error.NotFound()`     | 404         | `NotFound<ProblemDetails>`            |
+| `Error.Conflict()`     | 409         | `Conflict<ProblemDetails>`            |
+| `Error.Failure()`      | 500         | `InternalServerError<ProblemDetails>` |
+| `Error.Unexpected()`   | 500         | `InternalServerError<ProblemDetails>` |
 
 ## Middleware Attribute Support
 
@@ -129,17 +130,17 @@ public static ErrorOr<User> CreateAdmin(CreateUserRequest req)
 }
 ```
 
-| Attribute | Generated Call |
-|-----------|----------------|
-| `[Authorize]` | `.RequireAuthorization()` |
-| `[Authorize("Policy")]` | `.RequireAuthorization("Policy")` |
-| `[AllowAnonymous]` | `.AllowAnonymous()` |
-| `[EnableRateLimiting("policy")]` | `.RequireRateLimiting("policy")` |
-| `[DisableRateLimiting]` | `.DisableRateLimiting()` |
-| `[OutputCache]` | `.CacheOutput()` |
-| `[OutputCache(PolicyName = "x")]` | `.CacheOutput("x")` |
-| `[EnableCors("policy")]` | `.RequireCors("policy")` |
-| `[DisableCors]` | `.DisableCors()` |
+| Attribute                         | Generated Call                    |
+|-----------------------------------|-----------------------------------|
+| `[Authorize]`                     | `.RequireAuthorization()`         |
+| `[Authorize("Policy")]`           | `.RequireAuthorization("Policy")` |
+| `[AllowAnonymous]`                | `.AllowAnonymous()`               |
+| `[EnableRateLimiting("policy")]`  | `.RequireRateLimiting("policy")`  |
+| `[DisableRateLimiting]`           | `.DisableRateLimiting()`          |
+| `[OutputCache]`                   | `.CacheOutput()`                  |
+| `[OutputCache(PolicyName = "x")]` | `.CacheOutput("x")`               |
+| `[EnableCors("policy")]`          | `.RequireCors("policy")`          |
+| `[DisableCors]`                   | `.DisableCors()`                  |
 
 ## Fluent API
 
@@ -202,7 +203,8 @@ public static Task<ErrorOr<User>> GetAsync(int id, CancellationToken ct) { }
 
 ## Native AOT Support
 
-ErrorOr is fully compatible with Native AOT. The source generator produces reflection-free code that works with `PublishAot=true`.
+ErrorOr is fully compatible with Native AOT. The source generator produces reflection-free code that works with
+`PublishAot=true`.
 
 ```xml
 <PropertyGroup>
@@ -265,7 +267,3 @@ public static ErrorOr<ValidatedRequest> Validate(CreateUserRequest request)
 public static ErrorOr<Order> Create(CreateOrderRequest request, IOrderService service)
     => service.CreateOrder(request);
 ```
-
-## Contributing
-
-Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
