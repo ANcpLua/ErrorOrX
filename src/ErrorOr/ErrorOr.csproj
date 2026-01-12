@@ -60,7 +60,7 @@
 
     <!-- Include build props and README -->
     <ItemGroup>
-        <None Include="build\ErrorOr.props" Pack="true" PackagePath="build\"/>
+        <None Include="build\ErrorOrX.props" Pack="true" PackagePath="build\"/>
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
     <ItemGroup>
