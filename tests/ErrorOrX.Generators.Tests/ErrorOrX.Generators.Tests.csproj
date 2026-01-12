@@ -14,7 +14,7 @@
         <PackageReference Include="Verify.XunitV3"/>
         <PackageReference Include="Verify.SourceGenerators"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
-        <PackageReference Include="ANcpLua.Roslyn.Utilities"/>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities" GeneratePathProperty="true" PrivateAssets="all"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     </ItemGroup>
     <ItemGroup>
@@ -30,5 +30,9 @@
     <ItemGroup>
         <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" ReferenceOutputAssembly="true" OutputItemType="Analyzer"/>
         <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Generator dependency must be loaded as analyzer alongside the generator -->
+        <Analyzer Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"/>
     </ItemGroup>
 </Project>
