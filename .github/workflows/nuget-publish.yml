@@ -38,11 +38,11 @@ jobs:
       - name: Build
         run: dotnet build ErrorOrX.slnx -c Release -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Pack ErrorOr.Core
-        run: dotnet pack src/ErrorOr.Core/ErrorOr.Core.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+      - name: Pack ErrorOrX
+        run: dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Pack ErrorOr.Endpoints
-        run: dotnet pack src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+      - name: Pack ErrorOrX.Generators
+        run: dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
 
       - name: Push to NuGet
         run: |
