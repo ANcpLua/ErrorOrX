@@ -79,19 +79,20 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             return null;
 
         // Extract HTTP method and pattern from attribute
-        var attr = ctx.Attributes.FirstOrDefault();
-        var attrClass = attr?.AttributeClass?.ToDisplayString();
-        if (attrClass is null)
+        // Combined null check: attr exists AND has a valid AttributeClass
+        if (ctx.Attributes.FirstOrDefault() is not { AttributeClass: { } attrClass } attr)
             return null;
 
-        var (httpMethod, _) = attrClass switch
+        var attrClassName = attrClass.ToDisplayString();
+
+        var (httpMethod, _) = attrClassName switch
         {
-            WellKnownTypes.GetAttribute => (WellKnownTypes.HttpMethod.Get, GetPattern(attr!)),
-            WellKnownTypes.PostAttribute => (WellKnownTypes.HttpMethod.Post, GetPattern(attr!)),
-            WellKnownTypes.PutAttribute => (WellKnownTypes.HttpMethod.Put, GetPattern(attr!)),
-            WellKnownTypes.DeleteAttribute => (WellKnownTypes.HttpMethod.Delete, GetPattern(attr!)),
-            WellKnownTypes.PatchAttribute => (WellKnownTypes.HttpMethod.Patch, GetPattern(attr!)),
-            WellKnownTypes.ErrorOrEndpointAttribute => GetBaseAttributeInfo(attr!),
+            WellKnownTypes.GetAttribute => (WellKnownTypes.HttpMethod.Get, GetPattern(attr)),
+            WellKnownTypes.PostAttribute => (WellKnownTypes.HttpMethod.Post, GetPattern(attr)),
+            WellKnownTypes.PutAttribute => (WellKnownTypes.HttpMethod.Put, GetPattern(attr)),
+            WellKnownTypes.DeleteAttribute => (WellKnownTypes.HttpMethod.Delete, GetPattern(attr)),
+            WellKnownTypes.PatchAttribute => (WellKnownTypes.HttpMethod.Patch, GetPattern(attr)),
+            WellKnownTypes.ErrorOrEndpointAttribute => GetBaseAttributeInfo(attr),
             _ => (null, null)
         };
 
@@ -103,16 +104,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         var (summary, description) = ParseXmlDoc(xmlDoc);
 
         // Extract containing type info for tag generation
-        // CRITICAL: operationId algorithm MUST match Emitter.cs exactly
         var containingType = method.ContainingType;
         var className = containingType.Name;
-        var tagName = className.EndsWith("Endpoints")
-            ? className[..^"Endpoints".Length]
-            : className;
-
-        // Create unique operation ID - uses tagName (with "Endpoints" stripped), not className
-        // Must match: ErrorOrEndpointGenerator.Emitter.cs EmitMapCall line ~83
-        var operationId = $"{tagName}_{method.Name}";
+        var (tagName, operationId) = EndpointIdentityHelper.GetEndpointIdentity(className, method.Name);
 
         return new OpenApiEndpointInfo(
             operationId,

@@ -92,13 +92,13 @@ public sealed partial class ErrorOrEndpointGenerator
         var (isNullable, isNonNullableValueType) = GetParameterNullability(type, parameter.NullableAnnotation);
         var (isCollection, itemType, itemPrimitiveKind) = AnalyzeCollectionType(type, context);
 
-        var isFormFile = IsFormFileType(type, context);
-        var isFormFileCollection = IsFormFileCollectionType(type, context);
-        var isFormCollection = IsFormCollectionType(type, context);
-        var isStream = IsStreamType(type, context);
-        var isPipeReader = IsPipeReaderType(type, context);
-        var isCancellationToken = IsCancellationTokenType(type, context);
-        var isHttpContext = IsHttpContextType(type, context);
+        var isFormFile = context.IsFormFile(type);
+        var isFormFileCollection = context.IsFormFileCollection(type);
+        var isFormCollection = context.IsFormCollection(type);
+        var isStream = context.IsStream(type);
+        var isPipeReader = context.IsPipeReader(type);
+        var isCancellationToken = context.IsCancellationToken(type);
+        var isHttpContext = context.IsHttpContext(type);
 
         // Check if type requires BCL validation (has ValidationAttribute descendants or implements IValidatableObject)
         var requiresValidation = context.RequiresValidation(type);
@@ -615,10 +615,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (!IsTaskLike(method.ReturnType, context))
             return CustomBindingMethod.None;
 
-        if (method.Parameters.Length < 1 || !IsHttpContextType(method.Parameters[0].Type, context))
+        if (method.Parameters.Length < 1 || !context.IsHttpContext(method.Parameters[0].Type))
             return CustomBindingMethod.None;
 
-        if (method.Parameters.Length >= 2 && IsParameterInfoType(method.Parameters[1].Type, context))
+        if (method.Parameters.Length >= 2 && context.IsParameterInfo(method.Parameters[1].Type))
             return CustomBindingMethod.BindAsyncWithParam;
 
         return CustomBindingMethod.BindAsync;
@@ -632,22 +632,6 @@ public sealed partial class ErrorOrEndpointGenerator
         return (context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT)) ||
                (context.ValueTaskOfT is not null &&
                 SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT));
-    }
-
-    private static bool IsHttpContextType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        return context.IsHttpContext(type);
-    }
-
-    private static bool IsParameterInfoType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        if (context.ParameterInfo is not null)
-            return SymbolEqualityComparer.Default.Equals(type, context.ParameterInfo);
-
-        return type.Name == "ParameterInfo" &&
-               type.ContainingNamespace.ToDisplayString() == "System.Reflection";
     }
 
     private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -690,8 +674,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (type is INamedTypeSymbol { IsGenericType: true } named && context.ReadOnlySpanOfT is not null)
             return SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, context.ReadOnlySpanOfT) &&
-                   named.TypeArguments.Length == 1 &&
-                   named.TypeArguments[0].SpecialType == SpecialType.System_Char;
+                   named.TypeArguments is [{ SpecialType: SpecialType.System_Char }];
 
         return false;
     }
@@ -704,57 +687,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         return type.Name == "IFormatProvider" &&
                type.ContainingNamespace.ToDisplayString() == "System";
-    }
-
-    private static bool IsFormFileType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        return context.FormFile is not null && SymbolEqualityComparer.Default.Equals(type, context.FormFile);
-    }
-
-    private static bool IsFormFileCollectionType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        return context.FormFileCollection is not null &&
-               SymbolEqualityComparer.Default.Equals(type, context.FormFileCollection);
-    }
-
-    private static bool IsFormCollectionType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        return context.IsFormCollection(type);
-    }
-
-    private static bool IsStreamType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-
-        if (context.Stream is not null)
-            return type.IsOrInheritsFrom(context.Stream);
-
-        return type.Name == "Stream" &&
-               type.ContainingNamespace.ToDisplayString() == "System.IO";
-    }
-
-    private static bool IsPipeReaderType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-
-        if (context.PipeReader is not null)
-            return type.IsOrInheritsFrom(context.PipeReader);
-
-        return type.Name == "PipeReader" &&
-               type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
-    }
-
-    private static bool IsCancellationTokenType(ITypeSymbol type, ErrorOrContext context)
-    {
-        type = ErrorOrContext.UnwrapNullable(type);
-        if (context.CancellationToken is not null)
-            return SymbolEqualityComparer.Default.Equals(type, context.CancellationToken);
-
-        return type.Name == "CancellationToken" &&
-               type.ContainingNamespace.ToDisplayString() == "System.Threading";
     }
 
     private static (bool IsCollection, ITypeSymbol? ItemType, RoutePrimitiveKind? Kind) AnalyzeCollectionType(

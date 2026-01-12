@@ -55,13 +55,13 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var neededType in neededTypes)
         {
-            if (IsPrimitiveJsonType(neededType))
+            if (TypeNameHelper.IsPrimitiveJsonType(neededType))
                 continue;
 
-            var isRegistered = registeredTypes.Any(rt => TypeNamesMatch(neededType, rt));
+            var isRegistered = registeredTypes.Any(rt => TypeNameHelper.TypeNamesMatch(neededType, rt));
             if (!isRegistered)
             {
-                var displayType = neededType.Replace("global::", "");
+                var displayType = TypeNameHelper.StripGlobalPrefix(neededType);
                 var endpointName = typeToEndpoint.TryGetValue(neededType, out var epName)
                     ? epName
                     : "ErrorOr endpoints";
@@ -73,42 +73,6 @@ public sealed partial class ErrorOrEndpointGenerator
                     endpointName));
             }
         }
-    }
-
-    private static bool IsPrimitiveJsonType(string typeFqn)
-    {
-        var normalized = typeFqn.Replace("global::", "");
-        return normalized is "System.String" or "string" or
-            "System.Int32" or "int" or
-            "System.Int64" or "long" or
-            "System.Boolean" or "bool" or
-            "System.Double" or "double" or
-            "System.Decimal" or "decimal";
-    }
-
-    private static bool TypeNamesMatch(string needed, string registered)
-    {
-        var normalizedNeeded = needed.Replace("global::", "").Trim();
-        var normalizedRegistered = registered.Replace("global::", "").Trim();
-
-        if (normalizedNeeded == normalizedRegistered)
-            return true;
-
-        var neededShort = GetShortTypeName(normalizedNeeded);
-        var registeredShort = GetShortTypeName(normalizedRegistered);
-
-        return neededShort == registeredShort ||
-               normalizedNeeded.EndsWith(registeredShort) ||
-               normalizedRegistered.EndsWith(neededShort);
-    }
-
-    private static string GetShortTypeName(string typeName)
-    {
-        var isArray = typeName.EndsWith("[]");
-        var baseName = isArray ? typeName[..^2] : typeName;
-        var lastDot = baseName.LastIndexOf('.');
-        var shortName = lastDot >= 0 ? baseName[(lastDot + 1)..] : baseName;
-        return isArray ? shortName + "[]" : shortName;
     }
 
     /// <summary>
@@ -128,13 +92,13 @@ public sealed partial class ErrorOrEndpointGenerator
             // 3. InternalServerError safety net (1)
             // 4. Inferred error types (variable)
             var baseCount = 3; // success + binding + safety net
-            var errorTypeCount = ep.InferredErrorTypes.IsDefaultOrEmpty
+            var errorTypeCount = ep.InferredErrorTypeNames.IsDefaultOrEmpty
                 ? 0
-                : ep.InferredErrorTypes.AsImmutableArray().Distinct().Count();
+                : ep.InferredErrorTypeNames.AsImmutableArray().Distinct().Count();
 
             // Validation adds 1 (ValidationProblem is different from BadRequest)
-            var hasValidation = !ep.InferredErrorTypes.IsDefaultOrEmpty &&
-                                ep.InferredErrorTypes.AsImmutableArray().Contains((int)ErrorType.Validation);
+            var hasValidation = !ep.InferredErrorTypeNames.IsDefaultOrEmpty &&
+                                ep.InferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
 
             // Total unique types (approximate - some may share status codes)
             var totalTypes =
@@ -180,8 +144,7 @@ internal static class JsonContextProvider
             if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSerializableAttribute)
                 continue;
 
-            if (attr.ConstructorArguments is { Length: >= 1 } args &&
-                args[0].Value is ITypeSymbol typeArg)
+            if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg } _, ..])
             {
                 var typeFqn = "global::" + typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                     .Replace("global::", "");

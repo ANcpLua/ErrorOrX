@@ -2,7 +2,7 @@
   <!-- Centralized semantic version properties -->
   <PropertyGroup>
     <!-- Major.Minor.Patch -->
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>2.1.1</VersionPrefix>
 
     <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
     <VersionSuffix></VersionSuffix>

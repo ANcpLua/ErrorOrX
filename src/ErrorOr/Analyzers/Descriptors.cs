@@ -104,19 +104,6 @@ public static class Descriptors
         true);
 
     /// <summary>
-    ///     Custom error via Error.Custom() not documented with [ProducesError].
-    ///     BCL can't infer custom status codes - explicit metadata required.
-    ///     (Generator-only: requires method body analysis)
-    /// </summary>
-    public static readonly DiagnosticDescriptor UndocumentedCustomError = new(
-        "EOE008",
-        "Undocumented custom error",
-        "Endpoint '{0}' uses Error.Custom() with code '{1}'. Add [ProducesError({2}, \"{1}\")] for OpenAPI documentation.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
     ///     GET, HEAD, DELETE, OPTIONS should not have request bodies per HTTP semantics.
     /// </summary>
     public static readonly DiagnosticDescriptor BodyOnReadOnlyMethod = new(
@@ -188,17 +175,6 @@ public static class Descriptors
         true);
 
     /// <summary>
-    ///     Non-nullable route/query parameter may cause binding failure.
-    /// </summary>
-    public static readonly DiagnosticDescriptor NonNullableBindingParameter = new(
-        "EOE015",
-        "Non-nullable binding parameter",
-        "Parameter '{0}' is non-nullable but may not be present in the request. Consider making it nullable or adding a default value.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
     ///     [FromHeader] with non-string type requires TryParse.
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidFromHeaderType = new(
@@ -214,39 +190,6 @@ public static class Descriptors
     // ═══════════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    ///     Route parameter has conflicting constraints.
-    /// </summary>
-    public static readonly DiagnosticDescriptor ConflictingRouteConstraints = new(
-        "EOE020",
-        "Conflicting route constraints",
-        "Route parameter '{{{0}}}' has conflicting constraints: {1}",
-        Category,
-        DiagnosticSeverity.Error,
-        true);
-
-    /// <summary>
-    ///     Route constraint is unknown or unsupported.
-    /// </summary>
-    public static readonly DiagnosticDescriptor UnknownRouteConstraint = new(
-        "EOE021",
-        "Unknown route constraint",
-        "Route constraint '{0}' on parameter '{{{1}}}' is not recognized. Ensure it's a valid ASP.NET Core constraint.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
-    ///     Optional route parameter should be at the end.
-    /// </summary>
-    public static readonly DiagnosticDescriptor OptionalRouteParameterNotLast = new(
-        "EOE022",
-        "Optional route parameter not at end",
-        "Optional route parameter '{{{0}?}}' should be at the end of the route pattern. Parameters after optional ones may not be reached.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
     ///     Route constraint type does not match parameter type.
     ///     For example, {id:int} requires int parameter, not string.
     /// </summary>
@@ -256,17 +199,6 @@ public static class Descriptors
         "Route parameter '{{{0}:{1}}}' expects {2}, but method parameter '{3}' is {4}",
         Category,
         DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
-    ///     Catch-all route parameter must be string type.
-    /// </summary>
-    public static readonly DiagnosticDescriptor CatchAllMustBeString = new(
-        "EOE024",
-        "Catch-all must be string",
-        "Catch-all route parameter '{{*{0}}}' must be of type string, but '{1}' is {2}",
-        Category,
-        DiagnosticSeverity.Error,
         true);
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -287,18 +219,6 @@ public static class Descriptors
         true);
 
     /// <summary>
-    ///     [ProducesError] status code doesn't match Error.Custom type argument.
-    ///     (Generator-only: requires method body analysis)
-    /// </summary>
-    public static readonly DiagnosticDescriptor ProducesErrorMismatch = new(
-        "EOE031",
-        "[ProducesError] status mismatch",
-        "[ProducesError({0}, \"{1}\")] may not match Error.Custom({2}, \"{1}\", ...). Consider using status code {2}.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
     ///     Endpoint calls interface/abstract method returning ErrorOr without error documentation.
     ///     This is an ERROR because OpenAPI would lie about possible responses.
     ///     (Generator-only: requires call graph analysis)
@@ -311,33 +231,6 @@ public static class Descriptors
         "OpenAPI cannot infer errors through interfaces.",
         Category,
         DiagnosticSeverity.Error, // ERROR, not Warning - keine Lüge!
-        true);
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SSE / Streaming Diagnostics (EOE040-EOE049)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    ///     SSE endpoint has limited error handling capability.
-    ///     (Generator-only: requires return type analysis)
-    /// </summary>
-    public static readonly DiagnosticDescriptor SseErrorHandlingLimitation = new(
-        "EOE040",
-        "SSE error handling limitation",
-        "Endpoint '{0}' returns IAsyncEnumerable. Errors after streaming begins cannot be converted to HTTP error responses.",
-        Category,
-        DiagnosticSeverity.Info,
-        true);
-
-    /// <summary>
-    ///     SSE endpoint should not use [FromBody].
-    /// </summary>
-    public static readonly DiagnosticDescriptor SseWithBody = new(
-        "EOE041",
-        "SSE with request body",
-        "SSE endpoint '{0}' uses [FromBody]. Consider using query parameters or headers for SSE request data.",
-        Category,
-        DiagnosticSeverity.Warning,
         true);
 
     /// <summary>

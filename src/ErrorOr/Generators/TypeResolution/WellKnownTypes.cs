@@ -63,7 +63,6 @@ internal static class WellKnownTypes
 
     // System
     public const string CancellationToken = "System.Threading.CancellationToken";
-    public const string ObsoleteAttribute = "System.ObsoleteAttribute";
     public const string JsonSerializableAttribute = "System.Text.Json.Serialization.JsonSerializableAttribute";
     public const string JsonSerializerContext = "System.Text.Json.Serialization.JsonSerializerContext";
     public const string ParameterInfo = "System.Reflection.ParameterInfo";
@@ -91,7 +90,6 @@ internal static class WellKnownTypes
     public const string PipeReader = "System.IO.Pipelines.PipeReader";
 
     public const string SseItemT = "System.Net.ServerSentEvents.SseItem`1";
-    public const string AsyncEnumerableT = "System.Collections.Generic.IAsyncEnumerable`1";
 
     // Authorization attributes
     public const string AuthorizeAttribute = "Microsoft.AspNetCore.Authorization.AuthorizeAttribute";
@@ -195,7 +193,6 @@ internal static class WellKnownTypes
 
         // System
         public const string CancellationToken = "global::System.Threading.CancellationToken";
-        public const string ObsoleteAttribute = "global::System.ObsoleteAttribute";
 
         public const string JsonSerializableAttribute =
             "global::System.Text.Json.Serialization.JsonSerializableAttribute";
@@ -221,5 +218,69 @@ internal static class WellKnownTypes
         public const string DateOnly = "global::System.DateOnly";
         public const string TimeOnly = "global::System.TimeOnly";
         public const string TimeSpan = "global::System.TimeSpan";
+
+        /// <summary>
+        ///     TypedResults factory method prefixes for generated code.
+        ///     Usage: $"{TypedResults.Ok}(value)" emits "global::...TypedResults.Ok(value)"
+        /// </summary>
+        public static class TypedResults
+        {
+            private const string T = "global::Microsoft.AspNetCore.Http.TypedResults";
+
+            public const string Ok = $"{T}.Ok";
+            public const string Created = $"{T}.Created";
+            public const string Accepted = $"{T}.Accepted";
+            public const string NoContent = $"{T}.NoContent";
+            public const string BadRequest = $"{T}.BadRequest";
+            public const string Unauthorized = $"{T}.Unauthorized";
+            public const string Forbid = $"{T}.Forbid";
+            public const string NotFound = $"{T}.NotFound";
+            public const string Conflict = $"{T}.Conflict";
+            public const string UnprocessableEntity = $"{T}.UnprocessableEntity";
+            public const string InternalServerError = $"{T}.InternalServerError";
+            public const string ValidationProblem = $"{T}.ValidationProblem";
+            public const string Problem = $"{T}.Problem";
+            public const string ServerSentEvents = $"{T}.ServerSentEvents";
+        }
+
+        /// <summary>
+        ///     HttpResults type names for Results union declarations.
+        ///     Usage: $"{HttpResults.Ok}&lt;T&gt;" emits "global::...HttpResults.Ok&lt;T&gt;"
+        /// </summary>
+        public static class HttpResults
+        {
+            private const string H = "global::Microsoft.AspNetCore.Http.HttpResults";
+
+            public const string Ok = $"{H}.Ok";
+            public const string Created = $"{H}.Created";
+            public const string Accepted = $"{H}.Accepted";
+            public const string NoContent = $"{H}.NoContent";
+            public const string BadRequest = $"{H}.BadRequest";
+            public const string UnauthorizedHttpResult = $"{H}.UnauthorizedHttpResult";
+            public const string ForbidHttpResult = $"{H}.ForbidHttpResult";
+            public const string NotFound = $"{H}.NotFound";
+            public const string Conflict = $"{H}.Conflict";
+            public const string UnprocessableEntity = $"{H}.UnprocessableEntity";
+            public const string InternalServerError = $"{H}.InternalServerError";
+            public const string ValidationProblem = $"{H}.ValidationProblem";
+            public const string ProblemHttpResult = $"{H}.ProblemHttpResult";
+            public const string StatusCodeHttpResult = $"{H}.StatusCodeHttpResult";
+
+            /// <summary>
+            ///     Results union type for typed endpoint returns.
+            ///     Usage: $"{HttpResults.Results}&lt;T1, T2&gt;" emits "global::...HttpResults.Results&lt;T1, T2&gt;"
+            /// </summary>
+            public const string Results = $"{H}.Results";
+        }
+    }
+
+    /// <summary>
+    ///     Content type and URL constants for generated code.
+    /// </summary>
+    public static class Constants
+    {
+        public const string ContentTypeJson = "application/json";
+        public const string ContentTypeFormData = "multipart/form-data";
+        public const string HttpStatusesBaseUrl = "https://httpstatuses.io/";
     }
 }

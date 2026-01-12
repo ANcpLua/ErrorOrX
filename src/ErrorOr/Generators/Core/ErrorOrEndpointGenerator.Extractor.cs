@@ -168,7 +168,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return false;
     }
 
-    private static (EquatableArray<int> ErrorTypes, EquatableArray<CustomErrorInfo> CustomErrors)
+    private static (EquatableArray<string> ErrorTypeNames, EquatableArray<CustomErrorInfo> CustomErrors)
         InferErrorTypesFromMethod(
             GeneratorAttributeSyntaxContext ctx,
             ISymbol method,
@@ -181,9 +181,9 @@ public sealed partial class ErrorOrEndpointGenerator
             return (default, default);
 
         var methodName = method.Name;
-        var (errorTypes, customErrors) = CollectErrorTypes(ctx.SemanticModel, body, context, diagnostics, methodName,
+        var (errorTypeNames, customErrors) = CollectErrorTypes(ctx.SemanticModel, body, context, diagnostics, methodName,
             hasExplicitProducesError);
-        return (ToSortedErrorArray(errorTypes), new EquatableArray<CustomErrorInfo>([.. customErrors]));
+        return (ToSortedErrorArray(errorTypeNames), new EquatableArray<CustomErrorInfo>([.. customErrors]));
     }
 
     private static EquatableArray<ProducesErrorInfo> ExtractProducesErrorAttributes(
@@ -195,8 +195,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var attr in method.GetAttributes())
             if (context.ProducesErrorAttribute is not null &&
                 SymbolEqualityComparer.Default.Equals(attr.AttributeClass, context.ProducesErrorAttribute))
-                if (attr.ConstructorArguments.Length >= 1 &&
-                    attr.ConstructorArguments[0].Value is int statusCode)
+                if (attr.ConstructorArguments is [{ Value: int statusCode } _, ..])
                     results.Add(new ProducesErrorInfo(statusCode));
 
         return results.Count > 0
@@ -231,7 +230,7 @@ public sealed partial class ErrorOrEndpointGenerator
         };
     }
 
-    private static (HashSet<ErrorType> ErrorTypes, List<CustomErrorInfo> CustomErrors) CollectErrorTypes(
+    private static (HashSet<string> ErrorTypeNames, List<CustomErrorInfo> CustomErrors) CollectErrorTypes(
         SemanticModel semanticModel,
         SyntaxNode body,
         ErrorOrContext context,
@@ -239,7 +238,7 @@ public sealed partial class ErrorOrEndpointGenerator
         string endpointMethodName,
         bool hasExplicitProducesError)
     {
-        var set = new HashSet<ErrorType>();
+        var set = new HashSet<string>(StringComparer.Ordinal);
         var customErrors = new List<CustomErrorInfo>();
         var visitedSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         var seenCustomCodes = new HashSet<string>(StringComparer.Ordinal);
@@ -251,7 +250,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void CollectErrorTypesRecursive(
         SemanticModel semanticModel,
         SyntaxNode node,
-        ISet<ErrorType> errorTypes,
+        ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<ISymbol> visitedSymbols,
         ISet<string> seenCustomCodes,
@@ -261,14 +260,14 @@ public sealed partial class ErrorOrEndpointGenerator
         bool hasExplicitProducesError)
     {
         foreach (var child in node.DescendantNodes())
-            ProcessNode(semanticModel, child, errorTypes, customErrors, visitedSymbols, seenCustomCodes, context,
+            ProcessNode(semanticModel, child, errorTypeNames, customErrors, visitedSymbols, seenCustomCodes, context,
                 diagnostics, endpointMethodName, hasExplicitProducesError);
     }
 
     private static void ProcessNode(
         SemanticModel semanticModel,
         SyntaxNode child,
-        ISet<ErrorType> errorTypes,
+        ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<ISymbol> visitedSymbols,
         ISet<string> seenCustomCodes,
@@ -280,7 +279,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (TryHandleErrorFactoryInvocation(
                 semanticModel,
                 child,
-                errorTypes,
+                errorTypeNames,
                 customErrors,
                 seenCustomCodes,
                 context,
@@ -295,7 +294,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 endpointMethodName,
                 hasExplicitProducesError,
                 diagnostics,
-                errorTypes,
+                errorTypeNames,
                 customErrors,
                 seenCustomCodes))
             return;
@@ -307,7 +306,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var bodyToScan = GetBodyToScan(reference.GetSyntax());
             if (bodyToScan is not null)
-                CollectErrorTypesRecursive(semanticModel, bodyToScan, errorTypes, customErrors,
+                CollectErrorTypesRecursive(semanticModel, bodyToScan, errorTypeNames, customErrors,
                     visitedSymbols, seenCustomCodes, context, diagnostics, endpointMethodName,
                     hasExplicitProducesError);
         }
@@ -325,7 +324,7 @@ public sealed partial class ErrorOrEndpointGenerator
         string endpointMethodName,
         bool hasExplicitProducesError,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ISet<ErrorType> errorTypes,
+        ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes)
     {
@@ -352,7 +351,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Try to extract [ReturnsError] attributes from the interface method
         var hasReturnsError = TryExtractReturnsErrorAttributes(
-            methodSymbol, context, errorTypes, customErrors, seenCustomCodes);
+            methodSymbol, context, errorTypeNames, customErrors, seenCustomCodes);
 
         if (hasReturnsError)
             return true; // Successfully extracted errors from interface
@@ -379,7 +378,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool TryExtractReturnsErrorAttributes(
         ISymbol method,
         ErrorOrContext context,
-        ISet<ErrorType> errorTypes,
+        ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes)
     {
@@ -401,25 +400,47 @@ public sealed partial class ErrorOrEndpointGenerator
             // 1. ReturnsErrorAttribute(ErrorType errorType, string errorCode)
             // 2. ReturnsErrorAttribute(int statusCode, string errorCode)
 
-            if (args[0].Value is int statusCode && args[1].Value is string customErrorCode)
+            switch (args[0].Value)
             {
-                // Custom error with status code
-                if (seenCustomCodes.Add(customErrorCode))
-                    customErrors.Add(new CustomErrorInfo(statusCode, customErrorCode));
+                case int statusCode when args[1].Value is string customErrorCode:
+                {
+                    // Custom error with status code
+                    if (seenCustomCodes.Add(customErrorCode))
+                        customErrors.Add(new CustomErrorInfo(statusCode, customErrorCode));
 
-                foundAny = true;
-            }
-            else if (args[0].Value is int enumValue && args[1].Value is string)
-            {
-                // Standard ErrorType
-                var errorType = (ErrorType)enumValue;
-                errorTypes.Add(errorType);
-                foundAny = true;
+                    foundAny = true;
+                    break;
+                }
+                case int enumValue when args[1].Value is string:
+                {
+                    // Standard ErrorType - map enum int value to string name
+                    var errorTypeName = MapEnumValueToName(enumValue);
+                    if (errorTypeName is not null)
+                        errorTypeNames.Add(errorTypeName);
+                    foundAny = true;
+                    break;
+                }
             }
         }
 
         return foundAny;
     }
+
+    /// <summary>
+    ///     Maps runtime ErrorType enum integer value to its name.
+    ///     The enum values are: Failure=0, Unexpected=1, Validation=2, Conflict=3, NotFound=4, Unauthorized=5, Forbidden=6
+    /// </summary>
+    private static string? MapEnumValueToName(int enumValue) => enumValue switch
+    {
+        0 => ErrorMapping.Failure,
+        1 => ErrorMapping.Unexpected,
+        2 => ErrorMapping.Validation,
+        3 => ErrorMapping.Conflict,
+        4 => ErrorMapping.NotFound,
+        5 => ErrorMapping.Unauthorized,
+        6 => ErrorMapping.Forbidden,
+        _ => null
+    };
 
     private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
     {
@@ -443,7 +464,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool TryHandleErrorFactoryInvocation(
         SemanticModel semanticModel,
         SyntaxNode node,
-        ISet<ErrorType> errorTypes,
+        ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes,
         ErrorOrContext context,
@@ -452,10 +473,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (!IsErrorFactoryInvocation(semanticModel, node, context, out var factoryName, out var invocation))
             return false;
 
-        var errorType = MapErrorFactoryToType(factoryName);
-        if (errorType.HasValue)
+        // Validate and return the factory name if it's a known ErrorType
+        if (ErrorMapping.IsKnownErrorType(factoryName))
         {
-            errorTypes.Add(errorType.Value);
+            errorTypeNames.Add(factoryName);
             return true;
         }
 
@@ -571,8 +592,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
-        var symbol = semanticModel.GetSymbolInfo(inv).Symbol as IMethodSymbol;
-        if (symbol is null || context.Error is null ||
+        if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol || context.Error is null ||
             !SymbolEqualityComparer.Default.Equals(symbol.ContainingType, context.Error))
             return false;
 
@@ -580,50 +600,14 @@ public sealed partial class ErrorOrEndpointGenerator
         return true;
     }
 
-    private static ErrorType? MapErrorFactoryToType(string factoryName)
-    {
-        return factoryName switch
-        {
-            "Failure" => ErrorType.Failure,
-            "Unexpected" => ErrorType.Unexpected,
-            "Validation" => ErrorType.Validation,
-            "Conflict" => ErrorType.Conflict,
-            "NotFound" => ErrorType.NotFound,
-            "Unauthorized" => ErrorType.Unauthorized,
-            "Forbidden" => ErrorType.Forbidden,
-            _ => null
-        };
-    }
-
-    private static EquatableArray<int> ToSortedErrorArray(ICollection<ErrorType> set)
+    private static EquatableArray<string> ToSortedErrorArray(ICollection<string> set)
     {
         if (set.Count is 0)
             return default;
 
-        // Cast enums to int and sort
-        var array = set.Select(static e => (int)e).ToArray();
-        Array.Sort(array);
-        return new EquatableArray<int>([.. array]);
-    }
-
-    // ReSharper disable once UnusedMember.Local
-    private static (bool IsObsolete, string? Message, bool IsError) GetObsoleteInfo(ISymbol method,
-        ErrorOrContext context)
-    {
-        AttributeData? attr = null;
-        foreach (var a in method.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(a.AttributeClass, context.ObsoleteAttribute))
-            {
-                attr = a;
-                break;
-            }
-
-        if (attr is null) return (false, null, false);
-
-        var message = attr.ConstructorArguments.Length > 0 ? attr.ConstructorArguments[0].Value as string : null;
-        var isError = attr.ConstructorArguments.Length > 1 &&
-                      attr.ConstructorArguments[1].Value is true; // Safe pattern match for bool
-        return (true, message, isError);
+        var array = set.ToArray();
+        Array.Sort(array, StringComparer.Ordinal);
+        return new EquatableArray<string>([.. array]);
     }
 
     /// <summary>
@@ -633,18 +617,10 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     internal static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method, ErrorOrContext context)
     {
-        var requiresAuth = false;
-        string? authPolicy = null;
-        var allowAnonymous = false;
-        var enableRateLimiting = false;
-        string? rateLimitPolicy = null;
-        var disableRateLimiting = false;
-        var enableOutputCache = false;
-        string? outputCachePolicy = null;
-        int? outputCacheDuration = null;
-        var enableCors = false;
-        string? corsPolicy = null;
-        var disableCors = false;
+        var auth = default(AuthInfo);
+        var rateLimit = default(RateLimitInfo);
+        var cache = default(OutputCacheInfo);
+        var cors = default(CorsInfo);
 
         foreach (var attr in method.GetAttributes())
         {
@@ -652,80 +628,93 @@ public sealed partial class ErrorOrEndpointGenerator
             if (attrClass is null)
                 continue;
 
-            // [Authorize] / [Authorize("Policy")]
-            if (context.AuthorizeAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.AuthorizeAttribute))
-            {
-                requiresAuth = true;
-                // First constructor arg is policy name
-                if (attr.ConstructorArguments is [{ Value: string policy }])
-                    authPolicy = policy;
-                // Or named property "Policy"
-                foreach (var namedArg in attr.NamedArguments)
-                    if (namedArg.Key == "Policy" && namedArg.Value.Value is string namedPolicy)
-                        authPolicy = namedPolicy;
-            }
-
-            // [AllowAnonymous]
-            if (context.AllowAnonymousAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.AllowAnonymousAttribute))
-                allowAnonymous = true;
-
-            // [EnableRateLimiting("policy")]
-            if (context.EnableRateLimitingAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.EnableRateLimitingAttribute))
-            {
-                enableRateLimiting = true;
-                if (attr.ConstructorArguments is [{ Value: string policy }])
-                    rateLimitPolicy = policy;
-            }
-
-            // [DisableRateLimiting]
-            if (context.DisableRateLimitingAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.DisableRateLimitingAttribute))
-                disableRateLimiting = true;
-
-            // [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")]
-            if (context.OutputCacheAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.OutputCacheAttribute))
-            {
-                enableOutputCache = true;
-                foreach (var namedArg in attr.NamedArguments)
-                {
-                    if (namedArg.Key == "PolicyName" && namedArg.Value.Value is string policyName)
-                        outputCachePolicy = policyName;
-                    if (namedArg.Key == "Duration" && namedArg.Value.Value is int duration)
-                        outputCacheDuration = duration;
-                }
-            }
-
-            // [EnableCors("policy")]
-            if (context.EnableCorsAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.EnableCorsAttribute))
-            {
-                enableCors = true;
-                if (attr.ConstructorArguments is [{ Value: string policy }])
-                    corsPolicy = policy;
-            }
-
-            // [DisableCors]
-            if (context.DisableCorsAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attrClass, context.DisableCorsAttribute))
-                disableCors = true;
+            auth = TryExtractAuth(attr, attrClass, context, auth);
+            rateLimit = TryExtractRateLimit(attr, attrClass, context, rateLimit);
+            cache = TryExtractOutputCache(attr, attrClass, context, cache);
+            cors = TryExtractCors(attr, attrClass, context, cors);
         }
 
         return new MiddlewareInfo(
-            requiresAuth,
-            authPolicy,
-            allowAnonymous,
-            enableRateLimiting,
-            rateLimitPolicy,
-            disableRateLimiting,
-            enableOutputCache,
-            outputCachePolicy,
-            outputCacheDuration,
-            enableCors,
-            corsPolicy,
-            disableCors);
+            auth.Required, auth.Policy, auth.AllowAnonymous,
+            rateLimit.Enabled, rateLimit.Policy, rateLimit.Disabled,
+            cache.Enabled, cache.Policy, cache.Duration,
+            cors.Enabled, cors.Policy, cors.Disabled);
     }
+
+    private static AuthInfo TryExtractAuth(
+        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, AuthInfo current)
+    {
+        if (context.AuthorizeAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.AuthorizeAttribute))
+        {
+            var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
+            policy ??= attr.NamedArguments.FirstOrDefault(static a => a.Key == "Policy").Value.Value as string;
+            return current with { Required = true, Policy = policy ?? current.Policy };
+        }
+
+        if (context.AllowAnonymousAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.AllowAnonymousAttribute))
+            return current with { AllowAnonymous = true };
+
+        return current;
+    }
+
+    private static RateLimitInfo TryExtractRateLimit(
+        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, RateLimitInfo current)
+    {
+        if (context.EnableRateLimitingAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.EnableRateLimitingAttribute))
+        {
+            var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
+            return current with { Enabled = true, Policy = policy };
+        }
+
+        if (context.DisableRateLimitingAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.DisableRateLimitingAttribute))
+            return current with { Disabled = true };
+
+        return current;
+    }
+
+    private static OutputCacheInfo TryExtractOutputCache(
+        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
+    {
+        if (context.OutputCacheAttribute is null ||
+            !SymbolEqualityComparer.Default.Equals(attrClass, context.OutputCacheAttribute))
+            return current;
+
+        var result = current with { Enabled = true };
+        foreach (var namedArg in attr.NamedArguments)
+        {
+            if (namedArg is { Key: "PolicyName", Value.Value: string policy })
+                result = result with { Policy = policy };
+            if (namedArg is { Key: "Duration", Value.Value: int duration })
+                result = result with { Duration = duration };
+        }
+
+        return result;
+    }
+
+    private static CorsInfo TryExtractCors(
+        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, CorsInfo current)
+    {
+        if (context.EnableCorsAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.EnableCorsAttribute))
+        {
+            var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
+            return current with { Enabled = true, Policy = policy };
+        }
+
+        if (context.DisableCorsAttribute is not null &&
+            SymbolEqualityComparer.Default.Equals(attrClass, context.DisableCorsAttribute))
+            return current with { Disabled = true };
+
+        return current;
+    }
+
+    // Helper records for middleware extraction
+    private readonly record struct AuthInfo(bool Required, string? Policy, bool AllowAnonymous);
+    private readonly record struct RateLimitInfo(bool Enabled, string? Policy, bool Disabled);
+    private readonly record struct OutputCacheInfo(bool Enabled, string? Policy, int? Duration);
+    private readonly record struct CorsInfo(bool Enabled, string? Policy, bool Disabled);
 }

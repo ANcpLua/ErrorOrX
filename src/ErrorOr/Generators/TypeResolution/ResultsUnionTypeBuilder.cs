@@ -10,23 +10,19 @@ namespace ErrorOr.Generators;
 /// </summary>
 internal static class ResultsUnionTypeBuilder
 {
-    private const string HttpResultsNs = "global::Microsoft.AspNetCore.Http.HttpResults";
-    private const string ResultsNs = "global::Microsoft.AspNetCore.Http";
-    private const string ProblemDetailsType = "global::Microsoft.AspNetCore.Mvc.ProblemDetails";
-
     /// <summary>
     ///     Default max arity for Results union types. Detected from compilation when possible.
-    ///     As of .NET 10, the BCL provides Results`2 through Results`6.
+    ///     BCL provides Results`2 through Results`6 (may increase in future versions).
     /// </summary>
     private const int DefaultMaxArity = 6;
 
     /// <summary>
-    ///     Gets the HTTP status code for an ErrorType.
+    ///     Gets the HTTP status code for an ErrorType name.
     ///     Delegates to ErrorMapping for single source of truth.
     /// </summary>
-    public static int GetStatusCodeForErrorType(ErrorType errorType)
+    public static int GetStatusCodeForErrorType(string errorTypeName)
     {
-        return ErrorMapping.GetStatusCode(errorType);
+        return ErrorMapping.GetStatusCode(errorTypeName);
     }
 
     /// <summary>
@@ -40,11 +36,11 @@ internal static class ResultsUnionTypeBuilder
 
     /// <summary>
     ///     Gets the RFC 9110 compliant title for a given HTTP status code.
-    ///     Delegates to StatusCodeTitles for single source of truth.
+    ///     Delegates to ErrorMapping for single source of truth.
     /// </summary>
     public static string GetTitleForStatusCode(int statusCode)
     {
-        return StatusCodeTitles.Get(statusCode);
+        return ErrorMapping.GetStatusTitle(statusCode);
     }
 
     /// <summary>
@@ -66,58 +62,58 @@ internal static class ResultsUnionTypeBuilder
         // Handle [AcceptedResponse] attribute first (highest precedence)
         if (isAcceptedResponse)
             return new SuccessResponseInfo(
-                $"{HttpResultsNs}.Accepted<{successTypeFqn}>",
+                $"{WellKnownTypes.Fqn.HttpResults.Accepted}<{successTypeFqn}>",
                 202,
                 true,
-                "global::Microsoft.AspNetCore.Http.TypedResults.Accepted(string.Empty, result.Value)",
-                "value => global::Microsoft.AspNetCore.Http.TypedResults.Accepted(string.Empty, value)");
+                $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)",
+                $"value => {WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, value)");
 
         // Map marker types to their correct status codes
         return successKind switch
         {
             SuccessKind.Success => new SuccessResponseInfo(
-                $"{HttpResultsNs}.Ok",
+                WellKnownTypes.Fqn.HttpResults.Ok,
                 200,
                 false,
-                "global::Microsoft.AspNetCore.Http.TypedResults.Ok()",
-                "_ => global::Microsoft.AspNetCore.Http.TypedResults.Ok()"),
+                $"{WellKnownTypes.Fqn.TypedResults.Ok}()",
+                $"_ => {WellKnownTypes.Fqn.TypedResults.Ok}()"),
 
             SuccessKind.Created => new SuccessResponseInfo(
-                $"{HttpResultsNs}.Created",
+                WellKnownTypes.Fqn.HttpResults.Created,
                 201,
                 false,
-                "global::Microsoft.AspNetCore.Http.TypedResults.Created(string.Empty)",
-                "_ => global::Microsoft.AspNetCore.Http.TypedResults.Created(string.Empty)"),
+                $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)",
+                $"_ => {WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)"),
 
             SuccessKind.Updated => new SuccessResponseInfo(
-                $"{HttpResultsNs}.NoContent",
+                WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
                 false,
-                "global::Microsoft.AspNetCore.Http.TypedResults.NoContent()",
-                "_ => global::Microsoft.AspNetCore.Http.TypedResults.NoContent()"),
+                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()",
+                $"_ => {WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             SuccessKind.Deleted => new SuccessResponseInfo(
-                $"{HttpResultsNs}.NoContent",
+                WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
                 false,
-                "global::Microsoft.AspNetCore.Http.TypedResults.NoContent()",
-                "_ => global::Microsoft.AspNetCore.Http.TypedResults.NoContent()"),
+                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()",
+                $"_ => {WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             // Not a marker type - determine default response by HTTP method
             SuccessKind.Payload when httpMethod == WellKnownTypes.HttpMethod.Post =>
                 new SuccessResponseInfo(
-                    $"{HttpResultsNs}.Created<{successTypeFqn}>",
+                    $"{WellKnownTypes.Fqn.HttpResults.Created}<{successTypeFqn}>",
                     201,
                     true,
-                    "global::Microsoft.AspNetCore.Http.TypedResults.Created(string.Empty, result.Value)",
-                    "value => global::Microsoft.AspNetCore.Http.TypedResults.Created(string.Empty, value)"),
+                    $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty, result.Value)",
+                    $"value => {WellKnownTypes.Fqn.TypedResults.Created}(string.Empty, value)"),
 
             _ => new SuccessResponseInfo(
-                $"{HttpResultsNs}.Ok<{successTypeFqn}>",
+                $"{WellKnownTypes.Fqn.HttpResults.Ok}<{successTypeFqn}>",
                 200,
                 true,
-                "global::Microsoft.AspNetCore.Http.TypedResults.Ok(result.Value)",
-                "value => global::Microsoft.AspNetCore.Http.TypedResults.Ok(value)")
+                $"{WellKnownTypes.Fqn.TypedResults.Ok}(result.Value)",
+                $"value => {WellKnownTypes.Fqn.TypedResults.Ok}(value)")
         };
     }
 
@@ -147,7 +143,7 @@ internal static class ResultsUnionTypeBuilder
         string successTypeFqn,
         SuccessKind successKind,
         string httpMethod,
-        EquatableArray<int> inferredErrorTypes,
+        EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<CustomErrorInfo> inferredCustomErrors,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
         int maxArity = DefaultMaxArity,
@@ -163,7 +159,7 @@ internal static class ResultsUnionTypeBuilder
             includedStatuses);
 
         // 3. Built-in ErrorTypes (mapped to static BCL types)
-        var hasCustom = AddInferredErrorOutcomes(inferredErrorTypes, unionEntries, includedStatuses) ||
+        var hasCustom = AddInferredErrorOutcomes(inferredErrorTypeNames, unionEntries, includedStatuses) ||
                         !inferredCustomErrors.IsDefaultOrEmpty ||
                         AddDeclaredErrorOutcomes(declaredProducesErrors, includedStatuses);
 
@@ -176,7 +172,7 @@ internal static class ResultsUnionTypeBuilder
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
-            return BuildFallbackResult(inferredErrorTypes, declaredProducesErrors, middleware);
+            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware);
 
         // 7. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
@@ -186,7 +182,7 @@ internal static class ResultsUnionTypeBuilder
         // Build Results<T1, ..., Tn> type
         return new UnionTypeResult(
             true,
-            $"{HttpResultsNs}.Results<{string.Join(", ", sortedTypes)}>",
+            $"{WellKnownTypes.Fqn.HttpResults.Results}<{string.Join(", ", sortedTypes)}>",
             default);
     }
 
@@ -199,27 +195,27 @@ internal static class ResultsUnionTypeBuilder
         ISet<int> includedStatuses)
     {
         // [Authorize] adds 401 Unauthorized and 403 Forbidden
-        if (middleware.RequiresAuthorization && !middleware.AllowAnonymous)
+        if (middleware is { RequiresAuthorization: true, AllowAnonymous: false })
         {
             if (!includedStatuses.Contains(401))
             {
-                unionEntries.Add((401, $"{HttpResultsNs}.UnauthorizedHttpResult"));
+                unionEntries.Add((401, WellKnownTypes.Fqn.HttpResults.UnauthorizedHttpResult));
                 includedStatuses.Add(401);
             }
 
             if (!includedStatuses.Contains(403))
             {
-                unionEntries.Add((403, $"{HttpResultsNs}.ForbidHttpResult"));
+                unionEntries.Add((403, WellKnownTypes.Fqn.HttpResults.ForbidHttpResult));
                 includedStatuses.Add(403);
             }
         }
 
         // [EnableRateLimiting] adds 429 Too Many Requests
-        if (middleware.EnableRateLimiting && !middleware.DisableRateLimiting)
+        if (middleware is { EnableRateLimiting: true, DisableRateLimiting: false })
             if (!includedStatuses.Contains(429))
             {
                 // StatusCodeHttpResult is used for 429 since there's no typed TooManyRequestsHttpResult
-                unionEntries.Add((429, $"{HttpResultsNs}.StatusCodeHttpResult"));
+                unionEntries.Add((429, WellKnownTypes.Fqn.HttpResults.StatusCodeHttpResult));
                 includedStatuses.Add(429);
             }
     }
@@ -237,42 +233,41 @@ internal static class ResultsUnionTypeBuilder
         includedStatuses.Add(successInfo.StatusCode);
 
         // BadRequest<ProblemDetails> for binding failures (always present)
-        unionEntries.Add((400, $"{HttpResultsNs}.BadRequest<{ProblemDetailsType}>"));
+        unionEntries.Add((400, $"{WellKnownTypes.Fqn.HttpResults.BadRequest}<{WellKnownTypes.Fqn.ProblemDetails}>"));
         includedStatuses.Add(400);
 
         // InternalServerError<ProblemDetails> for unknown/unhandled errors (always present as safety net)
         // This ensures the default switch case always has a valid return type in the union
-        unionEntries.Add((500, $"{HttpResultsNs}.InternalServerError<{ProblemDetailsType}>"));
+        unionEntries.Add((500, $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>"));
         includedStatuses.Add(500);
     }
 
     private static bool AddInferredErrorOutcomes(
-        EquatableArray<int> inferredErrorTypes,
+        EquatableArray<string> inferredErrorTypeNames,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
-        if (inferredErrorTypes.IsDefaultOrEmpty)
+        if (inferredErrorTypeNames.IsDefaultOrEmpty)
             return false;
 
-        foreach (var errorTypeInt in inferredErrorTypes.AsImmutableArray().Distinct().OrderBy(static x => x))
+        foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray()
+                     .Distinct()
+                     .OrderBy(static x => x, StringComparer.Ordinal))
         {
-            var errorType = Enum.IsDefined(typeof(ErrorType), errorTypeInt)
-                ? (ErrorType)errorTypeInt
-                : ErrorType.Failure;
-            AddInferredError(errorType, unionEntries, includedStatuses);
+            AddInferredError(errorTypeName, unionEntries, includedStatuses);
         }
 
         return false;
     }
 
     private static void AddInferredError(
-        ErrorType errorType,
+        string errorTypeName,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
-        var entry = ErrorMapping.Get(errorType);
+        var entry = ErrorMapping.Get(errorTypeName);
 
-        if (errorType == ErrorType.Validation) // Validation: uses ValidationProblem (also 400, but different type)
+        if (errorTypeName == ErrorMapping.Validation) // Validation: uses ValidationProblem (also 400, but different type)
         {
             // ValidationProblem is a special case - it's 400 but different type than BadRequest
             // Use status 400 for sorting but keep as separate entry
@@ -302,19 +297,19 @@ internal static class ResultsUnionTypeBuilder
     }
 
     private static UnionTypeResult BuildFallbackResult(
-        EquatableArray<int> inferredErrorTypes,
+        EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
         MiddlewareInfo middleware = default)
     {
         var allStatuses = new HashSet<int> { 400 }; // Always include binding failure
 
-        CollectInferredErrorStatuses(inferredErrorTypes, allStatuses);
+        CollectInferredErrorStatuses(inferredErrorTypeNames, allStatuses);
         CollectDeclaredErrorStatuses(declaredProducesErrors, allStatuses);
         CollectMiddlewareStatuses(middleware, allStatuses);
 
         return new UnionTypeResult(
             false,
-            $"{ResultsNs}.IResult",
+            WellKnownTypes.Fqn.Result,
             new EquatableArray<int>([.. allStatuses.OrderBy(static x => x)]));
     }
 
@@ -325,32 +320,29 @@ internal static class ResultsUnionTypeBuilder
         in MiddlewareInfo middleware,
         ISet<int> allStatuses)
     {
-        if (middleware.RequiresAuthorization && !middleware.AllowAnonymous)
+        if (middleware is { RequiresAuthorization: true, AllowAnonymous: false })
         {
             allStatuses.Add(401);
             allStatuses.Add(403);
         }
 
-        if (middleware.EnableRateLimiting && !middleware.DisableRateLimiting)
+        if (middleware is { EnableRateLimiting: true, DisableRateLimiting: false })
             allStatuses.Add(429);
     }
 
     /// <summary>
-    ///     Collects HTTP status codes from inferred error types.
+    ///     Collects HTTP status codes from inferred error type names.
     /// </summary>
     private static void CollectInferredErrorStatuses(
-        EquatableArray<int> inferredErrorTypes,
+        EquatableArray<string> inferredErrorTypeNames,
         ISet<int> allStatuses)
     {
-        if (inferredErrorTypes.IsDefaultOrEmpty)
+        if (inferredErrorTypeNames.IsDefaultOrEmpty)
             return;
 
-        foreach (var errorTypeInt in inferredErrorTypes.AsImmutableArray().Distinct())
+        foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray().Distinct())
         {
-            var errorType = Enum.IsDefined(typeof(ErrorType), errorTypeInt)
-                ? (ErrorType)errorTypeInt
-                : ErrorType.Failure;
-            allStatuses.Add(ErrorMapping.GetStatusCode(errorType));
+            allStatuses.Add(ErrorMapping.GetStatusCode(errorTypeName));
         }
     }
 
@@ -366,22 +358,5 @@ internal static class ResultsUnionTypeBuilder
 
         foreach (var pe in declaredProducesErrors)
             allStatuses.Add(pe.StatusCode);
-    }
-
-    /// <summary>
-    ///     Gets the ErrorType enum name from its value.
-    /// </summary>
-    public static string GetErrorTypeName(ErrorType errorType)
-    {
-        return errorType.ToString();
-    }
-
-    /// <summary>
-    ///     Gets the ErrorType enum name from its integer value.
-    /// </summary>
-    public static string GetErrorTypeName(int errorTypeInt)
-    {
-        var errorType = Enum.IsDefined(typeof(ErrorType), errorTypeInt) ? (ErrorType)errorTypeInt : ErrorType.Failure;
-        return errorType.ToString();
     }
 }

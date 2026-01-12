@@ -7,13 +7,19 @@ namespace ErrorOr.Generators;
 
 /// <summary>
 ///     Compilation context for ErrorOr.Endpoints generator.
-///     Composes AspNetContext with ErrorOr-specific types.
+///     Composes ASP.NET Core types with ErrorOr-specific types.
 /// </summary>
 internal sealed class ErrorOrContext
 {
     public ErrorOrContext(Compilation compilation)
     {
-        AspNet = new AspNetContext(compilation);
+        // ASP.NET Core MVC Attributes
+        FromBodyAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromBodyAttribute);
+        FromServicesAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromServicesAttribute);
+        FromRouteAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromRouteAttribute);
+        FromQueryAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromQueryAttribute);
+        FromHeaderAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromHeaderAttribute);
+        FromFormAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromFormAttribute);
 
         // ErrorOr.Endpoints generated attributes
         ErrorOrEndpointAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorOrEndpointAttribute);
@@ -34,13 +40,14 @@ internal sealed class ErrorOrContext
         AsParametersAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AsParametersAttribute);
         FormFileCollection = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormFileCollection);
         FormCollection = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormCollection);
+        FormFile = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormFile);
+        HttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.HttpContext);
         BindableFromHttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.BindableFromHttpContext);
         ParameterInfo = compilation.GetBestTypeByMetadataName(WellKnownTypes.ParameterInfo);
         TypedResults = compilation.GetBestTypeByMetadataName(WellKnownTypes.TypedResults);
         SseItemOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.SseItemT)?.ConstructedFrom;
 
         // System types
-        ObsoleteAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ObsoleteAttribute);
         CancellationToken = compilation.GetBestTypeByMetadataName(WellKnownTypes.CancellationToken);
         NullableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.NullableT)?.ConstructedFrom;
 
@@ -58,7 +65,7 @@ internal sealed class ErrorOrContext
         ListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ListT)?.ConstructedFrom;
         IListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IListT)?.ConstructedFrom;
         IEnumerableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IEnumerableT)?.ConstructedFrom;
-        IAsyncEnumerableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.AsyncEnumerableT)
+        IAsyncEnumerableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IAsyncEnumerableT)
             ?.ConstructedFrom;
         IReadOnlyListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IReadOnlyListT)
             ?.ConstructedFrom;
@@ -99,10 +106,13 @@ internal sealed class ErrorOrContext
         IValidatableObject = compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableObject);
     }
 
-    /// <summary>
-    ///     Base ASP.NET Core context with common types.
-    /// </summary>
-    public AspNetContext AspNet { get; }
+    // ASP.NET Core MVC Attributes
+    public INamedTypeSymbol? FromBodyAttribute { get; }
+    public INamedTypeSymbol? FromServicesAttribute { get; }
+    public INamedTypeSymbol? FromRouteAttribute { get; }
+    public INamedTypeSymbol? FromQueryAttribute { get; }
+    public INamedTypeSymbol? FromHeaderAttribute { get; }
+    public INamedTypeSymbol? FromFormAttribute { get; }
 
     // Result markers
     public INamedTypeSymbol? SuccessMarker { get; }
@@ -159,16 +169,17 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? AcceptedResponseAttribute { get; }
     public INamedTypeSymbol? ReturnsErrorAttribute { get; }
 
-    // Additional ASP.NET types not in AspNetContext
+    // Additional ASP.NET types
     public INamedTypeSymbol? FromKeyedServicesAttribute { get; }
     public INamedTypeSymbol? AsParametersAttribute { get; }
     public INamedTypeSymbol? FormFileCollection { get; }
     public INamedTypeSymbol? FormCollection { get; }
+    public INamedTypeSymbol? FormFile { get; }
+    public INamedTypeSymbol? HttpContext { get; }
     public INamedTypeSymbol? BindableFromHttpContext { get; }
     public INamedTypeSymbol? ParameterInfo { get; }
 
     // System types
-    public INamedTypeSymbol? ObsoleteAttribute { get; }
     public INamedTypeSymbol? CancellationToken { get; }
 
     // Middleware attributes (BCL)
@@ -184,25 +195,27 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? ValidationAttribute { get; }
     public INamedTypeSymbol? IValidatableObject { get; }
 
-    // Convenience accessors that delegate to AspNetContext
-    public INamedTypeSymbol? FromBody => AspNet.FromBodyAttribute;
-    public INamedTypeSymbol? FromServices => AspNet.FromServicesAttribute;
-    public INamedTypeSymbol? FromRoute => AspNet.FromRouteAttribute;
-    public INamedTypeSymbol? FromQuery => AspNet.FromQueryAttribute;
-    public INamedTypeSymbol? FromHeader => AspNet.FromHeaderAttribute;
-    public INamedTypeSymbol? FromForm => AspNet.FromFormAttribute;
-    public INamedTypeSymbol? FormFile => AspNet.FormFile;
-    public INamedTypeSymbol? HttpContext => AspNet.HttpContext;
-
-    // Short aliases for backward compatibility with KnownSymbols
+    // Convenience accessors
+    public INamedTypeSymbol? FromBody => FromBodyAttribute;
+    public INamedTypeSymbol? FromServices => FromServicesAttribute;
+    public INamedTypeSymbol? FromRoute => FromRouteAttribute;
+    public INamedTypeSymbol? FromQuery => FromQueryAttribute;
+    public INamedTypeSymbol? FromHeader => FromHeaderAttribute;
+    public INamedTypeSymbol? FromForm => FromFormAttribute;
     public INamedTypeSymbol? FromKeyedServices => FromKeyedServicesAttribute;
     public INamedTypeSymbol? AsParameters => AsParametersAttribute;
-    public INamedTypeSymbol? HttpContextSymbol => HttpContext;
 
     // Helper methods
     public bool IsFormFile(ITypeSymbol? type)
     {
-        return AspNet.IsFormFile(type);
+        if (type is null)
+            return false;
+
+        if (FormFile is not null && type.IsOrImplements(FormFile))
+            return true;
+
+        return type.Name == "IFormFile" &&
+               type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
     }
 
     public bool IsFormFileCollection(ITypeSymbol? type)
@@ -234,7 +247,66 @@ internal sealed class ErrorOrContext
 
     public bool IsHttpContext(ITypeSymbol? type)
     {
-        return AspNet.IsHttpContextType(type);
+        if (type is null)
+            return false;
+
+        if (HttpContext is not null && type.IsOrInheritsFrom(HttpContext))
+            return true;
+
+        return type.Name == "HttpContext" &&
+               type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
+    }
+
+    public bool IsStream(ITypeSymbol? type)
+    {
+        if (type is null)
+            return false;
+
+        type = UnwrapNullable(type);
+        if (Stream is not null)
+            return type.IsOrInheritsFrom(Stream);
+
+        return type.Name == "Stream" &&
+               type.ContainingNamespace.ToDisplayString() == "System.IO";
+    }
+
+    public bool IsPipeReader(ITypeSymbol? type)
+    {
+        if (type is null)
+            return false;
+
+        type = UnwrapNullable(type);
+        if (PipeReader is not null)
+            return type.IsOrInheritsFrom(PipeReader);
+
+        return type.Name == "PipeReader" &&
+               type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
+    }
+
+    public bool IsCancellationToken(ITypeSymbol? type)
+    {
+        if (type is null)
+            return false;
+
+        type = UnwrapNullable(type);
+        if (CancellationToken is not null)
+            return SymbolEqualityComparer.Default.Equals(type, CancellationToken);
+
+        return type.Name == "CancellationToken" &&
+               type.ContainingNamespace.ToDisplayString() == "System.Threading";
+    }
+
+    public bool IsParameterInfo(ITypeSymbol? type)
+    {
+        if (type is null)
+            return false;
+
+        type = UnwrapNullable(type);
+        if (ParameterInfo is not null)
+            return SymbolEqualityComparer.Default.Equals(type, ParameterInfo);
+
+        return type.Name == "ParameterInfo" &&
+               type.ContainingNamespace.ToDisplayString() == "System.Reflection";
     }
 
     public bool HasFromKeyedServices(IParameterSymbol parameter)

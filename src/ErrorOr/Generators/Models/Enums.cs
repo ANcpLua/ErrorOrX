@@ -19,19 +19,6 @@ internal enum EndpointParameterSource
     PipeReader
 }
 
-internal enum ErrorType
-{
-    // Names match ErrorOr.ErrorType
-    // Values are internal IDs, NOT HTTP status codes (because Failure/Unexpected both map to 500)
-    Failure,
-    Unexpected,
-    Validation,
-    Conflict,
-    NotFound,
-    Unauthorized,
-    Forbidden
-}
-
 /// <summary>
 ///     Represents the custom binding method detected on a parameter type.
 /// </summary>

@@ -336,7 +336,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.Method.ContainingType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "Unknown",
             analysis.Method.Name,
             new EquatableArray<EndpointParameter>(bindingResult.Parameters),
-            analysis.InferredErrors,
+            analysis.InferredErrorTypeNames,
             analysis.InferredCustomErrors,
             analysis.ProducesErrors,
             analysis.ReturnInfo.IsSse,

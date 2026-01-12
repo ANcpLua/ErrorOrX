@@ -262,7 +262,7 @@ internal static class RouteValidator
             constraint,
             expectedTypes[0],
             methodParam.Name,
-            NormalizeTypeName(typeFqn)));
+            TypeNameHelper.Normalize(typeFqn)));
     }
 
     private static bool TryGetConstraintContext(
@@ -298,7 +298,7 @@ internal static class RouteValidator
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        if (IsStringType(typeFqn))
+        if (TypeNameHelper.IsStringType(typeFqn))
             return;
 
         diagnostics.Add(DiagnosticInfo.Create(
@@ -308,14 +308,28 @@ internal static class RouteValidator
             "*",
             "string",
             methodParam.Name,
-            NormalizeTypeName(typeFqn)));
+            TypeNameHelper.Normalize(typeFqn)));
     }
 
     private static bool MatchesExpectedType(string actualTypeFqn, IEnumerable<string> expectedTypes)
     {
+        var normalizedActual = TypeNameHelper.Normalize(actualTypeFqn);
+
         foreach (var expected in expectedTypes)
-            if (TypeNamesMatch(actualTypeFqn, expected))
+        {
+            // Direct match
+            if (string.Equals(normalizedActual, expected, StringComparison.Ordinal))
                 return true;
+
+            // Suffix match (e.g., "System.Int32" ends with ".Int32" for expected "Int32")
+            if (normalizedActual.EndsWith("." + expected, StringComparison.Ordinal))
+                return true;
+
+            // Handle keyword aliases (int vs Int32, etc.)
+            var aliasedActual = TypeNameHelper.GetKeywordAlias(normalizedActual);
+            if (aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal))
+                return true;
+        }
 
         return false;
     }
@@ -333,74 +347,12 @@ internal static class RouteValidator
             return typeFqn[..^1];
 
         // Handle Nullable<T> for value types
-        var normalized = NormalizeTypeName(typeFqn);
+        var normalized = TypeNameHelper.Normalize(typeFqn);
         if (normalized.StartsWith("System.Nullable<", StringComparison.Ordinal) &&
             normalized.EndsWith(">", StringComparison.Ordinal))
             return normalized["System.Nullable<".Length..^1];
 
         return typeFqn;
-    }
-
-    private static bool IsStringType(string typeFqn)
-    {
-        var normalized = NormalizeTypeName(typeFqn);
-        return normalized is "string" or "String" or "System.String";
-    }
-
-    private static bool TypeNamesMatch(string actualFqn, string expected)
-    {
-        var normalizedActual = NormalizeTypeName(actualFqn);
-
-        // Direct match
-        if (string.Equals(normalizedActual, expected, StringComparison.Ordinal))
-            return true;
-
-        // Suffix match (e.g., "System.Int32" ends with ".Int32" for expected "Int32")
-        if (normalizedActual.EndsWith("." + expected, StringComparison.Ordinal))
-            return true;
-
-        // Handle keyword aliases (int vs Int32, etc.)
-        var aliasedActual = GetTypeKeywordAlias(normalizedActual);
-        return aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Gets the C# keyword alias for a BCL type name, or null if none exists.
-    /// </summary>
-    private static string? GetTypeKeywordAlias(string typeName)
-    {
-        return typeName switch
-        {
-            "System.Int32" or "Int32" => "int",
-            "System.Int64" or "Int64" => "long",
-            "System.Int16" or "Int16" => "short",
-            "System.Byte" or "Byte" => "byte",
-            "System.SByte" or "SByte" => "sbyte",
-            "System.UInt32" or "UInt32" => "uint",
-            "System.UInt64" or "UInt64" => "ulong",
-            "System.UInt16" or "UInt16" => "ushort",
-            "System.Single" or "Single" => "float",
-            "System.Double" or "Double" => "double",
-            "System.Decimal" or "Decimal" => "decimal",
-            "System.Boolean" or "Boolean" => "bool",
-            "System.String" or "String" => "string",
-            _ => null
-        };
-    }
-
-    private static string NormalizeTypeName(string typeFqn)
-    {
-        var result = typeFqn;
-
-        // Remove global:: prefix
-        if (result.StartsWith("global::", StringComparison.Ordinal))
-            result = result["global::".Length..];
-
-        // Remove nullable suffix (for reference types)
-        if (result.EndsWith("?", StringComparison.Ordinal))
-            result = result[..^1];
-
-        return result;
     }
 }
 

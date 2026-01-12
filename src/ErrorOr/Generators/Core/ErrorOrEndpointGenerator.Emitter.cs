@@ -95,7 +95,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.SuccessTypeFqn,
             ep.SuccessKind,
             ep.HttpMethod,
-            ep.InferredErrorTypes,
+            ep.InferredErrorTypeNames,
             ep.InferredCustomErrors,
             ep.DeclaredProducesErrors,
             maxArity,
@@ -107,9 +107,8 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine(
             $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{index})");
 
-        var className = ExtractTypeName(ep.HandlerContainingTypeFqn);
-        var tagName = className.EndsWith("Endpoints") ? className[..^"Endpoints".Length] : className;
-        var operationId = $"{tagName}_{ep.HandlerMethodName}";
+        var className = TypeNameHelper.ExtractShortName(ep.HandlerContainingTypeFqn);
+        var (tagName, operationId) = EndpointIdentityHelper.GetEndpointIdentity(className, ep.HandlerMethodName);
 
         code.AppendLine($"            .WithName(\"{operationId}\")");
         code.AppendLine($"            .WithTags(\"{tagName}\")");
@@ -117,9 +116,9 @@ public sealed partial class ErrorOrEndpointGenerator
         var bodyParam = ep.HandlerParameters.AsImmutableArray()
             .FirstOrDefault(static p => p.Source == EndpointParameterSource.Body);
         if (bodyParam.Name is not null)
-            code.AppendLine($"            .Accepts<{bodyParam.TypeFqn}>(\"application/json\")");
+            code.AppendLine($"            .Accepts<{bodyParam.TypeFqn}>(\"{WellKnownTypes.Constants.ContentTypeJson}\")");
         else if (HasFormParams(ep))
-            code.AppendLine("            .Accepts(typeof(object), \"multipart/form-data\")");
+            code.AppendLine($"            .Accepts(typeof(object), \"{WellKnownTypes.Constants.ContentTypeFormData}\")");
 
         if (ep.IsSse)
         {
@@ -165,7 +164,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Rate Limiting: [EnableRateLimiting("policy")] / [DisableRateLimiting]
         if (middleware.DisableRateLimiting)
             code.AppendLine("            .DisableRateLimiting()");
-        else if (middleware.EnableRateLimiting && middleware.RateLimitingPolicy is not null)
+        else if (middleware is { EnableRateLimiting: true, RateLimitingPolicy: not null })
             code.AppendLine($"            .RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")");
 
         // Output Caching: [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")]
@@ -183,7 +182,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // CORS: [EnableCors("policy")] / [DisableCors]
         if (middleware.DisableCors)
             code.AppendLine("            .DisableCors()");
-        else if (middleware.EnableCors && middleware.CorsPolicy is not null)
+        else if (middleware is { EnableCors: true, CorsPolicy: not null })
             code.AppendLine($"            .RequireCors(\"{middleware.CorsPolicy}\")");
     }
 
@@ -199,7 +198,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.SuccessTypeFqn,
             ep.SuccessKind,
             ep.HttpMethod,
-            ep.InferredErrorTypes,
+            ep.InferredErrorTypeNames,
             ep.InferredCustomErrors,
             ep.DeclaredProducesErrors,
             maxArity,
@@ -244,7 +243,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ep.IsSse)
         {
             bodyCode.AppendLine($"            if (result.IsError) return {WrapReturn("ToProblem(result.Errors)")};");
-            bodyCode.AppendLine($"            return {WrapReturn("global::Microsoft.AspNetCore.Http.TypedResults.ServerSentEvents(result.Value)")};");
+            bodyCode.AppendLine($"            return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
         }
         else if (unionResult.CanUseUnion)
         {
@@ -314,8 +313,8 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("                }");
 
             var returnExpr = isAsync
-                ? "global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(validationDict)"
-                : $"Task.FromResult<{returnTypeFqn}>(global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(validationDict))";
+                ? $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict)"
+                : $"Task.FromResult<{returnTypeFqn}>({WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict))";
             code.AppendLine($"                return {returnExpr};");
             code.AppendLine("            }");
         }
@@ -331,11 +330,11 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                Title = \"Bad Request\",");
         code.AppendLine("                Detail = $\"Parameter '{param}' {reason}.\",");
         code.AppendLine("                Status = 400,");
-        code.AppendLine("                Type = \"https://httpstatuses.io/400\",");
+        code.AppendLine($"                Type = \"{WellKnownTypes.Constants.HttpStatusesBaseUrl}400\",");
         code.AppendLine("            };");
         code.AppendLine();
 
-        var badRequestExpr = "global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason))";
+        var badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
         var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
@@ -393,7 +392,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Generate Location URL: request path + "/" + id value
         // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return $"global::Microsoft.AspNetCore.Http.TypedResults.Created($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
+        return $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
     }
 
     /// <summary>
@@ -417,14 +416,14 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Generate Location URL using lambda parameter 'value'
         // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return $"value => global::Microsoft.AspNetCore.Http.TypedResults.Created($\"{{ctx.Request.Path}}/{{value.{idProp}}}\", value)";
+        return $"value => {WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{value.{idProp}}}\", value)";
     }
 
     private static void EmitValidationHandling(StringBuilder code, in EndpointDescriptor ep,
         Func<string, string> wrapReturn)
     {
-        var hasValidation = !ep.InferredErrorTypes.IsDefaultOrEmpty &&
-                            ep.InferredErrorTypes.AsImmutableArray().Contains((int)ErrorType.Validation);
+        var hasValidation = !ep.InferredErrorTypeNames.IsDefaultOrEmpty &&
+                            ep.InferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
 
         if (!hasValidation) return;
 
@@ -446,7 +445,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                            validationDict[e.Code] = arr;");
         code.AppendLine("                        }");
         code.AppendLine("                    }");
-        code.AppendLine($"                    return {wrapReturn("global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(validationDict)")};");
+        code.AppendLine($"                    return {wrapReturn($"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict)")};");
         code.AppendLine("                }");
     }
 
@@ -469,32 +468,20 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                switch (first.Type)");
         code.AppendLine("                {");
 
-        if (!ep.InferredErrorTypes.IsDefaultOrEmpty)
-            foreach (var errorTypeInt in ep.InferredErrorTypes.AsImmutableArray()
-                         .Where(static e => e != (int)ErrorType.Validation)
+        if (!ep.InferredErrorTypeNames.IsDefaultOrEmpty)
+            foreach (var errorTypeName in ep.InferredErrorTypeNames.AsImmutableArray()
+                         .Where(static e => e != ErrorMapping.Validation)
                          .Distinct()
-                         .OrderBy(static x => x))
+                         .OrderBy(static x => x, StringComparer.Ordinal))
             {
-                var errorType = Enum.IsDefined(typeof(ErrorType), errorTypeInt)
-                    ? (ErrorType)errorTypeInt
-                    : ErrorType.Failure;
-                var enumName = errorType.ToString();
+                var factory = ErrorMapping.GetFactory(errorTypeName);
 
-                var factory = errorType switch
-                {
-                    ErrorType.Unauthorized => "global::Microsoft.AspNetCore.Http.TypedResults.Unauthorized()",
-                    ErrorType.Forbidden => "global::Microsoft.AspNetCore.Http.TypedResults.Forbid()",
-                    ErrorType.NotFound => "global::Microsoft.AspNetCore.Http.TypedResults.NotFound(problem)",
-                    ErrorType.Conflict => "global::Microsoft.AspNetCore.Http.TypedResults.Conflict(problem)",
-                    _ => "global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem)"
-                };
-
-                code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{enumName}:");
+                code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{errorTypeName}:");
                 code.AppendLine($"                        return {wrapReturn(factory)};");
             }
 
         code.AppendLine("                    default:");
-        code.AppendLine($"                        return {wrapReturn("global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem)")};");
+        code.AppendLine($"                        return {wrapReturn(ErrorMapping.GetFactory(ErrorMapping.Failure))};");
         code.AppendLine("                }");
     }
 
@@ -590,7 +577,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var routeName = param.KeyName ?? param.Name;
         code.AppendLine(
-            IsStringType(param.TypeFqn)
+            TypeNameHelper.IsStringType(param.TypeFqn)
                 ? $"            if (!TryGetRouteValue(ctx, \"{routeName}\", out var {paramName})) return {bindFailFn}(\"{param.Name}\", \"is missing from route\");"
                 : $"            if (!TryGetRouteValue(ctx, \"{routeName}\", out var {paramName}Raw) || !{GetTryParseExpression(param.TypeFqn, paramName + "Raw", paramName, param.CustomBinding)}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
         return true;
@@ -629,7 +616,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            {");
 
         var usesBindFail = false;
-        if (IsStringType(itemType))
+        if (TypeNameHelper.IsStringType(itemType))
         {
             code.AppendLine(
                 $"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
@@ -671,7 +658,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            }");
         code.AppendLine("            else");
         code.AppendLine("            {");
-        if (IsStringType(param.TypeFqn))
+        if (TypeNameHelper.IsStringType(param.TypeFqn))
         {
             code.AppendLine($"                {paramName} = {paramName}Raw;");
         }
@@ -715,7 +702,7 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine($"                var {paramName}List = new {WellKnownTypes.Fqn.List}<{itemType}>();");
             code.AppendLine($"                foreach (var item in {paramName}Raw)");
             code.AppendLine("                {");
-            if (IsStringType(itemType))
+            if (TypeNameHelper.IsStringType(itemType))
                 code.AppendLine(
                     $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
             else
@@ -747,7 +734,7 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("            }");
             code.AppendLine("            else");
             code.AppendLine("            {");
-            if (IsStringType(param.TypeFqn))
+            if (TypeNameHelper.IsStringType(param.TypeFqn))
             {
                 code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
             }
@@ -819,7 +806,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            }");
         code.AppendLine("            else");
         code.AppendLine("            {");
-        if (IsStringType(param.TypeFqn))
+        if (TypeNameHelper.IsStringType(param.TypeFqn))
         {
             code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
         }
@@ -855,7 +842,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void EmitFormContentTypeGuard(StringBuilder code)
     {
         code.AppendLine(
-            "            if (!ctx.Request.HasFormContentType) return BindFail(\"form\", \"content-type must be multipart/form-data\");");
+            $"            if (!ctx.Request.HasFormContentType) return BindFail(\"form\", \"content-type must be {WellKnownTypes.Constants.ContentTypeFormData}\");");
         code.AppendLine("            var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);");
         code.AppendLine();
     }
@@ -923,7 +910,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine(
             $"        private static {WellKnownTypes.Fqn.Result} ToProblem({WellKnownTypes.Fqn.ReadOnlyList}<{WellKnownTypes.Fqn.Error}> errors)");
         code.AppendLine("        {");
-        code.AppendLine("            if (errors.Count is 0) return global::Microsoft.AspNetCore.Http.TypedResults.Problem();");
+        code.AppendLine($"            if (errors.Count is 0) return {WellKnownTypes.Fqn.TypedResults.Problem}();");
         code.AppendLine("            var hasValidation = false;");
         code.AppendLine(
             $"            for (var i = 0; i < errors.Count; i++) if (errors[i].Type == {WellKnownTypes.Fqn.ErrorType}.Validation) {{ hasValidation = true; break; }}");
@@ -939,7 +926,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine(
             "                    else { var n = new string[existing.Length + 1]; existing.CopyTo(n, 0); n[existing.Length] = e.Description; dict[e.Code] = n; }");
         code.AppendLine("                }");
-        code.AppendLine("                return global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(dict);");
+        code.AppendLine($"                return {WellKnownTypes.Fqn.TypedResults.ValidationProblem}(dict);");
         code.AppendLine("            }");
         code.AppendLine("            var first = errors[0];");
         code.AppendLine($"            var problem = new {WellKnownTypes.Fqn.ProblemDetails}");
@@ -952,14 +939,9 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
         code.AppendLine("            return problem.Status switch");
         code.AppendLine("            {");
-        code.AppendLine("                401 => global::Microsoft.AspNetCore.Http.TypedResults.Unauthorized(),");
-        code.AppendLine("                403 => global::Microsoft.AspNetCore.Http.TypedResults.Forbid(),");
-        code.AppendLine("                404 => global::Microsoft.AspNetCore.Http.TypedResults.NotFound(problem),");
-        code.AppendLine("                409 => global::Microsoft.AspNetCore.Http.TypedResults.Conflict(problem),");
-        code.AppendLine("                422 => global::Microsoft.AspNetCore.Http.TypedResults.UnprocessableEntity(problem),");
-        code.AppendLine("                500 => global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem),");
-        code.AppendLine(
-            "                _ => global::Microsoft.AspNetCore.Http.TypedResults.Problem(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)");
+        foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
+            code.AppendLine($"                {caseExpr},");
+        code.AppendLine($"                _ => {ErrorMapping.GetDefaultProblemFactory()}");
         code.AppendLine("            };");
         code.AppendLine("        }");
     }
@@ -1017,23 +999,11 @@ public sealed partial class ErrorOrEndpointGenerator
         };
     }
 
-    private static bool IsStringType(string typeFqn)
-    {
-        return typeFqn is "global::System.String" or "System.String" or "string";
-    }
-
     private static bool HasFormParams(in EndpointDescriptor ep)
     {
         return ep.HandlerParameters.AsImmutableArray().Any(static p =>
             p.Source is EndpointParameterSource.Form or EndpointParameterSource.FormFile
                 or EndpointParameterSource.FormFiles or EndpointParameterSource.FormCollection);
-    }
-
-    private static string ExtractTypeName(string fqn)
-    {
-        var i = fqn.LastIndexOf('.');
-        var n = i >= 0 ? fqn[(i + 1)..] : fqn;
-        return n.StartsWith("::") ? n[2..] : n;
     }
 
     private static ImmutableArray<EndpointDescriptor> SortEndpoints(ImmutableArray<EndpointDescriptor> endpoints)

@@ -45,7 +45,7 @@ internal static class DuplicateRouteDetector
                     Location.None, // Would need location info in EndpointDescriptor
                     ep.HttpMethod.ToUpperInvariant(),
                     ep.Pattern,
-                    ExtractTypeName(existing.HandlerContainingTypeFqn),
+                    TypeNameHelper.ExtractShortName(existing.HandlerContainingTypeFqn),
                     existing.HandlerMethodName));
             else
                 routeMap[key] = ep;
@@ -74,17 +74,5 @@ internal static class DuplicateRouteDetector
             normalized = normalized[..^1];
 
         return normalized;
-    }
-
-    private static string ExtractTypeName(string fqn)
-    {
-        var lastDot = fqn.LastIndexOf('.');
-        var name = lastDot >= 0 ? fqn[(lastDot + 1)..] : fqn;
-
-        // Handle global:: prefix
-        if (name.StartsWith("::"))
-            name = name[2..];
-
-        return name;
     }
 }

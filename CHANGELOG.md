@@ -2,6 +2,67 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.1] - 2026-01-12
+
+### Changed
+
+#### Generator Folder Restructure
+
+Organized 17 generator files into logical subdirectories:
+
+```
+Generators/
+├── Core/           (5 files) - Main generator partials
+├── Models/         (3 files) - Data structures
+├── TypeResolution/ (3 files) - Symbol/type computation
+├── Validation/     (2 files) - Route validation
+├── Helpers/        (3 files) - Utilities
+└── OpenApiTransformerGenerator.cs
+```
+
+#### Generator Codebase Consolidation
+
+Reduced generator file count from 21 to 17 files through strategic consolidation:
+
+| Deleted File | Merged Into | Rationale |
+|--------------|-------------|-----------|
+| `ErrorTypeNames.cs` | `ErrorMapping.cs` | SSOT: all error-to-HTTP logic in one place |
+| `StatusCodeTitles.cs` | `ErrorMapping.cs` | Only consumer was ErrorMapping |
+| `ParameterModels.cs` | `EndpointModels.cs` | Both are endpoint-related data structures |
+| `AspNetContext.cs` | *(deleted)* | Dead code - duplicated ErrorOrContext |
+
+#### ErrorMapping.cs Now Single Source of Truth
+
+```csharp
+// Before: scattered across 3 files
+ErrorTypeNames.Validation     // ErrorTypeNames.cs
+StatusCodeTitles.Get(400)     // StatusCodeTitles.cs
+ErrorMapping.Get(errorType)   // ErrorMapping.cs
+
+// After: consolidated in ErrorMapping.cs
+ErrorMapping.Validation           // Error type constants
+ErrorMapping.GetStatusTitle(400)  // RFC 9110 titles
+ErrorMapping.Get(errorType)       // HTTP mappings
+ErrorMapping.IsKnownErrorType(s)  // Validation
+ErrorMapping.AllErrorTypes        // Deterministic iteration
+```
+
+### Internal Changes
+
+- Added `#region` sections to `ErrorMapping.cs` for logical separation
+- Added `#region` sections to `EndpointModels.cs` for parameter/endpoint models
+- Updated all references from `ErrorTypeNames.X` to `ErrorMapping.X`
+- Updated `StatusCodeTitles.Get()` to `ErrorMapping.GetStatusTitle()`
+- Renamed `ErrorTypeNamesSyncTests.cs` to `ErrorMappingSyncTests.cs`
+- Removed unused `AspNetContext.cs` (all properties already in `ErrorOrContext.cs`)
+
+### Tests
+
+- All 49 tests passing
+- Sync tests updated to validate `ErrorMapping` constants against runtime `ErrorType` enum
+
+---
+
 ## [2.1.0] - 2026-01-10
 
 ### Added
