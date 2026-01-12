@@ -68,6 +68,15 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     [MemberNotNullWhen(false, nameof(_value))]
     public bool IsError => _errors is not null;
 
+    /// <summary>
+    ///     Gets a value indicating whether the state is success (no errors).
+    /// </summary>
+    [MemberNotNullWhen(false, nameof(_errors))]
+    [MemberNotNullWhen(false, nameof(Errors))]
+    [MemberNotNullWhen(true, nameof(Value))]
+    [MemberNotNullWhen(true, nameof(_value))]
+    public bool IsSuccess => _errors is null;
+
     /// <inheritdoc />
     IReadOnlyList<Error>? IErrorOr.Errors => IsError ? _errors : null;
 

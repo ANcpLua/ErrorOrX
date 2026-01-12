@@ -34,7 +34,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (bodyCount > 1 || (bodyCount > 0 ? 1 : 0) + (formCount > 0 ? 1 : 0) + (streamCount > 0 ? 1 : 0) > 1)
         {
             diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.MultipleBodySources, method.DeclaringSyntaxReferences[0].GetSyntax(), method.Name));
+                Descriptors.MultipleBodySources, method.Locations.FirstOrDefault() ?? Location.None, method.Name));
             return ParameterBindingResult.Invalid;
         }
 
@@ -100,6 +100,9 @@ public sealed partial class ErrorOrEndpointGenerator
         var isCancellationToken = IsCancellationTokenType(type, context);
         var isHttpContext = IsHttpContextType(type, context);
 
+        // Check if type requires BCL validation (has ValidationAttribute descendants or implements IValidatableObject)
+        var requiresValidation = context.RequiresValidation(type);
+
         return new ParameterMeta(
             parameter, parameter.Name, typeFqn, TryGetRoutePrimitiveKind(type, context),
             HasParameterAttribute(parameter, context.FromServices, WellKnownTypes.FromServicesAttribute),
@@ -113,7 +116,8 @@ public sealed partial class ErrorOrEndpointGenerator
             isCollection, itemType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), itemPrimitiveKind,
             hasFromForm, formName, isFormFile, isFormFileCollection, isFormCollection,
             isStream, isPipeReader,
-            DetectCustomBinding(type, context));
+            DetectCustomBinding(type, context),
+            requiresValidation);
     }
 
     private static ParameterBindingResult BuildEndpointParameters(
@@ -235,11 +239,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE011: [FromRoute] requires primitive or TryParse
         if (meta.RouteKind is null && !hasTryParse)
         {
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.InvalidFromRouteType,
-                method.DeclaringSyntaxReferences[0].GetSyntax(),
-                meta.Name,
-                meta.TypeFqn));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidFromRouteType, method, meta.Name, meta.TypeFqn));
             return ParameterClassificationResult.Error;
         }
 
@@ -260,11 +260,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE011: Route parameters must use supported primitive types or TryParse
         if (meta.RouteKind is null && !hasTryParse)
         {
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.InvalidFromRouteType,
-                method.DeclaringSyntaxReferences[0].GetSyntax(),
-                meta.Name,
-                meta.TypeFqn));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidFromRouteType, method, meta.Name, meta.TypeFqn));
             return ParameterClassificationResult.Error;
         }
 
@@ -293,11 +289,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 customBinding: meta.CustomBinding);
 
         // EOE012: [FromQuery] only supports primitives or collections of primitives
-        diagnostics.Add(DiagnosticInfo.Create(
-            Descriptors.InvalidFromQueryType,
-            method.DeclaringSyntaxReferences[0].GetSyntax(),
-            meta.Name,
-            meta.TypeFqn));
+        diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidFromQueryType, method, meta.Name, meta.TypeFqn));
         return ParameterClassificationResult.Error;
     }
 
@@ -327,11 +319,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 customBinding: meta.CustomBinding);
 
         // EOE016: [FromHeader] requires string, primitive with TryParse, or collection thereof
-        diagnostics.Add(DiagnosticInfo.Create(
-            Descriptors.InvalidFromHeaderType,
-            method.DeclaringSyntaxReferences[0].GetSyntax(),
-            meta.Name,
-            meta.TypeFqn));
+        diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidFromHeaderType, method, meta.Name, meta.TypeFqn));
         return ParameterClassificationResult.Error;
     }
 
@@ -400,7 +388,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 childMeta.IsNonNullableValueType,
                 childMeta.IsCollection,
                 childMeta.CollectionItemTypeFqn,
-                default));
+                default,
+                CustomBindingMethod.None,
+                childMeta.RequiresValidation));
         }
 
         return new ParameterClassificationResult(false, new EndpointParameter(
@@ -412,7 +402,9 @@ public sealed partial class ErrorOrEndpointGenerator
             meta.IsNonNullableValueType,
             false,
             null,
-            new EquatableArray<EndpointParameter>(children.ToImmutable())));
+            new EquatableArray<EndpointParameter>(children.ToImmutable()),
+            CustomBindingMethod.None,
+            meta.RequiresValidation));
     }
 
     /// <summary>
@@ -428,11 +420,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE013: [AsParameters] can only be used on class or struct types
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
         {
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.InvalidAsParametersType,
-                method.DeclaringSyntaxReferences[0].GetSyntax(),
-                meta.Name,
-                meta.TypeFqn));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidAsParametersType, method, meta.Name, meta.TypeFqn));
             return ParameterClassificationResult.Error;
         }
 
@@ -444,10 +432,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE014: [AsParameters] type must have an accessible constructor
         if (constructor is null)
         {
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.AsParametersNoConstructor,
-                method.DeclaringSyntaxReferences[0].GetSyntax(),
-                typeSymbol.ToDisplayString()));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.AsParametersNoConstructor, method, typeSymbol.ToDisplayString()));
             return ParameterClassificationResult.Error;
         }
 
@@ -472,7 +457,9 @@ public sealed partial class ErrorOrEndpointGenerator
             meta.IsNonNullableValueType,
             false,
             null,
-            new EquatableArray<EndpointParameter>(children.ToImmutable())));
+            new EquatableArray<EndpointParameter>(children.ToImmutable()),
+            CustomBindingMethod.None,
+            meta.RequiresValidation));
     }
 
     private static ParameterClassificationResult ParameterSuccess(
@@ -495,7 +482,8 @@ public sealed partial class ErrorOrEndpointGenerator
             meta.IsCollection,
             meta.CollectionItemTypeFqn,
             default,
-            customBinding));
+            customBinding,
+            meta.RequiresValidation));
     }
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)

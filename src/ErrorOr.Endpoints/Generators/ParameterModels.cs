@@ -13,7 +13,8 @@ internal readonly record struct EndpointParameter(
     bool IsCollection,
     string? CollectionItemTypeFqn,
     EquatableArray<EndpointParameter> Children,
-    CustomBindingMethod CustomBinding = CustomBindingMethod.None);
+    CustomBindingMethod CustomBinding = CustomBindingMethod.None,
+    bool RequiresValidation = false);
 
 internal readonly record struct ParameterMeta(
     IParameterSymbol Symbol,
@@ -45,4 +46,5 @@ internal readonly record struct ParameterMeta(
     bool IsFormCollection,
     bool IsStream,
     bool IsPipeReader,
-    CustomBindingMethod CustomBinding);
+    CustomBindingMethod CustomBinding,
+    bool RequiresValidation = false);

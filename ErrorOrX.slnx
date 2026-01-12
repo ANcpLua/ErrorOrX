@@ -1,14 +1,11 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/ErrorOr.Core/ErrorOr.Core.csproj" />
-    <Project Path="src/ErrorOr.Endpoints/ErrorOr.Endpoints.csproj" />
-  </Folder>
-  <Folder Name="/samples/">
-    <Project Path="samples/ErrorOr.Endpoints.Sample/ErrorOr.Endpoints.Sample.csproj" />
-    <Project Path="samples/ProblemDetailsAutoValidation/ProblemDetailsAutoValidation.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/ErrorOr.Core.Tests/ErrorOr.Core.Tests.csproj" />
-    <Project Path="tests/ErrorOr.Endpoints.Tests/ErrorOr.Endpoints.Tests.csproj" />
-  </Folder>
+    <Folder Name="/src/">
+        <Project Path="src/ErrorOr/ErrorOr.csproj"/>
+    </Folder>
+    <Folder Name="/samples/">
+        <Project Path="samples/ErrorOr.Endpoints.Sample/ErrorOr.Endpoints.Sample.csproj"/>
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/ErrorOr.Tests/ErrorOr.Tests.csproj"/>
+    </Folder>
 </Solution>

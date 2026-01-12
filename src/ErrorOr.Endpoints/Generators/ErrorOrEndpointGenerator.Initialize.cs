@@ -134,11 +134,11 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
             return ImmutableArray<DiagnosticFlow<EndpointDescriptor>>.Empty;
 
-        var syntax = method.DeclaringSyntaxReferences[0].GetSyntax();
+        var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // 1. Validate shape using SemanticGuard + DiagnosticFlow (The Railway Pattern)
         var methodAnalysisFlow = SemanticGuard.For(method)
-            .MustBeStatic(DiagnosticInfo.Create(Descriptors.NonStaticHandler, syntax, method.Name))
+            .MustBeStatic(DiagnosticInfo.Create(Descriptors.NonStaticHandler, location, method.Name))
             .ToFlow()
             .Then(m =>
             {
@@ -146,7 +146,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))
                     : DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
-                        DiagnosticInfo.Create(Descriptors.InvalidReturnType, syntax, m.Name));
+                        DiagnosticInfo.Create(Descriptors.InvalidReturnType, location, m.Name));
             })
             .Then(pair =>
             {

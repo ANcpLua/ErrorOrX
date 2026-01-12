@@ -324,7 +324,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var methodDisplayName = $"{containingType?.Name ?? "?"}.{methodSymbol.Name}";
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.UndocumentedInterfaceCall,
-            node,
+            node.GetLocation(),
             endpointMethodName,
             methodDisplayName));
 
@@ -430,7 +430,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // This fails loud instead of silently ignoring it or falling back to a default
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.UnknownErrorFactory,
-            node,
+            node.GetLocation(),
             factoryName));
 
         return true;

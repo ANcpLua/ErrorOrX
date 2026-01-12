@@ -686,6 +686,12 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitJsonConfigExtension(StringBuilder code)
     {
+        code.AppendLine("        /// <summary>");
+        code.AppendLine("        /// Configures JSON serialization for ErrorOr endpoints using the specified JsonSerializerContext.");
+        code.AppendLine("        /// </summary>");
+        code.AppendLine("        /// <typeparam name=\"TContext\">The JsonSerializerContext type containing type metadata.</typeparam>");
+        code.AppendLine("        /// <param name=\"services\">The service collection to configure.</param>");
+        code.AppendLine("        /// <returns>The service collection for chaining.</returns>");
         code.AppendLine(
             "        public static IServiceCollection AddErrorOrEndpointJson<TContext>(this IServiceCollection services)");
         code.AppendLine("            where TContext : System.Text.Json.Serialization.JsonSerializerContext, new()");
