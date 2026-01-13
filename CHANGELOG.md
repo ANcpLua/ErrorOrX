@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.4.0] - 2026-01-13
+
+### Added
+
+- **New `Or*` extension methods** for fluent nullable-to-ErrorOr conversion:
+  - `.OrNotFound(description)` - Returns NotFound error if null
+  - `.OrValidation(description)` - Returns Validation error if null
+  - `.OrUnauthorized(description)` - Returns Unauthorized error if null
+  - `.OrForbidden(description)` - Returns Forbidden error if null
+  - `.OrConflict(description)` - Returns Conflict error if null
+  - `.OrFailure(description)` - Returns Failure error if null
+
+  Error codes are auto-generated from the type name (e.g., `Todo.NotFound`).
+
+  ```csharp
+  // Before (verbose)
+  return _todos.Find(t => t.Id == id) is { } todo
+      ? todo
+      : Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+
+  // After (clean one-liner)
+  return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
+  ```
+
+- **`ToErrorOr` overload for nullable types** with explicit error parameter
+
+---
+
 ## [2.3.1] - 2026-01-13
 
 ### Documentation

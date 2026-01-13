@@ -17,9 +17,7 @@ public sealed class TodoService : ITodoService
     public async Task<ErrorOr<Todo>> GetByIdAsync(Guid id, CancellationToken ct)
     {
         await Task.Delay(10, ct); // Simulate I/O
-        return _todos.Find(t => t.Id == id) is { } todo
-            ? todo
-            : Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+        return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
     }
 
     public async Task<ErrorOr<Todo>> CreateAsync(CreateTodoRequest request, CancellationToken ct)
