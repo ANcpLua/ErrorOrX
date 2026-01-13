@@ -2,6 +2,74 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.3.0] - 2026-01-13
+
+### Breaking Changes
+
+#### Smart Parameter Binding Inference
+
+The generator now infers parameter binding based on HTTP method and type:
+
+```csharp
+// POST/PUT/PATCH with complex type → automatically bound from body
+[Post("/todos")]
+public static ErrorOr<Todo> Create(CreateTodoRequest req)  // No [FromBody] needed!
+
+// Interface types → automatically resolved from DI
+[Get("/todos")]
+public static ErrorOr<List<Todo>> GetAll(ITodoService svc)  // No [FromServices] needed!
+```
+
+**Breaking:** GET/DELETE with complex types now require explicit binding:
+
+```csharp
+// Before v2.3.0: Would silently try DI injection
+// After v2.3.0: Error EOE025
+
+[Get("/users")]
+public static ErrorOr<List<User>> Search(SearchFilter filter)  // ❌ EOE025
+
+// Fix with explicit attribute:
+[Get("/users")]
+public static ErrorOr<List<User>> Search([FromQuery] SearchFilter filter)  // ✅
+// Or use [AsParameters] for expanded binding
+```
+
+**Opt-out:** To restore pre-2.3.0 behavior (all unclassified parameters from DI):
+
+```xml
+<PropertyGroup>
+  <ErrorOrLegacyParameterBinding>true</ErrorOrLegacyParameterBinding>
+</PropertyGroup>
+```
+
+### Added
+
+- **EOE025 Diagnostic**: Error when GET/DELETE endpoints have complex type parameters without explicit binding attribute
+- **Service Type Detection**: Interface types and common DI patterns (`*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`) are automatically detected as services
+- **Complex Type Detection**: DTOs and request objects are distinguished from primitives and services
+
+### Fixed
+
+- **Incremental Caching**: Generator now properly caches outputs when source is unchanged. Fixed by removing `CompilationProvider` usage that cached `CSharpCompilation` references.
+
+### Internal Changes
+
+- Replaced dynamic max arity detection with hardcoded `const int maxArity = 6` to avoid `CompilationProvider`
+- `ErrorOrContext` is now created lazily from `SemanticModel.Compilation` instead of early combination
+- Added `GeneratorCachingTests` to verify incremental caching behavior
+- Added XML documentation to core generator types
+
+### Documentation
+
+- Streamlined README to focus on quick start
+- Created `docs/` folder with detailed documentation:
+  - `docs/api.md` - Full API reference
+  - `docs/parameter-binding.md` - Parameter binding details
+  - `docs/diagnostics.md` - Analyzer warnings and errors
+
+---
+
 ## [2.2.0] - 2026-01-12
 
 ### Breaking Changes
