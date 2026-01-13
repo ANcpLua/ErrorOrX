@@ -115,9 +115,6 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 }
 
-internal readonly record struct JsonContextInfo(
-    EquatableArray<string> SerializableTypes);
-
 internal static class JsonContextProvider
 {
     public static IncrementalValuesProvider<JsonContextInfo> Create(IncrementalGeneratorInitializationContext context)
@@ -138,27 +135,55 @@ internal static class JsonContextProvider
             return ImmutableArray<JsonContextInfo>.Empty;
 
         var serializableTypes = new List<string>();
+        var hasCamelCasePolicy = false;
 
         foreach (var attr in classSymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSerializableAttribute)
-                continue;
+            var attrName = attr.AttributeClass?.ToDisplayString();
 
-            if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg } _, ..])
+            if (attrName == WellKnownTypes.JsonSerializableAttribute)
             {
-                var typeFqn = "global::" + typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                    .Replace("global::", "");
-                serializableTypes.Add(typeFqn);
+                if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg } _, ..])
+                {
+                    var typeFqn = "global::" + typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        .Replace("global::", "");
+                    serializableTypes.Add(typeFqn);
+                }
+            }
+            else if (attrName == WellKnownTypes.JsonSourceGenerationOptionsAttribute)
+            {
+                // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
+                foreach (var namedArg in attr.NamedArguments)
+                {
+                    if (namedArg.Key == "PropertyNamingPolicy" &&
+                        namedArg.Value.Value is int policyValue &&
+                        policyValue == 1) // CamelCase = 1
+                    {
+                        hasCamelCasePolicy = true;
+                        break;
+                    }
+                }
             }
         }
 
         if (serializableTypes.Count is 0)
             return ImmutableArray<JsonContextInfo>.Empty;
 
+        var className = classSymbol.Name;
+        var namespaceName = classSymbol.ContainingNamespace?.IsGlobalNamespace == true
+            ? null
+            : classSymbol.ContainingNamespace?.ToDisplayString();
+
         return ImmutableArray.Create(new JsonContextInfo(
-            new EquatableArray<string>([.. serializableTypes])));
+            className,
+            namespaceName,
+            new EquatableArray<string>([.. serializableTypes]),
+            hasCamelCasePolicy));
     }
 
+    /// <summary>
+    ///     Checks if a type inherits from JsonSerializerContext by walking the base type chain.
+    /// </summary>
     private static bool InheritsFromJsonSerializerContext(ITypeSymbol symbol)
     {
         var current = symbol.BaseType;

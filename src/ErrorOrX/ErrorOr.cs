@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace ErrorOr;
 
 /// <summary>
@@ -15,16 +13,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     Prevents a default <see cref="ErrorOr" /> struct from being created.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when this method is called.</exception>
-    public ErrorOr()
-    {
+    public ErrorOr() =>
         throw new InvalidOperationException(
             "Default construction of ErrorOr<TValue> is invalid. Please use provided factory methods to instantiate.");
-    }
 
-    private ErrorOr(in Error error)
-    {
-        _errors = [error];
-    }
+    private ErrorOr(in Error error) => _errors = [error];
 
     private ErrorOr(List<Error> errors)
     {
@@ -47,15 +40,6 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     }
 
     /// <summary>
-    ///     Gets a value indicating whether the state is error.
-    /// </summary>
-    [MemberNotNullWhen(true, nameof(_errors))]
-    [MemberNotNullWhen(true, nameof(Errors))]
-    [MemberNotNullWhen(false, nameof(Value))]
-    [MemberNotNullWhen(false, nameof(_value))]
-    public bool IsError => _errors is not null;
-
-    /// <summary>
     ///     Gets a value indicating whether the state is success (no errors).
     /// </summary>
     [MemberNotNullWhen(false, nameof(_errors))]
@@ -63,9 +47,6 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     [MemberNotNullWhen(true, nameof(Value))]
     [MemberNotNullWhen(true, nameof(_value))]
     public bool IsSuccess => _errors is null;
-
-    /// <inheritdoc />
-    IReadOnlyList<Error>? IErrorOr.Errors => IsError ? _errors : null;
 
     /// <summary>
     ///     Gets the list of errors.
@@ -80,6 +61,18 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     Gets the list of errors. If the state is not error, the list will be empty.
     /// </summary>
     public IReadOnlyList<Error> ErrorsOrEmptyList => IsError ? _errors : EmptyErrors.Instance;
+
+    /// <summary>
+    ///     Gets a value indicating whether the state is error.
+    /// </summary>
+    [MemberNotNullWhen(true, nameof(_errors))]
+    [MemberNotNullWhen(true, nameof(Errors))]
+    [MemberNotNullWhen(false, nameof(Value))]
+    [MemberNotNullWhen(false, nameof(_value))]
+    public bool IsError => _errors is not null;
+
+    /// <inheritdoc />
+    IReadOnlyList<Error>? IErrorOr.Errors => IsError ? _errors : null;
 
     /// <summary>
     ///     Gets the value.
@@ -120,18 +113,13 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <summary>
     ///     Creates an <see cref="ErrorOr{TValue}" /> from a list of errors.
     /// </summary>
-    public static ErrorOr<TValue> From(List<Error> errors)
-    {
-        return errors;
-    }
+    public static ErrorOr<TValue> From(List<Error> errors) => errors;
 
     /// <summary>
     ///     Returns a string representation of the ErrorOr instance.
     /// </summary>
-    public override string ToString()
-    {
-        return IsError
+    public override string ToString() =>
+        IsError
             ? $"ErrorOr {{ IsError = True, FirstError = {FirstError} }}"
             : $"ErrorOr {{ IsError = False, Value = {_value} }}";
-    }
 }

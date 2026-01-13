@@ -21,18 +21,11 @@ internal sealed class ErrorOrContext
         FromHeaderAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromHeaderAttribute);
         FromFormAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromFormAttribute);
 
-        // ErrorOr.Endpoints generated attributes
-        ErrorOrEndpointAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorOrEndpointAttribute);
-        GetAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.GetAttribute);
-        PostAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.PostAttribute);
-        PutAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.PutAttribute);
-        DeleteAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.DeleteAttribute);
-        PatchAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.PatchAttribute);
+        // ErrorOr types
         ProducesErrorAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ProducesErrorAttribute);
         AcceptedResponseAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AcceptedResponseAttribute);
         ReturnsErrorAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ReturnsErrorAttribute);
         ErrorOrOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorOrT)?.ConstructedFrom;
-        ErrorType = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorType);
         Error = compilation.GetBestTypeByMetadataName(WellKnownTypes.Error);
 
         // Additional ASP.NET types
@@ -49,7 +42,6 @@ internal sealed class ErrorOrContext
 
         // System types
         CancellationToken = compilation.GetBestTypeByMetadataName(WellKnownTypes.CancellationToken);
-        NullableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.NullableT)?.ConstructedFrom;
 
         // Result markers
         SuccessMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Success);
@@ -85,11 +77,6 @@ internal sealed class ErrorOrContext
         IFormatProvider = compilation.GetBestTypeByMetadataName(WellKnownTypes.IFormatProvider);
         Stream = compilation.GetBestTypeByMetadataName(WellKnownTypes.Stream);
         PipeReader = compilation.GetBestTypeByMetadataName(WellKnownTypes.PipeReader);
-
-        TypedResultsProblem = Pick(TypedResults, "Problem", 1);
-        TypedResultsValidationProblem = Pick(TypedResults, "ValidationProblem", 1);
-        TypedResultsUnauthorized = Pick(TypedResults, "Unauthorized", 0);
-        TypedResultsForbid = Pick(TypedResults, "Forbid", 0);
 
         // Middleware attributes (BCL)
         AuthorizeAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AuthorizeAttribute);
@@ -134,7 +121,6 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? HashSetOfT { get; }
     public INamedTypeSymbol? SseItemOfT { get; }
     public INamedTypeSymbol? ErrorOrOfT { get; }
-    public INamedTypeSymbol? ErrorType { get; }
     public INamedTypeSymbol? Error { get; }
 
     // Primitive well-known types
@@ -150,21 +136,9 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? IFormatProvider { get; }
     public INamedTypeSymbol? Stream { get; }
     public INamedTypeSymbol? PipeReader { get; }
-    public INamedTypeSymbol? NullableOfT { get; }
     public INamedTypeSymbol? TypedResults { get; }
 
-    public IMethodSymbol? TypedResultsProblem { get; }
-    public IMethodSymbol? TypedResultsValidationProblem { get; }
-    public IMethodSymbol? TypedResultsUnauthorized { get; }
-    public IMethodSymbol? TypedResultsForbid { get; }
-
-    // ErrorOr-specific types (generated attributes)
-    public INamedTypeSymbol? ErrorOrEndpointAttribute { get; }
-    public INamedTypeSymbol? GetAttribute { get; }
-    public INamedTypeSymbol? PostAttribute { get; }
-    public INamedTypeSymbol? PutAttribute { get; }
-    public INamedTypeSymbol? DeleteAttribute { get; }
-    public INamedTypeSymbol? PatchAttribute { get; }
+    // ErrorOr types
     public INamedTypeSymbol? ProducesErrorAttribute { get; }
     public INamedTypeSymbol? AcceptedResponseAttribute { get; }
     public INamedTypeSymbol? ReturnsErrorAttribute { get; }
@@ -205,7 +179,9 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? FromKeyedServices => FromKeyedServicesAttribute;
     public INamedTypeSymbol? AsParameters => AsParametersAttribute;
 
-    // Helper methods
+    #region Helper Methods
+
+    /// <summary>Checks if the type implements IFormFile.</summary>
     public bool IsFormFile(ITypeSymbol? type)
     {
         if (type is null)
@@ -218,6 +194,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
     }
 
+    /// <summary>Checks if the type is IFormFileCollection or IReadOnlyList&lt;IFormFile&gt;.</summary>
     public bool IsFormFileCollection(ITypeSymbol? type)
     {
         if (type is null)
@@ -237,6 +214,7 @@ internal sealed class ErrorOrContext
         return false;
     }
 
+    /// <summary>Checks if the type implements IFormCollection.</summary>
     public bool IsFormCollection(ITypeSymbol? type)
     {
         if (type is null)
@@ -245,6 +223,7 @@ internal sealed class ErrorOrContext
         return FormCollection is not null && type.IsOrImplements(FormCollection);
     }
 
+    /// <summary>Checks if the type is or inherits from HttpContext.</summary>
     public bool IsHttpContext(ITypeSymbol? type)
     {
         if (type is null)
@@ -257,6 +236,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
     }
 
+    /// <summary>Checks if the type is or inherits from System.IO.Stream.</summary>
     public bool IsStream(ITypeSymbol? type)
     {
         if (type is null)
@@ -270,6 +250,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "System.IO";
     }
 
+    /// <summary>Checks if the type is or inherits from System.IO.Pipelines.PipeReader.</summary>
     public bool IsPipeReader(ITypeSymbol? type)
     {
         if (type is null)
@@ -283,6 +264,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
     }
 
+    /// <summary>Checks if the type is System.Threading.CancellationToken.</summary>
     public bool IsCancellationToken(ITypeSymbol? type)
     {
         if (type is null)
@@ -296,6 +278,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "System.Threading";
     }
 
+    /// <summary>Checks if the type is System.Reflection.ParameterInfo.</summary>
     public bool IsParameterInfo(ITypeSymbol? type)
     {
         if (type is null)
@@ -309,18 +292,7 @@ internal sealed class ErrorOrContext
                type.ContainingNamespace.ToDisplayString() == "System.Reflection";
     }
 
-    public bool HasFromKeyedServices(IParameterSymbol parameter)
-    {
-        return FromKeyedServicesAttribute is not null && parameter.GetAttributes().Any(a =>
-            SymbolEqualityComparer.Default.Equals(a.AttributeClass, FromKeyedServicesAttribute));
-    }
-
-    public bool HasAsParameters(IParameterSymbol parameter)
-    {
-        return AsParametersAttribute is not null && parameter.GetAttributes().Any(a =>
-            SymbolEqualityComparer.Default.Equals(a.AttributeClass, AsParametersAttribute));
-    }
-
+    /// <summary>Unwraps Nullable&lt;T&gt; to get the underlying type.</summary>
     public static ITypeSymbol UnwrapNullable(ITypeSymbol type)
     {
         return type is INamedTypeSymbol
@@ -331,12 +303,7 @@ internal sealed class ErrorOrContext
             : type;
     }
 
-    private static IMethodSymbol? Pick(INamespaceOrTypeSymbol? type, string name, int paramCount)
-    {
-        return type?
-            .GetMembers(name).OfType<IMethodSymbol>()
-            .FirstOrDefault(m => m.IsStatic && m.Parameters.Length == paramCount);
-    }
+    #endregion
 
     /// <summary>
     ///     Determines if a type requires BCL validation.
@@ -369,11 +336,9 @@ internal sealed class ErrorOrContext
                     continue;
 
                 foreach (var attribute in property.GetAttributes())
-                {
                     if (attribute.AttributeClass is not null &&
-                        InheritsFrom(attribute.AttributeClass, ValidationAttribute))
+                        attribute.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
                         return true;
-                }
             }
 
             return false;
@@ -383,18 +348,5 @@ internal sealed class ErrorOrContext
             // Gracefully degrade if validation detection fails
             return false;
         }
-    }
-
-    private static bool InheritsFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
-    {
-        var current = type;
-        while (current is not null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType))
-                return true;
-            current = current.BaseType;
-        }
-
-        return false;
     }
 }

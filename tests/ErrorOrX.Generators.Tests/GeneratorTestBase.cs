@@ -1,85 +1,66 @@
-using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
+using ANcpLua.Roslyn.Utilities.Testing;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
-using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
+using TypedResults = Microsoft.AspNetCore.Http.TypedResults;
 
 namespace ErrorOrX.Generators.Tests;
 
 public abstract class GeneratorTestBase
 {
-    static GeneratorTestBase()
-    {
-        // Force load some assemblies to ensure they are in the AppDomain
-        var types = new[]
-        {
-            typeof(object), typeof(JsonSerializer), typeof(HttpContext), typeof(Microsoft.AspNetCore.Http.TypedResults),
-            typeof(IQueryCollection), typeof(JsonOptions), typeof(IFeatureCollection), typeof(FromBodyAttribute),
-            typeof(IServiceCollection), typeof(OpenApiServiceCollectionExtensions),
-            typeof(RoutingEndpointConventionBuilderExtensions), typeof(OpenApiOptions), typeof(Error)
-        };
+    protected static readonly Type[] RequiredTypes =
+    [
+        typeof(HttpContext),
+        typeof(TypedResults),
+        typeof(FromBodyAttribute),
+        typeof(IServiceCollection),
+        typeof(OpenApiServiceCollectionExtensions),
+        typeof(Error)
+    ];
 
-        foreach (var type in types)
+    protected static async Task VerifyGeneratorAsync(string source)
+    {
+        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
+        using var result = await Test<ErrorOrEndpointGenerator>.Run(source);
+
+        await Verify(new
         {
-            _ = type.Assembly;
-        }
+            GeneratedSources = result.Files
+                .Select(static f => new { f.HintName, Source = f.Content })
+                .OrderBy(static s => s.HintName),
+            Diagnostics = result.Diagnostics
+                .Select(static d => new { d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage() })
+                .OrderBy(static d => d.Id)
+        }).UseDirectory("Snapshots");
     }
 
-    protected static Compilation CreateCompilation(string source) =>
-        CSharpCompilation.Create(
-            "test",
-            new[] { CSharpSyntaxTree.ParseText(source) },
-            GetMetadataReferences(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-    protected static IEnumerable<MetadataReference> GetMetadataReferences() =>
-        // Get all loaded assemblies to ensure we have ASP.NET Core and ErrorOr.Core
-        AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location));
-
-    protected static async Task VerifyGeneratorAsync(Compilation compilation, params IIncrementalGenerator[] generators)
+    protected static async Task VerifyGeneratorAsync(string source, params IIncrementalGenerator[] generators)
     {
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generators);
-        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
+        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
+
+        var engine = new GeneratorTestEngine<ErrorOrEndpointGenerator>();
+        var compilation = await engine.CreateCompilationAsync(source);
+
+        var parseOptions = new CSharpParseOptions(TestConfiguration.LanguageVersion);
+        var sourceGenerators = generators.Select(static g => g.AsSourceGenerator());
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(sourceGenerators, parseOptions: parseOptions);
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
 
         var runResult = driver.GetRunResult();
 
-        // Extract just the generated sources for verification (avoids ImmutableArray serialization issues)
-        var generatedSources = runResult.Results
-            .SelectMany(r => r.GeneratedSources)
-            .Select(s => new
-            {
-                HintName = s.HintName,
-                Source = s.SourceText.ToString()
-            })
-            .OrderBy(s => s.HintName)
-            .ToArray();
-
-        // Also include any diagnostics
-        var allDiagnostics = runResult.Results
-            .SelectMany(r => r.Diagnostics)
-            .Select(d => new
-            {
-                Id = d.Id,
-                Severity = d.Severity.ToString(),
-                Message = d.GetMessage()
-            })
-            .OrderBy(d => d.Id)
-            .ToArray();
-
-        var result = new
+        await Verify(new
         {
-            GeneratedSources = generatedSources,
-            Diagnostics = allDiagnostics
-        };
-
-        await Verify(result)
-            .UseDirectory("Snapshots");
+            GeneratedSources = runResult.Results
+                .SelectMany(static r => r.GeneratedSources)
+                .Select(static s => new { s.HintName, Source = s.SourceText.ToString() })
+                .OrderBy(static s => s.HintName),
+            Diagnostics = runResult.Results
+                .SelectMany(static r => r.Diagnostics)
+                .Select(static d => new { d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage() })
+                .OrderBy(static d => d.Id)
+        }).UseDirectory("Snapshots");
     }
 }

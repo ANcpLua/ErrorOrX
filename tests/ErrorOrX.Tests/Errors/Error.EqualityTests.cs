@@ -1,4 +1,3 @@
-
 namespace ErrorOrX.Tests.Errors;
 
 public sealed class ErrorEqualityTests

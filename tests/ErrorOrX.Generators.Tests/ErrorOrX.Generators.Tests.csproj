@@ -4,7 +4,7 @@
         <OutputType>Exe</OutputType>
         <RootNamespace>ErrorOrX.Generators.Tests</RootNamespace>
         <!-- Suppress code analysis warnings in test code -->
-        <NoWarn>$(NoWarn);CA1820;CA2201;CA1826;CA1859;CA1812;CA1852;NU1603</NoWarn>
+        <NoWarn>$(NoWarn);CA1820;CA2201;CA1826;CA1859;CA1812;CA1852;NU1603;IDE1006</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="xunit.v3.mtp-v2"/>
@@ -15,6 +15,7 @@
         <PackageReference Include="Verify.SourceGenerators"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
         <PackageReference Include="ANcpLua.Roslyn.Utilities" GeneratePathProperty="true" PrivateAssets="all"/>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities.Testing"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     </ItemGroup>
     <ItemGroup>

@@ -5,23 +5,22 @@ namespace ErrorOrX.Generators.Tests;
 public class ErrorOrEndpointGeneratorTests : GeneratorTestBase
 {
     [Fact]
-    public async Task Generates_Simple_Get_Endpoint()
+    public Task Generates_Simple_Get_Endpoint()
     {
-        var source = """
-                     using ErrorOr.Core.ErrorOr;
-                     using ErrorOr.Endpoints;
+        const string Source = """
+                              using ErrorOr.Core.ErrorOr;
+                              using ErrorOr.Endpoints;
 
-                     namespace MyNamespace;
+                              namespace MyNamespace;
 
-                     public static class MyEndpoints
-                     {
-                         [Get("/test/{id}")]
-                         public static ErrorOr<string> GetUser(int id) => "user_" + id;
-                     }
-                     """;
-        var compilation = CreateCompilation(source);
+                              public static class MyEndpoints
+                              {
+                                  [Get("/test/{id}")]
+                                  public static ErrorOr<string> GetUser(int id) => "user_" + id;
+                              }
+                              """;
 
-        await VerifyGeneratorAsync(compilation, new ErrorOrEndpointGenerator(), new OpenApiTransformerGenerator());
+        return VerifyGeneratorAsync(Source, new ErrorOrEndpointGenerator(), new OpenApiTransformerGenerator());
     }
 
     [Fact]
@@ -47,7 +46,8 @@ public class ErrorOrEndpointGeneratorTests : GeneratorTestBase
 
         status.Should().Be(500, "ErrorType.Failure must map to 500 per RFC 9110 §15.6.1");
         typeFqn.Should().Contain("InternalServerError", "ErrorType.Failure must use InternalServerError result type");
-        typeFqn.Should().NotContain("UnprocessableEntity", "422 is for semantic validation errors, not server failures");
+        typeFqn.Should().NotContain("UnprocessableEntity",
+            "422 is for semantic validation errors, not server failures");
     }
 
     [Fact]
@@ -153,7 +153,8 @@ public class ErrorOrEndpointGeneratorTests : GeneratorTestBase
         myUpdatedInfo.HasBody.Should().BeTrue();
     }
 
-    private static SuccessInfo InvokeSuccessInfo(MethodInfo method, string typeFqn, object successKind, string httpMethod)
+    private static SuccessInfo InvokeSuccessInfo(MethodBase method, string typeFqn, object successKind,
+        string httpMethod)
     {
         var info = method.Invoke(null, [typeFqn, successKind, httpMethod, false])!;
         return new SuccessInfo(

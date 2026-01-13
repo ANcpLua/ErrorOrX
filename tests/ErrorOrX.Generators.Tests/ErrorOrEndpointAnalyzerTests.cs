@@ -1,9 +1,9 @@
-
 namespace ErrorOrX.Generators.Tests;
 
 public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnalyzer>
 {
     private const string AttributesSource = """
+
                                             namespace ErrorOr.Endpoints
                                             {
                                                 [System.AttributeUsage(System.AttributeTargets.Method)]
@@ -19,33 +19,33 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
     [Fact]
     public async Task NonStaticHandler_ReportsDiagnostic()
     {
-        var source = """
-                     using ErrorOr.Core.ErrorOr;
-                     using ErrorOr.Endpoints;
+        const string Source = """
+                              using ErrorOr.Core.ErrorOr;
+                              using ErrorOr.Endpoints;
 
-                     public class MyEndpoint
-                     {
-                         [Get("/test")]
-                         public ErrorOr<string> {|EOE002:Get|}() => default;
-                     }
-                     """ + AttributesSource;
+                              public class MyEndpoint
+                              {
+                                  [Get("/test")]
+                                  public ErrorOr<string> {|EOE002:Get|}() => default;
+                              }
+                              """ + AttributesSource;
 
-        await VerifyAnalyzerAsync(source);
+        await VerifyAnalyzerAsync(Source);
     }
 
     [Fact]
     public async Task InvalidReturnType_ReportsDiagnostic()
     {
-        var source = """
-                     using ErrorOr.Endpoints;
+        const string Source = """
+                              using ErrorOr.Endpoints;
 
-                     public class MyEndpoint
-                     {
-                         [Get("/test")]
-                         public static string {|EOE001:Get|}() => "ok";
-                     }
-                     """ + AttributesSource;
+                              public class MyEndpoint
+                              {
+                                  [Get("/test")]
+                                  public static string {|EOE001:Get|}() => "ok";
+                              }
+                              """ + AttributesSource;
 
-        await VerifyAnalyzerAsync(source);
+        await VerifyAnalyzerAsync(Source);
     }
 }

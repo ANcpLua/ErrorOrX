@@ -181,7 +181,8 @@ public sealed partial class ErrorOrEndpointGenerator
             return (default, default);
 
         var methodName = method.Name;
-        var (errorTypeNames, customErrors) = CollectErrorTypes(ctx.SemanticModel, body, context, diagnostics, methodName,
+        var (errorTypeNames, customErrors) = CollectErrorTypes(ctx.SemanticModel, body, context, diagnostics,
+            methodName,
             hasExplicitProducesError);
         return (ToSortedErrorArray(errorTypeNames), new EquatableArray<CustomErrorInfo>([.. customErrors]));
     }
@@ -402,11 +403,11 @@ public sealed partial class ErrorOrEndpointGenerator
 
             switch (args[0].Value)
             {
-                case int statusCode when args[1].Value is string customErrorCode:
+                case int when args[1].Value is string customErrorCode:
                 {
                     // Custom error with status code
                     if (seenCustomCodes.Add(customErrorCode))
-                        customErrors.Add(new CustomErrorInfo(statusCode, customErrorCode));
+                        customErrors.Add(new CustomErrorInfo(customErrorCode));
 
                     foundAny = true;
                     break;
@@ -430,17 +431,20 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Maps runtime ErrorType enum integer value to its name.
     ///     The enum values are: Failure=0, Unexpected=1, Validation=2, Conflict=3, NotFound=4, Unauthorized=5, Forbidden=6
     /// </summary>
-    private static string? MapEnumValueToName(int enumValue) => enumValue switch
+    private static string? MapEnumValueToName(int enumValue)
     {
-        0 => ErrorMapping.Failure,
-        1 => ErrorMapping.Unexpected,
-        2 => ErrorMapping.Validation,
-        3 => ErrorMapping.Conflict,
-        4 => ErrorMapping.NotFound,
-        5 => ErrorMapping.Unauthorized,
-        6 => ErrorMapping.Forbidden,
-        _ => null
-    };
+        return enumValue switch
+        {
+            0 => ErrorMapping.Failure,
+            1 => ErrorMapping.Unexpected,
+            2 => ErrorMapping.Validation,
+            3 => ErrorMapping.Conflict,
+            4 => ErrorMapping.NotFound,
+            5 => ErrorMapping.Unauthorized,
+            6 => ErrorMapping.Forbidden,
+            _ => null
+        };
+    }
 
     private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
     {
@@ -533,19 +537,10 @@ public sealed partial class ErrorOrEndpointGenerator
         InvocationExpressionSyntax invocation)
     {
         // Error.Custom(int type, string code, string description, Dictionary<string, object>? metadata = null)
-        // The 'type' parameter is the custom error type (numeric), and 'code' is what we want
+        // The 'code' parameter (second arg) is what we want for deduplication
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 2)
             return null;
-
-        // Extract status code (first argument)
-        var statusCode = 500; // Default fallback
-        var typeArg = args[0].Expression;
-        var typeConstant = semanticModel.GetConstantValue(typeArg);
-        if (typeConstant is { HasValue: true, Value: int typeValue })
-            statusCode = typeValue;
-        else if (typeArg is LiteralExpressionSyntax { Token.Value: int literalType })
-            statusCode = literalType;
 
         // Try to extract the 'code' (second argument)
         var codeArg = args[1].Expression;
@@ -562,7 +557,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (errorCode is not { Length: > 0 } code)
             return null;
 
-        return new CustomErrorInfo(statusCode, code);
+        return new CustomErrorInfo(code);
     }
 
     private static bool IsErrorFactoryInvocation(
@@ -714,7 +709,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
     // Helper records for middleware extraction
     private readonly record struct AuthInfo(bool Required, string? Policy, bool AllowAnonymous);
+
     private readonly record struct RateLimitInfo(bool Enabled, string? Policy, bool Disabled);
+
     private readonly record struct OutputCacheInfo(bool Enabled, string? Policy, int? Duration);
+
     private readonly record struct CorsInfo(bool Enabled, string? Policy, bool Disabled);
 }

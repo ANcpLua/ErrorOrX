@@ -427,19 +427,3 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     }
 #pragma warning restore EPS06
 }
-
-/// <summary>
-///     Immutable endpoint info for OpenAPI generation.
-/// </summary>
-internal readonly record struct OpenApiEndpointInfo(
-    string OperationId,
-    string TagName,
-    string? Summary,
-    string? Description);
-
-/// <summary>
-///     Immutable type metadata for schema generation.
-/// </summary>
-internal readonly record struct TypeMetadataInfo(
-    string TypeName,
-    string Description);

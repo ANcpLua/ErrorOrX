@@ -1,3 +1,4 @@
+using ANcpLua.Roslyn.Utilities.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -12,15 +13,12 @@ public abstract class AnalyzerTestBase<TAnalyzer>
     {
         var test = new CSharpAnalyzerTest<TAnalyzer, XUnitV3Verifier>
         {
-            TestCode = source, ReferenceAssemblies = ReferenceAssemblies.Net.Net80
+            TestCode = source,
+            ReferenceAssemblies = TestConfiguration.ReferenceAssemblies
         };
 
-        // Add ErrorOr.Core reference
-        test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Error).Assembly.Location));
-
-        // Add Microsoft.AspNetCore.Http metadata reference if possible
-        // Since we are running on net10.0, we might have it in the app domain or we can rely on ReferenceAssemblies.Net.Net80
-        // Minimal APIs are part of the ASP.NET Core framework.
+        test.TestState.AdditionalReferences.Add(
+            MetadataReference.CreateFromFile(typeof(Error).Assembly.Location));
 
         return test.RunAsync();
     }

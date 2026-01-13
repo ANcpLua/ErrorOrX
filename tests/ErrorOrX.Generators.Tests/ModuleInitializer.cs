@@ -1,7 +1,4 @@
-using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using ANcpLua.Roslyn.Utilities;
-using VerifyTests;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -19,7 +16,7 @@ public static class ModuleInitializer
 
         // Configure Verify to properly serialize EquatableArray<T> as arrays
         // This prevents the ImmutableArray<T> default instance error during serialization
-        VerifierSettings.AddExtraSettings(settings =>
+        VerifierSettings.AddExtraSettings(static settings =>
         {
             settings.Converters.Add(new EquatableArrayJsonConverter());
         });
@@ -71,9 +68,7 @@ file sealed class EquatableArrayJsonConverter : WriteOnlyJsonConverter
         writer.Serialize(array ?? Array.Empty<object>());
     }
 
-    public override bool CanConvert(Type type)
-    {
-        return type.IsGenericType &&
-               type.GetGenericTypeDefinition().Name == "EquatableArray`1";
-    }
+    public override bool CanConvert(Type type) =>
+        type.IsGenericType &&
+        type.GetGenericTypeDefinition().Name == "EquatableArray`1";
 }

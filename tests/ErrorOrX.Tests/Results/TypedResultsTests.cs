@@ -1,4 +1,3 @@
-
 namespace ErrorOrX.Tests.Results;
 
 public class ResultTypesTests

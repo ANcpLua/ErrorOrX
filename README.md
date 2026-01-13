@@ -4,7 +4,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOrX.Generators.svg)](https://www.nuget.org/packages/ErrorOrX.Generators/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A discriminated union type for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full AOT support.
+A discriminated union type for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full
+AOT support.
 
 ## Installation
 
@@ -14,10 +15,10 @@ dotnet add package ErrorOrX.Generators
 
 This brings in both the source generator and the `ErrorOrX` runtime library.
 
-| Package | Purpose |
-|---------|---------|
+| Package               | Purpose                                           |
+|-----------------------|---------------------------------------------------|
 | `ErrorOrX.Generators` | Source generator + analyzer (references ErrorOrX) |
-| `ErrorOrX` | Runtime types: `ErrorOr<T>`, `Error`, `ErrorType` |
+| `ErrorOrX`            | Runtime types: `ErrorOr<T>`, `Error`, `ErrorType` |
 
 ## Quick Start
 

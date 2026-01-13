@@ -39,6 +39,24 @@ public readonly record struct Error
     /// </summary>
     public Dictionary<string, object>? Metadata { get; }
 
+    public bool Equals(Error other)
+    {
+        if (Type != other.Type ||
+            NumericType != other.NumericType ||
+            Code != other.Code ||
+            Description != other.Description)
+        {
+            return false;
+        }
+
+        if (Metadata is null)
+        {
+            return other.Metadata is null;
+        }
+
+        return other.Metadata is not null && CompareMetadata(Metadata, other.Metadata);
+    }
+
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Failure" /> from a code and description.
     /// </summary>
@@ -137,24 +155,6 @@ public readonly record struct Error
         string description,
         Dictionary<string, object>? metadata = null) =>
         new(code, description, (ErrorType)type, metadata);
-
-    public bool Equals(Error other)
-    {
-        if (Type != other.Type ||
-            NumericType != other.NumericType ||
-            Code != other.Code ||
-            Description != other.Description)
-        {
-            return false;
-        }
-
-        if (Metadata is null)
-        {
-            return other.Metadata is null;
-        }
-
-        return other.Metadata is not null && CompareMetadata(Metadata, other.Metadata);
-    }
 
     public override int GetHashCode() =>
         Metadata is null ? HashCode.Combine(Code, Description, Type, NumericType) : ComposeHashCode();

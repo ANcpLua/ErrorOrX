@@ -201,6 +201,21 @@ public static class Descriptors
         DiagnosticSeverity.Warning,
         true);
 
+    /// <summary>
+    ///     Complex type parameter on GET/DELETE requires explicit binding attribute.
+    ///     GET/DELETE cannot have implicit body binding, so the user must specify
+    ///     [FromQuery], [AsParameters], or [FromServices].
+    /// </summary>
+    public static readonly DiagnosticDescriptor AmbiguousParameterBinding = new(
+        "EOE025",
+        "Ambiguous parameter binding",
+        "Parameter '{0}' of type '{1}' on {2} endpoint requires explicit binding attribute. " +
+        "Use [FromQuery] for query string, [AsParameters] for expanded binding, " +
+        "or [FromServices] for DI injection.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
+
     // ═══════════════════════════════════════════════════════════════════════════
     // OpenAPI / Documentation Diagnostics (EOE030-EOE039)
     // Generator-only: require cross-file or complex analysis
@@ -240,6 +255,19 @@ public static class Descriptors
         "EOE032",
         "Unknown error factory",
         "Error.Or factory method '{0}' is not a known ErrorType. Supported types: Failure, Unexpected, Validation, Conflict, NotFound, Unauthorized, Forbidden.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     User's JsonSerializerContext is missing CamelCase property naming policy.
+    ///     Web APIs typically use camelCase for JSON properties.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MissingCamelCasePolicy = new(
+        "EOE040",
+        "Missing CamelCase policy",
+        "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility. " +
+        "Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.",
         Category,
         DiagnosticSeverity.Warning,
         true);

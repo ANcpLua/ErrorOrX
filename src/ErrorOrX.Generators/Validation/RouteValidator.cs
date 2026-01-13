@@ -31,7 +31,7 @@ internal static class RouteValidator
     ///     - required, nonfile
     ///     These format constraints accept string but validate format at runtime.
     /// </remarks>
-    private static readonly FrozenDictionary<string, string[]> SConstraintToTypes =
+    internal static readonly FrozenDictionary<string, string[]> ConstraintToTypes =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
             // Integer types
@@ -81,7 +81,7 @@ internal static class RouteValidator
     ///     Constraints that are format-only and should not trigger type mismatch warnings
     ///     when the parameter is any type that supports ToString().
     /// </summary>
-    private static readonly FrozenSet<string> SFormatOnlyConstraints =
+    internal static readonly FrozenSet<string> FormatOnlyConstraints =
         new[] { "min", "max", "range", "minlength", "maxlength", "length", "regex", "required", "nonfile" }
             .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
@@ -117,8 +117,7 @@ internal static class RouteValidator
     /// </summary>
     public static ImmutableArray<DiagnosticInfo> ValidatePattern(
         string pattern,
-        IMethodSymbol method,
-        string attributeName)
+        IMethodSymbol method)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         var location = method.Locations.FirstOrDefault() ?? Location.None;
@@ -172,7 +171,7 @@ internal static class RouteValidator
     public static ImmutableArray<DiagnosticInfo> ValidateParameterBindings(
         string pattern,
         ImmutableArray<RouteParameterInfo> routeParams,
-        ImmutableArray<MethodParameterInfo> methodParams,
+        ImmutableArray<RouteMethodParameterInfo> methodParams,
         IMethodSymbol method)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
@@ -201,7 +200,7 @@ internal static class RouteValidator
     /// </summary>
     public static ImmutableArray<DiagnosticInfo> ValidateConstraintTypes(
         ImmutableArray<RouteParameterInfo> routeParams,
-        ImmutableArray<MethodParameterInfo> methodParams,
+        ImmutableArray<RouteMethodParameterInfo> methodParams,
         IMethodSymbol method)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
@@ -216,10 +215,10 @@ internal static class RouteValidator
         return diagnostics.ToImmutable();
     }
 
-    private static Dictionary<string, MethodParameterInfo> BuildMethodParamsByRouteName(
-        ImmutableArray<MethodParameterInfo> methodParams)
+    private static Dictionary<string, RouteMethodParameterInfo> BuildMethodParamsByRouteName(
+        ImmutableArray<RouteMethodParameterInfo> methodParams)
     {
-        var methodParamsByRouteName = new Dictionary<string, MethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
+        var methodParamsByRouteName = new Dictionary<string, RouteMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var mp in methodParams)
             if (mp.BoundRouteName is not null && mp.TypeFqn is not null)
                 methodParamsByRouteName[mp.BoundRouteName] = mp;
@@ -229,7 +228,7 @@ internal static class RouteValidator
 
     private static void ValidateRouteConstraint(
         RouteParameterInfo routeParam,
-        IReadOnlyDictionary<string, MethodParameterInfo> methodParamsByRouteName,
+        IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
@@ -238,7 +237,7 @@ internal static class RouteValidator
             return;
 
         // Skip format-only constraints (min, max, range, etc.) - they don't constrain CLR type
-        if (SFormatOnlyConstraints.Contains(constraint))
+        if (FormatOnlyConstraints.Contains(constraint))
             return;
 
         // Catch-all parameters must be string
@@ -248,7 +247,7 @@ internal static class RouteValidator
             return;
         }
 
-        if (!SConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
+        if (!ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
             return; // Unknown constraint - skip validation (could be custom)
 
         var actualTypeFqn = UnwrapNullableType(typeFqn, routeParam.IsOptional || methodParam.IsNullable);
@@ -267,8 +266,8 @@ internal static class RouteValidator
 
     private static bool TryGetConstraintContext(
         RouteParameterInfo routeParam,
-        IReadOnlyDictionary<string, MethodParameterInfo> methodParamsByRouteName,
-        out MethodParameterInfo methodParam,
+        IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
+        out RouteMethodParameterInfo methodParam,
         out string typeFqn,
         out string constraint)
     {
@@ -293,7 +292,7 @@ internal static class RouteValidator
 
     private static void AddCatchAllMismatch(
         RouteParameterInfo routeParam,
-        MethodParameterInfo methodParam,
+        RouteMethodParameterInfo methodParam,
         string typeFqn,
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
@@ -355,15 +354,3 @@ internal static class RouteValidator
         return typeFqn;
     }
 }
-
-internal readonly record struct RouteParameterInfo(
-    string Name,
-    string? Constraint,
-    bool IsOptional,
-    bool IsCatchAll);
-
-internal readonly record struct MethodParameterInfo(
-    string Name,
-    string? BoundRouteName,
-    string? TypeFqn,
-    bool IsNullable);

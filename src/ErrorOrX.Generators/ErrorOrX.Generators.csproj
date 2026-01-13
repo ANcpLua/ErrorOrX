@@ -1,56 +1,56 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageId>ErrorOrX.Generators</PackageId>
-    <Description>Source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates MapErrorOrEndpoints() with typed Results, OpenAPI metadata, and middleware attribute support.</Description>
-    <PackageTags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen</PackageTags>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageId>ErrorOrX.Generators</PackageId>
+        <Description>Source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates MapErrorOrEndpoints() with typed Results, OpenAPI metadata, and middleware attribute support.</Description>
+        <PackageTags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>true</IsPackable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>latest</LangVersion>
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <LangVersion>latest</LangVersion>
 
-    <!-- Generator packaging configuration -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <IsRoslynComponent>true</IsRoslynComponent>
-    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!-- Generator packaging configuration -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <DevelopmentDependency>true</DevelopmentDependency>
-    <NoWarn>$(NoWarn);NU5128;CS1591;RS2008</NoWarn>
+        <NoWarn>$(NoWarn);NU5128;CS1591;RS2008</NoWarn>
 
-    <!-- Source Link -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>false</IncludeSymbols>
-  </PropertyGroup>
+        <!-- Source Link -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>false</IncludeSymbols>
+    </PropertyGroup>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════════
-       PACKAGE DEPENDENCY: ErrorOrX runtime flows to consumers
-       ReferenceOutputAssembly=false → No compile-time reference (TFM incompatible)
-       PrivateAssets=none → Dependency appears in nupkg for consumers
-       ═══════════════════════════════════════════════════════════════════════════ -->
-  <ItemGroup>
-    <ProjectReference Include="../ErrorOrX/ErrorOrX.csproj"
-                      ReferenceOutputAssembly="false"
-                      SkipGetTargetFrameworkProperties="true"
-                      PrivateAssets="none" />
-  </ItemGroup>
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         PACKAGE DEPENDENCY: ErrorOrX runtime flows to consumers
+         ReferenceOutputAssembly=false → No compile-time reference (TFM incompatible)
+         PrivateAssets=none → Dependency appears in nupkg for consumers
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <ItemGroup>
+        <ProjectReference Include="../ErrorOrX/ErrorOrX.csproj"
+                          ReferenceOutputAssembly="false"
+                          SkipGetTargetFrameworkProperties="true"
+                          PrivateAssets="none"/>
+    </ItemGroup>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════════
-       GENERATOR DEPENDENCIES (bundled, not exposed to consumers)
-       ═══════════════════════════════════════════════════════════════════════════ -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
-    <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="PolySharp" PrivateAssets="all" />
-  </ItemGroup>
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         GENERATOR DEPENDENCIES (bundled, not exposed to consumers)
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true"/>
+        <PackageReference Include="PolySharp" PrivateAssets="all"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
+    </ItemGroup>
 
-  <!-- Add ErrorOrX as a package dependency that flows to consumers -->
-  <PropertyGroup>
-    <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
-    <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-    <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot)</NuspecProperties>
-  </PropertyGroup>
+    <!-- Add ErrorOrX as a package dependency that flows to consumers -->
+    <PropertyGroup>
+        <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
+        <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
+        <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot)</NuspecProperties>
+    </PropertyGroup>
 </Project>

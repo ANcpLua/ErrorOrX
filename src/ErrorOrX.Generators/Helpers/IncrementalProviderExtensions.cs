@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 namespace ErrorOr.Generators;
 
 /// <summary>
-///     Extension methods for combining multiple <see cref="IncrementalValuesProvider{TValue}"/> instances.
+///     Extension methods for combining multiple <see cref="IncrementalValuesProvider{TValue}" /> instances.
 /// </summary>
 internal static class IncrementalProviderExtensions
 {

@@ -1,5 +1,3 @@
-using ErrorOrX.Sample.Domain;
-
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services

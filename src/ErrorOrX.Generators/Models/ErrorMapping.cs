@@ -16,6 +16,7 @@ internal static class ErrorMapping
     ///     maintaining compile-time safety via constant references.
     /// </summary>
     public const string Failure = nameof(Failure);
+
     public const string Unexpected = nameof(Unexpected);
     public const string Validation = nameof(Validation);
     public const string Conflict = nameof(Conflict);
@@ -45,7 +46,10 @@ internal static class ErrorMapping
     /// <summary>
     ///     Returns true if the name is a known ErrorType member.
     /// </summary>
-    public static bool IsKnownErrorType(string name) => ErrorTypeSet.Contains(name);
+    public static bool IsKnownErrorType(string name)
+    {
+        return ErrorTypeSet.Contains(name);
+    }
 
     #endregion
 
@@ -103,8 +107,10 @@ internal static class ErrorMapping
     /// <summary>
     ///     Gets the RFC 9110 compliant title for a given HTTP status code.
     /// </summary>
-    public static string GetStatusTitle(int statusCode) =>
-        StatusTitles.TryGetValue(statusCode, out var title) ? title : "Error";
+    public static string GetStatusTitle(int statusCode)
+    {
+        return StatusTitles.TryGetValue(statusCode, out var title) ? title : "Error";
+    }
 
     #endregion
 
@@ -119,32 +125,32 @@ internal static class ErrorMapping
         [Validation] = new Entry(
             WellKnownTypes.Fqn.HttpResults.ValidationProblem,
             $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(errors)",
-            400, false),
+            400),
         [Unauthorized] = new Entry(
             WellKnownTypes.Fqn.HttpResults.UnauthorizedHttpResult,
             $"{WellKnownTypes.Fqn.TypedResults.Unauthorized}()",
-            401, false),
+            401),
         [Forbidden] = new Entry(
             WellKnownTypes.Fqn.HttpResults.ForbidHttpResult,
             $"{WellKnownTypes.Fqn.TypedResults.Forbid}()",
-            403, false),
+            403),
         [NotFound] = new Entry(
             $"{WellKnownTypes.Fqn.HttpResults.NotFound}<{WellKnownTypes.Fqn.ProblemDetails}>",
             $"{WellKnownTypes.Fqn.TypedResults.NotFound}(problem)",
-            404, true),
+            404),
         [Conflict] = new Entry(
             $"{WellKnownTypes.Fqn.HttpResults.Conflict}<{WellKnownTypes.Fqn.ProblemDetails}>",
             $"{WellKnownTypes.Fqn.TypedResults.Conflict}(problem)",
-            409, true),
+            409),
         // 5xx Server Errors (RFC 9110 §15.6.1)
         [Failure] = new Entry(
             $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>",
             $"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)",
-            500, true),
+            500),
         [Unexpected] = new Entry(
             $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>",
             $"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)",
-            500, true)
+            500)
     };
 
     /// <summary>
@@ -153,13 +159,7 @@ internal static class ErrorMapping
     private static readonly Entry DefaultEntry = new(
         $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>",
         $"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)",
-        500,
-        true);
-
-    /// <summary>
-    ///     Gets all defined ErrorType names in canonical order for code generation.
-    /// </summary>
-    public static IEnumerable<string> AllErrorTypeNames => Mappings.Keys;
+        500);
 
     /// <summary>
     ///     Gets the mapping entry for an ErrorType name.
@@ -198,50 +198,18 @@ internal static class ErrorMapping
 
     /// <summary>
     ///     Canonical mapping of HTTP status codes to TypedResults factories.
-    ///     Used by both GetCustom() and GenerateStatusToFactorySwitch().
+    ///     Used by GenerateStatusToFactoryCases().
     /// </summary>
     private static readonly Dictionary<int, CustomEntry> StatusToFactory = new()
     {
-        [400] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(problem)",
-            $"{WellKnownTypes.Fqn.HttpResults.BadRequest}<{WellKnownTypes.Fqn.ProblemDetails}>",
-            true),
-        [401] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.Unauthorized}()",
-            WellKnownTypes.Fqn.HttpResults.UnauthorizedHttpResult,
-            false),
-        [403] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.Forbid}()",
-            WellKnownTypes.Fqn.HttpResults.ForbidHttpResult,
-            false),
-        [404] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.NotFound}(problem)",
-            $"{WellKnownTypes.Fqn.HttpResults.NotFound}<{WellKnownTypes.Fqn.ProblemDetails}>",
-            true),
-        [409] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.Conflict}(problem)",
-            $"{WellKnownTypes.Fqn.HttpResults.Conflict}<{WellKnownTypes.Fqn.ProblemDetails}>",
-            true),
-        [422] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.UnprocessableEntity}(problem)",
-            $"{WellKnownTypes.Fqn.HttpResults.UnprocessableEntity}<{WellKnownTypes.Fqn.ProblemDetails}>",
-            true),
-        [500] = new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)",
-            $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>",
-            true)
+        [400] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.BadRequest}(problem)"),
+        [401] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.Unauthorized}()"),
+        [403] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.Forbid}()"),
+        [404] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.NotFound}(problem)"),
+        [409] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.Conflict}(problem)"),
+        [422] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.UnprocessableEntity}(problem)"),
+        [500] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)")
     };
-
-    /// <summary>
-    ///     Default factory for unknown status codes using Problem().
-    /// </summary>
-    private static CustomEntry GetProblemFactory(int statusCode)
-    {
-        return new CustomEntry(
-            $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: {statusCode}, title: \"{GetStatusTitle(statusCode)}\")",
-            WellKnownTypes.Fqn.HttpResults.ProblemHttpResult,
-            true);
-    }
 
     /// <summary>
     ///     Generates switch cases for status code → factory mapping.
@@ -259,21 +227,8 @@ internal static class ErrorMapping
     /// </summary>
     public static string GetDefaultProblemFactory()
     {
-        return $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
-    }
-
-    /// <summary>
-    ///     Maps a custom error numeric type to the appropriate TypedResults factory.
-    /// </summary>
-    public static CustomEntry GetCustom(int numericType)
-    {
-        if (StatusToFactory.TryGetValue(numericType, out var entry))
-            return entry;
-
-        // Fallback to Problem() for all other valid HTTP status codes
-        return numericType is >= 400 and < 600
-            ? GetProblemFactory(numericType)
-            : StatusToFactory[500]; // Invalid status code → default to 500
+        return
+            $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
     }
 
     #endregion
@@ -286,16 +241,13 @@ internal static class ErrorMapping
     internal readonly record struct Entry(
         string TypeFqn,
         string Factory,
-        int StatusCode,
-        bool NeedsProblem);
+        int StatusCode);
 
     /// <summary>
     ///     Custom error mapping for Error.Custom() status codes.
     /// </summary>
     internal readonly record struct CustomEntry(
-        string Factory,
-        string TypeFqn,
-        bool HasBody);
+        string Factory);
 
     #endregion
 }

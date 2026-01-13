@@ -1,9 +1,11 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using ANcpLua.Roslyn.Utilities;
+using ANcpLua.Roslyn.Utilities.Matching;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
+using SymbolMatch = ANcpLua.Roslyn.Utilities.Matching.Match;
 
 namespace ErrorOr.Generators;
 
@@ -17,7 +19,9 @@ public sealed partial class ErrorOrEndpointGenerator
         IMethodSymbol method,
         ImmutableHashSet<string> routeParameters,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ErrorOrContext context)
+        ErrorOrContext context,
+        string httpMethod,
+        bool useLegacyBinding = false)
     {
         if (method.Parameters.Length is 0)
             return ParameterBindingResult.Empty;
@@ -38,7 +42,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterBindingResult.Invalid;
         }
 
-        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context);
+        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
     }
 
     private static ParameterMeta[] BuildParameterMetas(
@@ -125,14 +129,16 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableHashSet<string> routeParameters,
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ErrorOrContext context)
+        ErrorOrContext context,
+        string httpMethod,
+        bool useLegacyBinding)
     {
         var builder = ImmutableArray.CreateBuilder<EndpointParameter>(metas.Count);
         var isValid = true;
 
         foreach (var meta in metas)
         {
-            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context);
+            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
             if (result.IsError)
             {
                 isValid = false;
@@ -152,11 +158,13 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableHashSet<string> routeParameters,
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ErrorOrContext context)
+        ErrorOrContext context,
+        string httpMethod,
+        bool useLegacyBinding)
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
-            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context);
+            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
         if (meta.HasFromBody)
             return ParameterSuccess(in meta, EndpointParameterSource.Body);
         if (meta.HasFromForm)
@@ -218,6 +226,51 @@ public sealed partial class ErrorOrEndpointGenerator
 
             return ParameterSuccess(in meta, EndpointParameterSource.Query,
                 queryName: meta.Name, customBinding: meta.CustomBinding);
+        }
+
+        // Legacy mode: fallback to service injection (BCL handles resolution at runtime)
+        if (useLegacyBinding)
+            return ParameterSuccess(in meta, EndpointParameterSource.Service);
+
+        // Smart inference based on HTTP method and type analysis
+        return InferParameterSource(in meta, httpMethod, method, diagnostics, context);
+    }
+
+    /// <summary>
+    ///     Infers the parameter source based on HTTP method and type analysis.
+    ///     POST/PUT/PATCH with complex types → Body
+    ///     GET/DELETE with complex types → Error EOE025
+    ///     Service types (interfaces, abstract, DI patterns) → Service
+    ///     Fallback → Service
+    /// </summary>
+    private static ParameterClassificationResult InferParameterSource(
+        in ParameterMeta meta,
+        string httpMethod,
+        ISymbol method,
+        ImmutableArray<DiagnosticInfo>.Builder diagnostics,
+        ErrorOrContext context)
+    {
+        var type = meta.Symbol.Type;
+
+        // Service types: interfaces, abstract classes, and DI naming patterns
+        if (IsLikelyServiceType(type))
+            return ParameterSuccess(in meta, EndpointParameterSource.Service);
+
+        // Check if type is complex (DTO)
+        if (IsComplexType(type, context))
+        {
+            // POST, PUT, PATCH with complex type → Body
+            if (httpMethod is "POST" or "PUT" or "PATCH")
+                return ParameterSuccess(in meta, EndpointParameterSource.Body);
+
+            // GET, DELETE with complex type → Error EOE025
+            diagnostics.Add(DiagnosticInfo.Create(
+                Descriptors.AmbiguousParameterBinding,
+                method.Locations.FirstOrDefault() ?? Location.None,
+                meta.Name,
+                meta.TypeFqn,
+                httpMethod));
+            return ParameterClassificationResult.Error;
         }
 
         // Fallback: treat as service injection (BCL handles resolution at runtime)
@@ -429,12 +482,15 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableHashSet<string> routeParameters,
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ErrorOrContext context)
+        ErrorOrContext context,
+        string httpMethod,
+        bool useLegacyBinding)
     {
         // EOE013: [AsParameters] can only be used on class or struct types
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
         {
-            diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidAsParametersType, method, meta.Name, meta.TypeFqn));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidAsParametersType, method, meta.Name,
+                meta.TypeFqn));
             return ParameterClassificationResult.Error;
         }
 
@@ -446,7 +502,8 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE014: [AsParameters] type must have an accessible constructor
         if (constructor is null)
         {
-            diagnostics.Add(DiagnosticInfo.Create(Descriptors.AsParametersNoConstructor, method, typeSymbol.ToDisplayString()));
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.AsParametersNoConstructor, method,
+                typeSymbol.ToDisplayString()));
             return ParameterClassificationResult.Error;
         }
 
@@ -454,7 +511,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var paramSymbol in constructor.Parameters)
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
-            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context);
+            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
 
             if (result.IsError)
                 return ParameterClassificationResult.Error;
@@ -848,11 +905,99 @@ public sealed partial class ErrorOrEndpointGenerator
         return null;
     }
 
-    #endregion
-}
+    /// <summary>
+    ///     Pattern matchers for DI service detection using ANcpLua.Roslyn.Utilities.
+    ///     These patterns identify types that should be resolved from DI container.
+    /// </summary>
+    private static readonly TypeMatcher ServiceNameMatcher = SymbolMatch.Type()
+        .Where(static t => t.Name.EndsWith("Service", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Repository", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Handler", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Manager", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Provider", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Factory", StringComparison.Ordinal) ||
+                           t.Name.EndsWith("Client", StringComparison.Ordinal));
 
-internal readonly record struct ParameterBindingResult(bool IsValid, ImmutableArray<EndpointParameter> Parameters)
-{
-    public static readonly ParameterBindingResult Empty = new(true, ImmutableArray<EndpointParameter>.Empty);
-    public static readonly ParameterBindingResult Invalid = new(false, ImmutableArray<EndpointParameter>.Empty);
+    private static readonly TypeMatcher DbContextMatcher = SymbolMatch.Type()
+        .Where(static t => t.Name.EndsWith("Context", StringComparison.Ordinal) &&
+                           (t.Name.Contains("Db") || t.Name.StartsWith("Db", StringComparison.Ordinal)));
+
+    /// <summary>
+    ///     Detects if a type is likely a DI service based on naming conventions.
+    ///     Uses composable type matchers from ANcpLua.Roslyn.Utilities.
+    /// </summary>
+    private static bool IsLikelyServiceType(ITypeSymbol type)
+    {
+        // Interfaces are typically services
+        if (type.TypeKind == TypeKind.Interface)
+            return true;
+
+        // Abstract types are typically services
+        if (type.IsAbstract)
+            return true;
+
+        // Check using fluent matchers for common DI naming patterns
+        if (type is INamedTypeSymbol namedType)
+        {
+            if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Determines if a type is a complex type (DTO) that should be bound from body.
+    ///     Returns true for types that are NOT: primitives, special types, route-bindable, or collections of primitives.
+    /// </summary>
+    private static bool IsComplexType(ITypeSymbol type, ErrorOrContext context)
+    {
+        type = ErrorOrContext.UnwrapNullable(type);
+
+        // Primitives are not complex
+        if (type.SpecialType is not SpecialType.None)
+            return false;
+
+        // Well-known types (Guid, DateTime, etc.) are not complex
+        if (TryGetRoutePrimitiveKindBySymbol(type, context) is not null)
+            return false;
+
+        // Form file types are not complex (have special binding)
+        if (context.IsFormFile(type) || context.IsFormFileCollection(type) || context.IsFormCollection(type))
+            return false;
+
+        // Stream types are not complex (have special binding)
+        if (context.IsStream(type) || context.IsPipeReader(type))
+            return false;
+
+        // HttpContext, CancellationToken are not complex
+        if (context.IsHttpContext(type) || context.IsCancellationToken(type))
+            return false;
+
+        // Types with TryParse or BindAsync are route-bindable, not complex
+        if (type is INamedTypeSymbol namedType && !IsPrimitiveOrWellKnownType(namedType, context))
+        {
+            var customBinding = DetectCustomBinding(namedType, context);
+            if (customBinding != CustomBindingMethod.None)
+                return false;
+        }
+
+        // Collections of primitives are not complex
+        var (isCollection, _, itemKind) = AnalyzeCollectionType(type, context);
+        if (isCollection && itemKind is not null)
+            return false;
+
+        // Interface or abstract types are services, not complex DTOs
+        if (type.TypeKind == TypeKind.Interface || type.IsAbstract)
+            return false;
+
+        // Service types by naming convention are not complex DTOs
+        if (IsLikelyServiceType(type))
+            return false;
+
+        // Everything else is complex (DTOs, records, classes)
+        return true;
+    }
+
+    #endregion
 }

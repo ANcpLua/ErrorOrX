@@ -1,9 +1,11 @@
-using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using ANcpLua.Roslyn.Utilities.Matching;
+using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using RegexMatch = System.Text.RegularExpressions.Match;
+using SymbolMatch = ANcpLua.Roslyn.Utilities.Matching.Match;
 
 namespace ErrorOr.Analyzers;
 
@@ -14,63 +16,11 @@ namespace ErrorOr.Analyzers;
 /// <remarks>
 ///     This analyzer handles single-method diagnostics that can run fast.
 ///     Cross-file diagnostics (EOE004, EOE007, EOE008) remain in the generator.
+///     Route constraint mappings are shared via RouteValidator to avoid duplication.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 {
-    /// <summary>
-    ///     Maps route constraints to their expected CLR types.
-    ///     Complete coverage of ASP.NET Core Minimal API route constraints.
-    /// </summary>
-    private static readonly FrozenDictionary<string, string[]> SConstraintToTypes =
-        new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-        {
-            // Integer types
-            ["int"] = ["System.Int32", "int"],
-            ["long"] = ["System.Int64", "long"],
-            ["short"] = ["System.Int16", "short"],
-            ["byte"] = ["System.Byte", "byte"],
-            ["sbyte"] = ["System.SByte", "sbyte"],
-
-            // Unsigned integer types
-            ["uint"] = ["System.UInt32", "uint"],
-            ["ulong"] = ["System.UInt64", "ulong"],
-            ["ushort"] = ["System.UInt16", "ushort"],
-
-            // Floating point types
-            ["decimal"] = ["System.Decimal", "decimal"],
-            ["double"] = ["System.Double", "double"],
-            ["float"] = ["System.Single", "float"],
-
-            // Boolean
-            ["bool"] = ["System.Boolean", "bool"],
-
-            // Identifier types
-            ["guid"] = ["System.Guid"],
-
-            // Date/time types
-            ["datetime"] = ["System.DateTime"],
-            ["datetimeoffset"] = ["System.DateTimeOffset"],
-            ["dateonly"] = ["System.DateOnly"],
-            ["timeonly"] = ["System.TimeOnly"],
-            ["timespan"] = ["System.TimeSpan"],
-
-            // String format constraints
-            ["alpha"] = ["System.String", "string"],
-            ["minlength"] = ["System.String", "string"],
-            ["maxlength"] = ["System.String", "string"],
-            ["length"] = ["System.String", "string"],
-            ["regex"] = ["System.String", "string"],
-            ["required"] = ["System.String", "string"]
-        }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    ///     Constraints that are format-only and should not trigger type mismatch warnings.
-    /// </summary>
-    private static readonly FrozenSet<string> SFormatOnlyConstraints =
-        new[] { "min", "max", "range", "minlength", "maxlength", "length", "regex", "required", "nonfile" }
-            .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
-
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [
         Descriptors.InvalidReturnType,
@@ -174,7 +124,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // EOE009: Body on read-only HTTP method
         var hasBody = bodyCount > 0;
-        if (hasBody && IsReadOnlyHttpMethod(httpMethod))
+        if (hasBody && WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.BodyOnReadOnlyMethod,
                 attributeLocation,
@@ -182,7 +132,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 httpMethod.ToUpperInvariant()));
 
         // EOE010: [AcceptedResponse] on read-only method
-        if (HasAcceptedResponseAttribute(method) && IsReadOnlyHttpMethod(httpMethod))
+        if (HasAcceptedResponseAttribute(method) && WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
                 attributeLocation,
@@ -196,7 +146,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static void ValidateConstraintTypes(
         SymbolAnalysisContext context,
         List<RouteParameterInfo> routeParams,
-        IReadOnlyDictionary<string, MethodParameterInfo> methodParamsByRouteName,
+        IReadOnlyDictionary<string, ConstraintMethodParameterInfo> methodParamsByRouteName,
         Location attributeLocation)
     {
         foreach (var rp in routeParams)
@@ -209,7 +159,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static void ValidateSingleRouteConstraint(
         SymbolAnalysisContext context,
         RouteParameterInfo rp,
-        IReadOnlyDictionary<string, MethodParameterInfo> methodParamsByRouteName,
+        IReadOnlyDictionary<string, ConstraintMethodParameterInfo> methodParamsByRouteName,
         Location attributeLocation)
     {
         // Skip if no constraint or not bound to a method parameter
@@ -230,10 +180,11 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     Checks if a constraint is format-only and doesn't constrain the CLR type.
+    ///     Delegates to shared RouteValidator to avoid duplication.
     /// </summary>
     private static bool IsFormatOnlyConstraint(string constraint)
     {
-        return SFormatOnlyConstraints.Contains(constraint);
+        return RouteValidator.FormatOnlyConstraints.Contains(constraint);
     }
 
     /// <summary>
@@ -242,7 +193,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static void ValidateCatchAllConstraint(
         SymbolAnalysisContext context,
         RouteParameterInfo rp,
-        MethodParameterInfo mp,
+        ConstraintMethodParameterInfo mp,
         Location attributeLocation)
     {
         if (!IsStringType(mp.TypeFqn))
@@ -258,16 +209,17 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     Validates that a typed constraint matches the bound parameter type.
+    ///     Uses shared RouteValidator.ConstraintToTypes to avoid duplication.
     /// </summary>
     private static void ValidateTypedConstraint(
         SymbolAnalysisContext context,
         RouteParameterInfo rp,
         string constraint,
-        MethodParameterInfo mp,
+        ConstraintMethodParameterInfo mp,
         Location attributeLocation)
     {
-        // Look up expected types for this constraint
-        if (!SConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
+        // Look up expected types for this constraint using shared RouteValidator
+        if (!RouteValidator.ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
             return; // Unknown constraint (e.g., custom) - skip validation
 
         // Get the actual type, unwrapping Nullable<T> for optional parameters
@@ -296,21 +248,17 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    /// <summary>
-    ///     HTTP method constants to avoid magic strings.
-    /// </summary>
-    private static class HttpMethod
-    {
-        public const string Get = "GET";
-        public const string Post = "POST";
-        public const string Put = "PUT";
-        public const string Delete = "DELETE";
-        public const string Patch = "PATCH";
-        public const string Head = "HEAD";
-        public const string Options = "OPTIONS";
-    }
-
     #region Helpers
+
+    /// <summary>
+    ///     Type matchers for body source detection using ANcpLua.Roslyn.Utilities.
+    /// </summary>
+    private static readonly TypeMatcher StreamMatcher = SymbolMatch.Type().NameContains("Stream");
+
+    private static readonly TypeMatcher PipeReaderMatcher = SymbolMatch.Type().Named("PipeReader");
+    private static readonly TypeMatcher FormFileMatcher = SymbolMatch.Type().Named("IFormFile");
+    private static readonly TypeMatcher FormFileCollectionMatcher = SymbolMatch.Type().Named("IFormFileCollection");
+    private static readonly TypeMatcher FormCollectionMatcher = SymbolMatch.Type().Named("IFormCollection");
 
     private static bool IsErrorOr(ITypeSymbol type)
     {
@@ -318,29 +266,32 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                named.ContainingNamespace?.ToDisplayString() is "ErrorOr" or "ErrorOr.Core.ErrorOr";
     }
 
-    private static bool IsStream(ISymbol type)
+    /// <summary>
+    ///     Type detection using fluent matchers from ANcpLua.Roslyn.Utilities.
+    /// </summary>
+    private static bool IsStream(ITypeSymbol type)
     {
-        return type.Name.Contains("Stream");
+        return StreamMatcher.Matches(type);
     }
 
-    private static bool IsPipeReader(ISymbol type)
+    private static bool IsPipeReader(ITypeSymbol type)
     {
-        return type.Name == "PipeReader";
+        return PipeReaderMatcher.Matches(type);
     }
 
-    private static bool IsFormFile(ISymbol type)
+    private static bool IsFormFile(ITypeSymbol type)
     {
-        return type.Name == "IFormFile";
+        return FormFileMatcher.Matches(type);
     }
 
-    private static bool IsFormFileCollection(ISymbol type)
+    private static bool IsFormFileCollection(ITypeSymbol type)
     {
-        return type.Name == "IFormFileCollection";
+        return FormFileCollectionMatcher.Matches(type);
     }
 
-    private static bool IsFormCollection(ISymbol type)
+    private static bool IsFormCollection(ITypeSymbol type)
     {
-        return type.Name == "IFormCollection";
+        return FormCollectionMatcher.Matches(type);
     }
 
     private static List<(string HttpMethod, string Pattern, Location Location)> GetEndpointAttributes(
@@ -361,19 +312,19 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             {
                 // Check for specific HTTP method attributes
                 case "GetAttribute" or "Get":
-                    httpMethod = HttpMethod.Get;
+                    httpMethod = WellKnownTypes.HttpMethod.Get;
                     break;
                 case "PostAttribute" or "Post":
-                    httpMethod = HttpMethod.Post;
+                    httpMethod = WellKnownTypes.HttpMethod.Post;
                     break;
                 case "PutAttribute" or "Put":
-                    httpMethod = HttpMethod.Put;
+                    httpMethod = WellKnownTypes.HttpMethod.Put;
                     break;
                 case "DeleteAttribute" or "Delete":
-                    httpMethod = HttpMethod.Delete;
+                    httpMethod = WellKnownTypes.HttpMethod.Delete;
                     break;
                 case "PatchAttribute" or "Patch":
-                    httpMethod = HttpMethod.Patch;
+                    httpMethod = WellKnownTypes.HttpMethod.Patch;
                     break;
                 // Generic endpoint attribute - extract HTTP method from first constructor arg
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
@@ -449,9 +400,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     /// <summary>
     ///     Builds a lookup of method parameters by their bound route name.
     /// </summary>
-    private static Dictionary<string, MethodParameterInfo> BuildMethodParameterLookup(IMethodSymbol method)
+    private static Dictionary<string, ConstraintMethodParameterInfo> BuildMethodParameterLookup(IMethodSymbol method)
     {
-        var lookup = new Dictionary<string, MethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
+        var lookup = new Dictionary<string, ConstraintMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var param in method.Parameters)
         {
@@ -480,13 +431,13 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             var isNullable = param.Type.NullableAnnotation == NullableAnnotation.Annotated ||
                              IsNullableValueType(param.Type);
 
-            lookup[boundRouteName] = new MethodParameterInfo(param.Name, typeFqn, isNullable);
+            lookup[boundRouteName] = new ConstraintMethodParameterInfo(param.Name, typeFqn, isNullable);
         }
 
         return lookup;
     }
 
-    private static void ExpandAsParameters(ITypeSymbol type, IDictionary<string, MethodParameterInfo> lookup)
+    private static void ExpandAsParameters(ITypeSymbol type, IDictionary<string, ConstraintMethodParameterInfo> lookup)
     {
         // Follow Minimal API rules: find the best constructor or use public properties
         // For simplicity, we'll look at public properties and constructor parameters of the type
@@ -505,7 +456,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                     var typeFqn = p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     var isNullable = p.Type.NullableAnnotation == NullableAnnotation.Annotated ||
                                      IsNullableValueType(p.Type);
-                    lookup[boundRouteName] = new MethodParameterInfo(p.Name, typeFqn, isNullable);
+                    lookup[boundRouteName] = new ConstraintMethodParameterInfo(p.Name, typeFqn, isNullable);
                 }
             }
 
@@ -519,7 +470,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                     var typeFqn = prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     var isNullable = prop.Type.NullableAnnotation == NullableAnnotation.Annotated ||
                                      IsNullableValueType(prop.Type);
-                    lookup[boundRouteName] = new MethodParameterInfo(prop.Name, typeFqn, isNullable);
+                    lookup[boundRouteName] = new ConstraintMethodParameterInfo(prop.Name, typeFqn, isNullable);
                 }
             }
     }
@@ -601,12 +552,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
     }
 
-    private static bool IsReadOnlyHttpMethod(string httpMethod)
-    {
-        return httpMethod.ToUpperInvariant() is HttpMethod.Get or HttpMethod.Head or HttpMethod.Delete
-            or HttpMethod.Options;
-    }
-
     private static bool HasAcceptedResponseAttribute(ISymbol method)
     {
         foreach (var attr in method.GetAttributes())
@@ -671,8 +616,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
     private static bool IsStringType(string typeFqn)
     {
-        var normalized = NormalizeTypeName(typeFqn);
-        return normalized is "string" or "String" or "System.String";
+        return TypeNameHelper.IsStringType(typeFqn);
     }
 
     private static bool TypeNamesMatch(string actualFqn, string expected)
@@ -689,49 +633,21 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // Handle keyword aliases
         var aliasedActual = GetTypeKeywordAlias(normalizedActual);
-        if (aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal))
-            return true;
-
-        return false;
+        return aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal);
     }
 
     /// <summary>
     ///     Gets the C# keyword alias for a BCL type name, or null if none exists.
+    ///     Delegates to shared TypeNameHelper to avoid duplication.
     /// </summary>
     private static string? GetTypeKeywordAlias(string typeName)
     {
-        return typeName switch
-        {
-            "System.Int32" or "Int32" => "int",
-            "System.Int64" or "Int64" => "long",
-            "System.Int16" or "Int16" => "short",
-            "System.Byte" or "Byte" => "byte",
-            "System.SByte" or "SByte" => "sbyte",
-            "System.UInt32" or "UInt32" => "uint",
-            "System.UInt64" or "UInt64" => "ulong",
-            "System.UInt16" or "UInt16" => "ushort",
-            "System.Single" or "Single" => "float",
-            "System.Double" or "Double" => "double",
-            "System.Decimal" or "Decimal" => "decimal",
-            "System.Boolean" or "Boolean" => "bool",
-            "System.String" or "String" => "string",
-            _ => null
-        };
+        return TypeNameHelper.GetKeywordAlias(typeName);
     }
 
     private static string NormalizeTypeName(string typeFqn)
     {
-        var result = typeFqn;
-
-        // Remove global:: prefix
-        if (result.StartsWith("global::", StringComparison.Ordinal))
-            result = result["global::".Length..];
-
-        // Remove nullable suffix (for reference types)
-        if (result.EndsWith("?", StringComparison.Ordinal))
-            result = result[..^1];
-
-        return result;
+        return TypeNameHelper.Normalize(typeFqn);
     }
 
     #endregion
@@ -739,18 +655,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     #region Local Types
 
     /// <summary>
-    ///     Information about a route parameter extracted from the route template.
+    ///     Information about a method parameter relevant to constraint type checking.
+    ///     Note: Different from RouteMethodParameterInfo which is for route binding validation.
     /// </summary>
-    private readonly record struct RouteParameterInfo(
-        string Name,
-        string? Constraint,
-        bool IsOptional,
-        bool IsCatchAll);
-
-    /// <summary>
-    ///     Information about a method parameter relevant to route binding.
-    /// </summary>
-    private readonly record struct MethodParameterInfo(
+    private readonly record struct ConstraintMethodParameterInfo(
         string Name,
         string TypeFqn,
         bool IsNullable);

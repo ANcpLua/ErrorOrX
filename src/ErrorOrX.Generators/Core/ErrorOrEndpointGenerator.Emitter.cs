@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -11,7 +12,7 @@ namespace ErrorOr.Generators;
 public sealed partial class ErrorOrEndpointGenerator
 {
     internal static void EmitEndpoints(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints,
-        int maxArity = 6, bool generateJsonContext = true)
+        ImmutableArray<JsonContextInfo> userContexts, int maxArity = 6, bool generateJsonContext = true)
     {
         var sorted = SortEndpoints(endpoints);
         var jsonTypes = CollectJsonTypes(sorted);
@@ -20,7 +21,7 @@ public sealed partial class ErrorOrEndpointGenerator
         EmitMappings(spc, sorted, jsonTypes.Count > 0, maxArity);
 
         if (jsonTypes.Count > 0 && generateJsonContext)
-            EmitJsonContext(spc, jsonTypes);
+            EmitJsonContext(spc, jsonTypes, userContexts);
     }
 
     private static void EmitGlobalUsings(SourceProductionContext spc)
@@ -116,9 +117,11 @@ public sealed partial class ErrorOrEndpointGenerator
         var bodyParam = ep.HandlerParameters.AsImmutableArray()
             .FirstOrDefault(static p => p.Source == EndpointParameterSource.Body);
         if (bodyParam.Name is not null)
-            code.AppendLine($"            .Accepts<{bodyParam.TypeFqn}>(\"{WellKnownTypes.Constants.ContentTypeJson}\")");
+            code.AppendLine(
+                $"            .Accepts<{bodyParam.TypeFqn}>(\"{WellKnownTypes.Constants.ContentTypeJson}\")");
         else if (HasFormParams(ep))
-            code.AppendLine($"            .Accepts(typeof(object), \"{WellKnownTypes.Constants.ContentTypeFormData}\")");
+            code.AppendLine(
+                $"            .Accepts(typeof(object), \"{WellKnownTypes.Constants.ContentTypeFormData}\")");
 
         if (ep.IsSse)
         {
@@ -243,7 +246,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ep.IsSse)
         {
             bodyCode.AppendLine($"            if (result.IsError) return {WrapReturn("ToProblem(result.Errors)")};");
-            bodyCode.AppendLine($"            return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
+            bodyCode.AppendLine(
+                $"            return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
         }
         else if (unionResult.CanUseUnion)
         {
@@ -294,10 +298,13 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var (_, paramName) in validationParams)
         {
-            code.AppendLine($"            var {paramName}ValidationResults = new {WellKnownTypes.Fqn.List}<{WellKnownTypes.Fqn.ValidationResult}>();");
-            code.AppendLine($"            if (!{WellKnownTypes.Fqn.Validator}.TryValidateObject({paramName}!, new {WellKnownTypes.Fqn.ValidationContext}({paramName}!), {paramName}ValidationResults, validateAllProperties: true))");
+            code.AppendLine(
+                $"            var {paramName}ValidationResults = new {WellKnownTypes.Fqn.List}<{WellKnownTypes.Fqn.ValidationResult}>();");
+            code.AppendLine(
+                $"            if (!{WellKnownTypes.Fqn.Validator}.TryValidateObject({paramName}!, new {WellKnownTypes.Fqn.ValidationContext}({paramName}!), {paramName}ValidationResults, validateAllProperties: true))");
             code.AppendLine("            {");
-            code.AppendLine($"                var validationDict = new {WellKnownTypes.Fqn.Dictionary}<string, string[]>();");
+            code.AppendLine(
+                $"                var validationDict = new {WellKnownTypes.Fqn.Dictionary}<string, string[]>();");
             code.AppendLine($"                foreach (var vr in {paramName}ValidationResults)");
             code.AppendLine("                {");
             code.AppendLine("                    var key = vr.MemberNames.FirstOrDefault() ?? \"\";");
@@ -392,7 +399,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Generate Location URL: request path + "/" + id value
         // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
+        return
+            $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
     }
 
     /// <summary>
@@ -416,7 +424,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Generate Location URL using lambda parameter 'value'
         // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return $"value => {WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{value.{idProp}}}\", value)";
+        return
+            $"value => {WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{value.{idProp}}}\", value)";
     }
 
     private static void EmitValidationHandling(StringBuilder code, in EndpointDescriptor ep,
@@ -445,7 +454,8 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                            validationDict[e.Code] = arr;");
         code.AppendLine("                        }");
         code.AppendLine("                    }");
-        code.AppendLine($"                    return {wrapReturn($"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict)")};");
+        code.AppendLine(
+            $"                    return {wrapReturn($"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict)")};");
         code.AppendLine("                }");
     }
 
@@ -702,12 +712,10 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine($"                var {paramName}List = new {WellKnownTypes.Fqn.List}<{itemType}>();");
             code.AppendLine($"                foreach (var item in {paramName}Raw)");
             code.AppendLine("                {");
-            if (TypeNameHelper.IsStringType(itemType))
-                code.AppendLine(
-                    $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
-            else
-                code.AppendLine(
-                    $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
+            code.AppendLine(
+                TypeNameHelper.IsStringType(itemType)
+                    ? $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);"
+                    : $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
             code.AppendLine("                }");
             var isArray = param.TypeFqn.EndsWith("[]");
             var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
@@ -850,9 +858,11 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void EmitJsonConfigExtension(StringBuilder code)
     {
         code.AppendLine("        /// <summary>");
-        code.AppendLine("        /// Configures JSON serialization for ErrorOr endpoints using the specified JsonSerializerContext.");
+        code.AppendLine(
+            "        /// Configures JSON serialization for ErrorOr endpoints using the specified JsonSerializerContext.");
         code.AppendLine("        /// </summary>");
-        code.AppendLine("        /// <typeparam name=\"TContext\">The JsonSerializerContext type containing type metadata.</typeparam>");
+        code.AppendLine(
+            "        /// <typeparam name=\"TContext\">The JsonSerializerContext type containing type metadata.</typeparam>");
         code.AppendLine("        /// <param name=\"services\">The service collection to configure.</param>");
         code.AppendLine("        /// <returns>The service collection for chaining.</returns>");
         code.AppendLine(
@@ -867,26 +877,115 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine();
     }
 
-    private static void EmitJsonContext(SourceProductionContext spc, List<string> jsonTypes)
+    private static void EmitJsonContext(SourceProductionContext spc, List<string> jsonTypes,
+        ImmutableArray<JsonContextInfo> userContexts)
     {
-        var code = new StringBuilder();
-        code.AppendLine("// <auto-generated>");
-        code.AppendLine("// JSON serialization context for Native AOT support.");
-        code.AppendLine("// Generated by ErrorOr.Generators source generator.");
-        code.AppendLine("// </auto-generated>");
-        code.AppendLine("#nullable enable");
-        code.AppendLine();
-        code.AppendLine(
+        // If user has their own JsonSerializerContext, emit a helper file instead
+        if (!userContexts.IsDefaultOrEmpty && userContexts.Length > 0)
+        {
+            EmitJsonContextHelper(spc, jsonTypes, userContexts);
+            return;
+        }
+
+        // No user context - emit full ErrorOrJsonContext using IndentedStringBuilder
+        var sb = new IndentedStringBuilder();
+        sb.AppendLine(GeneratedCodeHelpers.AutoGeneratedHeader("ErrorOr.Generators"));
+        sb.AppendLine("// JSON serialization context for Native AOT support.");
+        sb.AppendLine(GeneratedCodeHelpers.NullableEnable);
+        sb.AppendLine();
+        sb.AppendLine(
             "[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]");
         foreach (var type in jsonTypes)
-            code.AppendLine($"[System.Text.Json.Serialization.JsonSerializable(typeof({type}))]");
-        code.AppendLine(
+            sb.AppendLine($"[System.Text.Json.Serialization.JsonSerializable(typeof({type}))]");
+        sb.AppendLine(
             $"[System.Text.Json.Serialization.JsonSerializable(typeof({WellKnownTypes.Fqn.ProblemDetails}))]");
-        code.AppendLine(
+        sb.AppendLine(
             $"[System.Text.Json.Serialization.JsonSerializable(typeof({WellKnownTypes.Fqn.HttpValidationProblemDetails}))]");
-        code.AppendLine(
+        sb.AppendLine(
             "internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonSerializerContext { }");
-        spc.AddSource("ErrorOrJsonContext.g.cs", SourceText.From(code.ToString(), Encoding.UTF8));
+        spc.AddSource("ErrorOrJsonContext.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    private static void EmitJsonContextHelper(SourceProductionContext spc, List<string> jsonTypes,
+        ImmutableArray<JsonContextInfo> userContexts)
+    {
+        var userContext = userContexts[0]; // Use first context found
+        var fullClassName = userContext.Namespace is not null
+            ? $"{userContext.Namespace}.{userContext.ClassName}"
+            : userContext.ClassName;
+
+        // Collect registered types from user context
+        var registeredTypes = new HashSet<string>();
+        foreach (var ctx in userContexts)
+        foreach (var typeFqn in ctx.SerializableTypes)
+            registeredTypes.Add(typeFqn);
+
+        // Find missing types
+        var missingTypes = new List<string>();
+
+        // Check endpoint types
+        foreach (var type in jsonTypes)
+            if (!registeredTypes.Any(rt => TypeNameHelper.TypeNamesMatch(type, rt)))
+                missingTypes.Add(type);
+
+        // Always check for ProblemDetails and HttpValidationProblemDetails
+        if (!registeredTypes.Any(static rt => TypeNameHelper.TypeNamesMatch(WellKnownTypes.Fqn.ProblemDetails, rt)))
+            missingTypes.Add(WellKnownTypes.Fqn.ProblemDetails);
+        if (!registeredTypes.Any(static rt =>
+                TypeNameHelper.TypeNamesMatch(WellKnownTypes.Fqn.HttpValidationProblemDetails, rt)))
+            missingTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
+
+        // Report EOE040 if user context lacks CamelCase policy
+        if (!userContext.HasCamelCasePolicy)
+        {
+            spc.ReportDiagnostic(Diagnostic.Create(
+                Analyzers.Descriptors.MissingCamelCasePolicy,
+                Location.None,
+                fullClassName));
+        }
+
+        // Emit helper file with missing types as comments using IndentedStringBuilder
+        var sb = new IndentedStringBuilder();
+        sb.AppendLine(GeneratedCodeHelpers.AutoGeneratedHeader("ErrorOr.Generators"));
+        sb.AppendLine("// ErrorOrX JSON Context Helper");
+        sb.AppendLine();
+        sb.AppendLine($"// Detected user JsonSerializerContext: {fullClassName}");
+        sb.AppendLine();
+
+        if (missingTypes.Count > 0)
+        {
+            sb.AppendLine("// ============================================================================");
+            sb.AppendLine("// MISSING TYPES - Add these [JsonSerializable] attributes to your context:");
+            sb.AppendLine("// ============================================================================");
+            sb.AppendLine("//");
+            foreach (var type in missingTypes.Distinct())
+            {
+                var displayType = TypeNameHelper.StripGlobalPrefix(type);
+                sb.AppendLine($"// [JsonSerializable(typeof({displayType}))]");
+            }
+
+            sb.AppendLine("//");
+        }
+        else
+        {
+            sb.AppendLine("// All required types are registered in your JsonSerializerContext.");
+        }
+
+        if (!userContext.HasCamelCasePolicy)
+        {
+            sb.AppendLine();
+            sb.AppendLine("// ============================================================================");
+            sb.AppendLine("// RECOMMENDED - Add CamelCase policy for web API compatibility:");
+            sb.AppendLine("// ============================================================================");
+            sb.AppendLine("//");
+            sb.AppendLine("// [JsonSourceGenerationOptions(");
+            sb.AppendLine("//     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,");
+            sb.AppendLine("//     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]");
+            sb.AppendLine("//");
+        }
+
+        // Use same filename as full context to ensure replacement (no stale file issues)
+        spc.AddSource("ErrorOrJsonContext.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     private static void EmitSupportMethods(StringBuilder code)

@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
-  <metadata>
-    <id>ErrorOrX.Generators</id>
-    <version>$version$</version>
-    <authors>ANcpLua</authors>
-    <license type="expression">MIT</license>
-    <projectUrl>https://github.com/ANcpLua/ErrorOrX</projectUrl>
-    <description>Source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates MapErrorOrEndpoints() with typed Results, OpenAPI metadata, and middleware attribute support.</description>
-    <copyright>Copyright (c) 2025 Alexander Nachtmann</copyright>
-    <tags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen</tags>
-    <repository type="git" url="https://github.com/ANcpLua/ErrorOrX" />
-    <developmentDependency>true</developmentDependency>
-    <dependencies>
-      <group targetFramework="net10.0">
-        <dependency id="ErrorOrX" version="$version$" />
-      </group>
-    </dependencies>
-    <readme>README.md</readme>
-  </metadata>
-  <files>
-    <file src="bin/Release/netstandard2.0/ErrorOrX.Generators.dll" target="analyzers/dotnet/cs/" />
-    <file src="$nugetRoot$ancplua.roslyn.utilities/1.10.0/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll" target="analyzers/dotnet/cs/" />
-    <file src="build/ErrorOrX.Generators.props" target="build/" />
-    <file src="../../README.md" target="" />
-  </files>
+    <metadata>
+        <id>ErrorOrX.Generators</id>
+        <version>$version$</version>
+        <authors>ANcpLua</authors>
+        <license type="expression">MIT</license>
+        <projectUrl>https://github.com/ANcpLua/ErrorOrX</projectUrl>
+        <description>Source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates
+            MapErrorOrEndpoints() with typed Results, OpenAPI metadata, and middleware attribute support.
+        </description>
+        <copyright>Copyright (c) 2025 Alexander Nachtmann</copyright>
+        <tags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen</tags>
+        <repository type="git" url="https://github.com/ANcpLua/ErrorOrX"/>
+        <developmentDependency>true</developmentDependency>
+        <dependencies>
+            <group targetFramework="net10.0">
+                <dependency id="ErrorOrX" version="$version$"/>
+            </group>
+        </dependencies>
+        <readme>README.md</readme>
+    </metadata>
+    <files>
+        <file src="bin/Release/netstandard2.0/ErrorOrX.Generators.dll" target="analyzers/dotnet/cs/"/>
+        <file src="$nugetRoot$ancplua.roslyn.utilities/1.10.0/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"
+              target="analyzers/dotnet/cs/"/>
+        <file src="build/ErrorOrX.Generators.props" target="build/"/>
+        <file src="../../README.md" target=""/>
+    </files>
 </package>

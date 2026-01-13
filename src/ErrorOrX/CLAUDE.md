@@ -1,16 +1,10 @@
 ---
-See [Root CLAUDE.md](/Users/ancplua/ErrorOrX/CLAUDE.md) for project context.
+See [Root CLAUDE.md](../CLAUDE.md) for project context.
 ---
 
 # ErrorOrX Runtime Library
 
-This project contains the runtime types for the ErrorOrX library:
-
-- `ErrorOr<T>` - The discriminated union type
-- `Error` - Error value with code, description, type, and metadata
-- `ErrorType` - Enum of error categories (Validation, NotFound, etc.)
-- `Result` - Factory for built-in result types (Deleted, Updated, Created, Success)
-- Fluent API extensions: `Then`, `Else`, `Match`, `Switch`, `FailIf`
+This project contains the runtime types for the ErrorOrX library.
 
 ## Package Details
 
@@ -18,10 +12,172 @@ This project contains the runtime types for the ErrorOrX library:
 - **Target**: `net10.0`
 - **Namespace**: `ErrorOr`
 
+## Core Types
+
+### `ErrorOr<T>`
+
+The discriminated union type representing either a success value or a list of errors.
+
+```csharp
+ErrorOr<User> result = await GetUserAsync(id);
+
+// Pattern matching
+return result.Match(
+    user => Ok(user),
+    errors => BadRequest(errors));
+
+// Fluent API
+return result
+    .Then(user => ValidateUser(user))
+    .Then(user => SaveUser(user))
+    .Else(errors => LogErrors(errors));
+```
+
+### `Error`
+
+Error value with structured information:
+
+```csharp
+public readonly record struct Error(
+    string Code,
+    string Description,
+    ErrorType Type,
+    Dictionary<string, object>? Metadata = null,
+    int NumericType = 0);
+```
+
+Factory methods:
+
+```csharp
+Error.Validation("User.InvalidEmail", "Email format is invalid")
+Error.NotFound("User.NotFound", "User does not exist")
+Error.Conflict("User.Duplicate", "Email already registered")
+Error.Unauthorized("Auth.InvalidToken", "Token has expired")
+Error.Forbidden("Auth.InsufficientRole", "Admin role required")
+Error.Failure("Db.ConnectionFailed", "Database unavailable")
+Error.Unexpected("Unknown", "An unexpected error occurred")
+Error.Custom(422, "Validation.Complex", "Complex validation failed")
+```
+
+### `ErrorType`
+
+Enum of error categories mapped to HTTP status codes:
+
+| ErrorType      | HTTP Status | Use Case                            |
+|----------------|-------------|-------------------------------------|
+| `Validation`   | 400         | Input validation failures           |
+| `Unauthorized` | 401         | Authentication required             |
+| `Forbidden`    | 403         | Insufficient permissions            |
+| `NotFound`     | 404         | Resource doesn't exist              |
+| `Conflict`     | 409         | State conflict (duplicate, version) |
+| `Failure`      | 500         | Known operational failure           |
+| `Unexpected`   | 500         | Unhandled/unknown errors            |
+
+### `Result`
+
+Factory for built-in success marker types:
+
+```csharp
+Result.Success   // 200 OK (no body)
+Result.Created   // 201 Created (no body)
+Result.Updated   // 204 No Content
+Result.Deleted   // 204 No Content
+```
+
+Usage with explicit response semantics:
+
+```csharp
+[Delete("/todos/{id}")]
+public static ErrorOr<Deleted> Delete(int id, ITodoService svc)
+    => svc.Delete(id) 
+        ? Result.Deleted 
+        : Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+
+[Post("/todos")]
+public static ErrorOr<Created> Create(CreateTodoRequest req)
+    => Result.Created; // 201 with no body
+```
+
+## Fluent API Extensions
+
+### `Then` - Chain operations on success
+
+```csharp
+ErrorOr<User> result = GetUser(id)
+    .Then(user => ValidateAge(user))      // ErrorOr<User> → ErrorOr<User>
+    .Then(user => EnrichProfile(user))    // ErrorOr<User> → ErrorOr<Profile>
+    .ThenAsync(profile => SaveAsync(profile)); // Async variant
+```
+
+### `Else` - Handle errors
+
+```csharp
+User user = GetUser(id)
+    .Else(errors => DefaultUser)           // Provide fallback
+    .ElseAsync(errors => FetchBackup());   // Async fallback
+```
+
+### `Match` - Transform both cases
+
+```csharp
+IActionResult result = GetUser(id).Match(
+    user => Ok(user),
+    errors => BadRequest(errors.First().Description));
+```
+
+### `Switch` - Side effects
+
+```csharp
+GetUser(id).Switch(
+    user => Console.WriteLine($"Found: {user.Name}"),
+    errors => Logger.LogError(errors));
+```
+
+### `FailIf` - Conditional failure
+
+```csharp
+ErrorOr<User> result = GetUser(id)
+    .FailIf(user => user.IsDeleted, Error.NotFound("User.Deleted", "User was deleted"))
+    .FailIf(user => !user.IsActive, Error.Forbidden("User.Inactive", "User is inactive"));
+```
+
 ## Dependencies
 
-- `Microsoft.AspNetCore.App` framework reference (for `TypedResults` helpers)
+- `Microsoft.AspNetCore.App` framework reference (for `TypedResults` helpers in endpoints)
 
 ## Consumers
 
-This package is referenced as a dependency by `ErrorOrX.Generators`. End users only need to reference `ErrorOrX.Generators` to get both packages.
+This package is automatically referenced when consumers add `ErrorOrX.Generators`. The generator package declares:
+
+```xml
+<PackageReference Include="ErrorOrX" PrivateAssets="none" />
+```
+
+This ensures `ErrorOrX.dll` flows to the consuming project's output.
+
+## File Structure
+
+```
+src/ErrorOrX/
+├── Error.cs                    # Error record struct and factory methods
+├── ErrorOr.cs                  # Main ErrorOr<T> struct
+├── ErrorOr.Else.cs             # Else/ElseAsync extensions
+├── ErrorOr.ElseExtensions.cs   # Additional Else overloads
+├── ErrorOr.Equality.cs         # IEquatable implementation
+├── ErrorOr.FailIf.cs           # FailIf conditional failure
+├── ErrorOr.FailIfExtensions.cs # FailIf extensions
+├── ErrorOr.ImplicitConverters.cs # T → ErrorOr<T>, Error → ErrorOr<T>
+├── ErrorOr.Match.cs            # Match transformation
+├── ErrorOr.MatchExtensions.cs  # Match extensions
+├── ErrorOr.Switch.cs           # Switch side effects
+├── ErrorOr.SwitchExtensions.cs # Switch extensions
+├── ErrorOr.Then.cs             # Then chaining
+├── ErrorOr.ThenExtensions.cs   # Then extensions
+├── ErrorOr.ToErrorOrExtensions.cs # ToErrorOr() helpers
+├── ErrorOrFactory.cs           # ErrorOr static factory
+├── ErrorType.cs                # ErrorType enum
+├── IErrorOr.cs                 # Non-generic interface
+├── Results.cs                  # Result marker types (Deleted, Updated, etc.)
+├── TypedResults.cs             # ASP.NET TypedResults helpers
+└── EmptyErrors.cs              # Empty error collection singleton
+```

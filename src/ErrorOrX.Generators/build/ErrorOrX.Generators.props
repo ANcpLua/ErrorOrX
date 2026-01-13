@@ -1,11 +1,19 @@
 <Project>
-  <PropertyGroup>
-    <!-- Enable JSON context generation by default -->
-    <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">true</ErrorOrGenerateJsonContext>
-  </PropertyGroup>
+    <PropertyGroup>
+        <!-- Enable JSON context generation by default -->
+        <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">true</ErrorOrGenerateJsonContext>
+        <!-- Legacy parameter binding: false = smart inference (default), true = DI fallback for all unclassified -->
+        <ErrorOrLegacyParameterBinding Condition="'$(ErrorOrLegacyParameterBinding)' == ''">false</ErrorOrLegacyParameterBinding>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Make MSBuild properties visible to the source generator -->
-    <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext" />
-  </ItemGroup>
+    <ItemGroup>
+        <!-- Make MSBuild properties visible to the source generator -->
+        <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext"/>
+        <CompilerVisibleProperty Include="ErrorOrLegacyParameterBinding"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Ensure ErrorOrX flows to consuming projects (not blocked by PrivateAssets=all) -->
+        <PackageReference Update="ErrorOrX" PrivateAssets="none"/>
+    </ItemGroup>
 </Project>

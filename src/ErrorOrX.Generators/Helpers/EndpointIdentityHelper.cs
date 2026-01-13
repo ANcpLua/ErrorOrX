@@ -21,16 +21,6 @@ internal static class EndpointIdentityHelper
     }
 
     /// <summary>
-    ///     Computes the operation ID for an endpoint.
-    ///     Format: "{TagName}_{MethodName}" (e.g., "Todo_GetById").
-    /// </summary>
-    public static string GetOperationId(string className, string methodName)
-    {
-        var tagName = GetTagName(className);
-        return $"{tagName}_{methodName}";
-    }
-
-    /// <summary>
     ///     Computes both tag name and operation ID for an endpoint.
     /// </summary>
     public static (string TagName, string OperationId) GetEndpointIdentity(string className, string methodName)

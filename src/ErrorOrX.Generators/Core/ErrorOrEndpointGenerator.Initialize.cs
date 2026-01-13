@@ -128,18 +128,25 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         // only sees types from PostInitializationOutput within the same generator
         context.RegisterPostInitializationOutput(EmitAttributes);
 
-        // Build ErrorOrContext once per compilation
-        var errorOrContextProvider = context.CompilationProvider
-            .Select(static (c, _) => new ErrorOrContext(c));
+        // Get ErrorOrLegacyParameterBinding option (defaults to false via ErrorOrX.Generators.props)
+        // Note: We don't combine with CompilationProvider here to avoid caching INamedTypeSymbol
+        // which breaks incremental caching. ErrorOrContext is created lazily in SelectMany.
+        var legacyBindingProvider = context.AnalyzerConfigOptionsProvider
+            .Select(static (options, _) =>
+            {
+                options.GlobalOptions.TryGetValue("build_property.ErrorOrLegacyParameterBinding", out var value);
+                // Default to false (smart inference enabled)
+                return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+            });
 
         // Create providers for each HTTP method attribute
-        var getProvider = CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.GetAttribute);
-        var postProvider = CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.PostAttribute);
-        var putProvider = CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.PutAttribute);
-        var deleteProvider = CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.DeleteAttribute);
-        var patchProvider = CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.PatchAttribute);
+        var getProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.GetAttribute);
+        var postProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PostAttribute);
+        var putProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PutAttribute);
+        var deleteProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.DeleteAttribute);
+        var patchProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PatchAttribute);
         var baseProvider =
-            CreateEndpointProvider(context, errorOrContextProvider, WellKnownTypes.ErrorOrEndpointAttribute);
+            CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.ErrorOrEndpointAttribute);
 
         // Combine all endpoint providers using shared utility
         var endpoints = IncrementalProviderExtensions.CombineSix(
@@ -148,10 +155,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         // Get JSON context info for AOT validation
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
-
-        // Get max arity from compilation
-        var compilationProvider = context.CompilationProvider
-            .Select(static (c, _) => ResultsUnionTypeBuilder.DetectMaxArity(c));
 
         // Get ErrorOrGenerateJsonContext option (defaults to true via ErrorOr.props)
         var generateJsonContextProvider = context.AnalyzerConfigOptionsProvider
@@ -164,13 +167,16 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             });
 
         // Combine and emit
-        var combined = endpoints.Combine(jsonContexts).Combine(compilationProvider)
+        var combined = endpoints.Combine(jsonContexts)
             .Combine(generateJsonContextProvider);
         context.RegisterSourceOutput(
             combined,
             static (spc, data) =>
             {
-                var (((endpoints, jsonContexts), maxArity), generateJsonContext) = data;
+                var ((endpoints, jsonContexts), generateJsonContext) = data;
+                // Max arity for Results<...> union type - ASP.NET Core 8+ supports Results`6
+                // Using hardcoded value to avoid CompilationProvider which breaks incremental caching
+                const int maxArity = 6;
                 var endpointArray = endpoints.IsDefaultOrEmpty
                     ? ImmutableArray<EndpointDescriptor>.Empty
                     : endpoints.AsImmutableArray();
@@ -186,7 +192,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 // Emit endpoint mappings
                 if (!endpointArray.IsDefaultOrEmpty)
                 {
-                    EmitEndpoints(spc, endpointArray, maxArity, generateJsonContext);
+                    EmitEndpoints(spc, endpointArray, jsonContextArray, maxArity, generateJsonContext);
                     AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray);
                     AnalyzeUnionTypeArity(spc, endpointArray, maxArity);
                 }
@@ -195,7 +201,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<ErrorOrContext> errorOrContextProvider,
+        IncrementalValueProvider<bool> legacyBindingProvider,
         string attributeName)
     {
         return context.SyntaxProvider
@@ -203,14 +209,21 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 attributeName,
                 static (node, _) => node is MethodDeclarationSyntax,
                 static (ctx, _) => ctx)
-            .Combine(errorOrContextProvider)
-            .SelectMany(static (pair, ct) => AnalyzeEndpointFlows(pair.Left, pair.Right, ct))
+            .Combine(legacyBindingProvider)
+            .SelectMany(static (pair, ct) =>
+            {
+                // Create ErrorOrContext lazily from SemanticModel to avoid caching
+                // INamedTypeSymbol references which breaks incremental caching.
+                var errorOrContext = new ErrorOrContext(pair.Left.SemanticModel.Compilation);
+                return AnalyzeEndpointFlows(pair.Left, errorOrContext, pair.Right, ct);
+            })
             .ReportAndContinue(context);
     }
 
     private static ImmutableArray<DiagnosticFlow<EndpointDescriptor>> AnalyzeEndpointFlows(
         GeneratorAttributeSyntaxContext ctx,
         ErrorOrContext errorOrContext,
+        bool useLegacyBinding,
         CancellationToken ct)
     {
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
@@ -268,7 +281,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         foreach (var attr in ctx.Attributes)
         {
             if (attr is null) continue;
-            var flow = methodAnalysisFlow.Then(analysis => ProcessAttributeFlow(analysis, attr, errorOrContext, ct));
+            var flow = methodAnalysisFlow.Then(analysis =>
+                ProcessAttributeFlow(analysis, attr, errorOrContext, useLegacyBinding, ct));
             flows.Add(flow);
         }
 
@@ -279,6 +293,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         MethodAnalysis analysis,
         AttributeData attr,
         ErrorOrContext errorOrContext,
+        bool useLegacyBinding,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -304,19 +319,19 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         // Bind parameters
         var bindingDiagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext);
+        var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext, httpMethod, useLegacyBinding);
         if (!bindingResult.IsValid)
             return DiagnosticFlow.Fail<EndpointDescriptor>(bindingDiagnostics.ToImmutable().AsEquatableArray());
 
         builder.AddRange(bindingDiagnostics);
 
         // Validate route pattern
-        builder.AddRange(RouteValidator.ValidatePattern(pattern, analysis.Method, attrName));
+        builder.AddRange(RouteValidator.ValidatePattern(pattern, analysis.Method));
 
         // Extract method parameter info for route binding validation
         var methodParams = bindingResult.Parameters
             .Where(static p => p.Source == EndpointParameterSource.Route)
-            .Select(static p => new MethodParameterInfo(p.Name, p.KeyName ?? p.Name, p.TypeFqn, p.IsNullable))
+            .Select(static p => new RouteMethodParameterInfo(p.Name, p.KeyName ?? p.Name, p.TypeFqn, p.IsNullable))
             .ToImmutableArray();
 
         // Validate route parameters are bound

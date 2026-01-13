@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
@@ -5,6 +6,9 @@ namespace ErrorOr.Generators;
 
 #region Parameter Models
 
+/// <summary>
+/// Represents a bound endpoint parameter with its source and type information.
+/// </summary>
 internal readonly record struct EndpointParameter(
     string Name,
     string TypeFqn,
@@ -18,6 +22,9 @@ internal readonly record struct EndpointParameter(
     CustomBindingMethod CustomBinding = CustomBindingMethod.None,
     bool RequiresValidation = false);
 
+/// <summary>
+/// Raw metadata extracted from a method parameter for binding classification.
+/// </summary>
 internal readonly record struct ParameterMeta(
     IParameterSymbol Symbol,
     string Name,
@@ -59,7 +66,6 @@ internal readonly record struct ParameterMeta(
 ///     Represents a custom error detected via Error.Custom() call.
 /// </summary>
 internal readonly record struct CustomErrorInfo(
-    int StatusCode,
     string ErrorCode);
 
 /// <summary>
@@ -80,7 +86,7 @@ internal readonly record struct ErrorOrReturnTypeInfo(
     string? IdPropertyName = null);
 
 /// <summary>
-///     Holds pre-computed method-level information shared across multiple attributes.
+/// Pre-computed method-level analysis shared across multiple HTTP method attributes.
 /// </summary>
 internal readonly record struct MethodAnalysis(
     IMethodSymbol Method,
@@ -91,6 +97,9 @@ internal readonly record struct MethodAnalysis(
     bool IsAcceptedResponse,
     MiddlewareInfo Middleware);
 
+/// <summary>
+/// Complete descriptor for an ErrorOr endpoint used for code generation.
+/// </summary>
 internal readonly record struct EndpointDescriptor(
     string HttpMethod,
     string Pattern,
@@ -108,13 +117,6 @@ internal readonly record struct EndpointDescriptor(
     bool IsAcceptedResponse = false,
     string? LocationIdPropertyName = null,
     MiddlewareInfo Middleware = default);
-
-internal readonly record struct EndpointData(
-    EquatableArray<EndpointDescriptor> Descriptors)
-{
-    public static EndpointData Empty =>
-        new(default);
-}
 
 /// <summary>
 ///     Success response information for OpenAPI metadata.
@@ -151,13 +153,79 @@ internal readonly record struct MiddlewareInfo(
     string? CorsPolicy,
     bool DisableCors)
 {
-    public static MiddlewareInfo Empty => default;
-
     public bool HasAny =>
         RequiresAuthorization || AllowAnonymous ||
         EnableRateLimiting || DisableRateLimiting ||
         EnableOutputCache ||
         EnableCors || DisableCors;
 }
+
+#endregion
+
+#region Route Validation Models
+
+/// <summary>
+///     Information about a route parameter extracted from the route template.
+/// </summary>
+internal readonly record struct RouteParameterInfo(
+    string Name,
+    string? Constraint,
+    bool IsOptional,
+    bool IsCatchAll);
+
+/// <summary>
+///     Information about a method parameter relevant to route binding validation.
+/// </summary>
+internal readonly record struct RouteMethodParameterInfo(
+    string Name,
+    string? BoundRouteName,
+    string? TypeFqn,
+    bool IsNullable);
+
+#endregion
+
+#region Binding Models
+
+/// <summary>
+///     Result of parameter binding analysis.
+/// </summary>
+internal readonly record struct ParameterBindingResult(bool IsValid, ImmutableArray<EndpointParameter> Parameters)
+{
+    public static readonly ParameterBindingResult Empty = new(true, ImmutableArray<EndpointParameter>.Empty);
+    public static readonly ParameterBindingResult Invalid = new(false, ImmutableArray<EndpointParameter>.Empty);
+}
+
+#endregion
+
+#region JSON Serialization Models
+
+/// <summary>
+///     Information about a user-defined JsonSerializerContext.
+/// </summary>
+internal readonly record struct JsonContextInfo(
+    string ClassName,
+    string? Namespace,
+    EquatableArray<string> SerializableTypes,
+    bool HasCamelCasePolicy);
+
+#endregion
+
+#region OpenAPI Models
+
+/// <summary>
+///     Immutable endpoint info for OpenAPI generation.
+/// </summary>
+internal readonly record struct OpenApiEndpointInfo(
+    string OperationId,
+    string TagName,
+    string? Summary,
+    string? Description);
+
+/// <summary>
+///     Immutable type metadata for schema generation.
+/// </summary>
+internal readonly record struct TypeMetadataInfo(
+    string TypeName,
+    string Description);
 
 #endregion

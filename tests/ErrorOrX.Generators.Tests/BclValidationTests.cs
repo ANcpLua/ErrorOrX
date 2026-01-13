@@ -32,7 +32,7 @@ public class BclValidationTests
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(model, context, results, true);
 
         isValid.Should().BeFalse("Model with null required field should fail validation");
         results.Should().ContainSingle(static r => r.MemberNames.Contains("Name"));
@@ -45,7 +45,7 @@ public class BclValidationTests
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(model, context, results, true);
 
         isValid.Should().BeTrue("Model with valid data should pass validation");
         results.Should().BeEmpty();
@@ -59,7 +59,7 @@ public class BclValidationTests
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(model, context, results, true);
 
         isValid.Should().BeFalse("IValidatableObject.Validate returning errors should fail");
         results.Should().ContainSingle(static r => r.ErrorMessage != null && r.ErrorMessage.Contains("positive"));
@@ -77,7 +77,7 @@ public class BclValidationTests
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(model, context, results, validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(model, context, results, true);
 
         isValid.Should().BeFalse();
         results.Should().HaveCountGreaterThan(1, "Multiple validation errors should be reported");
@@ -93,8 +93,7 @@ public class BclValidationTests
     // Getters are accessed via reflection by Validator.TryValidateObject.
     private sealed class TestModelWithRequired
     {
-        [Required]
-        public string? Name { get; set; }
+        [Required] public string? Name { get; set; }
     }
 
     private sealed class TestModelWithIValidatableObject : IValidatableObject
@@ -110,14 +109,10 @@ public class BclValidationTests
 
     private sealed class TestModelWithMultipleValidations
     {
-        [Required]
-        [MinLength(3)]
-        public string? Name { get; set; }
+        [Required] [MinLength(3)] public string? Name { get; set; }
 
-        [EmailAddress]
-        public string? Email { get; set; }
+        [EmailAddress] public string? Email { get; set; }
 
-        [Range(0, 120)]
-        public int Age { get; set; }
+        [Range(0, 120)] public int Age { get; set; }
     }
 }

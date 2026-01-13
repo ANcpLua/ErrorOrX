@@ -1,4 +1,3 @@
-using ErrorOrX.Sample.Domain;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErrorOrX.Sample;
@@ -21,7 +20,8 @@ public static class TodoApi
     ///     Get todo by ID.
     /// </summary>
     [Get("/api/todos/{id:guid}")]
-    public static Task<ErrorOr<Todo>> GetById([FromRoute] Guid id, [FromServices] ITodoService svc, CancellationToken ct)
+    public static Task<ErrorOr<Todo>> GetById([FromRoute] Guid id, [FromServices] ITodoService svc,
+        CancellationToken ct)
     {
         return svc.GetByIdAsync(id, ct);
     }
@@ -55,7 +55,8 @@ public static class TodoApi
     ///     Delete a todo.
     /// </summary>
     [Delete("/api/todos/{id:guid}")]
-    public static Task<ErrorOr<Deleted>> Delete([FromRoute] Guid id, [FromServices] ITodoService svc, CancellationToken ct)
+    public static Task<ErrorOr<Deleted>> Delete([FromRoute] Guid id, [FromServices] ITodoService svc,
+        CancellationToken ct)
     {
         return svc.DeleteAsync(id, ct);
     }

@@ -16,43 +16,6 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private const int DefaultMaxArity = 6;
 
-    /// <summary>
-    ///     Gets the HTTP status code for an ErrorType name.
-    ///     Delegates to ErrorMapping for single source of truth.
-    /// </summary>
-    public static int GetStatusCodeForErrorType(string errorTypeName)
-    {
-        return ErrorMapping.GetStatusCode(errorTypeName);
-    }
-
-    /// <summary>
-    ///     Generates the switch expression body for ErrorType → Status mapping.
-    ///     Delegates to ErrorMapping for single source of truth.
-    /// </summary>
-    public static string GenerateErrorTypeToStatusSwitch(string errorTypeFqn)
-    {
-        return ErrorMapping.GenerateStatusSwitch(errorTypeFqn);
-    }
-
-    /// <summary>
-    ///     Gets the RFC 9110 compliant title for a given HTTP status code.
-    ///     Delegates to ErrorMapping for single source of truth.
-    /// </summary>
-    public static string GetTitleForStatusCode(int statusCode)
-    {
-        return ErrorMapping.GetStatusTitle(statusCode);
-    }
-
-    /// <summary>
-    ///     Maps a custom error numeric type to the appropriate TypedResults factory.
-    ///     Delegates to ErrorMapping for single source of truth.
-    /// </summary>
-    public static (string Factory, string TypeFqn, bool HasBody) GetCustomErrorMapping(int numericType)
-    {
-        var entry = ErrorMapping.GetCustom(numericType);
-        return (entry.Factory, entry.TypeFqn, entry.HasBody);
-    }
-
     internal static SuccessResponseInfo GetSuccessResponseInfo(
         string successTypeFqn,
         SuccessKind successKind,
@@ -238,7 +201,8 @@ internal static class ResultsUnionTypeBuilder
 
         // InternalServerError<ProblemDetails> for unknown/unhandled errors (always present as safety net)
         // This ensures the default switch case always has a valid return type in the union
-        unionEntries.Add((500, $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>"));
+        unionEntries.Add((500,
+            $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>"));
         includedStatuses.Add(500);
     }
 
@@ -253,9 +217,7 @@ internal static class ResultsUnionTypeBuilder
         foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray()
                      .Distinct()
                      .OrderBy(static x => x, StringComparer.Ordinal))
-        {
             AddInferredError(errorTypeName, unionEntries, includedStatuses);
-        }
 
         return false;
     }
@@ -267,7 +229,8 @@ internal static class ResultsUnionTypeBuilder
     {
         var entry = ErrorMapping.Get(errorTypeName);
 
-        if (errorTypeName == ErrorMapping.Validation) // Validation: uses ValidationProblem (also 400, but different type)
+        if (errorTypeName ==
+            ErrorMapping.Validation) // Validation: uses ValidationProblem (also 400, but different type)
         {
             // ValidationProblem is a special case - it's 400 but different type than BadRequest
             // Use status 400 for sorting but keep as separate entry
@@ -341,9 +304,7 @@ internal static class ResultsUnionTypeBuilder
             return;
 
         foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray().Distinct())
-        {
             allStatuses.Add(ErrorMapping.GetStatusCode(errorTypeName));
-        }
     }
 
     /// <summary>
