@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.3.1] - 2026-01-13
+
+### Documentation
+
+- Streamlined README for NuGet package
+- Added `docs/` folder with detailed documentation
+
+---
+
 ## [2.3.0] - 2026-01-13
 
 ### Breaking Changes
