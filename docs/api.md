@@ -110,6 +110,38 @@ Error.Custom(int type, string code, string description)
 
 ---
 
+## Or* Extensions
+
+Fluent extensions for converting nullable values to `ErrorOr<T>`. Error codes are auto-generated from the type name.
+
+```csharp
+// Returns Todo if found, or NotFound error with code "Todo.NotFound"
+var result = _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
+```
+
+| Extension          | Error Type   | Default Code Pattern   |
+|--------------------|--------------|------------------------|
+| `.OrNotFound()`    | NotFound     | `{TypeName}.NotFound`  |
+| `.OrValidation()`  | Validation   | `{TypeName}.Invalid`   |
+| `.OrUnauthorized()`| Unauthorized | `{TypeName}.Unauthorized` |
+| `.OrForbidden()`   | Forbidden    | `{TypeName}.Forbidden` |
+| `.OrConflict()`    | Conflict     | `{TypeName}.Conflict`  |
+| `.OrFailure()`     | Failure      | `{TypeName}.Failure`   |
+
+Works with both reference types and nullable value types:
+
+```csharp
+// Reference type
+User? user = GetUser(id);
+var result = user.OrNotFound("User not found");
+
+// Nullable struct
+int? count = GetCount();
+var result = count.OrValidation("Count is required");
+```
+
+---
+
 ## Result Markers
 
 Built-in types for semantic HTTP responses.

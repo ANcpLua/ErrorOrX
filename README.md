@@ -29,9 +29,7 @@ public static class TodoApi
 {
     [Get("/todos/{id}")]
     public static ErrorOr<Todo> GetById(int id, ITodoService svc)
-        => svc.GetById(id) is { } todo
-            ? todo
-            : Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+        => svc.GetById(id).OrNotFound($"Todo {id} not found");
 
     [Post("/todos")]
     public static ErrorOr<Todo> Create(CreateTodoRequest req, ITodoService svc)
@@ -42,6 +40,26 @@ public static class TodoApi
         => svc.Delete(id) ? Result.Deleted : Error.NotFound();
 }
 ```
+
+## Nullable Handling
+
+Convert nullable values to `ErrorOr<T>` with fluent extensions:
+
+```csharp
+// Auto-generates error code from type name (e.g., "Todo.NotFound")
+return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
+return user.OrUnauthorized("Invalid credentials");
+return record.OrValidation("Record is invalid");
+```
+
+| Extension          | Error Type   | HTTP |
+|--------------------|--------------|------|
+| `.OrNotFound()`    | NotFound     | 404  |
+| `.OrValidation()`  | Validation   | 400  |
+| `.OrUnauthorized()`| Unauthorized | 401  |
+| `.OrForbidden()`   | Forbidden    | 403  |
+| `.OrConflict()`    | Conflict     | 409  |
+| `.OrFailure()`     | Failure      | 500  |
 
 ## Error Types
 

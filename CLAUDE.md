@@ -185,6 +185,7 @@ src/
 │   ├── ErrorOr.ImplicitConverters.cs
 │   ├── ErrorOr.Match.cs
 │   ├── ErrorOr.MatchExtensions.cs
+│   ├── ErrorOr.OrExtensions.cs      # NEW: OrNotFound, OrValidation, etc.
 │   ├── ErrorOr.Switch.cs
 │   ├── ErrorOr.SwitchExtensions.cs
 │   ├── ErrorOr.Then.cs
