@@ -1,3 +1,5 @@
+using Microsoft.Shared.Diagnostics;
+
 namespace ErrorOr;
 
 /// <summary>
@@ -21,7 +23,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
     private ErrorOr(List<Error> errors)
     {
-        ArgumentNullException.ThrowIfNull(errors);
+        _ = Throw.IfNull(errors);
 
         if (errors.Count == 0)
         {
@@ -33,11 +35,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         _errors = errors;
     }
 
-    private ErrorOr(TValue value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        _value = value;
-    }
+    private ErrorOr(TValue value) => _value = Throw.IfNull(value);
 
     /// <summary>
     ///     Gets a value indicating whether the state is success (no errors).

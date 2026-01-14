@@ -37,7 +37,6 @@ internal sealed class ErrorOrContext
         HttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.HttpContext);
         BindableFromHttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.BindableFromHttpContext);
         ParameterInfo = compilation.GetBestTypeByMetadataName(WellKnownTypes.ParameterInfo);
-        TypedResults = compilation.GetBestTypeByMetadataName(WellKnownTypes.TypedResults);
         SseItemOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.SseItemT)?.ConstructedFrom;
 
         // System types
@@ -136,7 +135,6 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? IFormatProvider { get; }
     public INamedTypeSymbol? Stream { get; }
     public INamedTypeSymbol? PipeReader { get; }
-    public INamedTypeSymbol? TypedResults { get; }
 
     // ErrorOr types
     public INamedTypeSymbol? ProducesErrorAttribute { get; }
@@ -178,6 +176,51 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? FromForm => FromFormAttribute;
     public INamedTypeSymbol? FromKeyedServices => FromKeyedServicesAttribute;
     public INamedTypeSymbol? AsParameters => AsParametersAttribute;
+
+    /// <summary>
+    ///     Determines if a type requires BCL validation.
+    ///     Returns true if the type:
+    ///     1. Has any property with an attribute deriving from ValidationAttribute, OR
+    ///     2. Implements IValidatableObject
+    ///     This enables automatic validation detection without hardcoding specific attributes.
+    /// </summary>
+    public bool RequiresValidation(ITypeSymbol? type)
+    {
+        try
+        {
+            if (type is null || ValidationAttribute is null)
+                return false;
+
+            // Skip primitives and strings - they don't need object-level validation
+            if (type.SpecialType is not SpecialType.None ||
+                type.TypeKind is TypeKind.Enum or TypeKind.Interface)
+                return false;
+
+            // Check if type implements IValidatableObject
+            if (IValidatableObject is not null &&
+                type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, IValidatableObject)))
+                return true;
+
+            // Check if any property has a ValidationAttribute descendant
+            foreach (var member in type.GetMembers())
+            {
+                if (member is not IPropertySymbol property)
+                    continue;
+
+                foreach (var attribute in property.GetAttributes())
+                    if (attribute.AttributeClass is not null &&
+                        attribute.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
+                        return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            // Gracefully degrade if validation detection fails
+            return false;
+        }
+    }
 
     #region Helper Methods
 
@@ -304,49 +347,4 @@ internal sealed class ErrorOrContext
     }
 
     #endregion
-
-    /// <summary>
-    ///     Determines if a type requires BCL validation.
-    ///     Returns true if the type:
-    ///     1. Has any property with an attribute deriving from ValidationAttribute, OR
-    ///     2. Implements IValidatableObject
-    ///     This enables automatic validation detection without hardcoding specific attributes.
-    /// </summary>
-    public bool RequiresValidation(ITypeSymbol? type)
-    {
-        try
-        {
-            if (type is null || ValidationAttribute is null)
-                return false;
-
-            // Skip primitives and strings - they don't need object-level validation
-            if (type.SpecialType is not SpecialType.None ||
-                type.TypeKind is TypeKind.Enum or TypeKind.Interface)
-                return false;
-
-            // Check if type implements IValidatableObject
-            if (IValidatableObject is not null &&
-                type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, IValidatableObject)))
-                return true;
-
-            // Check if any property has a ValidationAttribute descendant
-            foreach (var member in type.GetMembers())
-            {
-                if (member is not IPropertySymbol property)
-                    continue;
-
-                foreach (var attribute in property.GetAttributes())
-                    if (attribute.AttributeClass is not null &&
-                        attribute.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
-                        return true;
-            }
-
-            return false;
-        }
-        catch
-        {
-            // Gracefully degrade if validation detection fails
-            return false;
-        }
-    }
 }

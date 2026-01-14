@@ -3,7 +3,7 @@ using ANcpLua.Roslyn.Utilities.Testing;
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
-/// Tests that verify the generator properly caches its outputs between compilations.
+///     Tests that verify the generator properly caches its outputs between compilations.
 /// </summary>
 public class GeneratorCachingTests : GeneratorTestBase
 {

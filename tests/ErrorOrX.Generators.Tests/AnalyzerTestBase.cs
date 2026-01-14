@@ -2,7 +2,6 @@ using ANcpLua.Roslyn.Utilities.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Testing;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -13,8 +12,7 @@ public abstract class AnalyzerTestBase<TAnalyzer>
     {
         var test = new CSharpAnalyzerTest<TAnalyzer, XUnitV3Verifier>
         {
-            TestCode = source,
-            ReferenceAssemblies = TestConfiguration.ReferenceAssemblies
+            TestCode = source, ReferenceAssemblies = TestConfiguration.ReferenceAssemblies
         };
 
         test.TestState.AdditionalReferences.Add(

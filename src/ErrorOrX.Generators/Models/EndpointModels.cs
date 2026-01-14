@@ -7,7 +7,7 @@ namespace ErrorOr.Generators;
 #region Parameter Models
 
 /// <summary>
-/// Represents a bound endpoint parameter with its source and type information.
+///     Represents a bound endpoint parameter with its source and type information.
 /// </summary>
 internal readonly record struct EndpointParameter(
     string Name,
@@ -23,7 +23,7 @@ internal readonly record struct EndpointParameter(
     bool RequiresValidation = false);
 
 /// <summary>
-/// Raw metadata extracted from a method parameter for binding classification.
+///     Raw metadata extracted from a method parameter for binding classification.
 /// </summary>
 internal readonly record struct ParameterMeta(
     IParameterSymbol Symbol,
@@ -86,7 +86,7 @@ internal readonly record struct ErrorOrReturnTypeInfo(
     string? IdPropertyName = null);
 
 /// <summary>
-/// Pre-computed method-level analysis shared across multiple HTTP method attributes.
+///     Pre-computed method-level analysis shared across multiple HTTP method attributes.
 /// </summary>
 internal readonly record struct MethodAnalysis(
     IMethodSymbol Method,
@@ -98,7 +98,7 @@ internal readonly record struct MethodAnalysis(
     MiddlewareInfo Middleware);
 
 /// <summary>
-/// Complete descriptor for an ErrorOr endpoint used for code generation.
+///     Complete descriptor for an ErrorOr endpoint used for code generation.
 /// </summary>
 internal readonly record struct EndpointDescriptor(
     string HttpMethod,

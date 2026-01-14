@@ -248,6 +248,19 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    #region Local Types
+
+    /// <summary>
+    ///     Information about a method parameter relevant to constraint type checking.
+    ///     Note: Different from RouteMethodParameterInfo which is for route binding validation.
+    /// </summary>
+    private readonly record struct ConstraintMethodParameterInfo(
+        string Name,
+        string TypeFqn,
+        bool IsNullable);
+
+    #endregion
+
     #region Helpers
 
     /// <summary>
@@ -649,19 +662,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     {
         return TypeNameHelper.Normalize(typeFqn);
     }
-
-    #endregion
-
-    #region Local Types
-
-    /// <summary>
-    ///     Information about a method parameter relevant to constraint type checking.
-    ///     Note: Different from RouteMethodParameterInfo which is for route binding validation.
-    /// </summary>
-    private readonly record struct ConstraintMethodParameterInfo(
-        string Name,
-        string TypeFqn,
-        bool IsNullable);
 
     #endregion
 }

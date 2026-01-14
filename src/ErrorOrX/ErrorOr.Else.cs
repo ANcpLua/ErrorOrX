@@ -10,15 +10,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, Error> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return onError(Errors);
-    }
+    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, Error> onError) =>
+        IsError ? onError(Errors) : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed and its result is returned.
@@ -28,30 +21,16 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, IReadOnlyList<Error>> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return onError(Errors).ToList();
-    }
+    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, IReadOnlyList<Error>> onError) =>
+        IsError ? onError(Errors).ToList() : Value;
 
     /// <summary>
     ///     If the state is error, the provided <paramref name="error" /> is returned.
     /// </summary>
     /// <param name="error">The error to return.</param>
     /// <returns>The given <paramref name="error" />.</returns>
-    public ErrorOr<TValue> Else(in Error error)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return error;
-    }
+    public ErrorOr<TValue> Else(in Error error) =>
+        IsError ? error : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed and its result is returned.
@@ -61,15 +40,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, TValue> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return onError(Errors);
-    }
+    public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, TValue> onError) =>
+        IsError ? onError(Errors) : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed and its result is returned.
@@ -79,15 +51,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public ErrorOr<TValue> Else(TValue onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return onError;
-    }
+    public ErrorOr<TValue> Else(TValue onError) =>
+        IsError ? onError : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed asynchronously and its result
@@ -98,15 +63,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<TValue>> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return await onError(Errors).ConfigureAwait(false);
-    }
+    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<TValue>> onError) =>
+        IsError ? await onError(Errors).ConfigureAwait(false) : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed asynchronously and its result
@@ -117,15 +75,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<Error>> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return await onError(Errors).ConfigureAwait(false);
-    }
+    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<Error>> onError) =>
+        IsError ? await onError(Errors).ConfigureAwait(false) : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed asynchronously and its result
@@ -136,30 +87,16 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<IReadOnlyList<Error>>> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return (await onError(Errors).ConfigureAwait(false)).ToList();
-    }
+    public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<IReadOnlyList<Error>>> onError) =>
+        IsError ? (await onError(Errors).ConfigureAwait(false)).ToList() : Value;
 
     /// <summary>
     ///     If the state is error, the provided <paramref name="error" /> is awaited and returned.
     /// </summary>
     /// <param name="error">The error to return if the state is error.</param>
     /// <returns>The result from awaiting the given <paramref name="error" />.</returns>
-    public async Task<ErrorOr<TValue>> ElseAsync(Task<Error> error)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return await error.ConfigureAwait(false);
-    }
+    public async Task<ErrorOr<TValue>> ElseAsync(Task<Error> error) =>
+        IsError ? await error.ConfigureAwait(false) : Value;
 
     /// <summary>
     ///     If the state is error, the provided function <paramref name="onError" /> is executed asynchronously and its result
@@ -170,15 +107,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onError" /> if state is error; otherwise the original
     ///     <see cref="Value" />.
     /// </returns>
-    public async Task<ErrorOr<TValue>> ElseAsync(Task<TValue> onError)
-    {
-        if (!IsError)
-        {
-            return Value;
-        }
-
-        return await onError.ConfigureAwait(false);
-    }
+    public async Task<ErrorOr<TValue>> ElseAsync(Task<TValue> onError) =>
+        IsError ? await onError.ConfigureAwait(false) : Value;
 
     /// <summary>
     ///     If the state is error, the provided action <paramref name="onError" /> is executed for side-effects.

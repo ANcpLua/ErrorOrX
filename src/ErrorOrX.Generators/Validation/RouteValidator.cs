@@ -218,7 +218,8 @@ internal static class RouteValidator
     private static Dictionary<string, RouteMethodParameterInfo> BuildMethodParamsByRouteName(
         ImmutableArray<RouteMethodParameterInfo> methodParams)
     {
-        var methodParamsByRouteName = new Dictionary<string, RouteMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
+        var methodParamsByRouteName =
+            new Dictionary<string, RouteMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var mp in methodParams)
             if (mp.BoundRouteName is not null && mp.TypeFqn is not null)
                 methodParamsByRouteName[mp.BoundRouteName] = mp;

@@ -11,15 +11,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onValue" /> if state is value; otherwise the original
     ///     <see cref="Errors" />.
     /// </returns>
-    public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, ErrorOr<TNextValue>> onValue)
-    {
-        if (IsError)
-        {
-            return _errors;
-        }
-
-        return onValue(Value);
-    }
+    public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, ErrorOr<TNextValue>> onValue) =>
+        IsError ? _errors : onValue(Value);
 
     /// <summary>
     ///     If the state is a value, the provided <paramref name="action" /> is invoked.

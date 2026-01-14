@@ -201,6 +201,9 @@ src/
     ├── Analyzers/
     │   ├── Descriptors.cs
     │   └── ErrorOrEndpointAnalyzer.cs
+    ├── AotJson/
+    │   ├── AotJsonGenerator.cs      # Auto-discovers types for [JsonSerializable]
+    │   └── AotJsonModels.cs         # AotJsonContextInfo, DiscoveredTypeInfo
     ├── Core/
     │   ├── ErrorOrEndpointGenerator.Analyzer.cs
     │   ├── ErrorOrEndpointGenerator.Emitter.cs
@@ -234,7 +237,8 @@ src/
 | `ErrorMapping.cs`   | Error type names, HTTP status codes, TypedResult factories     |
 | `EndpointModels.cs` | All data structures (EndpointDescriptor, MiddlewareInfo, etc.) |
 | `WellKnownTypes.cs` | All FQN string constants                                       |
-| `Descriptors.cs`    | All diagnostics (EOE001-EOE040)                                |
+| `Descriptors.cs`    | All diagnostics (EOE001-EOE040, AOTJ001-AOTJ005)               |
+| `AotJsonGenerator.cs` | [AotJson] type discovery and [JsonSerializable] emission     |
 
 ## Diagnostics
 
@@ -260,6 +264,11 @@ src/
 | EOE032 | Warning  | Unknown error factory                                   |
 | EOE033 | Error    | Undocumented interface call                             |
 | EOE040 | Warning  | Missing CamelCase JSON policy                           |
+| AOTJ001| Warning  | JsonSerializerContext not registered in DI              |
+| AOTJ002| Info     | Missing [AotJson] attribute                             |
+| AOTJ003| Warning  | Duplicate [AotJson] contexts                            |
+| AOTJ004| Warning  | Type not serializable                                   |
+| AOTJ005| Error    | [AotJson] on non-partial class                          |
 
 ## ErrorType → HTTP (RFC 9110)
 

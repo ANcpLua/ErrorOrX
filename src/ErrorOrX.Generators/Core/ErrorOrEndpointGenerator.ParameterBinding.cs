@@ -42,7 +42,8 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterBindingResult.Invalid;
         }
 
-        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
+        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod,
+            useLegacyBinding);
     }
 
     private static ParameterMeta[] BuildParameterMetas(
@@ -138,7 +139,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var meta in metas)
         {
-            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
+            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod,
+                useLegacyBinding);
             if (result.IsError)
             {
                 isValid = false;
@@ -164,7 +166,8 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
-            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
+            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod,
+                useLegacyBinding);
         if (meta.HasFromBody)
             return ParameterSuccess(in meta, EndpointParameterSource.Body);
         if (meta.HasFromForm)
@@ -229,11 +232,11 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Legacy mode: fallback to service injection (BCL handles resolution at runtime)
-        if (useLegacyBinding)
-            return ParameterSuccess(in meta, EndpointParameterSource.Service);
-
-        // Smart inference based on HTTP method and type analysis
-        return InferParameterSource(in meta, httpMethod, method, diagnostics, context);
+        return useLegacyBinding
+            ? ParameterSuccess(in meta, EndpointParameterSource.Service)
+            :
+            // Smart inference based on HTTP method and type analysis
+            InferParameterSource(in meta, httpMethod, method, diagnostics, context);
     }
 
     /// <summary>
@@ -511,7 +514,8 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var paramSymbol in constructor.Parameters)
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
-            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod, useLegacyBinding);
+            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod,
+                useLegacyBinding);
 
             if (result.IsError)
                 return ParameterClassificationResult.Error;
@@ -938,10 +942,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Check using fluent matchers for common DI naming patterns
         if (type is INamedTypeSymbol namedType)
-        {
             if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
                 return true;
-        }
 
         return false;
     }

@@ -319,7 +319,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         // Bind parameters
         var bindingDiagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext, httpMethod, useLegacyBinding);
+        var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext,
+            httpMethod, useLegacyBinding);
         if (!bindingResult.IsValid)
             return DiagnosticFlow.Fail<EndpointDescriptor>(bindingDiagnostics.ToImmutable().AsEquatableArray());
 

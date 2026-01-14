@@ -154,7 +154,6 @@ internal static class JsonContextProvider
             {
                 // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
                 foreach (var namedArg in attr.NamedArguments)
-                {
                     if (namedArg.Key == "PropertyNamingPolicy" &&
                         namedArg.Value.Value is int policyValue &&
                         policyValue == 1) // CamelCase = 1
@@ -162,7 +161,6 @@ internal static class JsonContextProvider
                         hasCamelCasePolicy = true;
                         break;
                     }
-                }
             }
         }
 

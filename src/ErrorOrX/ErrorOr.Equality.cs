@@ -20,9 +20,9 @@ public readonly partial record struct ErrorOr<TValue>
         }
 
         var hashCode = new HashCode();
-        for (var i = 0; i < _errors.Count; i++)
+        foreach (var t in _errors)
         {
-            hashCode.Add(_errors[i]);
+            hashCode.Add(t);
         }
 
         return hashCode.ToHashCode();

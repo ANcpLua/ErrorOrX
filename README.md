@@ -4,7 +4,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOrX.Generators.svg)](https://www.nuget.org/packages/ErrorOrX.Generators/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Discriminated unions for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full AOT support.
+Discriminated unions for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full AOT
+support.
 
 ## Installation
 
@@ -56,17 +57,17 @@ return value.OrError(Error.Custom(422, "Custom.Code", "Custom message"));
 return value.OrError(() => BuildExpensiveError());
 ```
 
-| Extension          | Error Type   | HTTP | Description                |
-|--------------------|--------------|------|----------------------------|
-| `.OrNotFound()`    | NotFound     | 404  | Resource not found         |
-| `.OrValidation()`  | Validation   | 400  | Input validation failed    |
-| `.OrUnauthorized()`| Unauthorized | 401  | Authentication required    |
-| `.OrForbidden()`   | Forbidden    | 403  | Insufficient permissions   |
-| `.OrConflict()`    | Conflict     | 409  | State conflict             |
-| `.OrFailure()`     | Failure      | 500  | Operational failure        |
-| `.OrUnexpected()`  | Unexpected   | 500  | Unexpected error           |
-| `.OrError(Error)`  | Any          | Any  | Custom error               |
-| `.OrError(Func)`   | Any          | Any  | Lazy custom error          |
+| Extension           | Error Type   | HTTP | Description              |
+|---------------------|--------------|------|--------------------------|
+| `.OrNotFound()`     | NotFound     | 404  | Resource not found       |
+| `.OrValidation()`   | Validation   | 400  | Input validation failed  |
+| `.OrUnauthorized()` | Unauthorized | 401  | Authentication required  |
+| `.OrForbidden()`    | Forbidden    | 403  | Insufficient permissions |
+| `.OrConflict()`     | Conflict     | 409  | State conflict           |
+| `.OrFailure()`      | Failure      | 500  | Operational failure      |
+| `.OrUnexpected()`   | Unexpected   | 500  | Unexpected error         |
+| `.OrError(Error)`   | Any          | Any  | Custom error             |
+| `.OrError(Func)`    | Any          | Any  | Lazy custom error        |
 
 ## Error Types
 
@@ -81,16 +82,16 @@ Error.Unexpected("Unknown", "An unexpected error occurred")
 Error.Custom(422, "Validation.Complex", "Complex validation failed")
 ```
 
-| Factory                | HTTP | Use Case                    |
-|------------------------|------|-----------------------------|
-| `Error.Validation()`   | 400  | Input/request validation    |
-| `Error.Unauthorized()` | 401  | Authentication required     |
-| `Error.Forbidden()`    | 403  | Insufficient permissions    |
-| `Error.NotFound()`     | 404  | Resource doesn't exist      |
-| `Error.Conflict()`     | 409  | State conflict (duplicate)  |
-| `Error.Failure()`      | 500  | Known operational failure   |
-| `Error.Unexpected()`   | 500  | Unhandled/unknown error     |
-| `Error.Custom()`       | Any  | Custom HTTP status code     |
+| Factory                | HTTP | Use Case                   |
+|------------------------|------|----------------------------|
+| `Error.Validation()`   | 400  | Input/request validation   |
+| `Error.Unauthorized()` | 401  | Authentication required    |
+| `Error.Forbidden()`    | 403  | Insufficient permissions   |
+| `Error.NotFound()`     | 404  | Resource doesn't exist     |
+| `Error.Conflict()`     | 409  | State conflict (duplicate) |
+| `Error.Failure()`      | 500  | Known operational failure  |
+| `Error.Unexpected()`   | 500  | Unhandled/unknown error    |
+| `Error.Custom()`       | Any  | Custom HTTP status code    |
 
 ## Fluent API
 
@@ -155,7 +156,8 @@ public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
 
 ## Native AOT
 
-Fully compatible with `PublishAot=true`. The generator produces reflection-free code with automatic JSON serialization context generation.
+Fully compatible with `PublishAot=true`. The generator produces reflection-free code with automatic JSON serialization
+context generation.
 
 ```xml
 <PropertyGroup>

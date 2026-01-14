@@ -64,7 +64,10 @@ internal static class WellKnownTypes
     // System
     public const string CancellationToken = "System.Threading.CancellationToken";
     public const string JsonSerializableAttribute = "System.Text.Json.Serialization.JsonSerializableAttribute";
-    public const string JsonSourceGenerationOptionsAttribute = "System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute";
+
+    public const string JsonSourceGenerationOptionsAttribute =
+        "System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute";
+
     public const string JsonSerializerContext = "System.Text.Json.Serialization.JsonSerializerContext";
     public const string ParameterInfo = "System.Reflection.ParameterInfo";
 

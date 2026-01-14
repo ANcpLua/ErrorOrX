@@ -51,6 +51,6 @@
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-        <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot)</NuspecProperties>
+        <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot);roslynUtilsVersion=$(ANcpLuaRoslynUtilitiesVersion)</NuspecProperties>
     </PropertyGroup>
 </Project>

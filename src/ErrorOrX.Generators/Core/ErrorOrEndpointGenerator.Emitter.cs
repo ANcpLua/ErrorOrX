@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using ANcpLua.Roslyn.Utilities;
+using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -238,11 +239,6 @@ public sealed partial class ErrorOrEndpointGenerator
         bodyCode.AppendLine(
             $"            var result = {awaitKeyword}{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}({args});");
 
-        string WrapReturn(string expr)
-        {
-            return needsAwait ? expr : $"Task.FromResult<{unionResult.ReturnTypeFqn}>({expr})";
-        }
-
         if (ep.IsSse)
         {
             bodyCode.AppendLine($"            if (result.IsError) return {WrapReturn("ToProblem(result.Errors)")};");
@@ -273,6 +269,12 @@ public sealed partial class ErrorOrEndpointGenerator
         code.Append(bodyCode);
         code.AppendLine("        }");
         code.AppendLine();
+        return;
+
+        string WrapReturn(string expr)
+        {
+            return needsAwait ? expr : $"Task.FromResult<{unionResult.ReturnTypeFqn}>({expr})";
+        }
     }
 
     private static bool HasBodyParam(in EndpointDescriptor ep)
@@ -881,7 +883,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableArray<JsonContextInfo> userContexts)
     {
         // If user has their own JsonSerializerContext, emit a helper file instead
-        if (!userContexts.IsDefaultOrEmpty && userContexts.Length > 0)
+        if (userContexts is { IsDefaultOrEmpty: false, Length: > 0 })
         {
             EmitJsonContextHelper(spc, jsonTypes, userContexts);
             return;
@@ -937,12 +939,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Report EOE040 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
-        {
             spc.ReportDiagnostic(Diagnostic.Create(
-                Analyzers.Descriptors.MissingCamelCasePolicy,
+                Descriptors.MissingCamelCasePolicy,
                 Location.None,
                 fullClassName));
-        }
 
         // Emit helper file with missing types as comments using IndentedStringBuilder
         var sb = new IndentedStringBuilder();

@@ -1,7 +1,7 @@
 namespace ErrorOr.Generators;
 
 /// <summary>
-/// Specifies where an endpoint parameter value is bound from.
+///     Specifies where an endpoint parameter value is bound from.
 /// </summary>
 internal enum EndpointParameterSource
 {
@@ -52,7 +52,7 @@ internal enum EndpointParameterSource
 }
 
 /// <summary>
-/// Represents the custom binding method detected on a parameter type.
+///     Represents the custom binding method detected on a parameter type.
 /// </summary>
 internal enum CustomBindingMethod
 {
@@ -76,56 +76,74 @@ internal enum CustomBindingMethod
 }
 
 /// <summary>
-/// Primitive types that can be bound from route templates.
+///     Primitive types that can be bound from route templates.
 /// </summary>
 /// <remarks>
-/// These types are natively supported by ASP.NET Core route binding.
-/// Each has implicit TryParse support in the routing infrastructure.
+///     These types are natively supported by ASP.NET Core route binding.
+///     Each has implicit TryParse support in the routing infrastructure.
 /// </remarks>
 internal enum RoutePrimitiveKind
 {
     /// <summary>System.String - default for untyped route segments.</summary>
     String,
+
     /// <summary>System.Int32 (int) - {id:int}.</summary>
     Int32,
+
     /// <summary>System.Int64 (long) - {id:long}.</summary>
     Int64,
+
     /// <summary>System.Int16 (short).</summary>
     Int16,
+
     /// <summary>System.UInt32 (uint).</summary>
     UInt32,
+
     /// <summary>System.UInt64 (ulong).</summary>
     UInt64,
+
     /// <summary>System.UInt16 (ushort).</summary>
     UInt16,
+
     /// <summary>System.Byte.</summary>
     Byte,
+
     /// <summary>System.SByte.</summary>
     SByte,
+
     /// <summary>System.Boolean (bool) - {active:bool}.</summary>
     Boolean,
+
     /// <summary>System.Decimal - {price:decimal}.</summary>
     Decimal,
+
     /// <summary>System.Double - {rate:double}.</summary>
     Double,
+
     /// <summary>System.Single (float) - {rate:float}.</summary>
     Single,
+
     /// <summary>System.Guid - {id:guid}.</summary>
     Guid,
+
     /// <summary>System.DateTime - {date:datetime}.</summary>
     DateTime,
+
     /// <summary>System.DateTimeOffset.</summary>
     DateTimeOffset,
+
     /// <summary>System.DateOnly.</summary>
     DateOnly,
+
     /// <summary>System.TimeOnly.</summary>
     TimeOnly,
+
     /// <summary>System.TimeSpan.</summary>
     TimeSpan
 }
 
 /// <summary>
-/// Classifies the success response type for HTTP status code mapping.
+///     Classifies the success response type for HTTP status code mapping.
 /// </summary>
 internal enum SuccessKind
 {
