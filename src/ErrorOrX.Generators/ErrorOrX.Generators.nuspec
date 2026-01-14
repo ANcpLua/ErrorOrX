@@ -6,11 +6,9 @@
         <authors>ANcpLua</authors>
         <license type="expression">MIT</license>
         <projectUrl>https://github.com/ANcpLua/ErrorOrX</projectUrl>
-        <description>Source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates
-            MapErrorOrEndpoints() with typed Results, OpenAPI metadata, and middleware attribute support.
-        </description>
+        <description>Roslyn source generator for ASP.NET Core Minimal API integration with ErrorOrX. Auto-generates MapErrorOrEndpoints() with typed Results unions for OpenAPI, smart parameter binding (body/route/query/service inference), middleware attribute emission, and JSON serialization context. Full Native AOT support.</description>
         <copyright>Copyright (c) 2025 Alexander Nachtmann</copyright>
-        <tags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen</tags>
+        <tags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen;AOT;OpenAPI;Swagger;Railway</tags>
         <repository type="git" url="https://github.com/ANcpLua/ErrorOrX"/>
         <developmentDependency>true</developmentDependency>
         <dependencies>

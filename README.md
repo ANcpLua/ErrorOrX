@@ -41,7 +41,7 @@ public static class TodoApi
 }
 ```
 
-## Nullable Handling
+## Nullable-to-ErrorOr Extensions
 
 Convert nullable values to `ErrorOr<T>` with fluent extensions:
 
@@ -50,62 +50,125 @@ Convert nullable values to `ErrorOr<T>` with fluent extensions:
 return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
 return user.OrUnauthorized("Invalid credentials");
 return record.OrValidation("Record is invalid");
+
+// Custom errors
+return value.OrError(Error.Custom(422, "Custom.Code", "Custom message"));
+return value.OrError(() => BuildExpensiveError());
 ```
 
-| Extension          | Error Type   | HTTP |
-|--------------------|--------------|------|
-| `.OrNotFound()`    | NotFound     | 404  |
-| `.OrValidation()`  | Validation   | 400  |
-| `.OrUnauthorized()`| Unauthorized | 401  |
-| `.OrForbidden()`   | Forbidden    | 403  |
-| `.OrConflict()`    | Conflict     | 409  |
-| `.OrFailure()`     | Failure      | 500  |
+| Extension          | Error Type   | HTTP | Description                |
+|--------------------|--------------|------|----------------------------|
+| `.OrNotFound()`    | NotFound     | 404  | Resource not found         |
+| `.OrValidation()`  | Validation   | 400  | Input validation failed    |
+| `.OrUnauthorized()`| Unauthorized | 401  | Authentication required    |
+| `.OrForbidden()`   | Forbidden    | 403  | Insufficient permissions   |
+| `.OrConflict()`    | Conflict     | 409  | State conflict             |
+| `.OrFailure()`     | Failure      | 500  | Operational failure        |
+| `.OrUnexpected()`  | Unexpected   | 500  | Unexpected error           |
+| `.OrError(Error)`  | Any          | Any  | Custom error               |
+| `.OrError(Func)`   | Any          | Any  | Lazy custom error          |
 
 ## Error Types
 
-| Factory                | HTTP | Use Case               |
-|------------------------|------|------------------------|
-| `Error.Validation()`   | 400  | Input validation       |
-| `Error.Unauthorized()` | 401  | Authentication         |
-| `Error.Forbidden()`    | 403  | Authorization          |
-| `Error.NotFound()`     | 404  | Resource not found     |
-| `Error.Conflict()`     | 409  | State conflict         |
-| `Error.Failure()`      | 500  | Operational failure    |
+```csharp
+Error.Validation("User.InvalidEmail", "Email format is invalid")
+Error.NotFound("User.NotFound", "User does not exist")
+Error.Conflict("User.Duplicate", "Email already registered")
+Error.Unauthorized("Auth.InvalidToken", "Token has expired")
+Error.Forbidden("Auth.InsufficientRole", "Admin role required")
+Error.Failure("Db.ConnectionFailed", "Database unavailable")
+Error.Unexpected("Unknown", "An unexpected error occurred")
+Error.Custom(422, "Validation.Complex", "Complex validation failed")
+```
+
+| Factory                | HTTP | Use Case                    |
+|------------------------|------|-----------------------------|
+| `Error.Validation()`   | 400  | Input/request validation    |
+| `Error.Unauthorized()` | 401  | Authentication required     |
+| `Error.Forbidden()`    | 403  | Insufficient permissions    |
+| `Error.NotFound()`     | 404  | Resource doesn't exist      |
+| `Error.Conflict()`     | 409  | State conflict (duplicate)  |
+| `Error.Failure()`      | 500  | Known operational failure   |
+| `Error.Unexpected()`   | 500  | Unhandled/unknown error     |
+| `Error.Custom()`       | Any  | Custom HTTP status code     |
 
 ## Fluent API
 
 ```csharp
-// Chain operations
+// Chain operations (railway-oriented programming)
 var result = ValidateOrder(request)
     .Then(order => ProcessPayment(order))
-    .Then(order => CreateShipment(order));
+    .Then(order => CreateShipment(order))
+    .FailIf(order => order.Total <= 0, Error.Validation("Order.InvalidTotal", "Total must be positive"));
 
 // Handle both cases
 return result.Match(
     order => Ok(order),
-    errors => BadRequest(errors));
+    errors => BadRequest(errors.First().Description));
+
+// Provide fallback on error
+var user = GetUser(id).Else(errors => DefaultUser);
+
+// Side effects
+GetUser(id).Switch(
+    user => Console.WriteLine($"Found: {user.Name}"),
+    errors => Logger.LogError(errors.First().Description));
 ```
 
-## Middleware
+## Result Markers
+
+```csharp
+Result.Success   // 200 OK (no body)
+Result.Created   // 201 Created (no body)
+Result.Updated   // 204 No Content
+Result.Deleted   // 204 No Content
+```
+
+## Smart Parameter Binding
+
+The generator automatically infers parameter sources:
+
+```csharp
+[Post("/todos")]
+public static ErrorOr<Todo> Create(
+    CreateTodoRequest req,    // -> Body (POST + complex type)
+    ITodoService svc)         // -> Service (interface)
+    => svc.Create(req);
+
+[Get("/todos/{id}")]
+public static ErrorOr<Todo> GetById(
+    int id,                   // -> Route (matches {id})
+    ITodoService svc)         // -> Service
+    => svc.GetById(id).OrNotFound();
+```
+
+## Middleware Attributes
 
 ```csharp
 [Post("/admin")]
 [Authorize("Admin")]
 [EnableRateLimiting("fixed")]
+[OutputCache(Duration = 60)]
 public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
-// Generates: .RequireAuthorization("Admin").RequireRateLimiting("fixed")
+// Generates: .RequireAuthorization("Admin").RequireRateLimiting("fixed").CacheOutput(...)
 ```
 
 ## Native AOT
 
-Fully compatible with `PublishAot=true`. The generator produces reflection-free code.
+Fully compatible with `PublishAot=true`. The generator produces reflection-free code with automatic JSON serialization context generation.
+
+```xml
+<PropertyGroup>
+  <PublishAot>true</PublishAot>
+</PropertyGroup>
+```
 
 ## Documentation
 
-- [API Reference](docs/api.md) - Full API documentation
-- [Parameter Binding](docs/parameter-binding.md) - How parameters are bound
-- [Diagnostics](docs/diagnostics.md) - Analyzer warnings and errors
-- [Changelog](CHANGELOG.md) - Version history
+- [API Reference](docs/api.md)
+- [Parameter Binding](docs/parameter-binding.md)
+- [Diagnostics](docs/diagnostics.md)
+- [Changelog](CHANGELOG.md)
 
 ## License
 

@@ -196,7 +196,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var attr in method.GetAttributes())
             if (context.ProducesErrorAttribute is not null &&
                 SymbolEqualityComparer.Default.Equals(attr.AttributeClass, context.ProducesErrorAttribute))
-                if (attr.ConstructorArguments is [{ Value: int statusCode } _, ..])
+                if (attr.ConstructorArguments is [{ Value: int statusCode }, ..])
                     results.Add(new ProducesErrorInfo(statusCode));
 
         return results.Count > 0

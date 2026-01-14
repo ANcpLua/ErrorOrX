@@ -4,8 +4,9 @@
         <PackageId>ErrorOrX</PackageId>
         <!-- Suppress intentional API design choices -->
         <NoWarn>$(NoWarn);CA1040;CA1000;CA1002;CA1859;RS0030</NoWarn>
-        <Description>A discriminated union type for .NET. ErrorOr&lt;T&gt; with railway-oriented programming, immutable error collections, and rich error types.</Description>
-        <PackageTags>ErrorOr;Result;Either;Discriminated;Union;Monad;Railway;Error;Handling;DDD;Domain;Driven;Design</PackageTags>
+        <Description>Discriminated unions for .NET with fluent error handling. ErrorOr&lt;T&gt; provides railway-oriented programming, nullable-to-ErrorOr extensions (OrNotFound, OrValidation, OrError), Match/Then/Else/Switch/FailIf fluent API, and rich typed errors mapped to HTTP status codes.</Description>
+        <PackageTags>ErrorOr;Result;Either;Discriminated;Union;Railway;Error;Handling;Monad;Functional;DDD;MinimalAPI;ASP.NET;AOT</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
