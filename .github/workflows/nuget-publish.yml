@@ -41,7 +41,7 @@ jobs:
         run: dotnet build ErrorOrX.slnx -c Release -p:Version=${{ steps.version.outputs.version }}
 
       - name: Test
-        run: dotnet test ErrorOrX.slnx -c Release --no-build
+        run: dotnet test --solution ErrorOrX.slnx -c Release --no-build
 
       - name: Pack ErrorOrX
         run: dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }} --no-build
