@@ -1,4 +1,7 @@
 using ANcpLua.Roslyn.Utilities.Testing;
+using AwesomeAssertions;
+using ErrorOr.Generators;
+using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 

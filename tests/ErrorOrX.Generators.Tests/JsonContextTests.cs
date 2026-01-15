@@ -1,3 +1,7 @@
+using AwesomeAssertions;
+using ErrorOr;
+using Xunit;
+
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>

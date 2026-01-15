@@ -1,4 +1,8 @@
+using System;
 using System.Reflection;
+using AwesomeAssertions;
+using ErrorOr.Generators;
+using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 

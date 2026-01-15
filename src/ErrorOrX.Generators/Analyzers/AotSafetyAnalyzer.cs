@@ -35,6 +35,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         "GetCustomAttributes",
         "GetCustomAttribute");
 
+    /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [
         Descriptors.ActivatorCreateInstance,
@@ -44,6 +45,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         Descriptors.DynamicKeyword
     ];
 
+    /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);

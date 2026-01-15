@@ -28,7 +28,7 @@ public readonly partial record struct ErrorOr<TValue>
         return hashCode.ToHashCode();
     }
 
-    private static bool CheckIfErrorsAreEqual(IReadOnlyList<Error> errors1, IReadOnlyList<Error> errors2)
+    private static bool CheckIfErrorsAreEqual(List<Error> errors1, List<Error> errors2)
     {
         // This method is currently implemented with strict ordering in mind, so the errors
         // of the two lists need to be in the exact same order.

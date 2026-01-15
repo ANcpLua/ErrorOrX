@@ -1,3 +1,6 @@
+using System.Threading.Tasks;
+using Xunit;
+
 namespace ErrorOrX.Generators.Tests;
 
 public class DuplicateRouteTests : GeneratorTestBase

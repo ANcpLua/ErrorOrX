@@ -22,6 +22,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
     private const string JsonSerializerContextFqn = "System.Text.Json.Serialization.JsonSerializerContext";
     private const int DefaultMaxDepth = 10;
 
+    /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // 1. Emit the marker attributes
@@ -229,8 +230,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         var location = classSymbol.Locations.FirstOrDefault() ?? Location.None;
 
         // Check if class is partial
-        var syntax = ctx.TargetNode as ClassDeclarationSyntax;
-        if (syntax is not null && !syntax.Modifiers.Any(SyntaxKind.PartialKeyword))
+        if (ctx.TargetNode is ClassDeclarationSyntax syntax && !syntax.Modifiers.Any(SyntaxKind.PartialKeyword))
             return DiagnosticFlow.Fail<AotJsonContextInfo>(
                 DiagnosticInfo.Create(Descriptors.AotJsonOnNonPartialClass, location, classSymbol.Name));
 
@@ -350,68 +350,71 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
     ///     Recursively extracts types, unwrapping Task, ErrorOr, collections, etc.
     ///     Also traverses property types inline for proper caching.
     /// </summary>
-    private static void ExtractTypesRecursive(
-        ITypeSymbol type,
-        ImmutableArray<DiscoveredTypeInfo>.Builder types,
-        HashSet<string> visitedTypes,
-        AwaitableContext awaitableCtx,
-        CollectionContext collectionCtx,
-        DiscoveredTypeSource source)
+    private static void ExtractTypesRecursive(ITypeSymbol type, ImmutableArray<DiscoveredTypeInfo>.Builder types, HashSet<string> visitedTypes, AwaitableContext awaitableCtx, CollectionContext collectionCtx, DiscoveredTypeSource source)
     {
-        // Skip null/error types
-        if (type is null || type.TypeKind == TypeKind.Error)
-            return;
-
-        // Unwrap Task/ValueTask
-        if (awaitableCtx.IsTaskLike(type) && type is INamedTypeSymbol { TypeArguments.Length: 1 } taskType)
+        while (true)
         {
-            ExtractTypesRecursive(taskType.TypeArguments[0], types, visitedTypes, awaitableCtx, collectionCtx, source);
-            return;
-        }
-
-        // Unwrap ErrorOr<T>
-        if (type is INamedTypeSymbol { Name: "ErrorOr", TypeArguments.Length: 1 } errorOrType)
-        {
-            ExtractTypesRecursive(errorOrType.TypeArguments[0], types, visitedTypes, awaitableCtx, collectionCtx,
-                source);
-            return;
-        }
-
-        // Handle collections - extract element type but also keep the collection
-        if (collectionCtx.IsEnumerable(type))
-        {
-            var elementType = collectionCtx.GetElementType(type);
-            if (elementType is not null)
-            {
-                // Don't add IEnumerable<T>, IAsyncEnumerable<T>, etc. directly - just the element
-                ExtractTypesRecursive(elementType, types, visitedTypes, awaitableCtx, collectionCtx, source);
+            // Skip null/error types
+            if (type.TypeKind == TypeKind.Error)
                 return;
+
+            // Unwrap Task/ValueTask
+            if (awaitableCtx.IsTaskLike(type) && type is INamedTypeSymbol
+                {
+                    TypeArguments.Length: 1
+                } taskType)
+            {
+                type = taskType.TypeArguments[0];
+                continue;
             }
+
+            // Unwrap ErrorOr<T>
+            if (type is INamedTypeSymbol
+                {
+                    Name: "ErrorOr", TypeArguments.Length: 1
+                } errorOrType)
+            {
+                type = errorOrType.TypeArguments[0];
+                continue;
+            }
+
+            // Handle collections - extract element type but also keep the collection
+            if (collectionCtx.IsEnumerable(type))
+            {
+                var elementType = collectionCtx.GetElementType(type);
+                if (elementType is not null)
+                {
+                    // Don't add IEnumerable<T>, IAsyncEnumerable<T>, etc. directly - just the element
+                    type = elementType;
+                    continue;
+                }
+            }
+
+            // Handle arrays
+            if (type is IArrayTypeSymbol arrayType)
+            {
+                type = arrayType.ElementType;
+                continue;
+            }
+
+            // Skip primitives and well-known types
+            if (IsPrimitiveOrBuiltIn(type))
+                return;
+
+            // Skip special ASP.NET types that are handled differently
+            if (IsSpecialAspNetType(type))
+                return;
+
+            // Add the type
+            var fqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var displayName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+            types.Add(new DiscoveredTypeInfo(fqn, displayName, false, source));
+
+            // Traverse property types inline for proper caching
+            TraversePropertyTypesForExtraction(type, types, visitedTypes, 0, DefaultMaxDepth);
+            break;
         }
-
-        // Handle arrays
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            ExtractTypesRecursive(arrayType.ElementType, types, visitedTypes, awaitableCtx, collectionCtx, source);
-            return;
-        }
-
-        // Skip primitives and well-known types
-        if (IsPrimitiveOrBuiltIn(type))
-            return;
-
-        // Skip special ASP.NET types that are handled differently
-        if (IsSpecialAspNetType(type))
-            return;
-
-        // Add the type
-        var fqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var displayName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-        types.Add(new DiscoveredTypeInfo(fqn, displayName, false, source));
-
-        // Traverse property types inline for proper caching
-        TraversePropertyTypesForExtraction(type, types, visitedTypes, 0, DefaultMaxDepth);
     }
 
     /// <summary>
@@ -431,7 +434,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             return;
 
         // Skip null/error types
-        if (type is null || type.TypeKind == TypeKind.Error)
+        if (type.TypeKind == TypeKind.Error)
             return;
 
         var fqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -474,23 +477,25 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
                 } nullable)
                 propertyType = nullable.TypeArguments[0];
 
-            // Handle arrays
-            if (propertyType is IArrayTypeSymbol arrayType)
+            switch (propertyType)
             {
-                AddPropertyType(arrayType.ElementType, types, visitedTypes, currentDepth, maxDepth);
-                continue;
-            }
-
-            // Handle generic collections
-            if (propertyType is INamedTypeSymbol { IsGenericType: true } genericType)
-            {
-                var typeName = genericType.ConstructedFrom.ToDisplayString();
-                if (typeName.StartsWith("System.Collections.Generic.", StringComparison.Ordinal) ||
-                    typeName.StartsWith("System.Collections.Immutable.", StringComparison.Ordinal))
-                {
-                    foreach (var typeArg in genericType.TypeArguments)
-                        AddPropertyType(typeArg, types, visitedTypes, currentDepth, maxDepth);
+                // Handle arrays
+                case IArrayTypeSymbol arrayType:
+                    AddPropertyType(arrayType.ElementType, types, visitedTypes, currentDepth, maxDepth);
                     continue;
+                // Handle generic collections
+                case INamedTypeSymbol { IsGenericType: true } genericType:
+                {
+                    var typeName = genericType.ConstructedFrom.ToDisplayString();
+                    if (typeName.StartsWith("System.Collections.Generic.", StringComparison.Ordinal) ||
+                        typeName.StartsWith("System.Collections.Immutable.", StringComparison.Ordinal))
+                    {
+                        foreach (var typeArg in genericType.TypeArguments)
+                            AddPropertyType(typeArg, types, visitedTypes, currentDepth, maxDepth);
+                        continue;
+                    }
+
+                    break;
                 }
             }
 
@@ -719,10 +724,11 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         if (arg.Key is null || arg.Value.IsNull)
             return ImmutableArray<string>.Empty;
 
-        return arg.Value.Values
-            .Where(v => v.Value is not null)
-            .Select(v => v.Value!.ToString()!)
-            .ToImmutableArray();
+        return [
+            ..arg.Value.Values
+                .Where(static v => v.Value is not null)
+                .Select(static v => v.Value!.ToString())
+        ];
     }
 
     private static ImmutableArray<string> GetNamedArgumentTypeArrayValue(AttributeData attr, string name)
@@ -731,10 +737,11 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         if (arg.Key is null || arg.Value.IsNull)
             return ImmutableArray<string>.Empty;
 
-        return arg.Value.Values
-            .Where(v => v.Value is INamedTypeSymbol)
-            .Select(v => ((INamedTypeSymbol)v.Value!).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
-            .ToImmutableArray();
+        return [
+            ..arg.Value.Values
+                .Where(static v => v.Value is INamedTypeSymbol)
+                .Select(static v => ((INamedTypeSymbol)v.Value!).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+        ];
     }
 
     private static bool IsSerializableParameter(IParameterSymbol param)

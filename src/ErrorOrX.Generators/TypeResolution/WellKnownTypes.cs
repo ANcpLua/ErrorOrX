@@ -16,6 +16,9 @@ internal static class WellKnownTypes
     public const string PutAttribute = "ErrorOr.PutAttribute";
     public const string DeleteAttribute = "ErrorOr.DeleteAttribute";
     public const string PatchAttribute = "ErrorOr.PatchAttribute";
+    public const string HeadAttribute = "ErrorOr.HeadAttribute";
+    public const string OptionsAttribute = "ErrorOr.OptionsAttribute";
+    public const string TraceAttribute = "ErrorOr.TraceAttribute";
     public const string ProducesErrorAttribute = "ErrorOr.ProducesErrorAttribute";
     public const string AcceptedResponseAttribute = "ErrorOr.AcceptedResponseAttribute";
     public const string ReturnsErrorAttribute = "ErrorOr.ReturnsErrorAttribute";
@@ -125,6 +128,7 @@ internal static class WellKnownTypes
         public const string Patch = "PATCH";
         public const string Head = "HEAD";
         public const string Options = "OPTIONS";
+        public const string Trace = "TRACE";
 
         /// <summary>
         ///     Returns true if the HTTP method typically has no request body.

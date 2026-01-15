@@ -1,3 +1,6 @@
+// CA1002: List<Error> is exposed intentionally for ergonomic API - users commonly work with List<T>.
+#pragma warning disable CA1002
+
 using Microsoft.Shared.Diagnostics;
 
 namespace ErrorOr;

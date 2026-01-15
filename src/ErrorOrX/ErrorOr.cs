@@ -1,3 +1,7 @@
+// CA1000: Static From method on generic type is standard functional programming API design.
+// CA1002: List<Error> is exposed intentionally for ergonomic API - users commonly work with List<T>.
+#pragma warning disable CA1000, CA1002
+
 using Microsoft.Shared.Diagnostics;
 
 namespace ErrorOr;

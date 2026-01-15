@@ -15,52 +15,46 @@ namespace ErrorOr.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 {
-    // EPS06: Defensive copies are unavoidable with Roslyn's incremental generator API.
-    // IncrementalValuesProvider<T> and IncrementalValueProvider<T> are readonly structs,
-    // and extension methods like Where(), Select(), Collect(), Combine() inherently copy them.
-    // This is by design in the Roslyn API and has negligible performance impact.
+    // EPS06: Roslyn's readonly struct API causes unavoidable defensive copies.
 #pragma warning disable EPS06
 
+    /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // NOTE: Attributes are emitted by ErrorOrEndpointGenerator.
-        // Both generators run in the same compilation, so ForAttributeWithMetadataName
-        // can see the types from ErrorOrEndpointGenerator's PostInitializationOutput.
-        // We do NOT emit attributes here to avoid duplicate type definitions.
+        // Attributes are emitted by ErrorOrEndpointGenerator (shared across both generators)
+        var endpoints = CombineHttpMethodProviders(context);
 
-        // Create providers for each HTTP method attribute
-        var getProvider = CreateEndpointProvider(context, WellKnownTypes.GetAttribute);
-        var postProvider = CreateEndpointProvider(context, WellKnownTypes.PostAttribute);
-        var putProvider = CreateEndpointProvider(context, WellKnownTypes.PutAttribute);
-        var deleteProvider = CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute);
-        var patchProvider = CreateEndpointProvider(context, WellKnownTypes.PatchAttribute);
-        var baseProvider = CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute);
-
-        // Combine all endpoint providers using shared utility
-        var endpoints = IncrementalProviderExtensions.CombineSix(
-            getProvider, postProvider, putProvider,
-            deleteProvider, patchProvider, baseProvider);
-
-        // Collect type metadata for schema transformers using WhereNotNull
-        var types = context.SyntaxProvider
+        var typeMetadata = context.SyntaxProvider
             .CreateSyntaxProvider(
                 static (node, _) => node is TypeDeclarationSyntax,
                 static (ctx, ct) => ExtractTypeMetadata(ctx, ct))
             .WhereNotNull()
             .CollectAsEquatableArray();
 
-        // Combine and emit
-        var combined = endpoints.Combine(types);
         context.RegisterSourceOutput(
-            combined,
+            endpoints.Combine(typeMetadata),
             static (spc, data) => Emit(spc, data.Left.AsImmutableArray(), data.Right.AsImmutableArray()));
+    }
+
+    private static IncrementalValueProvider<EquatableArray<OpenApiEndpointInfo>> CombineHttpMethodProviders(
+        IncrementalGeneratorInitializationContext context)
+    {
+        return IncrementalProviderExtensions.CombineNine(
+            CreateEndpointProvider(context, WellKnownTypes.GetAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.PostAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.PutAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.PatchAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.HeadAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.OptionsAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.TraceAttribute),
+            CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute));
     }
 
     private static IncrementalValuesProvider<OpenApiEndpointInfo> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
         string attributeName)
     {
-        // Use WhereNotNull to filter out invalid extractions
         return context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 attributeName,
@@ -92,6 +86,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             WellKnownTypes.PutAttribute => (WellKnownTypes.HttpMethod.Put, GetPattern(attr)),
             WellKnownTypes.DeleteAttribute => (WellKnownTypes.HttpMethod.Delete, GetPattern(attr)),
             WellKnownTypes.PatchAttribute => (WellKnownTypes.HttpMethod.Patch, GetPattern(attr)),
+            WellKnownTypes.HeadAttribute => (WellKnownTypes.HttpMethod.Head, GetPattern(attr)),
+            WellKnownTypes.OptionsAttribute => (WellKnownTypes.HttpMethod.Options, GetPattern(attr)),
+            WellKnownTypes.TraceAttribute => (WellKnownTypes.HttpMethod.Trace, GetPattern(attr)),
             WellKnownTypes.ErrorOrEndpointAttribute => GetBaseAttributeInfo(attr),
             _ => (null, null)
         };
@@ -205,8 +202,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("#nullable enable");
         code.AppendLine();
         code.AppendLine("using System;");
+        code.AppendLine("using System.Collections.Frozen;");
         code.AppendLine("using System.Collections.Generic;");
-        code.AppendLine("using System.Linq;");
         code.AppendLine("using System.Threading;");
         code.AppendLine("using System.Threading.Tasks;");
         code.AppendLine("using Microsoft.AspNetCore.OpenApi;");
@@ -250,11 +247,10 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        OpenApiDocumentTransformerContext context,");
         code.AppendLine("        CancellationToken cancellationToken)");
         code.AppendLine("    {");
+        // OpenApiDocument.Tags setter auto-wraps with OpenApiTagComparer.Instance
+        // which handles deduplication by Name - no manual .Any() check needed
         code.AppendLine("        document.Tags ??= new HashSet<OpenApiTag>();");
-        code.AppendLine($"        if (!document.Tags.Any(t => t.Name == \"{tagName}\"))");
-        code.AppendLine("        {");
-        code.AppendLine($"            document.Tags.Add(new OpenApiTag {{ Name = \"{tagName}\" }});");
-        code.AppendLine("        }");
+        code.AppendLine($"        document.Tags.Add(new OpenApiTag {{ Name = \"{tagName}\" }});");
         code.AppendLine("        return Task.CompletedTask;");
         code.AppendLine("    }");
         code.AppendLine("}");
@@ -279,17 +275,18 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("{");
         code.AppendLine("    // Pre-computed metadata from XML docs (compile-time extraction)");
         code.AppendLine(
-            "    private static readonly Dictionary<string, (string? Summary, string? Description)> OperationDocs = new()");
-        code.AppendLine("    {");
+            "    private static readonly FrozenDictionary<string, (string? Summary, string? Description)> OperationDocs =");
+        code.AppendLine("        new Dictionary<string, (string? Summary, string? Description)>");
+        code.AppendLine("        {");
 
         foreach (var op in opsWithDocs)
         {
             var summary = op.Summary is not null ? $"\"{EscapeString(op.Summary)}\"" : "null";
             var description = op.Description is not null ? $"\"{EscapeString(op.Description)}\"" : "null";
-            code.AppendLine($"        [\"{op.OperationId}\"] = ({summary}, {description}),");
+            code.AppendLine($"            [\"{op.OperationId}\"] = ({summary}, {description}),");
         }
 
-        code.AppendLine("    };");
+        code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
         code.AppendLine();
         code.AppendLine("    public Task TransformAsync(");
         code.AppendLine("        OpenApiOperation operation,");
@@ -326,13 +323,14 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("file sealed class XmlDocSchemaTransformer : IOpenApiSchemaTransformer");
         code.AppendLine("{");
         code.AppendLine("    // Pre-computed type descriptions from XML docs");
-        code.AppendLine("    private static readonly Dictionary<string, string> TypeDescriptions = new()");
-        code.AppendLine("    {");
+        code.AppendLine("    private static readonly FrozenDictionary<string, string> TypeDescriptions =");
+        code.AppendLine("        new Dictionary<string, string>");
+        code.AppendLine("        {");
 
         foreach (var type in typesWithDocs)
-            code.AppendLine($"        [\"{type.TypeName}\"] = \"{EscapeString(type.Description)}\",");
+            code.AppendLine($"            [\"{type.TypeName}\"] = \"{EscapeString(type.Description)}\",");
 
-        code.AppendLine("    };");
+        code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
         code.AppendLine();
         code.AppendLine("    public Task TransformAsync(");
         code.AppendLine("        OpenApiSchema schema,");

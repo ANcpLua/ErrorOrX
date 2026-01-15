@@ -2,8 +2,6 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <PackageId>ErrorOrX</PackageId>
-        <!-- Suppress intentional API design choices -->
-        <NoWarn>$(NoWarn);CA1040;CA1000;CA1002;CA1859;RS0030</NoWarn>
         <Description>Discriminated unions for .NET with fluent error handling. ErrorOr&lt;T&gt; provides railway-oriented programming, nullable-to-ErrorOr extensions (OrNotFound, OrValidation, OrError), Match/Then/Else/Switch/FailIf fluent API, and rich typed errors mapped to HTTP status codes.</Description>
         <PackageTags>ErrorOr;Result;Either;Discriminated;Union;Railway;Error;Handling;Monad;Functional;DDD;MinimalAPI;ASP.NET;AOT</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>

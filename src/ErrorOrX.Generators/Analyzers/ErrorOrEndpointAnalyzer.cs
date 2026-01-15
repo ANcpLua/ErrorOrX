@@ -21,6 +21,7 @@ namespace ErrorOr.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 {
+    /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [
         Descriptors.InvalidReturnType,
@@ -33,6 +34,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         Descriptors.RouteConstraintTypeMismatch
     ];
 
+    /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);

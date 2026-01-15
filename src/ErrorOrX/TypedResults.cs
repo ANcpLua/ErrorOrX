@@ -1,3 +1,7 @@
+// CA1040: IResultExtensions is intentionally empty - it serves as an extension point for external
+// libraries to add custom IResult implementations via extension methods.
+#pragma warning disable CA1040
+
 namespace ErrorOr;
 
 /// <summary>

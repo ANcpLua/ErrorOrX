@@ -14,13 +14,21 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <DevelopmentDependency>true</DevelopmentDependency>
-        <NoWarn>$(NoWarn);NU5128;CS1591;RS2008</NoWarn>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
 
         <!-- Source Link -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         ANALYZER RELEASE TRACKING (for RS2008)
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md"/>
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md"/>
+    </ItemGroup>
 
     <!-- ═══════════════════════════════════════════════════════════════════════════
          PACKAGE DEPENDENCY: ErrorOrX runtime flows to consumers
@@ -41,6 +49,13 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
         <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true"/>
         <PackageReference Include="PolySharp" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         CODE QUALITY ANALYZERS (not using ANcpLua.NET.Sdk, so explicit reference needed)
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <ItemGroup>
+        <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,3 +1,6 @@
+using ErrorOr.Analyzers;
+using Xunit;
+
 namespace ErrorOrX.Generators.Tests;
 
 public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnalyzer>

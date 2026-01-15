@@ -4,6 +4,7 @@ using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ErrorOr.Generators;
 
@@ -118,86 +119,88 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         // Use a different file name to avoid conflicts with OpenApiTransformerGenerator
         context.AddSource("ErrorOrEndpointAttributes.Mappings.g.cs", source);
     }
-    // EPS06: Defensive copies are unavoidable with Roslyn's incremental generator API.
+    // EPS06: Roslyn's readonly struct API causes unavoidable defensive copies.
 #pragma warning disable EPS06
 
+    /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Emit the marker attributes that users apply to their handler methods
-        // This must be done in both generators because ForAttributeWithMetadataName
-        // only sees types from PostInitializationOutput within the same generator
         context.RegisterPostInitializationOutput(EmitAttributes);
 
-        // Get ErrorOrLegacyParameterBinding option (defaults to false via ErrorOrX.Generators.props)
-        // Note: We don't combine with CompilationProvider here to avoid caching INamedTypeSymbol
-        // which breaks incremental caching. ErrorOrContext is created lazily in SelectMany.
-        var legacyBindingProvider = context.AnalyzerConfigOptionsProvider
-            .Select(static (options, _) =>
-            {
-                options.GlobalOptions.TryGetValue("build_property.ErrorOrLegacyParameterBinding", out var value);
-                // Default to false (smart inference enabled)
-                return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
-            });
+        var legacyBindingOption = context.AnalyzerConfigOptionsProvider
+            .Select(ParseLegacyBindingOption);
 
-        // Create providers for each HTTP method attribute
-        var getProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.GetAttribute);
-        var postProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PostAttribute);
-        var putProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PutAttribute);
-        var deleteProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.DeleteAttribute);
-        var patchProvider = CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.PatchAttribute);
-        var baseProvider =
-            CreateEndpointProvider(context, legacyBindingProvider, WellKnownTypes.ErrorOrEndpointAttribute);
+        var endpoints = CombineHttpMethodProviders(context, legacyBindingOption);
+        var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
+        var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
+            .Select(ParseGenerateJsonContextOption);
 
-        // Combine all endpoint providers using shared utility
-        var endpoints = IncrementalProviderExtensions.CombineSix(
+        context.RegisterSourceOutput(
+            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption),
+            EmitMappingsAndRunAnalysis);
+    }
+
+    #region Pipeline Configuration
+
+    private static bool ParseLegacyBindingOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
+    {
+        options.GlobalOptions.TryGetValue("build_property.ErrorOrLegacyParameterBinding", out var value);
+        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ParseGenerateJsonContextOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
+    {
+        options.GlobalOptions.TryGetValue("build_property.ErrorOrGenerateJsonContext", out var value);
+        return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IncrementalValueProvider<EquatableArray<EndpointDescriptor>> CombineHttpMethodProviders(
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<bool> legacyBindingOption)
+    {
+        var getProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.GetAttribute);
+        var postProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PostAttribute);
+        var putProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PutAttribute);
+        var deleteProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.DeleteAttribute);
+        var patchProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PatchAttribute);
+        var baseProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.ErrorOrEndpointAttribute);
+
+        return IncrementalProviderExtensions.CombineSix(
             getProvider, postProvider, putProvider,
             deleteProvider, patchProvider, baseProvider);
-
-        // Get JSON context info for AOT validation
-        var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
-
-        // Get ErrorOrGenerateJsonContext option (defaults to true via ErrorOr.props)
-        var generateJsonContextProvider = context.AnalyzerConfigOptionsProvider
-            .Select(static (options, _) =>
-            {
-                // Check global options for build property
-                options.GlobalOptions.TryGetValue("build_property.ErrorOrGenerateJsonContext", out var value);
-                // Default to true if not specified
-                return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
-            });
-
-        // Combine and emit
-        var combined = endpoints.Combine(jsonContexts)
-            .Combine(generateJsonContextProvider);
-        context.RegisterSourceOutput(
-            combined,
-            static (spc, data) =>
-            {
-                var ((endpoints, jsonContexts), generateJsonContext) = data;
-                // Max arity for Results<...> union type - ASP.NET Core 8+ supports Results`6
-                // Using hardcoded value to avoid CompilationProvider which breaks incremental caching
-                const int maxArity = 6;
-                var endpointArray = endpoints.IsDefaultOrEmpty
-                    ? ImmutableArray<EndpointDescriptor>.Empty
-                    : endpoints.AsImmutableArray();
-                var jsonContextArray = jsonContexts.IsDefaultOrEmpty
-                    ? ImmutableArray<JsonContextInfo>.Empty
-                    : jsonContexts.AsImmutableArray();
-
-                // Run duplicate route detection
-                var duplicateDiagnostics = DuplicateRouteDetector.Detect(endpointArray);
-                foreach (var diag in duplicateDiagnostics)
-                    spc.ReportDiagnostic(diag);
-
-                // Emit endpoint mappings
-                if (!endpointArray.IsDefaultOrEmpty)
-                {
-                    EmitEndpoints(spc, endpointArray, jsonContextArray, maxArity, generateJsonContext);
-                    AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray);
-                    AnalyzeUnionTypeArity(spc, endpointArray, maxArity);
-                }
-            });
     }
+
+    private static void EmitMappingsAndRunAnalysis(
+        SourceProductionContext spc,
+        ((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts), bool GenerateJsonContext) data)
+    {
+        var ((endpoints, jsonContexts), generateJsonContext) = data;
+        const int maxResultsUnionArity = 6;
+
+        var endpointArray = endpoints.IsDefaultOrEmpty
+            ? ImmutableArray<EndpointDescriptor>.Empty
+            : endpoints.AsImmutableArray();
+        var jsonContextArray = jsonContexts.IsDefaultOrEmpty
+            ? ImmutableArray<JsonContextInfo>.Empty
+            : jsonContexts.AsImmutableArray();
+
+        ReportDuplicateRoutes(spc, endpointArray);
+
+        if (!endpointArray.IsDefaultOrEmpty)
+        {
+            EmitEndpoints(spc, endpointArray, jsonContextArray, maxResultsUnionArity, generateJsonContext);
+            AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray);
+            AnalyzeUnionTypeArity(spc, endpointArray, maxResultsUnionArity);
+        }
+    }
+
+    private static void ReportDuplicateRoutes(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints)
+    {
+        foreach (var diagnostic in DuplicateRouteDetector.Detect(endpoints))
+            spc.ReportDiagnostic(diagnostic);
+    }
+
+    #endregion
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
@@ -212,8 +215,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .Combine(legacyBindingProvider)
             .SelectMany(static (pair, ct) =>
             {
-                // Create ErrorOrContext lazily from SemanticModel to avoid caching
-                // INamedTypeSymbol references which breaks incremental caching.
+                // Lazy creation avoids caching ITypeSymbol (breaks incremental)
                 var errorOrContext = new ErrorOrContext(pair.Left.SemanticModel.Compilation);
                 return AnalyzeEndpointFlows(pair.Left, errorOrContext, pair.Right, ct);
             })
