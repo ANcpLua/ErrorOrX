@@ -140,8 +140,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             EmitMappingsAndRunAnalysis);
     }
 
-    #region Pipeline Configuration
-
     private static bool ParseLegacyBindingOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
     {
         options.GlobalOptions.TryGetValue("build_property.ErrorOrLegacyParameterBinding", out var value);
@@ -196,11 +194,9 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
     private static void ReportDuplicateRoutes(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints)
     {
-        foreach (var diagnostic in DuplicateRouteDetector.Detect(endpoints))
+        foreach (var diagnostic in RouteValidator.DetectDuplicateRoutes(endpoints))
             spc.ReportDiagnostic(diagnostic);
     }
-
-    #endregion
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,

@@ -222,8 +222,6 @@ internal sealed class ErrorOrContext
         }
     }
 
-    #region Helper Methods
-
     /// <summary>Checks if the type implements IFormFile.</summary>
     public bool IsFormFile(ITypeSymbol? type)
     {
@@ -345,6 +343,4 @@ internal sealed class ErrorOrContext
             ? n.TypeArguments[0]
             : type;
     }
-
-    #endregion
 }

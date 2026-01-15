@@ -4,7 +4,78 @@ using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
 
-#region Parameter Models
+/// <summary>
+///     Specifies where an endpoint parameter value is bound from.
+/// </summary>
+internal enum EndpointParameterSource
+{
+    Route,
+    Body,
+    Query,
+    Header,
+    Service,
+    KeyedService,
+    AsParameters,
+    HttpContext,
+    CancellationToken,
+    Form,
+    FormFile,
+    FormFiles,
+    FormCollection,
+    Stream,
+    PipeReader
+}
+
+/// <summary>
+///     Represents the custom binding method detected on a parameter type.
+/// </summary>
+internal enum CustomBindingMethod
+{
+    None,
+    TryParse,
+    TryParseWithFormat,
+    BindAsync,
+    BindAsyncWithParam,
+    Bindable
+}
+
+/// <summary>
+///     Primitive types that can be bound from route templates.
+/// </summary>
+internal enum RoutePrimitiveKind
+{
+    String,
+    Int32,
+    Int64,
+    Int16,
+    UInt32,
+    UInt64,
+    UInt16,
+    Byte,
+    SByte,
+    Boolean,
+    Decimal,
+    Double,
+    Single,
+    Guid,
+    DateTime,
+    DateTimeOffset,
+    DateOnly,
+    TimeOnly,
+    TimeSpan
+}
+
+/// <summary>
+///     Classifies the success response type for HTTP status code mapping.
+/// </summary>
+internal enum SuccessKind
+{
+    Payload,
+    Success,
+    Created,
+    Updated,
+    Deleted
+}
 
 /// <summary>
 ///     Represents a bound endpoint parameter with its source and type information.
@@ -57,10 +128,6 @@ internal readonly record struct ParameterMeta(
     bool IsPipeReader,
     CustomBindingMethod CustomBinding,
     bool RequiresValidation = false);
-
-#endregion
-
-#region Endpoint Models
 
 /// <summary>
 ///     Represents a custom error detected via Error.Custom() call.
@@ -160,10 +227,6 @@ internal readonly record struct MiddlewareInfo(
         EnableCors || DisableCors;
 }
 
-#endregion
-
-#region Route Validation Models
-
 /// <summary>
 ///     Information about a route parameter extracted from the route template.
 /// </summary>
@@ -182,10 +245,6 @@ internal readonly record struct RouteMethodParameterInfo(
     string? TypeFqn,
     bool IsNullable);
 
-#endregion
-
-#region Binding Models
-
 /// <summary>
 ///     Result of parameter binding analysis.
 /// </summary>
@@ -195,10 +254,6 @@ internal readonly record struct ParameterBindingResult(bool IsValid, ImmutableAr
     public static readonly ParameterBindingResult Invalid = new(false, ImmutableArray<EndpointParameter>.Empty);
 }
 
-#endregion
-
-#region JSON Serialization Models
-
 /// <summary>
 ///     Information about a user-defined JsonSerializerContext.
 /// </summary>
@@ -207,10 +262,6 @@ internal readonly record struct JsonContextInfo(
     string? Namespace,
     EquatableArray<string> SerializableTypes,
     bool HasCamelCasePolicy);
-
-#endregion
-
-#region OpenAPI Models
 
 /// <summary>
 ///     Immutable endpoint info for OpenAPI generation.
@@ -227,5 +278,3 @@ internal readonly record struct OpenApiEndpointInfo(
 internal readonly record struct TypeMetadataInfo(
     string TypeName,
     string Description);
-
-#endregion

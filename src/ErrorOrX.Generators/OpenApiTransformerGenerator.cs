@@ -103,7 +103,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // Extract containing type info for tag generation
         var containingType = method.ContainingType;
         var className = containingType.Name;
-        var (tagName, operationId) = EndpointIdentityHelper.GetEndpointIdentity(className, method.Name);
+        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(className, method.Name);
 
         return new OpenApiEndpointInfo(
             operationId,

@@ -697,8 +697,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         spc.AddSource($"{config.ContextTypeName}.g.cs", sb.ToString());
     }
 
-    #region Helper Methods
-
     private static bool InheritsFromJsonSerializerContext(INamedTypeSymbol symbol)
     {
         var current = symbol.BaseType;
@@ -801,6 +799,4 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
                name.Contains("IResult") ||
                name.Contains("ActionResult");
     }
-
-    #endregion
 }

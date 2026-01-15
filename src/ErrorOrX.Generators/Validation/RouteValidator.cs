@@ -354,4 +354,52 @@ internal static class RouteValidator
 
         return typeFqn;
     }
+
+    /// <summary>
+    ///     Detects duplicate routes across all registered endpoints.
+    /// </summary>
+    public static ImmutableArray<Diagnostic> DetectDuplicateRoutes(ImmutableArray<EndpointDescriptor> endpoints)
+    {
+        if (endpoints.IsDefaultOrEmpty || endpoints.Length < 2)
+            return ImmutableArray<Diagnostic>.Empty;
+
+        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        var routeMap = new Dictionary<string, EndpointDescriptor>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var ep in endpoints)
+        {
+            var normalizedPattern = NormalizeRoutePattern(ep.Pattern);
+            var key = $"{ep.HttpMethod.ToUpperInvariant()} {normalizedPattern}";
+
+            if (routeMap.TryGetValue(key, out var existing))
+                diagnostics.Add(Diagnostic.Create(
+                    Descriptors.DuplicateRoute,
+                    Location.None,
+                    ep.HttpMethod.ToUpperInvariant(),
+                    ep.Pattern,
+                    TypeNameHelper.ExtractShortName(existing.HandlerContainingTypeFqn),
+                    existing.HandlerMethodName));
+            else
+                routeMap[key] = ep;
+        }
+
+        return diagnostics.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Normalizes route patterns for duplicate detection.
+    ///     Replaces parameter names with placeholders since {id} and {userId} are structurally equivalent.
+    /// </summary>
+    private static string NormalizeRoutePattern(string pattern)
+    {
+        var normalized = Regex.Replace(pattern, @"\{[^}]+\}", "{_}");
+
+        if (!normalized.StartsWith("/"))
+            normalized = "/" + normalized;
+
+        if (normalized.Length > 1 && normalized.EndsWith("/"))
+            normalized = normalized[..^1];
+
+        return normalized;
+    }
 }

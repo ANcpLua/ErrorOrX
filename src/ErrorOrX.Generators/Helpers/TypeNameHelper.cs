@@ -1,8 +1,8 @@
 namespace ErrorOr.Generators;
 
 /// <summary>
-///     Centralized utilities for type name manipulation.
-///     Consolidates normalization, extraction, and comparison logic.
+///     Centralized utilities for type and endpoint name manipulation.
+///     Consolidates normalization, extraction, comparison, and identity logic.
 /// </summary>
 internal static class TypeNameHelper
 {
@@ -123,5 +123,25 @@ internal static class TypeNameHelper
             "System.String" or "String" => "string",
             _ => null
         };
+    }
+
+    private const string EndpointsSuffix = "Endpoints";
+
+    /// <summary>
+    ///     Computes the tag name from a containing type name.
+    ///     Strips "Endpoints" suffix if present (e.g., "TodoEndpoints" -> "Todo").
+    /// </summary>
+    public static string GetTagName(string className) =>
+        className.EndsWith(EndpointsSuffix)
+            ? className[..^EndpointsSuffix.Length]
+            : className;
+
+    /// <summary>
+    ///     Computes both tag name and operation ID for an endpoint.
+    /// </summary>
+    public static (string TagName, string OperationId) GetEndpointIdentity(string className, string methodName)
+    {
+        var tagName = GetTagName(className);
+        return (tagName, $"{tagName}_{methodName}");
     }
 }

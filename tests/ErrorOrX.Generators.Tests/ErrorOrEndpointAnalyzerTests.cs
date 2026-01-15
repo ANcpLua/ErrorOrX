@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using ErrorOr.Analyzers;
 using Xunit;
 

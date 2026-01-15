@@ -7,8 +7,6 @@ namespace ErrorOr.Generators;
 /// </summary>
 internal static class ErrorMapping
 {
-    #region ErrorTypeNames - Canonical error type names matching ErrorOr.ErrorType enum
-
     /// <summary>
     ///     Canonical error type names matching ErrorOr.ErrorType enum members.
     ///     Single source of truth for the generator - validated at test time against runtime enum.
@@ -50,11 +48,6 @@ internal static class ErrorMapping
     {
         return ErrorTypeSet.Contains(name);
     }
-
-    #endregion
-
-
-    #region ErrorType → HTTP Mappings
 
     /// <summary>
     ///     All ErrorType name → Entry mappings. This is the CANONICAL source.
@@ -171,10 +164,6 @@ internal static class ErrorMapping
             $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
     }
 
-    #endregion
-
-    #region Data Structures
-
     /// <summary>
     ///     Entry representing an ErrorType mapping.
     /// </summary>
@@ -188,6 +177,4 @@ internal static class ErrorMapping
     /// </summary>
     internal readonly record struct CustomEntry(
         string Factory);
-
-    #endregion
 }

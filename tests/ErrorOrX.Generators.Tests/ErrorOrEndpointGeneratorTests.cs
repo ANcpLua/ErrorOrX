@@ -1,7 +1,12 @@
 using System;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using ANcpLua.Roslyn.Utilities.Testing;
 using AwesomeAssertions;
 using ErrorOr.Generators;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
@@ -9,7 +14,7 @@ namespace ErrorOrX.Generators.Tests;
 public class ErrorOrEndpointGeneratorTests : GeneratorTestBase
 {
     [Fact]
-    public Task Generates_Simple_Get_Endpoint()
+    public async Task Generates_Simple_Get_Endpoint()
     {
         const string Source = """
                               using ErrorOr.Core.ErrorOr;
@@ -24,7 +29,30 @@ public class ErrorOrEndpointGeneratorTests : GeneratorTestBase
                               }
                               """;
 
-        return VerifyGeneratorAsync(Source, new ErrorOrEndpointGenerator(), new OpenApiTransformerGenerator());
+        // Multi-generator test: runs both ErrorOrEndpointGenerator and OpenApiTransformerGenerator
+        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
+        var ct = TestContext.Current.CancellationToken;
+        var compilation = await new GeneratorTestEngine<ErrorOrEndpointGenerator>().CreateCompilationAsync(Source, ct);
+
+        var generators = new IIncrementalGenerator[] { new ErrorOrEndpointGenerator(), new OpenApiTransformerGenerator() };
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators.Select(static g => g.AsSourceGenerator()),
+            parseOptions: new CSharpParseOptions(TestConfiguration.LanguageVersion));
+
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, ct);
+        var runResult = driver.GetRunResult();
+
+        await Verify(new
+        {
+            GeneratedSources = runResult.Results
+                .SelectMany(static r => r.GeneratedSources)
+                .Select(static s => new { s.HintName, Source = s.SourceText.ToString() })
+                .OrderBy(static s => s.HintName),
+            Diagnostics = runResult.Results
+                .SelectMany(static r => r.Diagnostics)
+                .Select(static d => new { d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage() })
+                .OrderBy(static d => d.Id)
+        }).UseDirectory("Snapshots");
     }
 
     [Fact]

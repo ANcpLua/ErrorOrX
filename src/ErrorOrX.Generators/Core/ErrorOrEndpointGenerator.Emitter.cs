@@ -110,7 +110,7 @@ public sealed partial class ErrorOrEndpointGenerator
             $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{index})");
 
         var className = TypeNameHelper.ExtractShortName(ep.HandlerContainingTypeFqn);
-        var (tagName, operationId) = EndpointIdentityHelper.GetEndpointIdentity(className, ep.HandlerMethodName);
+        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(className, ep.HandlerMethodName);
 
         code.AppendLine($"            .WithName(\"{operationId}\")");
         code.AppendLine($"            .WithTags(\"{tagName}\")");
