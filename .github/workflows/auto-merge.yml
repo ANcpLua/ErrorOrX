@@ -13,8 +13,6 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   pull_request_review:
     types: [submitted]
-  check_suite:
-    types: [completed]
 
 permissions:
   contents: write
@@ -87,9 +85,12 @@ jobs:
     name: AI Agent auto-merge
     runs-on: ubuntu-latest
     if: |
-      startsWith(github.event.pull_request.head.ref, 'copilot/') ||
-      startsWith(github.event.pull_request.head.ref, 'jules/') ||
-      startsWith(github.event.pull_request.head.ref, 'claude/')
+      (github.actor == 'copilot[bot]' || github.actor == 'jules[bot]' || github.actor == 'claude-code[bot]') &&
+      (
+        startsWith(github.event.pull_request.head.ref, 'copilot/') ||
+        startsWith(github.event.pull_request.head.ref, 'jules/') ||
+        startsWith(github.event.pull_request.head.ref, 'claude/')
+      )
 
     steps:
       - name: Identify AI agent
