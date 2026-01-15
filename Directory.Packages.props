@@ -22,7 +22,7 @@
         <!-- Polyfills -->
         <PackageVersion Include="PolySharp" Version="1.15.0"/>
         <!-- Source Link -->
-        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0"/>
+        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.102"/>
         <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0"/>
         <!-- Testing -->
         <PackageVersion Include="Verify.XunitV3" Version="31.9.3"/>
