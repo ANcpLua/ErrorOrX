@@ -12,17 +12,19 @@ on:
 
 permissions:
   contents: read
+  id-token: write  # Required for NuGet trusted publishing
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: nuget  # Environment for trusted publishing
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
@@ -38,15 +40,18 @@ jobs:
       - name: Build
         run: dotnet build ErrorOrX.slnx -c Release -p:Version=${{ steps.version.outputs.version }}
 
+      - name: Test
+        run: dotnet test ErrorOrX.slnx -c Release --no-build
+
       - name: Pack ErrorOrX
-        run: dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+        run: dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }} --no-build
 
       - name: Pack ErrorOrX.Generators
-        run: dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }}
+        run: dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }} --no-build
 
-      - name: Push to NuGet
+      - name: Push to NuGet (Trusted Publishing)
         run: |
           dotnet nuget push artifacts/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
-            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
             --skip-duplicate
