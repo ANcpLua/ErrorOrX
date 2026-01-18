@@ -404,23 +404,23 @@ public sealed partial class ErrorOrEndpointGenerator
             switch (args[0].Value)
             {
                 case int when args[1].Value is string customErrorCode:
-                {
-                    // Custom error with status code
-                    if (seenCustomCodes.Add(customErrorCode))
-                        customErrors.Add(new CustomErrorInfo(customErrorCode));
+                    {
+                        // Custom error with status code
+                        if (seenCustomCodes.Add(customErrorCode))
+                            customErrors.Add(new CustomErrorInfo(customErrorCode));
 
-                    foundAny = true;
-                    break;
-                }
+                        foundAny = true;
+                        break;
+                    }
                 case int enumValue when args[1].Value is string:
-                {
-                    // Standard ErrorType - map enum int value to string name
-                    var errorTypeName = MapEnumValueToName(enumValue);
-                    if (errorTypeName is not null)
-                        errorTypeNames.Add(errorTypeName);
-                    foundAny = true;
-                    break;
-                }
+                    {
+                        // Standard ErrorType - map enum int value to string name
+                        var errorTypeName = MapEnumValueToName(enumValue);
+                        if (errorTypeName is not null)
+                            errorTypeNames.Add(errorTypeName);
+                        foundAny = true;
+                        break;
+                    }
             }
         }
 

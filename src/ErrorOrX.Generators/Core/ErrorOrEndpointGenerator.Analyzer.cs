@@ -50,8 +50,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+            foreach (var typeFqn in ctx.SerializableTypes)
+                registeredTypes.Add(typeFqn);
 
         foreach (var neededType in neededTypes)
         {

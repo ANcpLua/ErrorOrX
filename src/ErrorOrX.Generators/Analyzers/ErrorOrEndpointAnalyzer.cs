@@ -343,11 +343,11 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                     break;
                 // Generic endpoint attribute - extract HTTP method from first constructor arg
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
-                {
-                    if (attr.ConstructorArguments is [{ Value: string m } _, ..])
-                        httpMethod = m.ToUpperInvariant();
-                    break;
-                }
+                    {
+                        if (attr.ConstructorArguments is [{ Value: string m } _, ..])
+                            httpMethod = m.ToUpperInvariant();
+                        break;
+                    }
             }
 
             if (httpMethod is null)
@@ -557,7 +557,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                      IsFormCollection(param.Type))
                 hasFromForm = true;
 
-            nextParam: ;
+            nextParam:;
         }
 
         // Multiple [FromBody] is always an error

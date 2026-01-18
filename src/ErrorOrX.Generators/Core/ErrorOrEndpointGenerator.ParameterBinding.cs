@@ -391,7 +391,7 @@ public sealed partial class ErrorOrEndpointGenerator
             IMethodSymbol _,
             ImmutableArray<DiagnosticInfo>.Builder __,
             ErrorOrContext context)
-        // ReSharper restore UnusedParameter.Local
+    // ReSharper restore UnusedParameter.Local
     {
         if (meta.IsFormFile)
             return ParameterSuccess(in meta, EndpointParameterSource.FormFile, formName: meta.FormName);

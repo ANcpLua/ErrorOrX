@@ -1030,8 +1030,8 @@ public sealed partial class ErrorOrEndpointGenerator
         // Collect registered types from user context
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+            foreach (var typeFqn in ctx.SerializableTypes)
+                registeredTypes.Add(typeFqn);
 
         // Find missing types
         var missingTypes = new List<string>();
