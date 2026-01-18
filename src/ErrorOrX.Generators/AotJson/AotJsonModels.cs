@@ -46,26 +46,22 @@ internal readonly record struct AotJsonAssemblyConfig(
     JsonNamingPolicy NamingPolicy,
     CollectionKind GenerateCollections,
     bool IncludeProblemDetails,
-    bool TraversePropertyTypes,
-    int MaxTraversalDepth);
+    bool TraversePropertyTypes);
 
 /// <summary>
 ///     Extracted context information from [AotJson] decorated class.
 ///     All fields are primitives/strings for proper incremental caching.
 /// </summary>
 internal readonly record struct AotJsonContextInfo(
-    string ContextTypeFqn,
     string ContextTypeName,
     string? Namespace,
     bool ScanEndpoints,
-    EquatableArray<string> ScanNamespaces,
     EquatableArray<string> IncludeTypes,
     EquatableArray<string> ExcludeTypes,
     CollectionKind GenerateCollections,
     bool IncludeProblemDetails,
     bool TraversePropertyTypes = true,
-    JsonNamingPolicy NamingPolicy = JsonNamingPolicy.CamelCase,
-    int MaxTraversalDepth = 10);
+    JsonNamingPolicy NamingPolicy = JsonNamingPolicy.CamelCase);
 
 /// <summary>
 ///     Discovered type information extracted from endpoint analysis.
@@ -74,7 +70,6 @@ internal readonly record struct AotJsonContextInfo(
 internal readonly record struct DiscoveredTypeInfo(
     string FullyQualifiedName,
     string DisplayName,
-    bool IsCollection,
     DiscoveredTypeSource Source);
 
 /// <summary>
@@ -88,22 +83,6 @@ internal enum DiscoveredTypeSource
     /// <summary>Type discovered from endpoint method parameter.</summary>
     EndpointParameter,
 
-    /// <summary>Type discovered from namespace scan.</summary>
-    NamespaceScan,
-
-    /// <summary>Type explicitly included via IncludeTypes.</summary>
-    ExplicitInclude,
-
-    /// <summary>Built-in type (ProblemDetails, etc.).</summary>
-    BuiltIn,
-
     /// <summary>Type discovered from property traversal.</summary>
     PropertyTraversal
 }
-
-/// <summary>
-///     Result of AotJson generation with all types to emit.
-/// </summary>
-internal readonly record struct AotJsonGenerationResult(
-    AotJsonContextInfo Context,
-    EquatableArray<DiscoveredTypeInfo> DiscoveredTypes);

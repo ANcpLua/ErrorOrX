@@ -180,3 +180,59 @@ Route parameters use `{name}` syntax with optional constraints:
 [Get("/posts/{slug:alpha}")]
 [Get("/files/{*path}")]  // Catch-all
 ```
+
+---
+
+## Native AOT Support
+
+ErrorOrX fully supports Native AOT compilation with automatic type discovery.
+
+### With Fluent Configuration (Recommended)
+
+```csharp
+[AotJson]  // Auto-generates [JsonSerializable] for all endpoint types
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+internal partial class AppJsonSerializerContext : JsonSerializerContext;
+
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Fluent builder - CamelCase and IgnoreNulls enabled by default
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>());
+
+var app = builder.Build();
+app.MapErrorOrEndpoints();
+app.Run();
+```
+
+### Available Options
+
+```csharp
+services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context for AOT
+    .WithCamelCase()                              // Use camelCase naming (default: true)
+    .WithIgnoreNulls());                          // Ignore null values (default: true)
+```
+
+### Zero-Config Approach
+
+```csharp
+// Add this assembly attribute - types are auto-discovered
+[assembly: ErrorOr.AotJsonAssembly]
+
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Register the auto-generated context
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AotJsonContext>());
+
+var app = builder.Build();
+app.MapErrorOrEndpoints();
+app.Run();
+```
+
+Publish with AOT:
+
+```bash
+dotnet publish -c Release -r linux-x64 --self-contained
+```

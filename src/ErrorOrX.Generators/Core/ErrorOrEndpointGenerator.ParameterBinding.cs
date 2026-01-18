@@ -20,8 +20,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableHashSet<string> routeParameters,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod,
-        bool useLegacyBinding = false)
+        string httpMethod)
     {
         if (method.Parameters.Length is 0)
             return ParameterBindingResult.Empty;
@@ -42,8 +41,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterBindingResult.Invalid;
         }
 
-        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod,
-            useLegacyBinding);
+        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod);
     }
 
     private static ParameterMeta[] BuildParameterMetas(
@@ -131,16 +129,14 @@ public sealed partial class ErrorOrEndpointGenerator
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod,
-        bool useLegacyBinding)
+        string httpMethod)
     {
         var builder = ImmutableArray.CreateBuilder<EndpointParameter>(metas.Count);
         var isValid = true;
 
         foreach (var meta in metas)
         {
-            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod,
-                useLegacyBinding);
+            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod);
             if (result.IsError)
             {
                 isValid = false;
@@ -161,13 +157,11 @@ public sealed partial class ErrorOrEndpointGenerator
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod,
-        bool useLegacyBinding)
+        string httpMethod)
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
-            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod,
-                useLegacyBinding);
+            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod);
         if (meta.HasFromBody)
             return ParameterSuccess(in meta, EndpointParameterSource.Body);
         if (meta.HasFromForm)
@@ -231,12 +225,8 @@ public sealed partial class ErrorOrEndpointGenerator
                 queryName: meta.Name, customBinding: meta.CustomBinding);
         }
 
-        // Legacy mode: fallback to service injection (BCL handles resolution at runtime)
-        return useLegacyBinding
-            ? ParameterSuccess(in meta, EndpointParameterSource.Service)
-            :
-            // Smart inference based on HTTP method and type analysis
-            InferParameterSource(in meta, httpMethod, method, diagnostics, context);
+        // Smart inference based on HTTP method and type analysis
+        return InferParameterSource(in meta, httpMethod, method, diagnostics, context);
     }
 
     /// <summary>
@@ -486,8 +476,7 @@ public sealed partial class ErrorOrEndpointGenerator
         IMethodSymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod,
-        bool useLegacyBinding)
+        string httpMethod)
     {
         // EOE013: [AsParameters] can only be used on class or struct types
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
@@ -514,8 +503,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var paramSymbol in constructor.Parameters)
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
-            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod,
-                useLegacyBinding);
+            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod);
 
             if (result.IsError)
                 return ParameterClassificationResult.Error;
@@ -994,11 +982,8 @@ public sealed partial class ErrorOrEndpointGenerator
             return false;
 
         // Service types by naming convention are not complex DTOs
-        if (IsLikelyServiceType(type))
-            return false;
-
+        return !IsLikelyServiceType(type);
         // Everything else is complex (DTOs, records, classes)
-        return true;
     }
 
     #endregion

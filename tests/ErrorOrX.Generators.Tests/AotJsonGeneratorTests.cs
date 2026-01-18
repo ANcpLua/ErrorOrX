@@ -103,7 +103,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
             .Produces("AppJsonSerializerContext.AotJson.g.cs")
             .IsClean();
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::CreateRequest", generatedFile.Content, StringComparison.Ordinal);
@@ -139,7 +139,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
             .Produces("AppJsonSerializerContext.AotJson.g.cs")
             .IsClean();
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("JsonSerializable(typeof(global::Item))", generatedFile.Content, StringComparison.Ordinal);
@@ -172,7 +172,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
             .Produces("AppJsonSerializerContext.AotJson.g.cs")
             .IsClean();
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("List<global::Item>", generatedFile.Content, StringComparison.Ordinal);
@@ -206,7 +206,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("List<global::Item>", generatedFile.Content, StringComparison.Ordinal);
@@ -236,7 +236,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::Item[]", generatedFile.Content, StringComparison.Ordinal);
@@ -268,7 +268,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("ProblemDetails", generatedFile.Content, StringComparison.Ordinal);
@@ -296,7 +296,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("HttpValidationProblemDetails", generatedFile.Content, StringComparison.Ordinal);
@@ -326,7 +326,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.DoesNotContain("typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails)", generatedFile.Content,
@@ -363,7 +363,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::AsyncResult", generatedFile.Content, StringComparison.Ordinal);
@@ -396,7 +396,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::NestedItem", generatedFile.Content, StringComparison.Ordinal);
@@ -434,7 +434,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
             .Produces("AppJsonSerializerContext.AotJson.g.cs")
             .IsClean();
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::Order", generatedFile.Content, StringComparison.Ordinal);
@@ -473,7 +473,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
             .Produces("AppJsonSerializerContext.AotJson.g.cs")
             .IsClean();
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::TreeNode", generatedFile.Content, StringComparison.Ordinal);
@@ -504,7 +504,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("global::Order", generatedFile.Content, StringComparison.Ordinal);
@@ -540,7 +540,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("IEnumerable<global::Item>", generatedFile.Content, StringComparison.Ordinal);
@@ -570,7 +570,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("IReadOnlyList<global::Item>", generatedFile.Content, StringComparison.Ordinal);
@@ -600,7 +600,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppJsonSerializerContext.AotJson.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppJsonSerializerContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("List<global::Item>", generatedFile.Content, StringComparison.Ordinal);
@@ -636,7 +636,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("GeneratedJsonContext.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("GeneratedJsonContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("partial class GeneratedJsonContext", generatedFile.Content, StringComparison.Ordinal);
@@ -669,8 +669,8 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
         using var result = await Test<AotJsonGenerator>.Run(Source, TestContext.Current.CancellationToken);
 
         // Should generate for ExistingContext, NOT for ShouldNotBeGenerated
-        Assert.Contains(result.Files, f => f.HintName.Contains("ExistingContext", StringComparison.Ordinal));
-        Assert.DoesNotContain(result.Files, f => f.HintName.Contains("ShouldNotBeGenerated", StringComparison.Ordinal));
+        Assert.Contains(result.Files, static f => f.HintName.Contains("ExistingContext", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Files, static f => f.HintName.Contains("ShouldNotBeGenerated", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -696,7 +696,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
 
         result.Produces("AppContext.g.cs");
 
-        var generatedFile = result.Files.FirstOrDefault(f =>
+        var generatedFile = result.Files.FirstOrDefault(static f =>
             f.HintName.Contains("AppContext", StringComparison.Ordinal));
         Assert.NotNull(generatedFile);
         Assert.Contains("namespace MyApp.Serialization;", generatedFile.Content, StringComparison.Ordinal);
@@ -726,7 +726,7 @@ public sealed class AotJsonGeneratorTests : GeneratorTestBase
         using var scope = TestConfiguration.WithAdditionalReferences(AotJsonRequiredTypes);
         using var result = await Test<AotJsonGenerator>.Run(Source, TestContext.Current.CancellationToken);
 
-        Assert.DoesNotContain(result.Files, f => f.HintName.Contains("NotAContext.AotJson", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Files, static f => f.HintName.Contains("NotAContext.AotJson", StringComparison.Ordinal));
     }
 
     [Fact]

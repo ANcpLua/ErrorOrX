@@ -89,16 +89,6 @@ Detected patterns:
 - Interface types (`ITodoService`)
 - `*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`
 
-## Legacy Behavior
-
-To restore pre-2.3.0 behavior (all unclassified parameters from DI):
-
-```xml
-<PropertyGroup>
-  <ErrorOrLegacyParameterBinding>true</ErrorOrLegacyParameterBinding>
-</PropertyGroup>
-```
-
 ## AsParameters Expansion
 
 ```csharp

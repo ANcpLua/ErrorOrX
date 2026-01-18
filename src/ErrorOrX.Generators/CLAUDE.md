@@ -223,15 +223,13 @@ PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility
 ```xml
 <Project>
   <PropertyGroup>
-    <!-- Defaults -->
+    <!-- Enable JSON context generation by default -->
     <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">true</ErrorOrGenerateJsonContext>
-    <ErrorOrLegacyParameterBinding Condition="'$(ErrorOrLegacyParameterBinding)' == ''">false</ErrorOrLegacyParameterBinding>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Make properties visible to generator -->
+    <!-- Make MSBuild properties visible to the source generator -->
     <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext" />
-    <CompilerVisibleProperty Include="ErrorOrLegacyParameterBinding" />
   </ItemGroup>
 
   <ItemGroup>
@@ -243,17 +241,65 @@ PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility
 
 ## Key Files
 
-| File                  | Responsibility                               |
-|-----------------------|----------------------------------------------|
-| `Initialize.cs`       | Generator entry, pipeline orchestration      |
-| `ParameterBinding.cs` | Parameter classification and smart inference |
-| `Emitter.cs`          | Code generation (mappings, JSON context)     |
-| `Extractor.cs`        | Method/attribute extraction                  |
-| `Analyzer.cs`         | JSON context detection, AOT validation       |
-| `ErrorOrContext.cs`   | Type resolution helpers                      |
-| `Descriptors.cs`      | Diagnostic definitions                       |
-| `ErrorMapping.cs`     | ErrorType → HTTP mapping                     |
-| `WellKnownTypes.cs`   | FQN string constants                         |
+| File                  | Responsibility                                              |
+|-----------------------|-------------------------------------------------------------|
+| `Initialize.cs`       | Generator entry, pipeline orchestration                     |
+| `ParameterBinding.cs` | Parameter classification and smart inference                |
+| `Emitter.cs`          | Code generation (mappings, JSON context, AOT wrapper)       |
+| `Extractor.cs`        | Method/attribute extraction                                 |
+| `Analyzer.cs`         | JSON context detection, AOT validation                      |
+| `ErrorOrContext.cs`   | Type resolution helpers                                     |
+| `Descriptors.cs`      | Diagnostic definitions                                      |
+| `ErrorMapping.cs`     | ErrorType → HTTP mapping                                    |
+| `WellKnownTypes.cs`   | FQN string constants                                        |
+
+## AOT-Compatible Handler Emission (Emitter.cs)
+
+The emitter generates handlers using a wrapper pattern for Native AOT compatibility:
+
+### Generated Code Structure
+
+```csharp
+// 1. Map registration uses typed MapGet/MapPost (no Delegate cast)
+app.MapGet(@"/todos/{id:int}", Invoke_Ep1)
+    .WithName("TodoApi_GetById")
+    .WithMetadata(new AcceptsMetadata(new[] { "application/json" }, typeof(CreateTodoRequest)));
+
+// 2. Wrapper method - returns Task (matches RequestDelegate)
+private static async Task Invoke_Ep1(HttpContext ctx)
+{
+    var __result = await Invoke_Ep1_Core(ctx);
+    await __result.ExecuteAsync(ctx);  // Writes response to HttpContext
+}
+
+// 3. Core method - returns typed Results<...> for OpenAPI
+private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
+{
+    int id = (int)ctx.Request.RouteValues["id"]!;
+    var result = TodoApi.GetById(id);
+    return Task.FromResult(result.Match(
+        value => (Results<Ok<Todo>, NotFound<ProblemDetails>>)TypedResults.Ok(value),
+        errors => MapError(errors)));
+}
+```
+
+### Why This Pattern?
+
+| Problem                        | Solution                                             |
+|--------------------------------|------------------------------------------------------|
+| `(Delegate)` cast forces reflection | Use typed `MapGet`/`MapPost` without cast        |
+| `Task<Results<...>>` needs JsonTypeInfo | Wrapper returns `Task`, not `Task<T>`        |
+| BCL generics can't have [JsonSerializable] | Call `IResult.ExecuteAsync()` explicitly   |
+| `.Accepts()` needs RouteHandlerBuilder | Use `.WithMetadata(new AcceptsMetadata(...))` |
+
+### AcceptsMetadata Constructor
+
+```csharp
+// Correct signature: (string[] contentTypes, Type? requestType = null)
+new AcceptsMetadata(new[] { "application/json" }, typeof(CreateTodoRequest))
+
+// NOT: AcceptsMetadata(typeof(T), string[])  // Wrong order!
+```
 
 ## Testing
 

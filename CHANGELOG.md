@@ -2,17 +2,97 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.0] - 2026-01-17
+
+### Added
+
+- **Fluent Configuration Builder**: New `AddErrorOrEndpoints()` extension method with fluent API for configuring JSON
+  options:
+
+```csharp
+services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>()  // Register AOT-compatible JSON context
+    .WithCamelCase()                              // Enable camelCase naming (default: true)
+    .WithIgnoreNulls());                          // Ignore null values (default: true)
+```
+
+### Removed
+
+- `AddErrorOrEndpointJson<TContext>()` - replaced by `AddErrorOrEndpoints()` fluent builder.
+- `ErrorOrLegacyParameterBinding` MSBuild property - smart parameter binding is now always enabled.
+
+### Fixed
+
+- **Native AOT Runtime Support**: Fixed critical runtime failure where AOT-published apps would throw
+  `NotSupportedException: JsonTypeInfo metadata for type 'Task<Results<...>>' was not provided`.
+
+### Changed
+
+#### Handler Pattern for AOT Compatibility
+
+The generated endpoint handlers now use a wrapper pattern that properly writes responses to `HttpContext`:
+
+```csharp
+// Before: Returned Task<Results<...>> which failed in AOT
+private static async Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep0(HttpContext ctx)
+{
+    // ... logic returning Results<...>
+}
+
+// After: Returns Task (matches RequestDelegate) and calls ExecuteAsync
+private static async Task Invoke_Ep0(HttpContext ctx)
+{
+    var __result = await Invoke_Ep0_Core(ctx);
+    await __result.ExecuteAsync(ctx);  // Writes response to HttpContext
+}
+
+private static async Task<Results<...>> Invoke_Ep0_Core(HttpContext ctx)
+{
+    // ... logic returning Results<...>
+}
+```
+
+#### Accepts Metadata via WithMetadata
+
+Replaced `.Accepts<T>()` (which requires `RouteHandlerBuilder`) with `.WithMetadata(AcceptsMetadata)` (which works on
+`IEndpointConventionBuilder`):
+
+```csharp
+// Before: Required Delegate cast for RouteHandlerBuilder
+app.MapPost("/todos", (Delegate)Invoke_Ep0)
+    .Accepts<CreateTodoRequest>("application/json")
+
+// After: Uses AcceptsMetadata for broader compatibility
+app.MapPost("/todos", Invoke_Ep0)
+    .WithMetadata(new AcceptsMetadata(new[] { "application/json" }, typeof(CreateTodoRequest)))
+```
+
+### Technical Details
+
+The root cause was that passing handlers with `(Delegate)` cast to `Map*` methods forced ASP.NET Core to use
+reflection-based `RequestDelegateFactory`, which requires JSON metadata for `Task<Results<...>>` - metadata that doesn't
+exist because these are BCL types.
+
+The fix:
+
+1. Handlers now return `Task` (matching `RequestDelegate` signature) instead of `Task<Results<...>>`
+2. The wrapper calls `IResult.ExecuteAsync(HttpContext)` to write the response
+3. Core logic remains in a `_Core` method that returns typed `Results<...>` for OpenAPI documentation
+4. No `(Delegate)` cast needed - the handler naturally matches `RequestDelegate`
+
+---
+
 ## [2.4.0] - 2026-01-13
 
 ### Added
 
 - **New `Or*` extension methods** for fluent nullable-to-ErrorOr conversion:
-  - `.OrNotFound(description)` - Returns NotFound error if null
-  - `.OrValidation(description)` - Returns Validation error if null
-  - `.OrUnauthorized(description)` - Returns Unauthorized error if null
-  - `.OrForbidden(description)` - Returns Forbidden error if null
-  - `.OrConflict(description)` - Returns Conflict error if null
-  - `.OrFailure(description)` - Returns Failure error if null
+    - `.OrNotFound(description)` - Returns NotFound error if null
+    - `.OrValidation(description)` - Returns Validation error if null
+    - `.OrUnauthorized(description)` - Returns Unauthorized error if null
+    - `.OrForbidden(description)` - Returns Forbidden error if null
+    - `.OrConflict(description)` - Returns Conflict error if null
+    - `.OrFailure(description)` - Returns Failure error if null
 
   Error codes are auto-generated from the type name (e.g., `Todo.NotFound`).
 
@@ -72,23 +152,17 @@ public static ErrorOr<List<User>> Search([FromQuery] SearchFilter filter)  // âœ
 // Or use [AsParameters] for expanded binding
 ```
 
-**Opt-out:** To restore pre-2.3.0 behavior (all unclassified parameters from DI):
-
-```xml
-<PropertyGroup>
-  <ErrorOrLegacyParameterBinding>true</ErrorOrLegacyParameterBinding>
-</PropertyGroup>
-```
-
 ### Added
 
 - **EOE025 Diagnostic**: Error when GET/DELETE endpoints have complex type parameters without explicit binding attribute
-- **Service Type Detection**: Interface types and common DI patterns (`*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`) are automatically detected as services
+- **Service Type Detection**: Interface types and common DI patterns (`*Repository`, `*Handler`, `*Manager`,
+  `*Provider`, `*Factory`, `*Client`) are automatically detected as services
 - **Complex Type Detection**: DTOs and request objects are distinguished from primitives and services
 
 ### Fixed
 
-- **Incremental Caching**: Generator now properly caches outputs when source is unchanged. Fixed by removing `CompilationProvider` usage that cached `CSharpCompilation` references.
+- **Incremental Caching**: Generator now properly caches outputs when source is unchanged. Fixed by removing
+  `CompilationProvider` usage that cached `CSharpCompilation` references.
 
 ### Internal Changes
 
@@ -101,9 +175,9 @@ public static ErrorOr<List<User>> Search([FromQuery] SearchFilter filter)  // âœ
 
 - Streamlined README to focus on quick start
 - Created `docs/` folder with detailed documentation:
-  - `docs/api.md` - Full API reference
-  - `docs/parameter-binding.md` - Parameter binding details
-  - `docs/diagnostics.md` - Analyzer warnings and errors
+    - `docs/api.md` - Full API reference
+    - `docs/parameter-binding.md` - Parameter binding details
+    - `docs/diagnostics.md` - Analyzer warnings and errors
 
 ---
 
@@ -120,12 +194,13 @@ The single `ErrorOrX` package has been split into two packages for cleaner separ
 + <PackageReference Include="ErrorOrX.Generators" Version="2.2.0" />
 ```
 
-**Note:** `ErrorOrX.Generators` automatically brings in `ErrorOrX` as a dependency - you only need to reference the generators package.
+**Note:** `ErrorOrX.Generators` automatically brings in `ErrorOrX` as a dependency - you only need to reference the
+generators package.
 
-| Package | Target | Contents |
-|---------|--------|----------|
-| `ErrorOrX` | `net10.0` | Runtime types: `ErrorOr<T>`, `Error`, `ErrorType`, fluent API extensions |
-| `ErrorOrX.Generators` | `netstandard2.0` | Source generator for ASP.NET Core Minimal API endpoints |
+| Package               | Target           | Contents                                                                 |
+|-----------------------|------------------|--------------------------------------------------------------------------|
+| `ErrorOrX`            | `net10.0`        | Runtime types: `ErrorOr<T>`, `Error`, `ErrorType`, fluent API extensions |
+| `ErrorOrX.Generators` | `netstandard2.0` | Source generator for ASP.NET Core Minimal API endpoints                  |
 
 ### Why Split?
 
@@ -139,17 +214,18 @@ Update your package reference:
 
 ```xml
 <!-- Before -->
-<PackageReference Include="ErrorOrX" Version="2.1.1" />
+<PackageReference Include="ErrorOrX" Version="2.1.1"/>
 
-<!-- After -->
-<PackageReference Include="ErrorOrX.Generators" Version="2.2.0" />
+    <!-- After -->
+<PackageReference Include="ErrorOrX.Generators" Version="2.2.0"/>
 ```
 
 No code changes required - all namespaces remain `ErrorOr`.
 
 ### Internal Changes
 
-- Consolidated test projects: `ErrorOr.Core.Tests` + `ErrorOr.Endpoints.Tests` â†’ `ErrorOrX.Tests` + `ErrorOrX.Generators.Tests`
+- Consolidated test projects: `ErrorOr.Core.Tests` + `ErrorOr.Endpoints.Tests` â†’ `ErrorOrX.Tests` +
+  `ErrorOrX.Generators.Tests`
 - Renamed sample project: `ErrorOr.Endpoints.Sample` â†’ `ErrorOrX.Sample`
 - Test count increased from 218 to 267 (merged comprehensive tests from both projects)
 - Updated solution file to use new project structure
@@ -178,12 +254,12 @@ Generators/
 
 Reduced generator file count from 21 to 17 files through strategic consolidation:
 
-| Deleted File | Merged Into | Rationale |
-|--------------|-------------|-----------|
-| `ErrorTypeNames.cs` | `ErrorMapping.cs` | SSOT: all error-to-HTTP logic in one place |
-| `StatusCodeTitles.cs` | `ErrorMapping.cs` | Only consumer was ErrorMapping |
-| `ParameterModels.cs` | `EndpointModels.cs` | Both are endpoint-related data structures |
-| `AspNetContext.cs` | *(deleted)* | Dead code - duplicated ErrorOrContext |
+| Deleted File          | Merged Into         | Rationale                                  |
+|-----------------------|---------------------|--------------------------------------------|
+| `ErrorTypeNames.cs`   | `ErrorMapping.cs`   | SSOT: all error-to-HTTP logic in one place |
+| `StatusCodeTitles.cs` | `ErrorMapping.cs`   | Only consumer was ErrorMapping             |
+| `ParameterModels.cs`  | `EndpointModels.cs` | Both are endpoint-related data structures  |
+| `AspNetContext.cs`    | *(deleted)*         | Dead code - duplicated ErrorOrContext      |
 
 #### ErrorMapping.cs Now Single Source of Truth
 
@@ -221,10 +297,11 @@ ErrorMapping.AllErrorTypes        // Deterministic iteration
 
 ### Added
 
-- **BCL Middleware Attribute Detection**: Generator now recognizes and emits fluent calls for standard ASP.NET Core middleware attributes:
+- **BCL Middleware Attribute Detection**: Generator now recognizes and emits fluent calls for standard ASP.NET Core
+  middleware attributes:
 
   | Attribute | Emitted Call |
-  |-----------|--------------|
+ |-----------|--------------|
   | `[Authorize]` | `.RequireAuthorization()` |
   | `[Authorize("Policy")]` | `.RequireAuthorization("Policy")` |
   | `[AllowAnonymous]` | `.AllowAnonymous()` |
@@ -236,9 +313,10 @@ ErrorMapping.AllErrorTypes        // Deterministic iteration
   | `[EnableCors("policy")]` | `.RequireCors("policy")` |
   | `[DisableCors]` | `.DisableCors()` |
 
-- **Automatic Results<> Union Updates**: When middleware attributes are detected, the union type automatically includes appropriate HTTP result types:
-  - `[Authorize]` adds `UnauthorizedHttpResult` (401) and `ForbidHttpResult` (403)
-  - `[EnableRateLimiting]` adds `StatusCodeHttpResult` (429)
+- **Automatic Results<> Union Updates**: When middleware attributes are detected, the union type automatically includes
+  appropriate HTTP result types:
+    - `[Authorize]` adds `UnauthorizedHttpResult` (401) and `ForbidHttpResult` (403)
+    - `[EnableRateLimiting]` adds `StatusCodeHttpResult` (429)
 
 ### Example
 
@@ -282,12 +360,12 @@ Replaced two packages with one unified package:
 
 #### Namespace Simplification
 
-| Before (v1.x) | After (v2.0.0) |
-|---------------|----------------|
-| `using ErrorOr;`<br>`using ErrorOr.Core.ErrorOr;`<br>`using ErrorOr.Core.Errors;`<br>`using ErrorOr.Core.Results;` | `using ErrorOr;` |
-| `ErrorOr.Core.ErrorOr.ErrorOr<T>` | `ErrorOr.ErrorOr<T>` |
-| `ErrorOr.Core.Errors.Error` | `ErrorOr.Error` |
-| `ErrorOr.Endpoints.GetAttribute` | `ErrorOr.GetAttribute` |
+| Before (v1.x)                                                                                                      | After (v2.0.0)         |
+|--------------------------------------------------------------------------------------------------------------------|------------------------|
+| `using ErrorOr;`<br>`using ErrorOr.Core.ErrorOr;`<br>`using ErrorOr.Core.Errors;`<br>`using ErrorOr.Core.Results;` | `using ErrorOr;`       |
+| `ErrorOr.Core.ErrorOr.ErrorOr<T>`                                                                                  | `ErrorOr.ErrorOr<T>`   |
+| `ErrorOr.Core.Errors.Error`                                                                                        | `ErrorOr.Error`        |
+| `ErrorOr.Endpoints.GetAttribute`                                                                                   | `ErrorOr.GetAttribute` |
 
 #### Parameter Binding Attributes Now Optional
 
@@ -313,7 +391,8 @@ public static ErrorOr<Todo> Create(CreateTodoRequest request) => ...
 
 #### Automatic AOT JSON Context Generation
 
-No longer requires manual `JsonSerializerContext` definition. The generator automatically creates `ErrorOrJsonContext` with all endpoint types:
+No longer requires manual `JsonSerializerContext` definition. The generator automatically creates `ErrorOrJsonContext`
+with all endpoint types:
 
 ```csharp
 // Before (v1.x) - Manual context required
@@ -330,7 +409,8 @@ builder.Services.AddOpenApi();
 
 #### Automatic Location Header for POST Endpoints
 
-POST endpoints returning 201 Created now automatically include Location header when the response type has an `Id` property:
+POST endpoints returning 201 Created now automatically include Location header when the response type has an `Id`
+property:
 
 ```csharp
 [Post("/todos")]
@@ -374,11 +454,7 @@ Console.WriteLine(error);  // "ErrorOr { IsError = True, FirstError = Not.Found 
 - `ErrorOr.Core` package (merged into `ErrorOr`)
 - `ErrorOr.Endpoints` package (merged into `ErrorOr`)
 - Manual `AddErrorOrEndpointJson<T>()` requirement
-- Requirement for explicit `[FromRoute]`/`[FromBody]` attributes
-
-### Migration Guide
-
-See [docs/migration-v2.md](docs/migration-v2.md) for detailed migration instructions.
+- Requirement for explicit `[FromRoute]`/`[FromBody]` attributes .
 
 ---
 

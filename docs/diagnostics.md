@@ -293,3 +293,57 @@ internal partial class AppJsonContext : JsonSerializerContext { }
 [JsonSerializable(typeof(User))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 ```
+
+---
+
+## AotJson Generator Diagnostics (AOTJ001-AOTJ005)
+
+### AOTJ001 - JsonSerializerContext Not Registered
+
+**Severity:** Warning
+
+The generated `JsonSerializerContext` must be registered for ASP.NET Core to use it.
+
+```csharp
+// Warning: context not registered
+[AotJson]
+internal partial class AppJsonContext : JsonSerializerContext { }
+
+// Fixed: register with fluent builder
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonContext>());
+```
+
+### AOTJ002 - Missing AotJson Attribute
+
+**Severity:** Info
+
+Suggests adding `[AotJson]` to a `JsonSerializerContext` for automatic type discovery.
+
+### AOTJ003 - Duplicate AotJson Contexts
+
+**Severity:** Warning
+
+Multiple classes have `[AotJson]` attribute. Only the first one will be used.
+
+### AOTJ004 - Type Not Serializable
+
+**Severity:** Warning
+
+A type discovered from endpoints cannot be serialized by the JSON context.
+
+### AOTJ005 - AotJson on Non-Partial Class
+
+**Severity:** Error
+
+`[AotJson]` requires the class to be `partial` for source generation.
+
+```csharp
+// Error: not partial
+[AotJson]
+internal class AppJsonContext : JsonSerializerContext { }  // AOTJ005
+
+// Fixed
+[AotJson]
+internal partial class AppJsonContext : JsonSerializerContext { }
+```

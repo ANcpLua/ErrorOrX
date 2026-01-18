@@ -178,6 +178,9 @@ internal static class WellKnownTypes
         public const string ProducesResponseTypeAttribute =
             "global::Microsoft.AspNetCore.Mvc.ProducesResponseTypeAttribute";
 
+        public const string ProducesResponseTypeMetadata =
+            "global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata";
+
         // ASP.NET Core Http
         public const string AsParametersAttribute = "global::Microsoft.AspNetCore.Http.AsParametersAttribute";
         public const string HttpContext = "global::Microsoft.AspNetCore.Http.HttpContext";
@@ -288,6 +291,7 @@ internal static class WellKnownTypes
     public static class Constants
     {
         public const string ContentTypeJson = "application/json";
+        public const string ContentTypeProblemJson = "application/problem+json";
         public const string ContentTypeFormData = "multipart/form-data";
         public const string HttpStatusesBaseUrl = "https://httpstatuses.io/";
     }

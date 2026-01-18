@@ -6,12 +6,20 @@ The generator's job is **one thing**: convert `ErrorOr<T>` handlers into ASP.NET
 
 ```
 User writes:                         Generator produces:
-[Get("/todos/{id}")]                 app.MapMethods("/todos/{id}", ["GET"], Invoke_Ep1)
+[Get("/todos/{id}")]                 app.MapGet("/todos/{id}", Invoke_Ep1)
 ErrorOr<Todo> GetById(int id)   →       .WithName("TodoApi_GetById")
                                         .RequireAuthorization("Admin")  // if [Authorize("Admin")]
                                         ;
 
-                                     static Task<Results<Ok<Todo>, NotFound<ProblemDetails>, ...>> Invoke_Ep1(...)
+                                     // Wrapper returns Task (AOT-compatible)
+                                     static async Task Invoke_Ep1(HttpContext ctx)
+                                     {
+                                         var __result = await Invoke_Ep1_Core(ctx);
+                                         await __result.ExecuteAsync(ctx);
+                                     }
+
+                                     // Core logic returns typed Results union (for OpenAPI)
+                                     static Task<Results<Ok<Todo>, NotFound<ProblemDetails>, ...>> Invoke_Ep1_Core(...)
                                      {
                                          var result = TodoApi.GetById(id);
                                          return result.Match(
@@ -31,16 +39,51 @@ ErrorOr<Todo> GetById(int id)   →       .WithName("TodoApi_GetById")
 | Wire route parameters           | Extract from route template, bind from HttpContext                                    |
 | **Smart parameter binding**     | Infer `[FromBody]`/`[FromServices]` based on HTTP method and type                     |
 
+### AOT-Compatible Handler Pattern
+
+The generator uses a wrapper pattern to ensure Native AOT compatibility:
+
+```csharp
+// Wrapper method - matches RequestDelegate signature (HttpContext → Task)
+private static async Task Invoke_Ep1(HttpContext ctx)
+{
+    var __result = await Invoke_Ep1_Core(ctx);
+    await __result.ExecuteAsync(ctx);  // Writes response to HttpContext
+}
+
+// Core method - returns typed Results<...> for OpenAPI documentation
+private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
+{
+    // ... actual handler logic
+}
+```
+
+**Why this pattern?**
+
+1. **Avoids reflection** - Without `(Delegate)` cast, ASP.NET uses the AOT-friendly path
+2. **No JSON metadata for `Task<Results<...>>`** - BCL generic types can't have `[JsonSerializable]`
+3. **Explicit response writing** - `IResult.ExecuteAsync()` handles serialization via TypedResults
+
+**The alternative (what fails in AOT):**
+
+```csharp
+// This forces reflection-based RequestDelegateFactory
+app.MapGet("/path", (Delegate)Handler);  // ❌ Requires JsonTypeInfo for Task<Results<...>>
+
+// This works in JIT but fails in AOT with:
+// "JsonTypeInfo metadata for type 'Task<Results<...>>' was not provided"
+```
+
 ### Why We Emit Middleware Calls
 
-ASP.NET Core only sees attributes on the delegate you pass to `MapMethods()`.
+ASP.NET Core only sees attributes on the delegate you pass to `MapGet()`, `MapPost()`, etc.
 
 ```csharp
 // Original method has [Authorize] - but we create a wrapper:
-private static Task<Results<...>> Invoke_Ep1(HttpContext ctx) { ... }
+private static async Task Invoke_Ep1(HttpContext ctx) { ... }
 
 // ASP.NET sees Invoke_Ep1, NOT the original method
-app.MapMethods("/path", ["GET"], (Delegate)Invoke_Ep1);
+app.MapGet("/path", Invoke_Ep1);
 ```
 
 **The wrapper has no attributes.** Therefore the generator MUST emit:
@@ -100,22 +143,11 @@ public static ErrorOr<List<Todo>> Search(SearchFilter filter) => ... // ❌ Ambi
 public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ... // ✅ Explicit
 ```
 
-### Disabling Smart Binding
-
-For legacy behavior (all unclassified → DI service):
-
-```xml
-<PropertyGroup>
-  <ErrorOrLegacyParameterBinding>true</ErrorOrLegacyParameterBinding>
-</PropertyGroup>
-```
-
 ## MSBuild Properties
 
-| Property                        | Default | Purpose                                           |
-|---------------------------------|---------|---------------------------------------------------|
-| `ErrorOrGenerateJsonContext`    | `true`  | Emit `ErrorOrJsonContext` with all endpoint types |
-| `ErrorOrLegacyParameterBinding` | `false` | Use old DI-fallback for unclassified parameters   |
+| Property                     | Default | Purpose                                           |
+|------------------------------|---------|---------------------------------------------------|
+| `ErrorOrGenerateJsonContext` | `true`  | Emit `ErrorOrJsonContext` with all endpoint types |
 
 ## Consumer Setup
 
@@ -127,6 +159,24 @@ var app = builder.Build();
 
 app.MapErrorOrEndpoints(); // Generated extension method
 
+app.Run();
+```
+
+### With Fluent Configuration (Recommended)
+
+Use the fluent builder for AOT-compatible JSON configuration:
+
+```csharp
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Fluent configuration with all options
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context
+    .WithCamelCase()                              // Use camelCase (default: true)
+    .WithIgnoreNulls());                          // Ignore nulls (default: true)
+
+var app = builder.Build();
+app.MapErrorOrEndpoints();
 app.Run();
 ```
 

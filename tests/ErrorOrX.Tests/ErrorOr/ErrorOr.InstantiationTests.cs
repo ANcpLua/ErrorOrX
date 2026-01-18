@@ -350,7 +350,7 @@ public class ErrorOrInstantiationTests
     public void CreateErrorOr_WhenUsingEmptyConstructor_ShouldThrow()
     {
         // Act
-        var action = () => new ErrorOr<int>();
+        var action = static () => new ErrorOr<int>();
 
         // Assert
         action.Should().ThrowExactly<InvalidOperationException>();
@@ -360,7 +360,7 @@ public class ErrorOrInstantiationTests
     public void CreateErrorOr_WhenEmptyErrorsList_ShouldThrow()
     {
         // Act
-        Func<ErrorOr<int>> errorOrInt = () => new List<Error>();
+        Func<ErrorOr<int>> errorOrInt = static () => new List<Error>();
 
         // Assert
         var exception = errorOrInt.Should().ThrowExactly<ArgumentException>().Which;
@@ -374,7 +374,7 @@ public class ErrorOrInstantiationTests
     public void CreateErrorOr_WhenEmptyErrorsArray_ShouldThrow()
     {
         // Act
-        Func<ErrorOr<int>> errorOrInt = () => Array.Empty<Error>();
+        Func<ErrorOr<int>> errorOrInt = static () => Array.Empty<Error>();
 
         // Assert
         var exception = errorOrInt.Should().ThrowExactly<ArgumentException>().Which;
@@ -387,7 +387,7 @@ public class ErrorOrInstantiationTests
     [Fact]
     public void CreateErrorOr_WhenNullIsPassedAsErrorsList_ShouldThrowArgumentNullException()
     {
-        Func<ErrorOr<int>> act = () => default(List<Error>)!;
+        Func<ErrorOr<int>> act = static () => default(List<Error>)!;
 
         act.Should().ThrowExactly<ArgumentNullException>()
             .And.ParamName.Should().Be("errors");
@@ -396,7 +396,7 @@ public class ErrorOrInstantiationTests
     [Fact]
     public void CreateErrorOr_WhenNullIsPassedAsErrorsArray_ShouldThrowArgumentNullException()
     {
-        Func<ErrorOr<int>> act = () => default(Error[])!;
+        Func<ErrorOr<int>> act = static () => default(Error[])!;
 
         act.Should().ThrowExactly<ArgumentNullException>()
             .And.ParamName.Should().Be("errors");
@@ -405,7 +405,7 @@ public class ErrorOrInstantiationTests
     [Fact]
     public void CreateErrorOr_WhenValueIsNull_ShouldThrowArgumentNullException()
     {
-        Func<ErrorOr<int?>> act = () => default(int?);
+        Func<ErrorOr<int?>> act = static () => default(int?);
 
         act.Should().ThrowExactly<ArgumentNullException>()
             .And.ParamName.Should().Be("value");

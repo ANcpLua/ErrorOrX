@@ -156,14 +156,75 @@ public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
 
 ## Native AOT
 
-Fully compatible with `PublishAot=true`. The generator produces reflection-free code with automatic JSON serialization
-context generation.
+Fully compatible with `PublishAot=true`. The generator produces reflection-free code that works seamlessly with Native
+AOT compilation.
 
-```xml
-<PropertyGroup>
-  <PublishAot>true</PublishAot>
-</PropertyGroup>
+### Zero-Config (Recommended)
+
+Add one line - the generator auto-discovers all types from your endpoints:
+
+```csharp
+// Add this anywhere in your project
+[assembly: ErrorOr.AotJsonAssembly]
 ```
+
+Or for more control, decorate your own context:
+
+```csharp
+[AotJson]  // Auto-generates [JsonSerializable] for all endpoint types
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+internal partial class AppJsonSerializerContext : JsonSerializerContext;
+```
+
+### Program.cs Setup
+
+Use the fluent builder for configuration:
+
+```csharp
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Fluent configuration - CamelCase and IgnoreNulls enabled by default
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>());
+
+var app = builder.Build();
+app.MapErrorOrEndpoints();
+app.Run();
+```
+
+#### Available Options
+
+```csharp
+services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context for AOT
+    .WithCamelCase()                              // Use camelCase naming (default: true)
+    .WithIgnoreNulls());                          // Ignore null values (default: true)
+```
+
+### AotJson Attribute Options
+
+```csharp
+[AotJson(
+    ScanEndpoints = true,              // Discover types from ErrorOr endpoints (default: true)
+    IncludeProblemDetails = true,      // Include ProblemDetails types (default: true)
+    TraversePropertyTypes = true,      // Discover nested types from properties (default: true)
+    GenerateCollections = CollectionKind.List | CollectionKind.Array,  // Collection variants
+    IncludeTypes = new[] { typeof(CustomType) },  // Explicit includes
+    ExcludeTypes = new[] { typeof(InternalType) } // Explicit excludes
+)]
+internal partial class AppJsonSerializerContext : JsonSerializerContext;
+```
+
+### How It Works
+
+The generator emits AOT-compatible endpoint handlers using a wrapper pattern:
+
+1. **Typed Map methods** - Uses `MapGet`, `MapPost`, etc. instead of `MapMethods` with delegate cast
+2. **ExecuteAsync pattern** - Handlers return `Task` and explicitly write responses via `IResult.ExecuteAsync()`
+3. **No reflection** - All routing and serialization uses compile-time generated code
+
+This design avoids the reflection-based `RequestDelegateFactory` path that requires JSON metadata for
+`Task<Results<...>>` types, which cannot be satisfied for BCL generic types at compile time.
 
 ## Documentation
 

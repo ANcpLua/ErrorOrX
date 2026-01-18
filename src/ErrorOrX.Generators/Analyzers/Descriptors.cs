@@ -285,7 +285,7 @@ public static class Descriptors
     public static readonly DiagnosticDescriptor JsonContextNotRegistered = new(
         "AOTJ001",
         "JsonSerializerContext not registered",
-        "JsonSerializerContext '{0}' is not registered in DI. Add ConfigureHttpJsonOptions with TypeInfoResolverChain.Insert(0, {0}.Default).",
+        "JsonSerializerContext '{0}' is not registered in DI. Register with AddErrorOrEndpoints fluent builder.",
         AotJsonCategory,
         DiagnosticSeverity.Warning,
         true);

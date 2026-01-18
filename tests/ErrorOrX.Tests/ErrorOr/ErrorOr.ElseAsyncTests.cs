@@ -224,7 +224,7 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString
-            .ElseDoAsync(async _ => await Task.CompletedTask);
+            .ElseDoAsync(async static _ => await Task.CompletedTask);
 
         // Assert
         result.IsError.Should().BeTrue();

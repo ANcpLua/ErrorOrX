@@ -19,6 +19,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var jsonTypes = CollectJsonTypes(sorted);
 
         EmitGlobalUsings(spc);
+        EmitOptionsClass(spc);
         EmitMappings(spc, sorted, jsonTypes.Count > 0, maxArity);
 
         if (jsonTypes.Count > 0 && generateJsonContext)
@@ -106,8 +107,20 @@ public sealed partial class ErrorOrEndpointGenerator
 
         code.AppendLine(
             $"            // {ep.HttpMethod} {ep.Pattern} -> {ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}");
-        code.AppendLine(
-            $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{index})");
+        var mapMethod = ep.HttpMethod switch
+        {
+            "GET" => "MapGet",
+            "POST" => "MapPost",
+            "PUT" => "MapPut",
+            "DELETE" => "MapDelete",
+            "PATCH" => "MapPatch",
+            _ => "MapMethods"
+        };
+        // Use typed Map* methods without Delegate cast for AOT compatibility
+        // The handler takes HttpContext and returns Task<Results<...>>
+        code.AppendLine(mapMethod == "MapMethods"
+            ? $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{index})"
+            : $"            app.{mapMethod}(@\"{ep.Pattern}\", Invoke_Ep{index})");
 
         var className = TypeNameHelper.ExtractShortName(ep.HandlerContainingTypeFqn);
         var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(className, ep.HandlerMethodName);
@@ -115,31 +128,36 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine($"            .WithName(\"{operationId}\")");
         code.AppendLine($"            .WithTags(\"{tagName}\")");
 
+        // Add body content type metadata using WithMetadata (works on IEndpointConventionBuilder)
+        // This replaces .Accepts() which requires RouteHandlerBuilder
+        // AcceptsMetadata constructor: (string[] contentTypes, Type? requestType = null)
         var bodyParam = ep.HandlerParameters.AsImmutableArray()
             .FirstOrDefault(static p => p.Source == EndpointParameterSource.Body);
         if (bodyParam.Name is not null)
             code.AppendLine(
-                $"            .Accepts<{bodyParam.TypeFqn}>(\"{WellKnownTypes.Constants.ContentTypeJson}\")");
+                $"            .WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
         else if (HasFormParams(ep))
             code.AppendLine(
-                $"            .Accepts(typeof(object), \"{WellKnownTypes.Constants.ContentTypeFormData}\")");
+                $"            .WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
 
         if (ep.IsSse)
         {
             code.AppendLine(
-                $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeAttribute}(200) {{ ContentTypes = new[] {{ \"text/event-stream\" }} }})");
+                $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}(200, null, new[] {{ \"text/event-stream\" }}))");
         }
         else if (!unionResult.CanUseUnion)
         {
+            // Use WithMetadata(ProducesResponseTypeMetadata) instead of .Produces() for AOT compatibility
+            // .Produces() requires RouteHandlerBuilder, but without (Delegate) cast we get IEndpointConventionBuilder
             code.AppendLine(successInfo.HasBody
-                ? $"            .Produces<{ep.SuccessTypeFqn}>({successInfo.StatusCode})"
-                : $"            .Produces({successInfo.StatusCode})");
+                ? $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}({successInfo.StatusCode}, typeof({ep.SuccessTypeFqn}), new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}))"
+                : $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}({successInfo.StatusCode}))");
 
             foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                          .OrderBy(static x => x))
                 code.AppendLine(statusCode == 400
-                    ? "            .ProducesValidationProblem()"
-                    : $"            .ProducesProblem({statusCode})");
+                    ? $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}(400, typeof({WellKnownTypes.Fqn.HttpValidationProblemDetails}), new[] {{ \"{WellKnownTypes.Constants.ContentTypeProblemJson}\" }}))"
+                    : $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}({statusCode}, typeof({WellKnownTypes.Fqn.ProblemDetails}), new[] {{ \"{WellKnownTypes.Constants.ContentTypeProblemJson}\" }}))");
         }
 
         // Emit middleware fluent calls based on BCL attributes
@@ -256,10 +274,20 @@ public sealed partial class ErrorOrEndpointGenerator
                 $"            return {WrapReturn($"result.Match<{WellKnownTypes.Fqn.Result}>({matchFactory}, errors => ToProblem(errors))")};");
         }
 
+        // Emit wrapper method that calls ExecuteAsync on the IResult
+        // This ensures the handler matches RequestDelegate (Task, not Task<T>) and properly writes the response
+        code.AppendLine($"        private static async Task Invoke_Ep{index}(HttpContext ctx)");
+        code.AppendLine("        {");
+        code.AppendLine($"            var __result = await Invoke_Ep{index}_Core(ctx);");
+        code.AppendLine("            await __result.ExecuteAsync(ctx);");
+        code.AppendLine("        }");
+        code.AppendLine();
+
+        // Emit core method that returns the typed Results union (for logic)
         code.AppendLine(
             needsAwait
-                ? $"        private static async Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}(HttpContext ctx)"
-                : $"        private static Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}(HttpContext ctx)");
+                ? $"        private static async Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}_Core(HttpContext ctx)"
+                : $"        private static Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}_Core(HttpContext ctx)");
 
         code.AppendLine("        {");
 
@@ -859,24 +887,107 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitJsonConfigExtension(StringBuilder code)
     {
+        // Emit fluent builder: AddErrorOrEndpoints(Action<ErrorOrEndpointOptions>?)
         code.AppendLine("        /// <summary>");
-        code.AppendLine(
-            "        /// Configures JSON serialization for ErrorOr endpoints using the specified JsonSerializerContext.");
+        code.AppendLine("        /// Configures ErrorOr endpoints with fluent options.");
         code.AppendLine("        /// </summary>");
-        code.AppendLine(
-            "        /// <typeparam name=\"TContext\">The JsonSerializerContext type containing type metadata.</typeparam>");
         code.AppendLine("        /// <param name=\"services\">The service collection to configure.</param>");
+        code.AppendLine("        /// <param name=\"configure\">Optional configuration action.</param>");
         code.AppendLine("        /// <returns>The service collection for chaining.</returns>");
+        code.AppendLine("        /// <example>");
+        code.AppendLine("        /// <code>");
+        code.AppendLine("        /// services.AddErrorOrEndpoints(options => options");
+        code.AppendLine("        ///     .UseJsonContext&lt;AppJsonSerializerContext&gt;()");
+        code.AppendLine("        ///     .WithCamelCase()");
+        code.AppendLine("        ///     .WithIgnoreNulls());");
+        code.AppendLine("        /// </code>");
+        code.AppendLine("        /// </example>");
         code.AppendLine(
-            "        public static IServiceCollection AddErrorOrEndpointJson<TContext>(this IServiceCollection services)");
-        code.AppendLine("            where TContext : System.Text.Json.Serialization.JsonSerializerContext, new()");
+            "        public static IServiceCollection AddErrorOrEndpoints(this IServiceCollection services, System.Action<ErrorOrEndpointOptions>? configure = null)");
         code.AppendLine("        {");
-        code.AppendLine("            var context = new TContext();");
-        code.AppendLine(
-            "            services.ConfigureHttpJsonOptions(options => options.SerializerOptions.TypeInfoResolverChain.Insert(0, context));");
+        code.AppendLine("            var options = new ErrorOrEndpointOptions();");
+        code.AppendLine("            configure?.Invoke(options);");
+        code.AppendLine("            options.Apply(services);");
         code.AppendLine("            return services;");
         code.AppendLine("        }");
         code.AppendLine();
+    }
+
+    private static void EmitOptionsClass(SourceProductionContext spc)
+    {
+        const string source = """
+            // <auto-generated>
+            // This file was generated by ErrorOr.Generators source generator.
+            // </auto-generated>
+
+            #nullable enable
+
+            namespace ErrorOr.Generated
+            {
+                /// <summary>
+                /// Options for configuring ErrorOr endpoints.
+                /// </summary>
+                public sealed class ErrorOrEndpointOptions
+                {
+                    private global::System.Func<global::System.Text.Json.Serialization.JsonSerializerContext>? _jsonContextFactory;
+                    private bool _useCamelCase = true;
+                    private bool _ignoreNullValues = true;
+
+                    /// <summary>
+                    /// Registers a JsonSerializerContext for AOT-compatible JSON serialization.
+                    /// </summary>
+                    /// <typeparam name="TContext">The JsonSerializerContext type.</typeparam>
+                    /// <returns>The options instance for chaining.</returns>
+                    public ErrorOrEndpointOptions UseJsonContext<TContext>()
+                        where TContext : global::System.Text.Json.Serialization.JsonSerializerContext, new()
+                    {
+                        _jsonContextFactory = static () => new TContext();
+                        return this;
+                    }
+
+                    /// <summary>
+                    /// Uses camelCase for JSON property names.
+                    /// </summary>
+                    /// <param name="enabled">Whether to enable camelCase (default: true).</param>
+                    /// <returns>The options instance for chaining.</returns>
+                    public ErrorOrEndpointOptions WithCamelCase(bool enabled = true)
+                    {
+                        _useCamelCase = enabled;
+                        return this;
+                    }
+
+                    /// <summary>
+                    /// Ignores null values when serializing JSON.
+                    /// </summary>
+                    /// <param name="enabled">Whether to ignore nulls (default: true).</param>
+                    /// <returns>The options instance for chaining.</returns>
+                    public ErrorOrEndpointOptions WithIgnoreNulls(bool enabled = true)
+                    {
+                        _ignoreNullValues = enabled;
+                        return this;
+                    }
+
+                    /// <summary>
+                    /// Applies the configured options to the service collection.
+                    /// </summary>
+                    internal void Apply(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                    {
+                        services.ConfigureHttpJsonOptions(options =>
+                        {
+                            if (_jsonContextFactory is not null)
+                                options.SerializerOptions.TypeInfoResolverChain.Insert(0, _jsonContextFactory());
+
+                            if (_useCamelCase)
+                                options.SerializerOptions.PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase;
+
+                            if (_ignoreNullValues)
+                                options.SerializerOptions.DefaultIgnoreCondition = global::System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                        });
+                    }
+                }
+            }
+            """;
+        spc.AddSource("ErrorOrEndpointOptions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
     private static void EmitJsonContext(SourceProductionContext spc, List<string> jsonTypes,

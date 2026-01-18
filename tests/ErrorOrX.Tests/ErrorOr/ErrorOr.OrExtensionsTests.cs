@@ -264,8 +264,8 @@ public class OrExtensionsTests
         var people = new List<Person> { new("Alice"), new("Bob") };
 
         // Act
-        var found = people.Find(p => p.Name == "Alice").OrNotFound("Person not found");
-        var notFound = people.Find(p => p.Name == "Charlie").OrNotFound("Person not found");
+        var found = people.Find(static p => p.Name == "Alice").OrNotFound("Person not found");
+        var notFound = people.Find(static p => p.Name == "Charlie").OrNotFound("Person not found");
 
         // Assert
         found.IsError.Should().BeFalse();

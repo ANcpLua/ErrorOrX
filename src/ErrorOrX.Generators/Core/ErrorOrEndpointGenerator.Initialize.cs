@@ -10,7 +10,7 @@ namespace ErrorOr.Generators;
 
 /// <summary>
 ///     Generator entry point for ErrorOr endpoint mappings.
-///     Generates MapErrorOrEndpoints() and AddErrorOrEndpointJson() extension methods.
+///     Generates MapErrorOrEndpoints() and AddErrorOrEndpoints() fluent configuration extension methods.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
@@ -127,10 +127,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     {
         context.RegisterPostInitializationOutput(EmitAttributes);
 
-        var legacyBindingOption = context.AnalyzerConfigOptionsProvider
-            .Select(ParseLegacyBindingOption);
-
-        var endpoints = CombineHttpMethodProviders(context, legacyBindingOption);
+        var endpoints = CombineHttpMethodProviders(context);
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
             .Select(ParseGenerateJsonContextOption);
@@ -140,12 +137,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             EmitMappingsAndRunAnalysis);
     }
 
-    private static bool ParseLegacyBindingOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
-    {
-        options.GlobalOptions.TryGetValue("build_property.ErrorOrLegacyParameterBinding", out var value);
-        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
-    }
-
     private static bool ParseGenerateJsonContextOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
     {
         options.GlobalOptions.TryGetValue("build_property.ErrorOrGenerateJsonContext", out var value);
@@ -153,15 +144,14 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     }
 
     private static IncrementalValueProvider<EquatableArray<EndpointDescriptor>> CombineHttpMethodProviders(
-        IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<bool> legacyBindingOption)
+        IncrementalGeneratorInitializationContext context)
     {
-        var getProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.GetAttribute);
-        var postProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PostAttribute);
-        var putProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PutAttribute);
-        var deleteProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.DeleteAttribute);
-        var patchProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.PatchAttribute);
-        var baseProvider = CreateEndpointProvider(context, legacyBindingOption, WellKnownTypes.ErrorOrEndpointAttribute);
+        var getProvider = CreateEndpointProvider(context, WellKnownTypes.GetAttribute);
+        var postProvider = CreateEndpointProvider(context, WellKnownTypes.PostAttribute);
+        var putProvider = CreateEndpointProvider(context, WellKnownTypes.PutAttribute);
+        var deleteProvider = CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute);
+        var patchProvider = CreateEndpointProvider(context, WellKnownTypes.PatchAttribute);
+        var baseProvider = CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute);
 
         return IncrementalProviderExtensions.CombineSix(
             getProvider, postProvider, putProvider,
@@ -200,7 +190,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<bool> legacyBindingProvider,
         string attributeName)
     {
         return context.SyntaxProvider
@@ -208,12 +197,11 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 attributeName,
                 static (node, _) => node is MethodDeclarationSyntax,
                 static (ctx, _) => ctx)
-            .Combine(legacyBindingProvider)
-            .SelectMany(static (pair, ct) =>
+            .SelectMany(static (ctx, ct) =>
             {
                 // Lazy creation avoids caching ITypeSymbol (breaks incremental)
-                var errorOrContext = new ErrorOrContext(pair.Left.SemanticModel.Compilation);
-                return AnalyzeEndpointFlows(pair.Left, errorOrContext, pair.Right, ct);
+                var errorOrContext = new ErrorOrContext(ctx.SemanticModel.Compilation);
+                return AnalyzeEndpointFlows(ctx, errorOrContext, ct);
             })
             .ReportAndContinue(context);
     }
@@ -221,7 +209,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     private static ImmutableArray<DiagnosticFlow<EndpointDescriptor>> AnalyzeEndpointFlows(
         GeneratorAttributeSyntaxContext ctx,
         ErrorOrContext errorOrContext,
-        bool useLegacyBinding,
         CancellationToken ct)
     {
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
@@ -280,7 +267,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         {
             if (attr is null) continue;
             var flow = methodAnalysisFlow.Then(analysis =>
-                ProcessAttributeFlow(analysis, attr, errorOrContext, useLegacyBinding, ct));
+                ProcessAttributeFlow(analysis, attr, errorOrContext, ct));
             flows.Add(flow);
         }
 
@@ -291,7 +278,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         MethodAnalysis analysis,
         AttributeData attr,
         ErrorOrContext errorOrContext,
-        bool useLegacyBinding,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -318,7 +304,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         // Bind parameters
         var bindingDiagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext,
-            httpMethod, useLegacyBinding);
+            httpMethod);
         if (!bindingResult.IsValid)
             return DiagnosticFlow.Fail<EndpointDescriptor>(bindingDiagnostics.ToImmutable().AsEquatableArray());
 

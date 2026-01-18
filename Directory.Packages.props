@@ -35,8 +35,7 @@
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0"/>
         <!-- ASP.NET Core -->
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
-        <!-- ErrorOrX (local development) -->
-        <PackageVersion Include="ErrorOrX" Version="2.2.0"/>
-        <PackageVersion Include="ErrorOrX.Generators" Version="2.2.0"/>
+        <!-- NOTE: ErrorOrX packages use ProjectReference during development.
+             Do NOT add PackageVersion entries here - see samples/ for correct pattern. -->
     </ItemGroup>
 </Project>

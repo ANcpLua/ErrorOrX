@@ -610,7 +610,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Detects [Authorize], [AllowAnonymous], [EnableRateLimiting], [DisableRateLimiting],
     ///     [OutputCache], [EnableCors], [DisableCors].
     /// </summary>
-    internal static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method, ErrorOrContext context)
+    private static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method, ErrorOrContext context)
     {
         var auth = default(AuthInfo);
         var rateLimit = default(RateLimitInfo);
@@ -644,12 +644,19 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             policy ??= attr.NamedArguments.FirstOrDefault(static a => a.Key == "Policy").Value.Value as string;
-            return current with { Required = true, Policy = policy ?? current.Policy };
+            return current with
+            {
+                Required = true,
+                Policy = policy ?? current.Policy
+            };
         }
 
         if (context.AllowAnonymousAttribute is not null &&
             SymbolEqualityComparer.Default.Equals(attrClass, context.AllowAnonymousAttribute))
-            return current with { AllowAnonymous = true };
+            return current with
+            {
+                AllowAnonymous = true
+            };
 
         return current;
     }
@@ -661,12 +668,19 @@ public sealed partial class ErrorOrEndpointGenerator
             SymbolEqualityComparer.Default.Equals(attrClass, context.EnableRateLimitingAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
-            return current with { Enabled = true, Policy = policy };
+            return current with
+            {
+                Enabled = true,
+                Policy = policy
+            };
         }
 
         if (context.DisableRateLimitingAttribute is not null &&
             SymbolEqualityComparer.Default.Equals(attrClass, context.DisableRateLimitingAttribute))
-            return current with { Disabled = true };
+            return current with
+            {
+                Disabled = true
+            };
 
         return current;
     }
@@ -678,13 +692,22 @@ public sealed partial class ErrorOrEndpointGenerator
             !SymbolEqualityComparer.Default.Equals(attrClass, context.OutputCacheAttribute))
             return current;
 
-        var result = current with { Enabled = true };
+        var result = current with
+        {
+            Enabled = true
+        };
         foreach (var namedArg in attr.NamedArguments)
         {
             if (namedArg is { Key: "PolicyName", Value.Value: string policy })
-                result = result with { Policy = policy };
+                result = result with
+                {
+                    Policy = policy
+                };
             if (namedArg is { Key: "Duration", Value.Value: int duration })
-                result = result with { Duration = duration };
+                result = result with
+                {
+                    Duration = duration
+                };
         }
 
         return result;
@@ -697,12 +720,19 @@ public sealed partial class ErrorOrEndpointGenerator
             SymbolEqualityComparer.Default.Equals(attrClass, context.EnableCorsAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
-            return current with { Enabled = true, Policy = policy };
+            return current with
+            {
+                Enabled = true,
+                Policy = policy
+            };
         }
 
         if (context.DisableCorsAttribute is not null &&
             SymbolEqualityComparer.Default.Equals(attrClass, context.DisableCorsAttribute))
-            return current with { Disabled = true };
+            return current with
+            {
+                Disabled = true
+            };
 
         return current;
     }

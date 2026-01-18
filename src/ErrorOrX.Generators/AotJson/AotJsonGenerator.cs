@@ -98,9 +98,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
                                       /// <summary>Scan ErrorOr endpoint returns for serializable types. Default: true.</summary>
                                       public bool ScanEndpoints { get; set; } = true;
 
-                                      /// <summary>Additional namespaces to scan for serializable types.</summary>
-                                      public string[]? ScanNamespaces { get; set; }
-
                                       /// <summary>Explicit types to always include.</summary>
                                       public global::System.Type[]? IncludeTypes { get; set; }
 
@@ -115,9 +112,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
 
                                       /// <summary>Traverse property types to discover nested types. Default: true.</summary>
                                       public bool TraversePropertyTypes { get; set; } = true;
-
-                                      /// <summary>Maximum depth for property type traversal. Default: 10.</summary>
-                                      public int MaxTraversalDepth { get; set; } = 10;
 
                                       /// <summary>JSON property naming policy. Default: CamelCase.</summary>
                                       public global::ErrorOr.JsonNamingPolicy NamingPolicy { get; set; } = global::ErrorOr.JsonNamingPolicy.CamelCase;
@@ -147,9 +141,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
 
                                       /// <summary>Traverse property types to discover nested types. Default: true.</summary>
                                       public bool TraversePropertyTypes { get; set; } = true;
-
-                                      /// <summary>Maximum depth for property type traversal. Default: 10.</summary>
-                                      public int MaxTraversalDepth { get; set; } = 10;
                                   }
 
                                   /// <summary>Collection variants to generate for discovered types.</summary>
@@ -191,7 +182,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        var attr = ctx.Attributes.FirstOrDefault(a =>
+        var attr = ctx.Attributes.FirstOrDefault(static a =>
             a.AttributeClass?.ToDisplayString() == AotJsonAssemblyAttributeFqn);
 
         if (attr is null)
@@ -203,7 +194,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         var generateCollections = (CollectionKind)GetNamedArgumentValue(attr, "GenerateCollections", (int)CollectionKind.All);
         var includeProblemDetails = GetNamedArgumentValue(attr, "IncludeProblemDetails", true);
         var traversePropertyTypes = GetNamedArgumentValue(attr, "TraversePropertyTypes", true);
-        var maxTraversalDepth = GetNamedArgumentValue(attr, "MaxTraversalDepth", DefaultMaxDepth);
 
         return new AotJsonAssemblyConfig(
             contextNamespace,
@@ -211,8 +201,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             namingPolicy,
             generateCollections,
             includeProblemDetails,
-            traversePropertyTypes,
-            maxTraversalDepth);
+            traversePropertyTypes);
     }
 
     /// <summary>
@@ -239,7 +228,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             return DiagnosticFlow.Fail<AotJsonContextInfo>();
 
         // Extract attribute data
-        var attr = ctx.Attributes.FirstOrDefault(a =>
+        var attr = ctx.Attributes.FirstOrDefault(static a =>
             a.AttributeClass?.ToDisplayString() == AotJsonAttributeFqn);
 
         if (attr is null)
@@ -247,28 +236,23 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
 
         // Extract properties from attribute
         var scanEndpoints = GetNamedArgumentValue(attr, "ScanEndpoints", true);
-        var scanNamespaces = GetNamedArgumentArrayValue<string>(attr, "ScanNamespaces");
         var includeTypes = GetNamedArgumentTypeArrayValue(attr, "IncludeTypes");
         var excludeTypes = GetNamedArgumentTypeArrayValue(attr, "ExcludeTypes");
         var generateCollections = GetNamedArgumentValue(attr, "GenerateCollections", 3); // List | Array
         var includeProblemDetails = GetNamedArgumentValue(attr, "IncludeProblemDetails", true);
         var traversePropertyTypes = GetNamedArgumentValue(attr, "TraversePropertyTypes", true);
         var namingPolicy = (JsonNamingPolicy)GetNamedArgumentValue(attr, "NamingPolicy", 1);
-        var maxTraversalDepth = GetNamedArgumentValue(attr, "MaxTraversalDepth", DefaultMaxDepth);
 
         var contextInfo = new AotJsonContextInfo(
-            classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             classSymbol.Name,
-            classSymbol.ContainingNamespace?.ToDisplayString(),
+            classSymbol.ContainingNamespace is { IsGlobalNamespace: false } ns ? ns.ToDisplayString() : null,
             scanEndpoints,
-            scanNamespaces.AsEquatableArray(),
             includeTypes.AsEquatableArray(),
             excludeTypes.AsEquatableArray(),
             (CollectionKind)generateCollections,
             includeProblemDetails,
             traversePropertyTypes,
-            namingPolicy,
-            maxTraversalDepth);
+            namingPolicy);
 
         return DiagnosticFlow.Ok(contextInfo);
     }
@@ -296,13 +280,14 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
                     attr,
                     static (node, _) => node is MethodDeclarationSyntax,
                     static (ctx, ct) => ExtractTypesFromMethod(ctx, ct))
-                .SelectMany(static (types, _) => types));
+                .SelectMany(static (types, _) => types))
+            .ToList(); // Materialize to avoid multiple enumeration
 
         // Combine all providers - start with first, then add remaining
-        var combined = providers.First();
-        foreach (var provider in providers.Skip(1))
+        var combined = providers[0];
+        for (var i = 1; i < providers.Count; i++)
             combined = combined.Collect()
-                .Combine(provider.Collect())
+                .Combine(providers[i].Collect())
                 .SelectMany(static (pair, _) =>
                     pair.Left.Concat(pair.Right));
 
@@ -409,7 +394,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             var fqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             var displayName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
-            types.Add(new DiscoveredTypeInfo(fqn, displayName, false, source));
+            types.Add(new DiscoveredTypeInfo(fqn, displayName, source));
 
             // Traverse property types inline for proper caching
             TraversePropertyTypesForExtraction(type, types, visitedTypes, 0, DefaultMaxDepth);
@@ -526,7 +511,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         var displayName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
         // Add as property traversal type (will be filtered based on TraversePropertyTypes setting)
-        types.Add(new DiscoveredTypeInfo(fqn, displayName, false, DiscoveredTypeSource.PropertyTraversal));
+        types.Add(new DiscoveredTypeInfo(fqn, displayName, DiscoveredTypeSource.PropertyTraversal));
 
         // Continue traversing
         TraversePropertyTypesForExtraction(type, types, visitedTypes, currentDepth + 1, maxDepth);
@@ -600,8 +585,27 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             sb.AppendLine();
         }
 
+        // Emit naming policy if not default (user may already have it on their class)
+        // This generates a comment to remind users to add the policy to their context
+        if (contextInfo.NamingPolicy != JsonNamingPolicy.Default)
+        {
+            var policyName = contextInfo.NamingPolicy switch
+            {
+                JsonNamingPolicy.CamelCase => "CamelCase",
+                JsonNamingPolicy.SnakeCase => "SnakeCaseLower",
+                JsonNamingPolicy.KebabCase => "KebabCaseLower",
+                _ => null
+            };
+            if (policyName is not null)
+            {
+                sb.AppendLine($"// NOTE: Ensure your {contextInfo.ContextTypeName} class has:");
+                sb.AppendLine($"// [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.{policyName})]");
+                sb.AppendLine();
+            }
+        }
+
         // Emit [JsonSerializable] attributes
-        foreach (var type in withCollections.OrderBy(t => t, StringComparer.Ordinal))
+        foreach (var type in withCollections.OrderBy(static t => t, StringComparer.Ordinal))
             sb.AppendLine($"[global::System.Text.Json.Serialization.JsonSerializable(typeof({type}))]");
 
         sb.AppendLine($"partial class {contextInfo.ContextTypeName};");
@@ -687,7 +691,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         }
 
         // Emit [JsonSerializable] attributes
-        foreach (var type in withCollections.OrderBy(t => t, StringComparer.Ordinal))
+        foreach (var type in withCollections.OrderBy(static t => t, StringComparer.Ordinal))
             sb.AppendLine($"[global::System.Text.Json.Serialization.JsonSerializable(typeof({type}))]");
 
         sb.AppendLine($"internal partial class {config.ContextTypeName} : global::System.Text.Json.Serialization.JsonSerializerContext");
@@ -716,19 +720,6 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
         return arg.Key is not null && arg.Value.Value is T value ? value : defaultValue;
     }
 
-    private static ImmutableArray<string> GetNamedArgumentArrayValue<T>(AttributeData attr, string name)
-    {
-        var arg = attr.NamedArguments.FirstOrDefault(a => a.Key == name);
-        if (arg.Key is null || arg.Value.IsNull)
-            return ImmutableArray<string>.Empty;
-
-        return [
-            ..arg.Value.Values
-                .Where(static v => v.Value is not null)
-                .Select(static v => v.Value!.ToString())
-        ];
-    }
-
     private static ImmutableArray<string> GetNamedArgumentTypeArrayValue(AttributeData attr, string name)
     {
         var arg = attr.NamedArguments.FirstOrDefault(a => a.Key == name);
@@ -754,7 +745,7 @@ public sealed class AotJsonGenerator : IIncrementalGenerator
             return false;
 
         // Check for [FromBody] or complex type that would be body
-        var hasFromBody = param.GetAttributes().Any(a =>
+        var hasFromBody = param.GetAttributes().Any(static a =>
             a.AttributeClass?.Name is "FromBodyAttribute" or "FromBody");
 
         if (hasFromBody)
