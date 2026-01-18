@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.1] - 2026-01-18
+
+Re-release with correct generated code. The 2.6.0 package was inadvertently built from stale code.
+
 ## [2.6.0] - 2026-01-17
 
 ### Added
