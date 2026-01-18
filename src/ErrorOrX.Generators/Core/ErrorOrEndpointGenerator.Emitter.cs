@@ -996,10 +996,6 @@ public sealed partial class ErrorOrEndpointGenerator
         // If user has their own JsonSerializerContext, emit a helper file instead
         if (userContexts is { IsDefaultOrEmpty: false, Length: > 0 })
         {
-            // If user context has [AotJson], AotJsonGenerator handles everything - no helper needed
-            if (userContexts.Any(static ctx => ctx.HasAotJsonAttribute))
-                return;
-
             EmitJsonContextHelper(spc, jsonTypes, userContexts);
             return;
         }

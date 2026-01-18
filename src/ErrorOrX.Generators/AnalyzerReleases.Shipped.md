@@ -24,11 +24,6 @@ EOE030 | ErrorOr.Endpoints | Info | Too many result types
 EOE032 | ErrorOr.Endpoints | Warning | Unknown error factory
 EOE033 | ErrorOr.Endpoints | Error | Undocumented interface call
 EOE040 | ErrorOr.Endpoints | Warning | Missing CamelCase policy
-AOTJ001 | ErrorOr.AotJson | Warning | JsonSerializerContext not registered
-AOTJ002 | ErrorOr.AotJson | Info | Missing [AotJson] attribute
-AOTJ003 | ErrorOr.AotJson | Warning | Duplicate [AotJson] contexts
-AOTJ004 | ErrorOr.AotJson | Warning | Type not serializable
-AOTJ005 | ErrorOr.AotJson | Error | [AotJson] on non-partial class
 AOT001 | ErrorOr.AotSafety | Warning | Activator.CreateInstance is not AOT-safe
 AOT002 | ErrorOr.AotSafety | Warning | Type.GetType is not AOT-safe
 AOT003 | ErrorOr.AotSafety | Warning | Reflection over members is not AOT-safe

@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.3] - 2026-01-18
+
+### Removed
+
+- **AotJsonGenerator and related attributes**: Removed the `[AotJson]` and `[AotJsonAssembly]` attributes along with
+  the `AotJsonGenerator`. These features attempted to auto-generate `[JsonSerializable]` attributes, but due to a
+  fundamental source generator limitation (generators run in parallel and cannot add attributes that other generators
+  will see), the STJ generator never processed these generated attributes. Users must manually add `[JsonSerializable]`
+  attributes to their `JsonSerializerContext`.
+
+- **AOTJ diagnostics**: Removed AOTJ001-AOTJ005 diagnostics since the AotJson feature has been removed.
+
 ## [2.6.2] - 2026-01-18
 
 ### Fixed
@@ -9,9 +21,6 @@ All notable changes to this project are documented in this file.
 - **False positive EOE007 warnings for generic types**: Fixed type matching to correctly compare types like
   `List<Todo>` against the generator's fully-qualified `List<global::Todo>`. The `TypeNameHelper.Normalize`
   method now strips all `global::` prefixes including those inside generic type arguments.
-
-- **AotJson context detection**: When a user's JsonSerializerContext has `[AotJson]` attribute, the
-  `ErrorOrEndpointGenerator` now correctly detects it and skips emitting redundant `ErrorOrJsonContext.g.cs`.
 
 ## [2.6.1] - 2026-01-18
 

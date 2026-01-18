@@ -159,26 +159,24 @@ public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
 Fully compatible with `PublishAot=true`. The generator produces reflection-free code that works seamlessly with Native
 AOT compilation.
 
-### Zero-Config (Recommended)
+### Setup
 
-Add one line - the generator auto-discovers all types from your endpoints:
-
-```csharp
-// Add this anywhere in your project
-[assembly: ErrorOr.AotJsonAssembly]
-```
-
-Or for more control, decorate your own context:
+1. Create a `JsonSerializerContext` with `[JsonSerializable]` attributes for your endpoint types:
 
 ```csharp
-[AotJson]  // Auto-generates [JsonSerializable] for all endpoint types
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(Todo))]
+[JsonSerializable(typeof(Todo[]))]
+[JsonSerializable(typeof(List<Todo>))]
+[JsonSerializable(typeof(CreateTodoRequest))]
+[JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
-### Program.cs Setup
-
-Use the fluent builder for configuration:
+2. Register it in `Program.cs`:
 
 ```csharp
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -199,20 +197,6 @@ services.AddErrorOrEndpoints(options => options
     .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context for AOT
     .WithCamelCase()                              // Use camelCase naming (default: true)
     .WithIgnoreNulls());                          // Ignore null values (default: true)
-```
-
-### AotJson Attribute Options
-
-```csharp
-[AotJson(
-    ScanEndpoints = true,              // Discover types from ErrorOr endpoints (default: true)
-    IncludeProblemDetails = true,      // Include ProblemDetails types (default: true)
-    TraversePropertyTypes = true,      // Discover nested types from properties (default: true)
-    GenerateCollections = CollectionKind.List | CollectionKind.Array,  // Collection variants
-    IncludeTypes = new[] { typeof(CustomType) },  // Explicit includes
-    ExcludeTypes = new[] { typeof(InternalType) } // Explicit excludes
-)]
-internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
 ### How It Works

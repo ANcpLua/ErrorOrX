@@ -322,125 +322,10 @@ cat samples/ErrorOrX.Sample/obj/Debug/net10.0/generated/ErrorOrX.Generators/*.cs
 | EOE025                   | GET/DELETE with complex type                     |
 | JSON context detection   | User context present/absent, CamelCase check     |
 
-## AotJson Generator
-
-The `AotJsonGenerator` automatically discovers types from ErrorOr endpoints and generates `[JsonSerializable]`
-attributes for Native AOT compatibility.
-
-### What It Does
-
-```csharp
-// User writes:
-[AotJson]
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-internal partial class AppJsonSerializerContext : JsonSerializerContext;
-
-public static class TodoApi
-{
-    [Get("/todos")]
-    public static ErrorOr<List<Todo>> GetAll() => ...;
-}
-
-// Generator produces:
-[JsonSerializable(typeof(global::Todo))]
-[JsonSerializable(typeof(global::System.Collections.Generic.List<global::Todo>))]
-[JsonSerializable(typeof(global::Todo[]))]
-[JsonSerializable(typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails))]
-[JsonSerializable(typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]
-partial class AppJsonSerializerContext;
-```
-
-### Pipeline
-
-```
-Initialize()
-     │
-     ├─► RegisterPostInitializationOutput()
-     │       └─► EmitAotJsonAttribute()  // Emits [AotJson] + CollectionKind enum
-     │
-     ├─► ForAttributeWithMetadataName("ErrorOr.AotJsonAttribute")
-     │       └─► ExtractAotJsonContext()  // Extracts settings from [AotJson]
-     │
-     ├─► CreateEndpointTypeProvider()
-     │       └─► ForAttributeWithMetadataName() for each HTTP verb
-     │           └─► ExtractTypesFromMethod()  // Discovers types from endpoints
-     │
-     └─► RegisterSourceOutput()
-             └─► GenerateJsonSerializableAttributes()  // Emits [JsonSerializable] attributes
-```
-
-### Key Files
-
-| File                  | Responsibility                                           |
-|-----------------------|----------------------------------------------------------|
-| `AotJsonGenerator.cs` | Main generator - type discovery and code emission        |
-| `AotJsonModels.cs`    | Data models (`AotJsonContextInfo`, `DiscoveredTypeInfo`) |
-
-### AotJson Attribute Options
-
-| Property                | Default         | Purpose                                      |
-|-------------------------|-----------------|----------------------------------------------|
-| `ScanEndpoints`         | `true`          | Discover types from ErrorOr endpoint returns |
-| `ScanNamespaces`        | `null`          | Additional namespaces to scan                |
-| `IncludeTypes`          | `null`          | Explicit types to always include             |
-| `ExcludeTypes`          | `null`          | Types to exclude from generation             |
-| `GenerateCollections`   | `List \| Array` | Collection variants to generate              |
-| `IncludeProblemDetails` | `true`          | Include ProblemDetails types                 |
-
-### CollectionKind Enum
-
-```csharp
-[Flags]
-public enum CollectionKind
-{
-    None = 0,
-    List = 1 << 0,           // List<T>
-    Array = 1 << 1,          // T[]
-    IEnumerable = 1 << 2,    // IEnumerable<T>
-    IReadOnlyList = 1 << 3,  // IReadOnlyList<T>
-    All = List | Array | IEnumerable | IReadOnlyList
-}
-```
-
-### Type Unwrapping
-
-The generator recursively unwraps nested types:
-
-```
-Task<ErrorOr<List<Todo>>>
-  └─► ErrorOr<List<Todo>>     (unwrap Task)
-        └─► List<Todo>        (unwrap ErrorOr)
-              └─► Todo        (unwrap List element)
-```
-
-### AOTJ Diagnostics
-
-| ID      | Severity | Description                          |
-|---------|----------|--------------------------------------|
-| AOTJ001 | Warning  | JsonSerializerContext not registered |
-| AOTJ002 | Info     | Missing [AotJson] attribute          |
-| AOTJ003 | Warning  | Duplicate [AotJson] contexts         |
-| AOTJ004 | Warning  | Type not serializable                |
-| AOTJ005 | Error    | [AotJson] on non-partial class       |
-
-### Important Implementation Notes
-
-1. **Internal CollectionKind**: The generator needs `CollectionKind` at compile-time, so there's an internal copy in
-   `AotJsonModels.cs`. The user-facing version is emitted via `PostInitializationOutput`.
-
-2. **ForAttributeWithMetadataName Limitation**: Each generator can only see types from its own
-   `PostInitializationOutput`. That's why:
-    - Tests must define route attributes in test source code
-    - The generator emits its own `[AotJson]` attribute
-
-3. **Incremental Caching**: Uses `EquatableArray<T>` and primitive-only record structs - never cache `ISymbol` or
-   `Compilation`.
-
-### ANcpLua.Roslyn.Utilities Used
+## ANcpLua.Roslyn.Utilities Used
 
 | Utility                                           | Purpose                                                    |
 |---------------------------------------------------|------------------------------------------------------------|
-| `ForAttributeWithMetadataNameOfClassesAndRecords` | Find `[AotJson]` decorated classes                         |
 | `DiagnosticFlow<T>`                               | Railway-oriented error handling with diagnostic collection |
 | `.SelectFlow()`                                   | Transform with `DiagnosticFlow`                            |
 | `.ReportAndContinue()`                            | Report diagnostics and continue with values                |
@@ -454,27 +339,6 @@ Task<ErrorOr<List<Todo>>>
 
 ## Incremental Caching
 
-### Tracking Names
-
-The generators use `.WithTrackingName()` to identify custom pipeline steps for caching verification:
-
-| Generator              | Step Name              | Purpose                                      |
-|------------------------|------------------------|----------------------------------------------|
-| `AotJsonGenerator`     | `AotJson_Contexts`     | [AotJson] decorated context classes          |
-| `AotJsonGenerator`     | `AotJson_EndpointTypes`| Discovered types from ErrorOr endpoints      |
-
-### Caching Test Pattern
-
-```csharp
-result.IsCached("AotJson_Contexts", "AotJson_EndpointTypes");
-```
-
-When step names are provided to `.IsCached()`:
-1. Only checks forbidden types in those named steps (not internal Roslyn steps)
-2. Only verifies caching status for those named steps
-
-### Why This Matters
-
 Roslyn's `ForAttributeWithMetadataName` creates internal tracked steps that inherently cache semantic types:
 - `Compilation` - CSharpCompilation
 - `result_ForAttributeWithMetadataName` - ISymbol, SemanticModel, SyntaxNode
@@ -483,16 +347,3 @@ These internal steps cannot be avoided when using semantic APIs. The solution:
 1. Add `.WithTrackingName()` to custom transformation steps
 2. Test only named steps with `.IsCached("stepName")`
 3. Ensure custom data models are fully equatable (no Roslyn types)
-
-### Utilities Fix Required (ANcpLua.Roslyn.Utilities 1.10.5+)
-
-The `IsCached()` method must filter forbidden types by step names:
-
-```csharp
-// In GeneratorResult.cs
-var violationsToCheck = stepNames.Length > 0
-    ? report.ForbiddenTypeViolations.Where(v => stepNames.Contains(v.StepName)).ToList()
-    : report.ForbiddenTypeViolations;
-```
-
-This allows testing generator caching without failing on internal Roslyn framework steps.

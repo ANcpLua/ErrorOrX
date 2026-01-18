@@ -15,11 +15,6 @@ public static class Descriptors
 {
     private const string Category = "ErrorOr.Endpoints";
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // AotJson Generator Diagnostics (AOTJ001-AOTJ009)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private const string AotJsonCategory = "ErrorOr.AotJson";
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Errors - Must fix, won't compile or will fail at runtime
@@ -278,68 +273,6 @@ public static class Descriptors
         DiagnosticSeverity.Warning,
         true);
 
-    /// <summary>
-    ///     JsonSerializerContext not registered in DI.
-    ///     The generated context must be registered for ASP.NET Core to use it.
-    /// </summary>
-    public static readonly DiagnosticDescriptor JsonContextNotRegistered = new(
-        "AOTJ001",
-        "JsonSerializerContext not registered",
-        "JsonSerializerContext '{0}' is not registered in DI. Register with AddErrorOrEndpoints fluent builder.",
-        AotJsonCategory,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
-    ///     Missing [AotJson] attribute on JsonSerializerContext.
-    ///     Suggests adding the attribute for automatic type discovery.
-    /// </summary>
-    public static readonly DiagnosticDescriptor MissingAotJsonAttribute = new(
-        "AOTJ002",
-        "Missing [AotJson] attribute",
-        "JsonSerializerContext '{0}' does not have [AotJson] attribute. " +
-        "Add [AotJson] to enable automatic type discovery from ErrorOr endpoints.",
-        AotJsonCategory,
-        DiagnosticSeverity.Info,
-        true);
-
-    /// <summary>
-    ///     Multiple [AotJson] contexts detected in the same project.
-    ///     This may cause duplicate type registrations.
-    /// </summary>
-    public static readonly DiagnosticDescriptor DuplicateAotJsonContexts = new(
-        "AOTJ003",
-        "Duplicate [AotJson] contexts",
-        "Multiple JsonSerializerContexts with [AotJson] detected: '{0}' and '{1}'. " +
-        "Consider using a single context to avoid duplicate type registrations.",
-        AotJsonCategory,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
-    ///     Type discovered from endpoint is not serializable.
-    ///     The type may be missing a parameterless constructor or have unsupported properties.
-    /// </summary>
-    public static readonly DiagnosticDescriptor TypeNotSerializable = new(
-        "AOTJ004",
-        "Type not serializable",
-        "Type '{0}' discovered from endpoint '{1}' may not be serializable. " +
-        "Ensure it has a public parameterless constructor or is a record type.",
-        AotJsonCategory,
-        DiagnosticSeverity.Warning,
-        true);
-
-    /// <summary>
-    ///     [AotJson] applied to non-partial class.
-    ///     The class must be partial for source generation to work.
-    /// </summary>
-    public static readonly DiagnosticDescriptor AotJsonOnNonPartialClass = new(
-        "AOTJ005",
-        "[AotJson] on non-partial class",
-        "Class '{0}' must be declared as 'partial' for [AotJson] source generation",
-        AotJsonCategory,
-        DiagnosticSeverity.Error,
-        true);
 
     // ═══════════════════════════════════════════════════════════════════════════
     // AOT Safety Diagnostics (AOT001-AOT009)

@@ -189,7 +189,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
     private static string? GetFirstStringArgument(InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments.Count == 0)
+        if (invocation.ArgumentList.Arguments.Count is 0)
             return null;
 
         var firstArg = invocation.ArgumentList.Arguments[0].Expression;

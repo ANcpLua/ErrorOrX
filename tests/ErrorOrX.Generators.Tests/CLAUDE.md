@@ -19,7 +19,7 @@ Unit tests for the ErrorOrX source generators and analyzers.
 dotnet test --project tests/ErrorOrX.Generators.Tests
 
 # Run specific test class (xUnit v3 MTP syntax)
-dotnet test --project tests/ErrorOrX.Generators.Tests --filter-class "*AotJson*"
+dotnet test --project tests/ErrorOrX.Generators.Tests --filter-class "*Binding*"
 
 # Run specific test method
 dotnet test --project tests/ErrorOrX.Generators.Tests --filter-method "*Discovers_Types*"
@@ -114,7 +114,7 @@ await Test<MyGenerator>.Run(source, TestContext.Current.CancellationToken);
 
 // Use StringComparison.Ordinal for string assertions
 Assert.Contains("text", content, StringComparison.Ordinal);
-f.HintName.Contains("AotJson", StringComparison.Ordinal);
+f.HintName.Contains("Endpoint", StringComparison.Ordinal);
 
 // Use Assert.DoesNotContain with predicate, not Assert.Empty with Where
 Assert.DoesNotContain(result.Files, f => f.HintName.Contains("X", StringComparison.Ordinal));
@@ -142,42 +142,9 @@ using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
 
 | File                              | Tests                                  |
 |-----------------------------------|----------------------------------------|
-| `AotJsonGeneratorTests.cs`        | AotJson type discovery, collection gen |
 | `DuplicateRouteTests.cs`          | EOE004 duplicate route detection       |
 | `ErrorOrEndpointAnalyzerTests.cs` | EOE001, EOE002, etc. analyzer rules    |
 | `ParameterBindingTests.cs`        | Smart parameter binding inference      |
-
-## AotJsonGenerator Tests
-
-The AotJson tests verify:
-
-1. **Type discovery** from `ErrorOr<T>` return types
-2. **Request parameter** type discovery (`[FromBody]`)
-3. **Collection variants** (`List<T>`, `T[]`, etc.)
-4. **ProblemDetails** inclusion/exclusion
-5. **Async unwrapping** (`Task<ErrorOr<T>>` → `T`)
-6. **Nested generics** (`Task<ErrorOr<List<T>>>` → `T`)
-7. **Non-JsonSerializerContext** class filtering
-
-### Test Source Template
-
-```csharp
-const string source = """
-    using System.Text.Json.Serialization;
-    using ErrorOr;
-
-    [AotJson]
-    internal partial class AppJsonSerializerContext : JsonSerializerContext;
-
-    public static class Api
-    {
-        [Get("/items")]
-        public static ErrorOr<Item> Get() => default;
-    }
-
-    public record Item(string Name);
-    """ + RouteAttributesSource;  // Must include route attribute definitions!
-```
 
 ## Debugging Generator Output
 
@@ -189,9 +156,6 @@ dotnet build samples/ErrorOrX.Sample
 
 # View generated files
 ls samples/ErrorOrX.Sample/obj/Debug/net10.0/generated/ErrorOrX.Generators/
-
-# View specific generator output
-cat samples/ErrorOrX.Sample/obj/Debug/net10.0/generated/ErrorOrX.Generators/ErrorOr.Generators.AotJsonGenerator/AppJsonSerializerContext.AotJson.g.cs
 ```
 
 ## Common Test Failures

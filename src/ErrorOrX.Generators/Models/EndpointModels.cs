@@ -261,8 +261,7 @@ internal readonly record struct JsonContextInfo(
     string ClassName,
     string? Namespace,
     EquatableArray<string> SerializableTypes,
-    bool HasCamelCasePolicy,
-    bool HasAotJsonAttribute = false);
+    bool HasCamelCasePolicy);
 
 /// <summary>
 ///     Immutable endpoint info for OpenAPI generation.

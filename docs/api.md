@@ -185,15 +185,28 @@ Route parameters use `{name}` syntax with optional constraints:
 
 ## Native AOT Support
 
-ErrorOrX fully supports Native AOT compilation with automatic type discovery.
+ErrorOrX fully supports Native AOT compilation.
 
-### With Fluent Configuration (Recommended)
+### Setup
+
+1. Create a `JsonSerializerContext` with `[JsonSerializable]` attributes for your endpoint types:
 
 ```csharp
-[AotJson]  // Auto-generates [JsonSerializable] for all endpoint types
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(Todo))]
+[JsonSerializable(typeof(Todo[]))]
+[JsonSerializable(typeof(List<Todo>))]
+[JsonSerializable(typeof(CreateTodoRequest))]
+[JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext;
+```
 
+2. Register it using the fluent builder:
+
+```csharp
 var builder = WebApplication.CreateSlimBuilder(args);
 
 // Fluent builder - CamelCase and IgnoreNulls enabled by default
@@ -212,23 +225,6 @@ services.AddErrorOrEndpoints(options => options
     .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context for AOT
     .WithCamelCase()                              // Use camelCase naming (default: true)
     .WithIgnoreNulls());                          // Ignore null values (default: true)
-```
-
-### Zero-Config Approach
-
-```csharp
-// Add this assembly attribute - types are auto-discovered
-[assembly: ErrorOr.AotJsonAssembly]
-
-var builder = WebApplication.CreateSlimBuilder(args);
-
-// Register the auto-generated context
-builder.Services.AddErrorOrEndpoints(options => options
-    .UseJsonContext<AotJsonContext>());
-
-var app = builder.Build();
-app.MapErrorOrEndpoints();
-app.Run();
 ```
 
 Publish with AOT:
