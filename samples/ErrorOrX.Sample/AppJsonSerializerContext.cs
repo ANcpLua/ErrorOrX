@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ErrorOrX.Sample.Domain;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErrorOrX.Sample;

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.2] - 2026-01-18
+
+### Fixed
+
+- **False positive EOE007 warnings for generic types**: Fixed type matching to correctly compare types like
+  `List<Todo>` against the generator's fully-qualified `List<global::Todo>`. The `TypeNameHelper.Normalize`
+  method now strips all `global::` prefixes including those inside generic type arguments.
+
+- **AotJson context detection**: When a user's JsonSerializerContext has `[AotJson]` attribute, the
+  `ErrorOrEndpointGenerator` now correctly detects it and skips emitting redundant `ErrorOrJsonContext.g.cs`.
+
 ## [2.6.1] - 2026-01-18
 
 Re-release with correct generated code. The 2.6.0 package was inadvertently built from stale code.
@@ -304,18 +315,18 @@ ErrorMapping.AllErrorTypes        // Deterministic iteration
 - **BCL Middleware Attribute Detection**: Generator now recognizes and emits fluent calls for standard ASP.NET Core
   middleware attributes:
 
-  | Attribute | Emitted Call |
- |-----------|--------------|
-  | `[Authorize]` | `.RequireAuthorization()` |
-  | `[Authorize("Policy")]` | `.RequireAuthorization("Policy")` |
-  | `[AllowAnonymous]` | `.AllowAnonymous()` |
-  | `[EnableRateLimiting("policy")]` | `.RequireRateLimiting("policy")` |
-  | `[DisableRateLimiting]` | `.DisableRateLimiting()` |
-  | `[OutputCache]` | `.CacheOutput()` |
-  | `[OutputCache(Duration = 60)]` | `.CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)))` |
-  | `[OutputCache(PolicyName = "x")]` | `.CacheOutput("x")` |
-  | `[EnableCors("policy")]` | `.RequireCors("policy")` |
-  | `[DisableCors]` | `.DisableCors()` |
+  | Attribute                         | Emitted Call                                            |
+    |-----------------------------------|---------------------------------------------------------|
+  | `[Authorize]`                     | `.RequireAuthorization()`                               |
+  | `[Authorize("Policy")]`           | `.RequireAuthorization("Policy")`                       |
+  | `[AllowAnonymous]`                | `.AllowAnonymous()`                                     |
+  | `[EnableRateLimiting("policy")]`  | `.RequireRateLimiting("policy")`                        |
+  | `[DisableRateLimiting]`           | `.DisableRateLimiting()`                                |
+  | `[OutputCache]`                   | `.CacheOutput()`                                        |
+  | `[OutputCache(Duration = 60)]`    | `.CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)))` |
+  | `[OutputCache(PolicyName = "x")]` | `.CacheOutput("x")`                                     |
+  | `[EnableCors("policy")]`          | `.RequireCors("policy")`                                |
+  | `[DisableCors]`                   | `.DisableCors()`                                        |
 
 - **Automatic Results<> Union Updates**: When middleware attributes are detected, the union type automatically includes
   appropriate HTTP result types:

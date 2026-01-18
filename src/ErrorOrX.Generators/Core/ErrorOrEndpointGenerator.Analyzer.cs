@@ -19,6 +19,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (endpoints.IsDefaultOrEmpty)
             return;
 
+        // If user has [AotJson] context, AotJsonGenerator handles type registration - skip EOE007 checks
+        if (!userContexts.IsDefaultOrEmpty && userContexts.Any(static ctx => ctx.HasAotJsonAttribute))
+            return;
+
         var neededTypes = new HashSet<string>();
         var typeToEndpoint = new Dictionary<string, string>();
 
@@ -136,6 +140,7 @@ internal static class JsonContextProvider
 
         var serializableTypes = new List<string>();
         var hasCamelCasePolicy = false;
+        var hasAotJsonAttribute = false;
 
         foreach (var attr in classSymbol.GetAttributes())
         {
@@ -162,9 +167,15 @@ internal static class JsonContextProvider
                         break;
                     }
             }
+            else if (attrName == "ErrorOr.AotJsonAttribute")
+            {
+                // [AotJson] decorated context - AotJsonGenerator handles the [JsonSerializable] attributes
+                hasAotJsonAttribute = true;
+            }
         }
 
-        if (serializableTypes.Count is 0)
+        // Return context info if it has [JsonSerializable] OR [AotJson] attributes
+        if (serializableTypes.Count is 0 && !hasAotJsonAttribute)
             return ImmutableArray<JsonContextInfo>.Empty;
 
         var className = classSymbol.Name;
@@ -176,7 +187,8 @@ internal static class JsonContextProvider
             className,
             namespaceName,
             new EquatableArray<string>([.. serializableTypes]),
-            hasCamelCasePolicy));
+            hasCamelCasePolicy,
+            hasAotJsonAttribute));
     }
 
     /// <summary>

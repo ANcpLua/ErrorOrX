@@ -66,7 +66,9 @@ public class BclValidationTests
         var isValid = Validator.TryValidateObject(model, context, results, true);
 
         isValid.Should().BeFalse("IValidatableObject.Validate returning errors should fail");
+#pragma warning disable AL0014 // Expression tree needs != not 'is not null'
         results.Should().ContainSingle(static r => r.ErrorMessage != null && r.ErrorMessage.Contains("positive"));
+#pragma warning restore AL0014
     }
 
     [Fact]

@@ -19,11 +19,13 @@ internal static class TypeNameHelper
     }
 
     /// <summary>
-    ///     Normalizes a type name by removing global:: prefix and trailing nullable marker.
+    ///     Normalizes a type name by removing all global:: prefixes (including inside generics)
+    ///     and trailing nullable marker.
     /// </summary>
     public static string Normalize(string typeFqn)
     {
-        var result = StripGlobalPrefix(typeFqn);
+        // Remove ALL global:: prefixes (including inside generics like List<global::Todo>)
+        var result = typeFqn.Replace(GlobalPrefix, string.Empty);
 
         // Remove nullable suffix (for reference types)
         if (result.EndsWith("?"))
