@@ -496,7 +496,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                    Title = first.Code,");
         code.AppendLine("                    Detail = first.Description,");
         code.AppendLine(
-            $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
+            $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType, "first")} }}");
         code.AppendLine("                };");
         code.AppendLine("                problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
         code.AppendLine();
@@ -1142,14 +1142,13 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine($"            var problem = new {WellKnownTypes.Fqn.ProblemDetails}");
         code.AppendLine("            {");
         code.AppendLine("                Title = first.Code,");
-        code.AppendLine("                Detail = first.Description,");
-        code.AppendLine(
-            $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
-        code.AppendLine("            };");
-        code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
-        code.AppendLine("            return problem.Status switch");
-        code.AppendLine("            {");
-        foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
+            code.AppendLine("                Detail = first.Description,");
+            code.AppendLine(
+                $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType, "first")} }}");
+            code.AppendLine("            };");
+            code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
+            code.AppendLine("            return problem.Status switch");
+            code.AppendLine("            {");        foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
             code.AppendLine($"                {caseExpr},");
         code.AppendLine($"                _ => {ErrorMapping.GetDefaultProblemFactory()}");
         code.AppendLine("            };");
