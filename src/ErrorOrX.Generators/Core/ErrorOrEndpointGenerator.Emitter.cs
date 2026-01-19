@@ -94,6 +94,8 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.HttpMethod,
             ep.IsAcceptedResponse);
 
+        var hasBodyParam = HasBodyParam(ep) || HasFormParams(ep);
+
         var unionResult = ResultsUnionTypeBuilder.ComputeReturnType(
             ep.SuccessTypeFqn,
             ep.SuccessKind,
@@ -101,6 +103,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.InferredErrorTypeNames,
             ep.InferredCustomErrors,
             ep.DeclaredProducesErrors,
+            hasBodyParam,
             maxArity,
             ep.IsAcceptedResponse,
             ep.Middleware);
@@ -216,6 +219,8 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.HttpMethod,
             ep.IsAcceptedResponse);
 
+        var hasBodyParam = HasBodyParam(ep) || HasFormParams(ep);
+
         var unionResult = ResultsUnionTypeBuilder.ComputeReturnType(
             ep.SuccessTypeFqn,
             ep.SuccessKind,
@@ -223,6 +228,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.InferredErrorTypeNames,
             ep.InferredCustomErrors,
             ep.DeclaredProducesErrors,
+            hasBodyParam,
             maxArity,
             ep.IsAcceptedResponse,
             ep.Middleware);
@@ -293,6 +299,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (usedBindFail)
             EmitBindFailHelper(code, unionResult.ReturnTypeFqn, needsAwait);
+
+        if (HasBodyParam(ep))
+            EmitBindFail415Helper(code, unionResult.ReturnTypeFqn, needsAwait);
 
         code.Append(bodyCode);
         code.AppendLine("        }");
@@ -376,6 +385,17 @@ public sealed partial class ErrorOrEndpointGenerator
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
         code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
+        code.AppendLine($"                => {returnExpr};");
+        code.AppendLine();
+    }
+
+    private static void EmitBindFail415Helper(StringBuilder code, string returnTypeFqn, bool isAsync)
+    {
+        var expr = $"global::Microsoft.AspNetCore.Http.TypedResults.StatusCode(415)";
+        var returnExpr = isAsync ? expr : $"Task.FromResult<{returnTypeFqn}>({expr})";
+        var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
+
+        code.AppendLine($"            static {returnType} BindFail415()");
         code.AppendLine($"                => {returnExpr};");
         code.AppendLine();
     }
@@ -792,6 +812,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
+        code.AppendLine($"            if (!ctx.Request.HasJsonContentType()) return BindFail415();");
         code.AppendLine($"            {param.TypeFqn}? {paramName};");
         code.AppendLine("            try");
         code.AppendLine("            {");

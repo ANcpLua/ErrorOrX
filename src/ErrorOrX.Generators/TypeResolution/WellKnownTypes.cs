@@ -252,6 +252,7 @@ internal static class WellKnownTypes
             public const string ValidationProblem = $"{T}.ValidationProblem";
             public const string Problem = $"{T}.Problem";
             public const string ServerSentEvents = $"{T}.ServerSentEvents";
+            public const string UnsupportedMediaType = $"{T}.UnsupportedMediaType";
         }
 
         /// <summary>
@@ -276,6 +277,7 @@ internal static class WellKnownTypes
             public const string ValidationProblem = $"{H}.ValidationProblem";
             public const string ProblemHttpResult = $"{H}.ProblemHttpResult";
             public const string StatusCodeHttpResult = $"{H}.StatusCodeHttpResult";
+            public const string UnsupportedMediaType = $"{H}.UnsupportedMediaTypeHttpResult";
 
             /// <summary>
             ///     Results union type for typed endpoint returns.

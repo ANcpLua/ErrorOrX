@@ -62,15 +62,8 @@ internal static class ResultsUnionTypeBuilder
                 $"{WellKnownTypes.Fqn.TypedResults.NoContent}()",
                 $"_ => {WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
-            // Not a marker type - determine default response by HTTP method
-            SuccessKind.Payload when httpMethod == WellKnownTypes.HttpMethod.Post =>
-                new SuccessResponseInfo(
-                    $"{WellKnownTypes.Fqn.HttpResults.Created}<{successTypeFqn}>",
-                    201,
-                    true,
-                    $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty, result.Value)",
-                    $"value => {WellKnownTypes.Fqn.TypedResults.Created}(string.Empty, value)"),
-
+            // Not a marker type - use default 200 OK regardless of method (Minimal API parity)
+            // 201 Created is only for Created<T> / CreatedAtRoute<T> which users must return explicitly via ErrorOr<Created>
             _ => new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Ok}<{successTypeFqn}>",
                 200,
@@ -109,6 +102,7 @@ internal static class ResultsUnionTypeBuilder
         EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<CustomErrorInfo> inferredCustomErrors,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
+        bool hasBodyBinding,
         int maxArity = DefaultMaxArity,
         bool isAcceptedResponse = false,
         MiddlewareInfo middleware = default)
@@ -118,8 +112,8 @@ internal static class ResultsUnionTypeBuilder
         var includedStatuses = new HashSet<int>();
 
         // 1 & 2. Success and Binding outcomes (always present)
-        AddSuccessAndBindingOutcomes(successTypeFqn, successKind, httpMethod, isAcceptedResponse, unionEntries,
-            includedStatuses);
+        AddSuccessAndBindingOutcomes(successTypeFqn, successKind, httpMethod, isAcceptedResponse, hasBodyBinding,
+            unionEntries, includedStatuses);
 
         // 3. Built-in ErrorTypes (mapped to static BCL types)
         var hasCustom = AddInferredErrorOutcomes(inferredErrorTypeNames, unionEntries, includedStatuses) ||
@@ -188,6 +182,7 @@ internal static class ResultsUnionTypeBuilder
         SuccessKind successKind,
         string httpMethod,
         bool isAcceptedResponse,
+        bool hasBodyBinding,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
@@ -198,6 +193,13 @@ internal static class ResultsUnionTypeBuilder
         // BadRequest<ProblemDetails> for binding failures (always present)
         unionEntries.Add((400, $"{WellKnownTypes.Fqn.HttpResults.BadRequest}<{WellKnownTypes.Fqn.ProblemDetails}>"));
         includedStatuses.Add(400);
+
+        // UnsupportedMediaType for body binding failures (415) - parity with Minimal APIs
+        if (hasBodyBinding)
+        {
+            unionEntries.Add((415, WellKnownTypes.Fqn.HttpResults.StatusCodeHttpResult));
+            includedStatuses.Add(415);
+        }
 
         // InternalServerError<ProblemDetails> for unknown/unhandled errors (always present as safety net)
         // This ensures the default switch case always has a valid return type in the union
