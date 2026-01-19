@@ -17,13 +17,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
-        <Using Include="AwesomeAssertions"/>
-        <Using Include="ErrorOr"/>
+        <Using Include="Xunit" />
+        <Using Include="AwesomeAssertions" />
+        <Using Include="ErrorOr" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,6 +35,7 @@
 
     <ItemGroup>
         <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj" />
+        <ProjectReference Include="..\..\samples\ErrorOrX.Sample\ErrorOrX.Sample.csproj" />
     </ItemGroup>
 
 </Project>
