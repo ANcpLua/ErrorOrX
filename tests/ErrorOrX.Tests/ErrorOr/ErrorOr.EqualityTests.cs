@@ -1,27 +1,29 @@
+using ErrorOrX.Tests.TestUtils;
+
 namespace ErrorOrX.Tests.ErrorOr;
 
 public sealed class ErrorOrEqualityTests
 {
-    public static readonly TheoryData<Error[], Error[]> DifferentErrors =
+    public static readonly TheoryData<SerializableError[], SerializableError[]> DifferentErrors =
         new()
         {
             {
                 // Different number of entries
                 [
-                    Error.Validation("User.Name", "Name is too short")
+                    (SerializableError)Error.Validation("User.Name", "Name is too short")
                 ],
                 [
-                    Error.Validation("User.Name", "Name is too short"),
-                    Error.Validation("User.Age", "User is too young")
+                    (SerializableError)Error.Validation("User.Name", "Name is too short"),
+                    (SerializableError)Error.Validation("User.Age", "User is too young")
                 ]
             },
             {
                 // Different errors
                 [
-                    Error.Validation("User.Name", "Name is too short")
+                    (SerializableError)Error.Validation("User.Name", "Name is too short")
                 ],
                 [
-                    Error.Validation("User.Age", "User is too young")
+                    (SerializableError)Error.Validation("User.Age", "User is too young")
                 ]
             }
         };
@@ -67,10 +69,10 @@ public sealed class ErrorOrEqualityTests
 
     [Theory]
     [MemberData(nameof(DifferentErrors))]
-    public void Equals_WhenTwoInstancesHaveDifferentErrors_ShouldReturnFalse(Error[] errors1, Error[] errors2)
+    public void Equals_WhenTwoInstancesHaveDifferentErrors_ShouldReturnFalse(SerializableError[] errors1, SerializableError[] errors2)
     {
-        ErrorOr<Person> errorOrPerson1 = errors1;
-        ErrorOr<Person> errorOrPerson2 = errors2;
+        ErrorOr<Person> errorOrPerson1 = errors1.Select(e => e.Value).ToList();
+        ErrorOr<Person> errorOrPerson2 = errors2.Select(e => e.Value).ToList();
 
         var result = errorOrPerson1.Equals(errorOrPerson2);
 
@@ -152,11 +154,11 @@ public sealed class ErrorOrEqualityTests
     [Theory]
     [MemberData(nameof(DifferentErrors))]
     public void GetHashCode_WhenTwoInstancesHaveDifferentErrors_ShouldReturnDifferentHashCodes(
-        Error[] errors1,
-        Error[] errors2)
+        SerializableError[] errors1,
+        SerializableError[] errors2)
     {
-        ErrorOr<Person> errorOrPerson1 = errors1;
-        ErrorOr<Person> errorOrPerson2 = errors2;
+        ErrorOr<Person> errorOrPerson1 = errors1.Select(e => e.Value).ToList();
+        ErrorOr<Person> errorOrPerson2 = errors2.Select(e => e.Value).ToList();
 
         var hashCode1 = errorOrPerson1.GetHashCode();
         var hashCode2 = errorOrPerson2.GetHashCode();

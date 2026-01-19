@@ -1,3 +1,5 @@
+using ErrorOrX.Tests.TestUtils;
+
 namespace ErrorOrX.Tests.Errors;
 
 public sealed class ErrorEqualityTests
@@ -21,7 +23,7 @@ public sealed class ErrorEqualityTests
             }
         };
 
-    public static readonly TheoryData<Error, Error> DifferentInstances =
+    public static readonly TheoryData<SerializableError, SerializableError> DifferentInstances =
         new()
         {
             {
@@ -98,9 +100,9 @@ public sealed class ErrorEqualityTests
 
     [Theory]
     [MemberData(nameof(DifferentInstances))]
-    public void Equals_WhenTwoInstancesHaveDifferentValues_ShouldReturnFalse(Error error1, Error error2)
+    public void Equals_WhenTwoInstancesHaveDifferentValues_ShouldReturnFalse(SerializableError error1, SerializableError error2)
     {
-        var result = error1.Equals(error2);
+        var result = ((Error)error1).Equals(error2);
 
         result.Should().BeFalse();
     }
@@ -126,11 +128,11 @@ public sealed class ErrorEqualityTests
     [Theory]
     [MemberData(nameof(DifferentInstances))]
     public void GetHashCode_WhenTwoInstancesHaveDifferentValues_ShouldReturnDifferentHashCodes(
-        Error error1,
-        Error error2)
+        SerializableError error1,
+        SerializableError error2)
     {
-        var hashCode1 = error1.GetHashCode();
-        var hashCode2 = error2.GetHashCode();
+        var hashCode1 = ((Error)error1).GetHashCode();
+        var hashCode2 = ((Error)error2).GetHashCode();
 
         hashCode1.Should().NotBe(hashCode2);
     }
