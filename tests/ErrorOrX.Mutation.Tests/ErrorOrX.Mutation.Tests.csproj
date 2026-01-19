@@ -22,12 +22,19 @@
 
     <ItemGroup>
         <Using Include="Xunit"/>
+        <Using Include="AwesomeAssertions"/>
+        <Using Include="ErrorOr"/>
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
         <PackageReference Include="xunit.v3.mtp-v2" />
+        <PackageReference Include="AwesomeAssertions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj" />
     </ItemGroup>
 
 </Project>
