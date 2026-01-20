@@ -6,14 +6,14 @@ public class ToErrorOrTests
     public void ValueToErrorOr_WhenAccessingValue_ShouldReturnValue()
     {
         // Arrange
-        var value = 5;
+        const int Value = 5;
 
         // Act
-        var result = value.ToErrorOr();
+        var result = Value.ToErrorOr();
 
         // Assert
         result.IsError.Should().BeFalse();
-        result.Value.Should().Be(value);
+        result.Value.Should().Be(Value);
     }
 
     [Fact]

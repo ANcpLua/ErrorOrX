@@ -26,7 +26,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<int> errorOr = 5;
 
         // Act
-        var value = ((IErrorOr<int>)errorOr).Value;
+        var value = errorOr.Value;
 
         // Assert
         value.Should().Be(5);
@@ -39,7 +39,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<string> errorOr = "success";
 
         // Act
-        var isError = ((IErrorOr)errorOr).IsError;
+        var isError = errorOr.IsError;
 
         // Assert
         isError.Should().BeFalse();
@@ -92,7 +92,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<int> errorOr = Error.Failure();
 
         // Act
-        var act = () => ((IErrorOr<int>)errorOr).Value;
+        var act = () => errorOr.Value;
 
         // Assert
         act.Should().ThrowExactly<InvalidOperationException>()
@@ -107,7 +107,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<string> errorOr = Error.NotFound();
 
         // Act
-        var isError = ((IErrorOr)errorOr).IsError;
+        var isError = errorOr.IsError;
 
         // Assert
         isError.Should().BeTrue();
@@ -152,7 +152,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<TestPerson> errorOr = expectedPerson;
 
         // Act
-        var actualPerson = ((IErrorOr<TestPerson>)errorOr).Value;
+        var actualPerson = errorOr.Value;
 
         // Assert
         actualPerson.Should().Be(expectedPerson);
@@ -167,8 +167,8 @@ public class ErrorOrInterfaceTests
         ErrorOr<string> stringErrorOr = sharedError;
 
         // Assert
-        ((IErrorOr)intErrorOr).IsError.Should().BeTrue();
-        ((IErrorOr)stringErrorOr).IsError.Should().BeTrue();
+        intErrorOr.IsError.Should().BeTrue();
+        stringErrorOr.IsError.Should().BeTrue();
         var intErrors = ((IErrorOr)intErrorOr).Errors;
         Unreachable.ThrowIf(intErrors is null);
         intErrors[0].Should().Be(sharedError);
@@ -193,7 +193,7 @@ public class ErrorOrInterfaceTests
         ErrorOr<List<int>> errorOr = list;
 
         // Act
-        var result = ((IErrorOr<List<int>>)errorOr).Value;
+        var result = errorOr.Value;
 
         // Assert
         result.Should().BeSameAs(list);

@@ -2,12 +2,9 @@ using Xunit.Sdk;
 
 namespace ErrorOrX.Tests.TestUtils;
 
-public class SerializableError : IXunitSerializable
+public class SerializableError(Error error) : IXunitSerializable
 {
-    public SerializableError() { }
-
-    public SerializableError(Error error) => Value = error;
-    public Error Value { get; private set; }
+    public Error Value { get; private set; } = error;
 
     public void Deserialize(IXunitSerializationInfo info)
     {
@@ -50,7 +47,7 @@ public class SerializableError : IXunitSerializable
             {
                 info.AddValue($"MetadataKey_{i}", kvp.Key);
                 // Assumption: Test metadata values are simple strings as observed in the codebase
-                info.AddValue($"MetadataValue_{i}", kvp.Value?.ToString() ?? string.Empty);
+                info.AddValue($"MetadataValue_{i}", kvp.Value.ToString() ?? string.Empty);
                 i++;
             }
         }

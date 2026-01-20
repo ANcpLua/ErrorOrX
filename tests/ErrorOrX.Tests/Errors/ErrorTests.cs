@@ -235,16 +235,16 @@ public class ErrorTests
     public void CreateError_WhenCustomWithExistingEnumValue_ShouldMapToCorrectErrorType()
     {
         // Arrange - using the numeric value of ErrorType.Validation
-        var validationTypeValue = (int)ErrorType.Validation;
+        const int ValidationTypeValue = (int)ErrorType.Validation;
         const string Code = "Custom.MappedToValidation";
         const string Description = "Custom error that maps to validation";
 
         // Act
-        var error = Error.Custom(validationTypeValue, Code, Description);
+        var error = Error.Custom(ValidationTypeValue, Code, Description);
 
         // Assert
         error.Type.Should().Be(ErrorType.Validation);
-        error.NumericType.Should().Be(validationTypeValue);
+        error.NumericType.Should().Be(ValidationTypeValue);
     }
 
     [Fact]
@@ -349,7 +349,7 @@ public class ErrorTests
 
         // Assert
         error.Metadata.Should().BeEquivalentTo(complexMetadata);
-        error.Metadata!["stringValue"].Should().Be("test");
+        error.Metadata["stringValue"].Should().Be("test");
         error.Metadata["intValue"].Should().Be(42);
         error.Metadata["boolValue"].Should().Be(true);
     }

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using TypedResults = Microsoft.AspNetCore.Http.TypedResults;
 
 namespace ErrorOrX.Generators.Tests;
 
