@@ -12,3 +12,4 @@ Rule ID | Category | Severity | Notes
 
 Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 --------|--------------|--------------|--------------|--------------|-------
+EOE025 | ErrorOr.Endpoints | Warning | ErrorOr.Endpoints | Error | Downgraded to warning for bodyless/custom method inference

@@ -12,7 +12,7 @@ public class ThenAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(static num => Task.FromResult(num * 2))
-            .ThenDoAsync(static num => Task.Run(static () => { _ = 5; }))
+            .ThenDoAsync(static _ => Task.CompletedTask)
             .ThenAsync(Convert.ToStringAsync);
 
         // Assert
@@ -30,7 +30,7 @@ public class ThenAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(static num => Task.FromResult(num * 2))
-            .ThenDoAsync(static num => Task.Run(static () => { _ = 5; }))
+            .ThenDoAsync(static _ => Task.CompletedTask)
             .ThenAsync(Convert.ToStringAsync);
 
         // Assert

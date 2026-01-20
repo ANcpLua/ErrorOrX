@@ -1,4 +1,3 @@
-
 namespace ErrorOr;
 
 public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
@@ -16,6 +15,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public ErrorOr<TValue> FailIf(Func<TValue, bool> onValue, in Error error)
     {
+        _ = Throw.IfNull(onValue);
+
         if (IsError)
         {
             return this;
@@ -40,6 +41,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public ErrorOr<TValue> FailIf(Func<TValue, bool> onValue, Func<TValue, Error> errorBuilder)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(errorBuilder);
+
         if (IsError)
         {
             return this;
@@ -64,6 +68,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> FailIfAsync(Func<TValue, bool> onValue, Func<TValue, Task<Error>> errorBuilder)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(errorBuilder);
+
         if (IsError)
         {
             return this;
@@ -88,6 +95,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> FailIfAsync(Func<TValue, Task<bool>> onValue, Func<TValue, Error> errorBuilder)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(errorBuilder);
+
         if (IsError)
         {
             return this;
@@ -109,6 +119,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> FailIfAsync(Func<TValue, Task<bool>> onValue, Error error)
     {
+        _ = Throw.IfNull(onValue);
+
         if (IsError)
         {
             return this;
@@ -134,6 +146,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     public async Task<ErrorOr<TValue>> FailIfAsync(Func<TValue, Task<bool>> onValue,
         Func<TValue, Task<Error>> errorBuilder)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(errorBuilder);
+
         if (IsError)
         {
             return this;

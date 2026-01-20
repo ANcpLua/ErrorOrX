@@ -5,7 +5,15 @@ public class ErrorTests
     private const string ErrorCode = "ErrorCode";
     private const string ErrorDescription = "ErrorDescription";
 
-    private static readonly Dictionary<string, object> Dictionary = new() { { "key1", "value1" }, { "key2", 21 } };
+    private static readonly Dictionary<string, object> Dictionary = new()
+    {
+        {
+            "key1", "value1"
+        },
+        {
+            "key2", 21
+        }
+    };
 
     #region Factory Methods with Custom Parameters
 
@@ -285,7 +293,12 @@ public class ErrorTests
     public void Metadata_WhenAccessedMultipleTimes_ShouldReturnSameReference()
     {
         // Arrange
-        var metadata = new Dictionary<string, object> { { "key", "value" } };
+        var metadata = new Dictionary<string, object>
+        {
+            {
+                "key", "value"
+            }
+        };
         var error = Error.Failure(metadata: metadata);
 
         // Act
@@ -303,12 +316,32 @@ public class ErrorTests
         // Arrange
         var complexMetadata = new Dictionary<string, object>
         {
-            { "stringValue", "test" },
-            { "intValue", 42 },
-            { "boolValue", true },
-            { "doubleValue", 3.14 },
-            { "arrayValue", new[] { 1, 2, 3 } },
-            { "nestedDict", new Dictionary<string, object> { { "nested", "value" } } }
+            {
+                "stringValue", "test"
+            },
+            {
+                "intValue", 42
+            },
+            {
+                "boolValue", true
+            },
+            {
+                "doubleValue", 3.14
+            },
+            {
+                "arrayValue", new[]
+                {
+                    1, 2, 3
+                }
+            },
+            {
+                "nestedDict", new Dictionary<string, object>
+                {
+                    {
+                        "nested", "value"
+                    }
+                }
+            }
         };
 
         // Act

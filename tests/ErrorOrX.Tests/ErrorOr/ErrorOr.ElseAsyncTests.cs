@@ -114,7 +114,7 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static errors => Task.FromResult(Error.Unexpected()));
+            .ElseAsync(static _ => Task.FromResult(Error.Unexpected()));
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -131,7 +131,7 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static errors => Task.FromResult(Error.Unexpected()));
+            .ElseAsync(static _ => Task.FromResult(Error.Unexpected()));
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -148,7 +148,10 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static errors => Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Unexpected() }));
+            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error>
+            {
+                Error.Unexpected()
+            }));
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -165,7 +168,10 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static errors => Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Unexpected() }));
+            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error>
+            {
+                Error.Unexpected()
+            }));
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -183,7 +189,7 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString
-            .ElseDoAsync(async errors =>
+            .ElseDoAsync(async _ =>
             {
                 await Task.Delay(1);
                 actionExecuted = true;
@@ -203,7 +209,7 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString
-            .ElseDoAsync(async errors =>
+            .ElseDoAsync(async _ =>
             {
                 await Task.Delay(1);
                 actionExecuted = true;
@@ -224,7 +230,7 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString
-            .ElseDoAsync(async static _ => await Task.CompletedTask);
+            .ElseDoAsync(static _ => Task.CompletedTask);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -235,7 +241,7 @@ public class ElseAsyncTests
     public async Task CallingElseDoAsync_WhenIsError_ShouldReceiveAllErrors()
     {
         // Arrange
-        List<Error> expectedErrors =
+        Error[] expectedErrors =
         [
             Error.Validation("Error.One", "First"),
             Error.Conflict("Error.Two", "Second")
@@ -343,7 +349,10 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString.ElseAsync(static _ =>
-            Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Validation() }));
+            Task.FromResult<IReadOnlyList<Error>>(new List<Error>
+            {
+                Error.Validation()
+            }));
 
         // Assert
         result.IsError.Should().BeFalse();

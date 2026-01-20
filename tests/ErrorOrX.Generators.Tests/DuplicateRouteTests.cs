@@ -1,12 +1,9 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace ErrorOrX.Generators.Tests;
 
 public class DuplicateRouteTests : GeneratorTestBase
 {
     [Fact]
-    public async Task Reports_Duplicate_Route_Across_Classes()
+    public Task Reports_Duplicate_Route_Across_Classes()
     {
         const string Source = """
                               using System;
@@ -34,11 +31,11 @@ public class DuplicateRouteTests : GeneratorTestBase
                               }
                               """;
 
-        await VerifyGeneratorAsync(Source);
+        return VerifyGeneratorAsync(Source);
     }
 
     [Fact]
-    public async Task Reports_Duplicate_Route_With_Different_Parameter_Names()
+    public Task Reports_Duplicate_Route_With_Different_Parameter_Names()
     {
         const string Source = """
                               using System;
@@ -66,6 +63,6 @@ public class DuplicateRouteTests : GeneratorTestBase
                               }
                               """;
 
-        await VerifyGeneratorAsync(Source);
+        return VerifyGeneratorAsync(Source);
     }
 }

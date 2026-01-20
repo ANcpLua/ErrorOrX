@@ -2,6 +2,6 @@
 See [Root CLAUDE.md](/Users/ancplua/ErrorOrX/CLAUDE.md) for project context.
 ---
 
-# ErrorOr.Core.Tests
+# ErrorOrX.Tests
 
 Project-specific context goes here.

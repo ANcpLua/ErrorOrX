@@ -16,7 +16,7 @@ public class ErrorOrFailIfValidationTests
 
         // Assert
         act.Should().ThrowExactly<ArgumentNullException>()
-           .WithParameterName("onValue");
+            .WithParameterName("onValue");
     }
 
     [Fact]
@@ -27,11 +27,11 @@ public class ErrorOrFailIfValidationTests
         Func<int, Error> errorBuilder = null!;
 
         // Act
-        Action act = () => errorOrInt.FailIf(val => true, errorBuilder);
+        Action act = () => errorOrInt.FailIf(_ => true, errorBuilder);
 
         // Assert
         act.Should().ThrowExactly<ArgumentNullException>()
-           .WithParameterName("errorBuilder");
+            .WithParameterName("errorBuilder");
     }
 
     [Fact]
@@ -46,6 +46,6 @@ public class ErrorOrFailIfValidationTests
 
         // Assert
         await act.Should().ThrowExactlyAsync<ArgumentNullException>()
-           .WithParameterName("onValue");
+            .WithParameterName("onValue");
     }
 }

@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -8,15 +10,15 @@ internal static class TypeNameHelper
 {
     private const string GlobalPrefix = "global::";
 
+    private const string EndpointsSuffix = "Endpoints";
+
     /// <summary>
     ///     Removes the global:: prefix from a fully-qualified type name.
     /// </summary>
-    public static string StripGlobalPrefix(string typeFqn)
-    {
-        return typeFqn.StartsWith(GlobalPrefix)
+    public static string StripGlobalPrefix(string typeFqn) =>
+        typeFqn.StartsWith(GlobalPrefix)
             ? typeFqn[GlobalPrefix.Length..]
             : typeFqn;
-    }
 
     /// <summary>
     ///     Normalizes a type name by removing all global:: prefixes (including inside generics)
@@ -32,6 +34,30 @@ internal static class TypeNameHelper
             result = result[..^1];
 
         return result;
+    }
+
+    /// <summary>
+    ///     Unwraps Nullable&lt;T&gt; or nullable reference type annotation to get the underlying type.
+    /// </summary>
+    /// <param name="typeFqn">The fully-qualified type name.</param>
+    /// <param name="shouldUnwrap">If false, returns typeFqn unchanged.</param>
+    /// <returns>The unwrapped type name, or the original if not nullable.</returns>
+    public static string UnwrapNullable(string typeFqn, bool shouldUnwrap = true)
+    {
+        if (!shouldUnwrap)
+            return typeFqn;
+
+        // Handle nullable reference type annotation (string?)
+        if (typeFqn.EndsWith("?", StringComparison.Ordinal))
+            return typeFqn[..^1];
+
+        // Handle Nullable<T> for value types
+        var normalized = Normalize(typeFqn);
+        if (normalized.StartsWith("System.Nullable<", StringComparison.Ordinal) &&
+            normalized.EndsWith(">", StringComparison.Ordinal))
+            return normalized["System.Nullable<".Length..^1];
+
+        return typeFqn;
     }
 
     /// <summary>
@@ -81,8 +107,7 @@ internal static class TypeNameHelper
     }
 
     /// <summary>
-    ///     Compares two type names for equality, handling various formats.
-    ///     Supports global::, short names, and namespace suffixes.
+    ///     Compares two type names for equality, handling global:: prefixes and keyword aliases.
     /// </summary>
     public static bool TypeNamesMatch(string type1, string type2)
     {
@@ -93,13 +118,15 @@ internal static class TypeNameHelper
         if (normalized1 == normalized2)
             return true;
 
-        // Extract short names and compare
-        var short1 = ExtractShortName(normalized1);
-        var short2 = ExtractShortName(normalized2);
+        var alias1 = GetKeywordAlias(normalized1);
+        var alias2 = GetKeywordAlias(normalized2);
 
-        return short1 == short2 ||
-               normalized1.EndsWith(short2) ||
-               normalized2.EndsWith(short1);
+        if (alias1 is not null && alias1 == normalized2)
+            return true;
+        if (alias2 is not null && alias2 == normalized1)
+            return true;
+
+        return alias1 is not null && alias2 is not null && alias1 == alias2;
     }
 
     /// <summary>
@@ -127,8 +154,6 @@ internal static class TypeNameHelper
         };
     }
 
-    private const string EndpointsSuffix = "Endpoints";
-
     /// <summary>
     ///     Computes the tag name from a containing type name.
     ///     Strips "Endpoints" suffix if present (e.g., "TodoEndpoints" -> "Todo").
@@ -141,9 +166,21 @@ internal static class TypeNameHelper
     /// <summary>
     ///     Computes both tag name and operation ID for an endpoint.
     /// </summary>
-    public static (string TagName, string OperationId) GetEndpointIdentity(string className, string methodName)
+    public static (string TagName, string OperationId) GetEndpointIdentity(string containingTypeFqn, string methodName)
     {
+        var className = ExtractShortName(containingTypeFqn);
         var tagName = GetTagName(className);
-        return (tagName, $"{tagName}_{methodName}");
+        var normalizedType = StripGlobalPrefix(containingTypeFqn);
+        var opPrefix = SanitizeIdentifier(normalizedType);
+
+        return (tagName, $"{opPrefix}_{methodName}");
+    }
+
+    private static string SanitizeIdentifier(string value)
+    {
+        var sb = new StringBuilder(value.Length);
+        foreach (var c in value)
+            sb.Append(char.IsLetterOrDigit(c) ? c : '_');
+        return sb.ToString();
     }
 }

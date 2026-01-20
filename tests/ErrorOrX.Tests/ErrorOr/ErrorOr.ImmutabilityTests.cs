@@ -7,8 +7,11 @@ public class ErrorOrImmutabilityTests
     {
         // Arrange
         var initialError = Error.Validation("User.Name", "Name is too short");
-        var errors = new List<Error> { initialError };
-        var errorOr = ErrorOr<int>.From(errors);
+        var errors = new List<Error>
+        {
+            initialError
+        };
+        var errorOr = errors.ToErrorOr<int>();
 
         // Act
         errors.Add(Error.NotFound("User.NotFound", "User not found"));

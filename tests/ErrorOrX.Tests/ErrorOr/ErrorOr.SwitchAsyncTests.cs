@@ -6,85 +6,93 @@ public class SwitchAsyncTests
     public async Task CallingSwitchAsync_WhenIsSuccess_ShouldExecuteThenAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
-        Task ElsesAction(IReadOnlyList<Error> _) => throw new Exception("Should not be called");
+        ErrorOr<Person> errorOrPerson = new Person();
 
         // Act
-        var action = async () => await errorOrPerson.SwitchAsync(
+        var action = () => errorOrPerson.SwitchAsync(
             ThenAction,
             ElsesAction);
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+
+        static Task ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw<Task>();
     }
 
     [Fact]
     public async Task CallingSwitchAsync_WhenIsError_ShouldExecuteElseAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new List<Error> { Error.Validation(), Error.Conflict() };
-        Task ThenAction(Person _) => throw new Exception("Should not be called");
-
-        Task ElsesAction(IReadOnlyList<Error> errors) =>
-            Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors));
+        ErrorOr<Person> errorOrPerson = (Error[])[Error.Validation(), Error.Conflict()];
 
         // Act
-        var action = async () => await errorOrPerson.SwitchAsync(
+        var action = () => errorOrPerson.SwitchAsync(
             ThenAction,
             ElsesAction);
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        static Task ThenAction(Person _) => Unreachable.Throw<Task>();
+
+        Task ElsesAction(IReadOnlyList<Error> errors) =>
+            Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors));
     }
 
     [Fact]
     public async Task CallingSwitchFirstAsync_WhenIsSuccess_ShouldExecuteThenAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
-        Task OnFirstErrorAction(Error _) => throw new Exception("Should not be called");
+        ErrorOr<Person> errorOrPerson = new Person();
 
         // Act
-        var action = async () => await errorOrPerson.SwitchFirstAsync(
+        var action = () => errorOrPerson.SwitchFirstAsync(
             ThenAction,
             OnFirstErrorAction);
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+
+        static Task OnFirstErrorAction(Error _) => Unreachable.Throw<Task>();
     }
 
     [Fact]
     public async Task CallingSwitchFirstAsync_WhenIsError_ShouldExecuteOnFirstErrorAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new List<Error> { Error.Validation(), Error.Conflict() };
-        Task ThenAction(Person _) => throw new Exception("Should not be called");
-
-        Task OnFirstErrorAction(Error errors)
-            => Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
-                .And.BeEquivalentTo(errorOrPerson.FirstError));
+        ErrorOr<Person> errorOrPerson = (Error[])[Error.Validation(), Error.Conflict()];
 
         // Act
-        var action = async () => await errorOrPerson.SwitchFirstAsync(
+        var action = () => errorOrPerson.SwitchFirstAsync(
             ThenAction,
             OnFirstErrorAction);
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        static Task ThenAction(Person _) => Unreachable.Throw<Task>();
+
+        Task OnFirstErrorAction(Error errors)
+            => Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
+                .And.BeEquivalentTo(errorOrPerson.FirstError));
     }
 
     [Fact]
     public async Task CallingSwitchFirstAsyncAfterThenAsync_WhenIsSuccess_ShouldExecuteThenAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
-        Task OnFirstErrorAction(Error _) => throw new Exception("Should not be called");
+        ErrorOr<Person> errorOrPerson = new Person();
 
         // Act
-        var action = async () => await errorOrPerson
+        var action = () => errorOrPerson
             .ThenAsync(static person => Task.FromResult(person))
             .SwitchFirstAsync(
                 ThenAction,
@@ -92,24 +100,32 @@ public class SwitchAsyncTests
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+
+        static Task OnFirstErrorAction(Error _) => Unreachable.Throw<Task>();
     }
 
     [Fact]
     public async Task CallingSwitchAsyncAfterThenAsync_WhenIsSuccess_ShouldExecuteThenAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
-        Task ElsesAction(IReadOnlyList<Error> _) => throw new Exception("Should not be called");
+        ErrorOr<Person> errorOrPerson = new Person();
 
         // Act
-        var action = async () => await errorOrPerson
+        var action = () => errorOrPerson
             .ThenAsync(static person => Task.FromResult(person))
             .SwitchAsync(ThenAction, ElsesAction);
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+
+        static Task ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw<Task>();
     }
 
-    private record Person(string Name);
+    private sealed record Person;
 }

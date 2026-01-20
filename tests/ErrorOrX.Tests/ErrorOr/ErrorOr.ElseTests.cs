@@ -114,7 +114,7 @@ public class ElseTests
         var result = errorOrString
             .Then(Convert.ToInt)
             .Then(Convert.ToString)
-            .Else(static errors => Error.Unexpected());
+            .Else(static _ => Error.Unexpected());
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -131,7 +131,7 @@ public class ElseTests
         var result = errorOrString
             .Then(Convert.ToInt)
             .Then(Convert.ToString)
-            .Else(static errors => Error.Unexpected());
+            .Else(static _ => Error.Unexpected());
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -148,7 +148,7 @@ public class ElseTests
         var result = errorOrString
             .Then(Convert.ToInt)
             .Then(Convert.ToString)
-            .Else(static errors => [Error.Unexpected()]);
+            .Else(static _ => [Error.Unexpected()]);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -165,7 +165,7 @@ public class ElseTests
         var result = errorOrString
             .Then(Convert.ToInt)
             .Then(Convert.ToString)
-            .Else(static errors => [Error.Unexpected()]);
+            .Else(static _ => [Error.Unexpected()]);
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -233,7 +233,7 @@ public class ElseTests
         var result = await errorOrString
             .Then(Convert.ToInt)
             .ThenAsync(Convert.ToStringAsync)
-            .Else(static errors => Error.Unexpected());
+            .Else(static _ => Error.Unexpected());
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -250,7 +250,7 @@ public class ElseTests
         var result = await errorOrString
             .Then(Convert.ToInt)
             .ThenAsync(Convert.ToStringAsync)
-            .Else(static errors => [Error.Unexpected()]);
+            .Else(static _ => [Error.Unexpected()]);
 
         // Assert
         result.IsError.Should().BeTrue();

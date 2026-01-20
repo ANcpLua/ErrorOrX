@@ -10,20 +10,20 @@ public sealed class ErrorOrEqualityTests
             {
                 // Different number of entries
                 [
-                    (SerializableError)Error.Validation("User.Name", "Name is too short")
+                    Error.Validation("User.Name", "Name is too short")
                 ],
                 [
-                    (SerializableError)Error.Validation("User.Name", "Name is too short"),
-                    (SerializableError)Error.Validation("User.Age", "User is too young")
+                    Error.Validation("User.Name", "Name is too short"),
+                    Error.Validation("User.Age", "User is too young")
                 ]
             },
             {
                 // Different errors
                 [
-                    (SerializableError)Error.Validation("User.Name", "Name is too short")
+                    Error.Validation("User.Name", "Name is too short")
                 ],
                 [
-                    (SerializableError)Error.Validation("User.Age", "User is too young")
+                    Error.Validation("User.Age", "User is too young")
                 ]
             }
         };
@@ -31,15 +31,24 @@ public sealed class ErrorOrEqualityTests
     public static readonly TheoryData<string> Names = ["Amichai", "feO2x"];
 
     public static readonly TheoryData<string, string> DifferentNames =
-        new() { { "Amichai", "feO2x" }, { "Tyrion", "Cersei" } };
+        new()
+        {
+            {
+                "Amichai", "feO2x"
+            },
+            {
+                "Tyrion", "Cersei"
+            }
+        };
 
     [Fact]
     public void Equals_WhenTwoInstancesHaveTheSameErrorsCollection_ShouldReturnTrue()
     {
-        var errors = new List<Error>
-        {
-            Error.Validation("User.Name", "Name is too short"), Error.Validation("User.Age", "User is too young")
-        };
+        Error[] errors =
+        [
+            Error.Validation("User.Name", "Name is too short"),
+            Error.Validation("User.Age", "User is too young")
+        ];
         ErrorOr<Person> errorOrPerson1 = errors;
         ErrorOr<Person> errorOrPerson2 = errors;
 
@@ -71,8 +80,8 @@ public sealed class ErrorOrEqualityTests
     [MemberData(nameof(DifferentErrors))]
     public void Equals_WhenTwoInstancesHaveDifferentErrors_ShouldReturnFalse(SerializableError[] errors1, SerializableError[] errors2)
     {
-        ErrorOr<Person> errorOrPerson1 = errors1.Select(e => e.Value).ToList();
-        ErrorOr<Person> errorOrPerson2 = errors2.Select(e => e.Value).ToList();
+        ErrorOr<Person> errorOrPerson1 = errors1.Select(static e => e.Value).ToArray();
+        ErrorOr<Person> errorOrPerson2 = errors2.Select(static e => e.Value).ToArray();
 
         var result = errorOrPerson1.Equals(errorOrPerson2);
 
@@ -157,8 +166,8 @@ public sealed class ErrorOrEqualityTests
         SerializableError[] errors1,
         SerializableError[] errors2)
     {
-        ErrorOr<Person> errorOrPerson1 = errors1.Select(e => e.Value).ToList();
-        ErrorOr<Person> errorOrPerson2 = errors2.Select(e => e.Value).ToList();
+        ErrorOr<Person> errorOrPerson1 = errors1.Select(static e => e.Value).ToArray();
+        ErrorOr<Person> errorOrPerson2 = errors2.Select(static e => e.Value).ToArray();
 
         var hashCode1 = errorOrPerson1.GetHashCode();
         var hashCode2 = errorOrPerson2.GetHashCode();
@@ -167,5 +176,5 @@ public sealed class ErrorOrEqualityTests
     }
 
     // ReSharper disable once NotAccessedPositionalProperty.Local -- we require this property for these tests
-    private record Person(string Name);
+    private sealed record Person(string Name);
 }

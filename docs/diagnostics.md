@@ -4,7 +4,7 @@ Analyzer warnings and errors for ErrorOrX endpoints.
 
 ## Error Codes
 
-### EOE001 - Invalid Return Type
+### EOE001 - Invalid return type
 
 **Severity:** Error
 
@@ -20,7 +20,7 @@ public static User GetUser() => new User();
 public static ErrorOr<User> GetUser() => new User();
 ```
 
-### EOE002 - Handler Must Be Static
+### EOE002 - Handler must be static
 
 **Severity:** Error
 
@@ -36,7 +36,7 @@ public ErrorOr<User> GetUser() => ...
 public static ErrorOr<User> GetUser() => ...
 ```
 
-### EOE003 - Route Parameter Not Bound
+### EOE003 - Route parameter not bound
 
 **Severity:** Error
 
@@ -52,7 +52,7 @@ public static ErrorOr<User> GetUser() => ...
 public static ErrorOr<User> GetUser(int id) => ...
 ```
 
-### EOE004 - Duplicate Route
+### EOE004 - Duplicate route
 
 **Severity:** Error
 
@@ -67,7 +67,7 @@ public static ErrorOr<List<User>> GetAll() => ...
 public static ErrorOr<List<User>> ListUsers() => ...  // EOE004
 ```
 
-### EOE005 - Invalid Route Pattern
+### EOE005 - Invalid route pattern
 
 **Severity:** Error
 
@@ -79,7 +79,7 @@ Route pattern syntax is invalid.
 public static ErrorOr<User> GetUser(int id) => ...
 ```
 
-### EOE006 - Multiple Body Sources
+### EOE006 - Multiple body sources
 
 **Severity:** Error
 
@@ -101,7 +101,7 @@ public static ErrorOr<Result> Upload([FromForm] IFormFile file) => ...
 
 ## Warnings
 
-### EOE007 - Type Not AOT-Serializable
+### EOE007 - Type not AOT-serializable
 
 **Severity:** Warning
 
@@ -117,7 +117,7 @@ public static ErrorOr<CustomType> GetData() => ...
 internal partial class AppJsonContext : JsonSerializerContext { }
 ```
 
-### EOE009 - Body on Read-Only HTTP Method
+### EOE009 - Body on read-only HTTP method
 
 **Severity:** Warning
 
@@ -133,7 +133,7 @@ public static ErrorOr<Results> Search([FromBody] SearchQuery query)
 public static ErrorOr<Results> Search([FromBody] SearchQuery query)
 ```
 
-### EOE010 - AcceptedResponse on Read-Only Method
+### EOE010 - [AcceptedResponse] on read-only method
 
 **Severity:** Warning
 
@@ -143,7 +143,7 @@ public static ErrorOr<Results> Search([FromBody] SearchQuery query)
 
 ## Parameter Binding Errors (EOE011-EOE019)
 
-### EOE011 - Invalid FromRoute Type
+### EOE011 - Invalid [FromRoute] type
 
 **Severity:** Error
 
@@ -159,25 +159,25 @@ public static ErrorOr<List<User>> Get([FromRoute] ComplexFilter filter)
 public static ErrorOr<List<User>> Get([FromRoute] string status)
 ```
 
-### EOE012 - Invalid FromQuery Type
+### EOE012 - Invalid [FromQuery] type
 
 **Severity:** Error
 
 `[FromQuery]` parameter must be a primitive or collection of primitives.
 
-### EOE013 - Invalid AsParameters Type
+### EOE013 - Invalid [AsParameters] type
 
 **Severity:** Error
 
 `[AsParameters]` must be used on a class or struct type.
 
-### EOE014 - AsParameters No Constructor
+### EOE014 - [AsParameters] type has no constructor
 
 **Severity:** Error
 
 Type used with `[AsParameters]` must have an accessible constructor.
 
-### EOE016 - Invalid FromHeader Type
+### EOE016 - Invalid [FromHeader] type
 
 **Severity:** Error
 
@@ -187,7 +187,7 @@ Type used with `[AsParameters]` must have an accessible constructor.
 
 ## Route Constraint Diagnostics (EOE020-EOE029)
 
-### EOE023 - Route Constraint Type Mismatch
+### EOE023 - Route constraint type mismatch
 
 **Severity:** Warning
 
@@ -203,37 +203,37 @@ public static ErrorOr<User> Get(string id)  // EOE023
 public static ErrorOr<User> Get(int id)
 ```
 
-### EOE025 - Ambiguous Parameter Binding
+### EOE025 - Ambiguous parameter binding
 
-**Severity:** Error
+**Severity:** Warning
 
-Complex type parameter on GET/DELETE requires explicit binding attribute.
+Complex type parameter on a bodyless/custom method requires explicit binding. The generator will default to DI and warn.
 
 ```csharp
-// Error: SearchFilter is complex type on GET
+// Warning: SearchFilter is complex type on GET
 [Get("/users")]
 public static ErrorOr<List<User>> Search(SearchFilter filter)  // EOE025
 
-// Fixed with [FromQuery]
-[Get("/users")]
-public static ErrorOr<List<User>> Search([FromQuery] SearchFilter filter)
-
-// Or use [AsParameters]
+// Fixed with [AsParameters]
 [Get("/users")]
 public static ErrorOr<List<User>> Search([AsParameters] SearchFilter filter)
+
+// Or explicitly allow body binding
+[Get("/users")]
+public static ErrorOr<List<User>> Search([FromBody] SearchFilter filter)
 ```
 
 ---
 
 ## OpenAPI Diagnostics (EOE030-EOE039)
 
-### EOE030 - Too Many Result Types
+### EOE030 - Too many result types
 
 **Severity:** Info
 
 Endpoint has too many possible response types for `Results<...>` union (max 6). OpenAPI documentation may be incomplete.
 
-### EOE032 - Unknown Error Factory
+### EOE032 - Unknown error factory
 
 **Severity:** Warning
 
@@ -253,7 +253,7 @@ Error.Failure()
 Error.Unexpected()
 ```
 
-### EOE033 - Undocumented Interface Call
+### EOE033 - Undocumented interface call
 
 **Severity:** Error
 
@@ -276,7 +276,7 @@ public static ErrorOr<User> Get(int id, IUserService svc)
 
 ## JSON Context Diagnostics (EOE040+)
 
-### EOE040 - Missing CamelCase Policy
+### EOE040 - Missing CamelCase policy
 
 **Severity:** Warning
 
@@ -294,3 +294,36 @@ internal partial class AppJsonContext : JsonSerializerContext { }
 internal partial class AppJsonContext : JsonSerializerContext { }
 ```
 
+---
+
+## AOT Safety Diagnostics (AOT001-AOT009)
+
+### AOT001 - Activator.CreateInstance is not AOT-safe
+
+**Severity:** Warning
+
+`Activator.CreateInstance<T>()` uses reflection and is not compatible with NativeAOT.
+
+### AOT002 - Type.GetType is not AOT-safe
+
+**Severity:** Warning
+
+`Type.GetType(string)` uses runtime type lookup and is not compatible with NativeAOT.
+
+### AOT003 - Reflection over members is not AOT-safe
+
+**Severity:** Warning
+
+Reflection over type members is not compatible with NativeAOT because members may be trimmed.
+
+### AOT004 - Expression.Compile is not AOT-safe
+
+**Severity:** Warning
+
+`Expression.Compile()` generates code at runtime and is not compatible with NativeAOT.
+
+### AOT005 - 'dynamic' is not AOT-safe
+
+**Severity:** Warning
+
+The `dynamic` keyword uses runtime binding and is not compatible with NativeAOT.

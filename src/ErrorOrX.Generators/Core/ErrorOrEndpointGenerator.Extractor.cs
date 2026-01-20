@@ -141,10 +141,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var constructed = named.ConstructedFrom;
 
-        if (context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT))
-            return (named.TypeArguments[0], true);
-
-        if (context.ValueTaskOfT is not null &&
+        if (context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT) || context.ValueTaskOfT is not null &&
             SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT))
             return (named.TypeArguments[0], true);
 
@@ -176,8 +173,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ImmutableArray<DiagnosticInfo>.Builder diagnostics,
             bool hasExplicitProducesError)
     {
-        var body = GetMethodBody(method);
-        if (body is null)
+        if (GetMethodBody(method) is not { } body)
             return (default, default);
 
         var methodName = method.Name;
@@ -404,23 +400,23 @@ public sealed partial class ErrorOrEndpointGenerator
             switch (args[0].Value)
             {
                 case int when args[1].Value is string customErrorCode:
-                    {
-                        // Custom error with status code
-                        if (seenCustomCodes.Add(customErrorCode))
-                            customErrors.Add(new CustomErrorInfo(customErrorCode));
+                {
+                    // Custom error with status code
+                    if (seenCustomCodes.Add(customErrorCode))
+                        customErrors.Add(new CustomErrorInfo(customErrorCode));
 
-                        foundAny = true;
-                        break;
-                    }
+                    foundAny = true;
+                    break;
+                }
                 case int enumValue when args[1].Value is string:
-                    {
-                        // Standard ErrorType - map enum int value to string name
-                        var errorTypeName = MapEnumValueToName(enumValue);
-                        if (errorTypeName is not null)
-                            errorTypeNames.Add(errorTypeName);
-                        foundAny = true;
-                        break;
-                    }
+                {
+                    // Standard ErrorType - map enum int value to string name
+                    var errorTypeName = MapEnumValueToName(enumValue);
+                    if (errorTypeName is not null)
+                        errorTypeNames.Add(errorTypeName);
+                    foundAny = true;
+                    break;
+                }
             }
         }
 
@@ -619,8 +615,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var attr in method.GetAttributes())
         {
-            var attrClass = attr.AttributeClass;
-            if (attrClass is null)
+            if (attr.AttributeClass is not { } attrClass)
                 continue;
 
             auth = TryExtractAuth(attr, attrClass, context, auth);

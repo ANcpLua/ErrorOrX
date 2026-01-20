@@ -2,7 +2,7 @@ namespace ErrorOrX.Tests.ErrorOr;
 
 public class OrExtensionsTests
 {
-    private record Person(string Name);
+    private sealed record Person(string Name);
 
     #region OrNotFound - Class
 
@@ -255,13 +255,79 @@ public class OrExtensionsTests
 
     #endregion
 
+    #region OrError
+
+    [Fact]
+    public void OrError_WhenValueIsNotNull_ShouldReturnValue()
+    {
+        // Arrange
+        var person = new Person("John");
+        var error = Error.Failure("Custom.Error");
+
+        // Act
+        var result = person.OrError(error);
+
+        // Assert
+        result.IsError.Should().BeFalse();
+        result.Value.Should().Be(person);
+    }
+
+    [Fact]
+    public void OrError_WhenValueIsNull_ShouldReturnSpecifiedError()
+    {
+        // Arrange
+        Person? person = null;
+        var error = Error.Failure("Custom.Error");
+
+        // Act
+        var result = person.OrError(error);
+
+        // Assert
+        result.IsError.Should().BeTrue();
+        result.FirstError.Should().Be(error);
+    }
+
+    [Fact]
+    public void OrError_WithFactory_WhenValueIsNull_ShouldReturnSpecifiedError()
+    {
+        // Arrange
+        Person? person = null;
+        var error = Error.Failure("Custom.Error");
+
+        // Act
+        var result = person.OrError(() => error);
+
+        // Assert
+        result.IsError.Should().BeTrue();
+        result.FirstError.Should().Be(error);
+    }
+
+    [Fact]
+    public void OrError_WithFactory_WhenFactoryIsNull_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        Person? person = null;
+        Func<Error> factory = null!;
+
+        // Act
+        Action act = () => person.OrError(factory);
+
+        // Assert
+        act.Should().ThrowExactly<ArgumentNullException>().WithParameterName("errorFactory");
+    }
+
+    #endregion
+
     #region Real-world usage patterns
 
     [Fact]
     public void OrNotFound_WithListFind_ShouldWorkAsExpected()
     {
         // Arrange
-        var people = new List<Person> { new("Alice"), new("Bob") };
+        var people = new List<Person>
+        {
+            new("Alice"), new("Bob")
+        };
 
         // Act
         var found = people.Find(static p => p.Name == "Alice").OrNotFound("Person not found");

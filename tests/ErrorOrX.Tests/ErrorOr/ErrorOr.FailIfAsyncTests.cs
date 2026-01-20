@@ -56,7 +56,7 @@ public class FailIfAsyncTests
 
         // Act
         var result = await errorOrString
-            .FailIfAsync(static str => Task.FromResult(str == string.Empty), Error.Failure());
+            .FailIfAsync(static str => Task.FromResult(string.IsNullOrEmpty(str)), Error.Failure());
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -130,5 +130,4 @@ public class FailIfAsyncTests
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
-    private record Person(string Name);
 }

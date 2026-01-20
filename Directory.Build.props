@@ -2,6 +2,7 @@
     <!-- Import versioning -->
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
+
     <!-- Package versions for embedding -->
     <PropertyGroup>
         <ANcpLuaRoslynUtilitiesVersion>1.13.0</ANcpLuaRoslynUtilitiesVersion>

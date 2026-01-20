@@ -29,6 +29,25 @@ Generates:
 - Middleware attribute emission
 - JSON serialization context (optional)
 
+## Minimal Interface Principle
+
+Generated code uses only the **minimal `ErrorOr<T>` interface**: `IsError`, `Errors`, `Value`.
+
+```csharp
+// ✅ Correct - uses minimal interface
+if (result.IsError) return ToProblem(result.Errors);
+return TypedResults.Ok(result.Value);
+
+// ❌ Never emit - creates dependency on convenience API
+return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors));
+```
+
+**Why?**
+- Reduces runtime coupling to ErrorOr library internals
+- Generated code is more portable and self-contained
+- Simpler to understand and debug
+- Consistent pattern across all code paths (SSE, union types, fallback)
+
 ## Dependencies
 
 - `Microsoft.CodeAnalysis.CSharp` - Roslyn APIs
@@ -120,7 +139,7 @@ The `ClassifyParameter()` method processes parameters in this order:
     - Abstract types → Service
     - Service naming patterns → Service
     - POST/PUT/PATCH + complex type → **Body**
-    - GET/DELETE + complex type → **Error EOE025**
+    - Other methods + complex type → **Service + Warning EOE025**
     - Fallback → Service
 
 ### Service Type Detection
@@ -153,20 +172,20 @@ AppDbContext      → true (*Context with Db)
 
 ### EOE025: Ambiguous Parameter Binding
 
-GET/DELETE with complex type triggers this error:
+Bodyless/custom methods with complex type trigger this warning:
 
 ```csharp
-// ❌ EOE025: Parameter 'filter' of type 'SearchFilter' on GET endpoint requires explicit binding
+// ⚠️ EOE025: Parameter 'filter' of type 'SearchFilter' on GET endpoint requires explicit binding
 [Get("/todos")]
 public static ErrorOr<List<Todo>> Search(SearchFilter filter) => ...
-
-// ✅ Fixed with explicit attribute
-[Get("/todos")]
-public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 
 // ✅ Or use [AsParameters] for query object
 [Get("/todos")]
 public static ErrorOr<List<Todo>> Search([AsParameters] SearchFilter filter) => ...
+
+// ✅ Or explicitly allow body binding
+[Get("/todos")]
+public static ErrorOr<List<Todo>> Search([FromBody] SearchFilter filter) => ...
 ```
 
 ## JSON Context Generation (Emitter.cs)
@@ -214,7 +233,7 @@ When user has existing `JsonSerializerContext`:
 Triggers when user's context lacks `PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase`:
 
 ```
-warning EOE040: JsonSerializerContext 'AppJsonSerializerContext' should use 
+warning EOE040: JsonSerializerContext 'AppJsonSerializerContext' should use
 PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility.
 ```
 
@@ -241,17 +260,17 @@ PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility
 
 ## Key Files
 
-| File                  | Responsibility                                              |
-|-----------------------|-------------------------------------------------------------|
-| `Initialize.cs`       | Generator entry, pipeline orchestration                     |
-| `ParameterBinding.cs` | Parameter classification and smart inference                |
-| `Emitter.cs`          | Code generation (mappings, JSON context, AOT wrapper)       |
-| `Extractor.cs`        | Method/attribute extraction                                 |
-| `Analyzer.cs`         | JSON context detection, AOT validation                      |
-| `ErrorOrContext.cs`   | Type resolution helpers                                     |
-| `Descriptors.cs`      | Diagnostic definitions                                      |
-| `ErrorMapping.cs`     | ErrorType → HTTP mapping                                    |
-| `WellKnownTypes.cs`   | FQN string constants                                        |
+| File                  | Responsibility                                        |
+|-----------------------|-------------------------------------------------------|
+| `Initialize.cs`       | Generator entry, pipeline orchestration               |
+| `ParameterBinding.cs` | Parameter classification and smart inference          |
+| `Emitter.cs`          | Code generation (mappings, JSON context, AOT wrapper) |
+| `Extractor.cs`        | Method/attribute extraction                           |
+| `Analyzer.cs`         | JSON context detection, AOT validation                |
+| `ErrorOrContext.cs`   | Type resolution helpers                               |
+| `Descriptors.cs`      | Diagnostic definitions                                |
+| `ErrorMapping.cs`     | ErrorType → HTTP mapping                              |
+| `WellKnownTypes.cs`   | FQN string constants                                  |
 
 ## AOT-Compatible Handler Emission (Emitter.cs)
 
@@ -262,7 +281,7 @@ The emitter generates handlers using a wrapper pattern for Native AOT compatibil
 ```csharp
 // 1. Map registration uses typed MapGet/MapPost (no Delegate cast)
 app.MapGet(@"/todos/{id:int}", Invoke_Ep1)
-    .WithName("TodoApi_GetById")
+    .WithName("MyApp_TodoApi_GetById")
     .WithMetadata(new AcceptsMetadata(new[] { "application/json" }, typeof(CreateTodoRequest)));
 
 // 2. Wrapper method - returns Task (matches RequestDelegate)
@@ -272,25 +291,24 @@ private static async Task Invoke_Ep1(HttpContext ctx)
     await __result.ExecuteAsync(ctx);  // Writes response to HttpContext
 }
 
-// 3. Core method - returns typed Results<...> for OpenAPI
-private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
+// 3. Core method - uses minimal interface (IsError/Errors/Value)
+private static Task<IResult> Invoke_Ep1_Core(HttpContext ctx)
 {
     int id = (int)ctx.Request.RouteValues["id"]!;
     var result = TodoApi.GetById(id);
-    return Task.FromResult(result.Match(
-        value => (Results<Ok<Todo>, NotFound<ProblemDetails>>)TypedResults.Ok(value),
-        errors => MapError(errors)));
+    if (result.IsError) return Task.FromResult(ToProblem(result.Errors));
+    return Task.FromResult(TypedResults.Ok(result.Value));
 }
 ```
 
 ### Why This Pattern?
 
-| Problem                        | Solution                                             |
-|--------------------------------|------------------------------------------------------|
-| `(Delegate)` cast forces reflection | Use typed `MapGet`/`MapPost` without cast        |
-| `Task<Results<...>>` needs JsonTypeInfo | Wrapper returns `Task`, not `Task<T>`        |
-| BCL generics can't have [JsonSerializable] | Call `IResult.ExecuteAsync()` explicitly   |
-| `.Accepts()` needs RouteHandlerBuilder | Use `.WithMetadata(new AcceptsMetadata(...))` |
+| Problem                                    | Solution                                      |
+|--------------------------------------------|-----------------------------------------------|
+| `(Delegate)` cast forces reflection        | Use typed `MapGet`/`MapPost` without cast     |
+| `Task<Results<...>>` needs JsonTypeInfo    | Wrapper returns `Task`, not `Task<T>`         |
+| BCL generics can't have [JsonSerializable] | Call `IResult.ExecuteAsync()` explicitly      |
+| `.Accepts()` needs RouteHandlerBuilder     | Use `.WithMetadata(new AcceptsMetadata(...))` |
 
 ### AcceptsMetadata Constructor
 
@@ -319,31 +337,33 @@ cat samples/ErrorOrX.Sample/obj/Debug/net10.0/generated/ErrorOrX.Generators/*.cs
 | `IsLikelyServiceType()`  | Interface patterns, suffix patterns, edge cases  |
 | `IsComplexType()`        | Primitives, collections, nullable, special types |
 | `InferParameterSource()` | Each HTTP method × type combination              |
-| EOE025                   | GET/DELETE with complex type                     |
+| EOE025                   | Bodyless/custom method with complex type         |
 | JSON context detection   | User context present/absent, CamelCase check     |
 
 ## ANcpLua.Roslyn.Utilities Used
 
-| Utility                                           | Purpose                                                    |
-|---------------------------------------------------|------------------------------------------------------------|
-| `DiagnosticFlow<T>`                               | Railway-oriented error handling with diagnostic collection |
-| `.SelectFlow()`                                   | Transform with `DiagnosticFlow`                            |
-| `.ReportAndContinue()`                            | Report diagnostics and continue with values                |
-| `EquatableArray<T>`                               | Value-equality collection for incremental caching          |
-| `.CollectAsEquatableArray()`                      | Collect with value equality                                |
-| `.Distinct()`                                     | Remove duplicates from discovered types                    |
-| `AwaitableContext`                                | Unwrap `Task<T>`, `ValueTask<T>`                           |
-| `CollectionContext`                               | Unwrap collections, get element types                      |
-| `DiagnosticInfo.Create()`                         | Create diagnostic info for flow                            |
-| `.WithTrackingName()`                             | Add step name for caching verification                     |
+| Utility                      | Purpose                                                    |
+|------------------------------|------------------------------------------------------------|
+| `DiagnosticFlow<T>`          | Railway-oriented error handling with diagnostic collection |
+| `.SelectFlow()`              | Transform with `DiagnosticFlow`                            |
+| `.ReportAndContinue()`       | Report diagnostics and continue with values                |
+| `EquatableArray<T>`          | Value-equality collection for incremental caching          |
+| `.CollectAsEquatableArray()` | Collect with value equality                                |
+| `.Distinct()`                | Remove duplicates from discovered types                    |
+| `AwaitableContext`           | Unwrap `Task<T>`, `ValueTask<T>`                           |
+| `CollectionContext`          | Unwrap collections, get element types                      |
+| `DiagnosticInfo.Create()`    | Create diagnostic info for flow                            |
+| `.WithTrackingName()`        | Add step name for caching verification                     |
 
 ## Incremental Caching
 
 Roslyn's `ForAttributeWithMetadataName` creates internal tracked steps that inherently cache semantic types:
+
 - `Compilation` - CSharpCompilation
 - `result_ForAttributeWithMetadataName` - ISymbol, SemanticModel, SyntaxNode
 
 These internal steps cannot be avoided when using semantic APIs. The solution:
+
 1. Add `.WithTrackingName()` to custom transformation steps
 2. Test only named steps with `.IsCached("stepName")`
 3. Ensure custom data models are fully equatable (no Roslyn types)

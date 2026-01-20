@@ -9,10 +9,10 @@
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.13.0"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.13.0"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.14.0"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.14.0"/>
         <!-- Code Quality Analyzers -->
-        <PackageVersion Include="ANcpLua.Analyzers" Version="1.6.13"/>
+        <PackageVersion Include="ANcpLua.Analyzers" Version="1.6.15"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4"/>
         <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.5"/>
         <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>
@@ -25,19 +25,21 @@
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.102"/>
         <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0"/>
         <!-- Testing -->
-        <PackageVersion Include="Verify.XunitV3" Version="31.9.3"/>
+        <PackageVersion Include="Verify.XunitV3" Version="31.9.4"/>
         <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3-beta1.25564.1"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.3-beta1.25564.1"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.3-beta1.25564.1"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.1.3-beta1.25564.1"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.3"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.3"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.1.3"/>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
         <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.3.2"/>
         <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2"/>
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0"/>
         <!-- ASP.NET Core -->
-        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
+        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.2"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2"/>
         <!-- NOTE: ErrorOrX packages use ProjectReference during development.
-             Do NOT add PackageVersion entries here - see samples/ for correct pattern. -->
+                 Do NOT add PackageVersion entries here - see samples/ for correct pattern. -->
     </ItemGroup>
 </Project>

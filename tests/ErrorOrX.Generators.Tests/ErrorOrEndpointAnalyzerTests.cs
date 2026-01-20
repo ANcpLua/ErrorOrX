@@ -1,7 +1,3 @@
-using System.Threading.Tasks;
-using ErrorOr.Analyzers;
-using Xunit;
-
 namespace ErrorOrX.Generators.Tests;
 
 public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnalyzer>
@@ -21,7 +17,7 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
                                             """;
 
     [Fact]
-    public async Task NonStaticHandler_ReportsDiagnostic()
+    public Task NonStaticHandler_ReportsDiagnostic()
     {
         const string Source = """
                               using ErrorOr.Core.ErrorOr;
@@ -34,11 +30,11 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
                               }
                               """ + AttributesSource;
 
-        await VerifyAnalyzerAsync(Source);
+        return VerifyAnalyzerAsync(Source);
     }
 
     [Fact]
-    public async Task InvalidReturnType_ReportsDiagnostic()
+    public Task InvalidReturnType_ReportsDiagnostic()
     {
         const string Source = """
                               using ErrorOr.Endpoints;
@@ -50,6 +46,6 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
                               }
                               """ + AttributesSource;
 
-        await VerifyAnalyzerAsync(Source);
+        return VerifyAnalyzerAsync(Source);
     }
 }

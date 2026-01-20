@@ -1,7 +1,3 @@
-using AwesomeAssertions;
-using ErrorOr;
-using Xunit;
-
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
@@ -58,9 +54,7 @@ public class JsonContextTests
     {
         var errorTypes = new[]
         {
-            (ErrorType.Failure, 500), (ErrorType.Validation, 400), (ErrorType.NotFound, 404),
-            (ErrorType.Conflict, 409), (ErrorType.Unauthorized, 401), (ErrorType.Forbidden, 403),
-            (ErrorType.Unexpected, 500)
+            (ErrorType.Failure, 500), (ErrorType.Validation, 400), (ErrorType.NotFound, 404), (ErrorType.Conflict, 409), (ErrorType.Unauthorized, 401), (ErrorType.Forbidden, 403), (ErrorType.Unexpected, 500)
         };
 
         foreach (var (errorType, expectedStatus) in errorTypes)

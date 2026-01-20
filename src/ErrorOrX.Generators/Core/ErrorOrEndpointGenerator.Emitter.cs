@@ -91,19 +91,17 @@ public sealed partial class ErrorOrEndpointGenerator
         var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
             ep.SuccessTypeFqn,
             ep.SuccessKind,
-            ep.HttpMethod,
             ep.IsAcceptedResponse);
 
-        var hasBodyParam = HasBodyParam(ep) || HasFormParams(ep);
+        var hasBodyBinding = HasBodyParam(ep) || HasFormParams(ep);
 
         var unionResult = ResultsUnionTypeBuilder.ComputeReturnType(
             ep.SuccessTypeFqn,
             ep.SuccessKind,
-            ep.HttpMethod,
             ep.InferredErrorTypeNames,
             ep.InferredCustomErrors,
             ep.DeclaredProducesErrors,
-            hasBodyParam,
+            hasBodyBinding,
             maxArity,
             ep.IsAcceptedResponse,
             ep.Middleware);
@@ -125,8 +123,8 @@ public sealed partial class ErrorOrEndpointGenerator
             ? $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{index})"
             : $"            app.{mapMethod}(@\"{ep.Pattern}\", Invoke_Ep{index})");
 
-        var className = TypeNameHelper.ExtractShortName(ep.HandlerContainingTypeFqn);
-        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(className, ep.HandlerMethodName);
+        var (tagName, operationId) =
+            TypeNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
 
         code.AppendLine($"            .WithName(\"{operationId}\")");
         code.AppendLine($"            .WithTags(\"{tagName}\")");
@@ -144,10 +142,8 @@ public sealed partial class ErrorOrEndpointGenerator
                 $"            .WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
 
         if (ep.IsSse)
-        {
             code.AppendLine(
                 $"            .WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}(200, null, new[] {{ \"text/event-stream\" }}))");
-        }
         else if (!unionResult.CanUseUnion)
         {
             // Use WithMetadata(ProducesResponseTypeMetadata) instead of .Produces() for AOT compatibility
@@ -211,34 +207,54 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine($"            .RequireCors(\"{middleware.CorsPolicy}\")");
     }
 
-    private static void EmitInvoker(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity)
+    /// <summary>
+    ///     Context for invoker emission, holding precomputed values and providing helper methods.
+    /// </summary>
+    private readonly record struct InvokerContext(
+        SuccessResponseInfo SuccessInfo,
+        UnionTypeResult UnionResult,
+        bool HasFormBinding,
+        bool HasBodyBinding,
+        bool NeedsAwait,
+        int Index)
+    {
+        public string WrapperName => $"Invoke_Ep{Index}";
+        public string CoreName => $"Invoke_Ep{Index}_Core";
+
+        public string WrapReturn(string expr) =>
+            NeedsAwait ? expr : $"Task.FromResult<{UnionResult.ReturnTypeFqn}>({expr})";
+    }
+
+    private static InvokerContext ComputeInvokerContext(
+        in EndpointDescriptor ep,
+        int index,
+        int maxArity)
     {
         var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
-            ep.SuccessTypeFqn,
-            ep.SuccessKind,
-            ep.HttpMethod,
-            ep.IsAcceptedResponse);
+            ep.SuccessTypeFqn, ep.SuccessKind, ep.IsAcceptedResponse);
 
-        var hasBodyParam = HasBodyParam(ep) || HasFormParams(ep);
+        var hasFormBinding = HasFormParams(ep);
+        var hasBodyBinding = HasBodyParam(ep) || hasFormBinding;
 
         var unionResult = ResultsUnionTypeBuilder.ComputeReturnType(
-            ep.SuccessTypeFqn,
-            ep.SuccessKind,
-            ep.HttpMethod,
-            ep.InferredErrorTypeNames,
-            ep.InferredCustomErrors,
-            ep.DeclaredProducesErrors,
-            hasBodyParam,
-            maxArity,
-            ep.IsAcceptedResponse,
-            ep.Middleware);
+            ep.SuccessTypeFqn, ep.SuccessKind,
+            ep.InferredErrorTypeNames, ep.InferredCustomErrors,
+            ep.DeclaredProducesErrors, hasBodyBinding, maxArity,
+            ep.IsAcceptedResponse, ep.Middleware);
 
-        var needsAwait = ep.IsAsync || HasFormParams(ep) || HasBodyParam(ep) || HasBindAsyncParam(ep);
+        var needsAwait = ep.IsAsync || hasBodyBinding || HasBindAsyncParam(ep);
 
+        return new InvokerContext(successInfo, unionResult, hasFormBinding, hasBodyBinding, needsAwait, index);
+    }
+
+    private static (StringBuilder Code, bool UsesBindFail) EmitBodyCode(
+        in EndpointDescriptor ep,
+        in InvokerContext ctx)
+    {
         var bodyCode = new StringBuilder();
-        var usedBindFail = HasFormParams(ep);
+        var usesBindFail = ctx.HasFormBinding;
 
-        if (usedBindFail)
+        if (ctx.HasFormBinding)
             EmitFormContentTypeGuard(bodyCode);
 
         var args = new StringBuilder();
@@ -246,72 +262,92 @@ public sealed partial class ErrorOrEndpointGenerator
         for (var i = 0; i < ep.HandlerParameters.Length; i++)
         {
             var param = ep.HandlerParameters[i];
-            usedBindFail |= EmitParameterBinding(bodyCode, in param, $"p{i}", "BindFail");
+            usesBindFail |= EmitParameterBinding(bodyCode, in param, $"p{i}", "BindFail");
             if (i > 0) args.Append(", ");
             args.Append(BuildArgumentExpression(in param, $"p{i}"));
 
-            // Track parameters that require BCL validation
             if (param.RequiresValidation)
                 validationParams.Add((i, $"p{i}"));
         }
 
-        // Emit BCL validation calls for parameters that require it
         if (validationParams.Count > 0)
-            EmitBclValidation(bodyCode, validationParams, unionResult.ReturnTypeFqn, needsAwait);
+            EmitBclValidation(bodyCode, validationParams, ctx.UnionResult.ReturnTypeFqn, ctx.NeedsAwait);
 
         var awaitKeyword = ep.IsAsync ? "await " : "";
         bodyCode.AppendLine(
             $"            var result = {awaitKeyword}{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}({args});");
 
+        EmitErrorHandling(bodyCode, ep, ctx);
+
+        return (bodyCode, usesBindFail);
+    }
+
+    private static void EmitErrorHandling(
+        StringBuilder bodyCode,
+        in EndpointDescriptor ep,
+        in InvokerContext ctx)
+    {
         if (ep.IsSse)
         {
-            bodyCode.AppendLine($"            if (result.IsError) return {WrapReturn("ToProblem(result.Errors)")};");
+            bodyCode.AppendLine($"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
             bodyCode.AppendLine(
-                $"            return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
+                $"            return {ctx.WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
         }
-        else if (unionResult.CanUseUnion)
+        else if (ctx.UnionResult.CanUseUnion)
         {
-            EmitUnionTypeErrorHandling(bodyCode, ep, unionResult.ReturnTypeFqn, successInfo, needsAwait);
+            EmitUnionTypeErrorHandling(bodyCode, ep, ctx.UnionResult.ReturnTypeFqn, ctx.SuccessInfo, ctx.NeedsAwait);
         }
         else
         {
-            var matchFactory = GetMatchFactoryWithLocation(ep, successInfo);
-            bodyCode.AppendLine(
-                $"            return {WrapReturn($"result.Match<{WellKnownTypes.Fqn.Result}>({matchFactory}, errors => ToProblem(errors))")};");
+            // Use minimal interface (IsError/Errors/Value) instead of convenience Match API
+            var successFactory = GetSuccessFactoryWithLocation(ep, ctx.SuccessInfo);
+            bodyCode.AppendLine($"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
+            bodyCode.AppendLine($"            return {ctx.WrapReturn(successFactory)};");
         }
+    }
 
-        // Emit wrapper method that calls ExecuteAsync on the IResult
-        // This ensures the handler matches RequestDelegate (Task, not Task<T>) and properly writes the response
-        code.AppendLine($"        private static async Task Invoke_Ep{index}(HttpContext ctx)");
+    private static void EmitWrapperMethod(StringBuilder code, in InvokerContext ctx)
+    {
+        code.AppendLine($"        private static async Task {ctx.WrapperName}(HttpContext ctx)");
         code.AppendLine("        {");
-        code.AppendLine($"            var __result = await Invoke_Ep{index}_Core(ctx);");
+        code.AppendLine($"            var __result = await {ctx.CoreName}(ctx);");
         code.AppendLine("            await __result.ExecuteAsync(ctx);");
         code.AppendLine("        }");
         code.AppendLine();
+    }
 
-        // Emit core method that returns the typed Results union (for logic)
+    private static void EmitCoreMethod(
+        StringBuilder code,
+        StringBuilder bodyCode,
+        in InvokerContext ctx,
+        bool usesBindFail)
+    {
+        var returnType = ctx.UnionResult.ReturnTypeFqn;
         code.AppendLine(
-            needsAwait
-                ? $"        private static async Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}_Core(HttpContext ctx)"
-                : $"        private static Task<{unionResult.ReturnTypeFqn}> Invoke_Ep{index}_Core(HttpContext ctx)");
+            ctx.NeedsAwait
+                ? $"        private static async Task<{returnType}> {ctx.CoreName}(HttpContext ctx)"
+                : $"        private static Task<{returnType}> {ctx.CoreName}(HttpContext ctx)");
 
         code.AppendLine("        {");
 
-        if (usedBindFail)
-            EmitBindFailHelper(code, unionResult.ReturnTypeFqn, needsAwait);
+        if (usesBindFail)
+            EmitBindFailHelper(code, returnType, ctx.NeedsAwait);
 
-        if (HasBodyParam(ep))
-            EmitBindFail415Helper(code, unionResult.ReturnTypeFqn, needsAwait);
+        if (ctx.HasBodyBinding)
+            EmitBindFail415Helper(code, returnType, ctx.NeedsAwait);
 
         code.Append(bodyCode);
         code.AppendLine("        }");
         code.AppendLine();
-        return;
+    }
 
-        string WrapReturn(string expr)
-        {
-            return needsAwait ? expr : $"Task.FromResult<{unionResult.ReturnTypeFqn}>({expr})";
-        }
+    private static void EmitInvoker(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity)
+    {
+        var ctx = ComputeInvokerContext(ep, index, maxArity);
+        var (bodyCode, usesBindFail) = EmitBodyCode(ep, ctx);
+
+        EmitWrapperMethod(code, ctx);
+        EmitCoreMethod(code, bodyCode, ctx, usesBindFail);
     }
 
     private static bool HasBodyParam(in EndpointDescriptor ep)
@@ -380,7 +416,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            };");
         code.AppendLine();
 
-        var badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
+        const string badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
         var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
@@ -391,7 +427,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitBindFail415Helper(StringBuilder code, string returnTypeFqn, bool isAsync)
     {
-        var expr = $"global::Microsoft.AspNetCore.Http.TypedResults.StatusCode(415)";
+        const string expr = $"{WellKnownTypes.Fqn.TypedResults.StatusCode}(415)";
         var returnExpr = isAsync ? expr : $"Task.FromResult<{returnTypeFqn}>({expr})";
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
@@ -407,11 +443,6 @@ public sealed partial class ErrorOrEndpointGenerator
         SuccessResponseInfo successInfo,
         bool needsAwait)
     {
-        string WrapReturn(string expr)
-        {
-            return needsAwait ? expr : $"Task.FromResult<{returnType}>({expr})";
-        }
-
         code.AppendLine("            if (result.IsError)");
         code.AppendLine("            {");
         code.AppendLine("                var first = result.FirstError;");
@@ -426,6 +457,9 @@ public sealed partial class ErrorOrEndpointGenerator
         // Generate Location header for POST endpoints with Created response and Id property
         var successFactory = GetSuccessFactoryWithLocation(ep, successInfo);
         code.AppendLine($"            return {WrapReturn(successFactory)};");
+        return;
+
+        string WrapReturn(string expr) => needsAwait ? expr : $"Task.FromResult<{returnType}>({expr})";
     }
 
     /// <summary>
@@ -444,38 +478,12 @@ public sealed partial class ErrorOrEndpointGenerator
         if (!successInfo.HasBody)
             return successInfo.Factory;
 
-        if (ep.LocationIdPropertyName is not { Length: > 0 } idProp)
-            return successInfo.Factory;
-
-        // Generate Location URL: request path + "/" + id value
-        // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return
+        return ep.LocationIdPropertyName is not { Length: > 0 } idProp
+            ? successInfo.Factory
+            :
+            // Generate Location URL: request path + "/" + id value
+            // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
             $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
-    }
-
-    /// <summary>
-    ///     Returns the appropriate match factory lambda, with Location header support for Created responses.
-    /// </summary>
-    private static string GetMatchFactoryWithLocation(in EndpointDescriptor ep, SuccessResponseInfo successInfo)
-    {
-        // Only apply Location header for POST endpoints returning Created with an Id property
-        if (ep.HttpMethod != WellKnownTypes.HttpMethod.Post)
-            return successInfo.MatchFactory;
-
-        if (successInfo.StatusCode != 201)
-            return successInfo.MatchFactory;
-
-        // Location header requires both a body (with the Id value) and a detected Id property
-        if (!successInfo.HasBody)
-            return successInfo.MatchFactory;
-
-        if (ep.LocationIdPropertyName is not { Length: > 0 } idProp)
-            return successInfo.MatchFactory;
-
-        // Generate Location URL using lambda parameter 'value'
-        // For POST /api/users with response { Id: 123 }, Location becomes /api/users/123
-        return
-            $"value => {WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{value.{idProp}}}\", value)";
     }
 
     private static void EmitValidationHandling(StringBuilder code, in EndpointDescriptor ep,
@@ -516,7 +524,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                    Title = first.Code,");
         code.AppendLine("                    Detail = first.Description,");
         code.AppendLine(
-            $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType, "first")} }}");
+            $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
         code.AppendLine("                };");
         code.AppendLine("                problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
         code.AppendLine();
@@ -677,10 +685,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var usesBindFail = false;
         if (TypeNameHelper.IsStringType(itemType))
-        {
             code.AppendLine(
                 $"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
-        }
         else
         {
             usesBindFail = true;
@@ -706,9 +712,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine($"            if (!TryGetQueryValue(ctx, \"{queryKey}\", out var {paramName}Raw))");
         code.AppendLine("            {");
         if (param.IsNullable)
-        {
             code.AppendLine($"                {paramName} = default;");
-        }
         else
         {
             usesBindFail = true;
@@ -719,9 +723,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (TypeNameHelper.IsStringType(param.TypeFqn))
-        {
             code.AppendLine($"                {paramName} = {paramName}Raw;");
-        }
         else
         {
             usesBindFail = true;
@@ -747,9 +749,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
-            {
                 code.AppendLine($"                {paramName} = default!;");
-            }
             else
             {
                 usesBindFail = true;
@@ -770,7 +770,6 @@ public sealed partial class ErrorOrEndpointGenerator
             var isArray = param.TypeFqn.EndsWith("[]");
             var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
             code.AppendLine($"                {paramName} = {assignment};");
-            code.AppendLine("            }");
         }
         else
         {
@@ -780,9 +779,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
-            {
                 code.AppendLine($"                {paramName} = default;");
-            }
             else
             {
                 usesBindFail = true;
@@ -793,18 +790,16 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("            else");
             code.AppendLine("            {");
             if (TypeNameHelper.IsStringType(param.TypeFqn))
-            {
                 code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
-            }
             else
             {
                 usesBindFail = true;
                 code.AppendLine(
                     $"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\"); {paramName} = {paramName}Temp;");
             }
-
-            code.AppendLine("            }");
         }
+
+        code.AppendLine("            }");
 
         return usesBindFail;
     }
@@ -812,7 +807,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
-        code.AppendLine($"            if (!ctx.Request.HasJsonContentType()) return BindFail415();");
+        code.AppendLine("            if (!ctx.Request.HasJsonContentType()) return BindFail415();");
         code.AppendLine($"            {param.TypeFqn}? {paramName};");
         code.AppendLine("            try");
         code.AppendLine("            {");
@@ -853,9 +848,7 @@ public sealed partial class ErrorOrEndpointGenerator
             $"            if (!form.TryGetValue(\"{fieldName}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
         code.AppendLine("            {");
         if (param.IsNullable)
-        {
             code.AppendLine($"                {paramName} = default;");
-        }
         else
         {
             usesBindFailScalar = true;
@@ -866,9 +859,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (TypeNameHelper.IsStringType(param.TypeFqn))
-        {
             code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
-        }
         else
         {
             usesBindFailScalar = true;
@@ -901,7 +892,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void EmitFormContentTypeGuard(StringBuilder code)
     {
         code.AppendLine(
-            $"            if (!ctx.Request.HasFormContentType) return BindFail(\"form\", \"content-type must be {WellKnownTypes.Constants.ContentTypeFormData}\");");
+            "            if (!ctx.Request.HasFormContentType) return BindFail415();");
         code.AppendLine("            var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);");
         code.AppendLine();
     }
@@ -937,77 +928,77 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void EmitOptionsClass(SourceProductionContext spc)
     {
         const string source = """
-            // <auto-generated>
-            // This file was generated by ErrorOr.Generators source generator.
-            // </auto-generated>
+                              // <auto-generated>
+                              // This file was generated by ErrorOr.Generators source generator.
+                              // </auto-generated>
 
-            #nullable enable
+                              #nullable enable
 
-            namespace ErrorOr.Generated
-            {
-                /// <summary>
-                /// Options for configuring ErrorOr endpoints.
-                /// </summary>
-                public sealed class ErrorOrEndpointOptions
-                {
-                    private global::System.Func<global::System.Text.Json.Serialization.JsonSerializerContext>? _jsonContextFactory;
-                    private bool _useCamelCase = true;
-                    private bool _ignoreNullValues = true;
+                              namespace ErrorOr.Generated
+                              {
+                                  /// <summary>
+                                  /// Options for configuring ErrorOr endpoints.
+                                  /// </summary>
+                                  public sealed class ErrorOrEndpointOptions
+                                  {
+                                      private global::System.Func<global::System.Text.Json.Serialization.JsonSerializerContext>? _jsonContextFactory;
+                                      private bool _useCamelCase = true;
+                                      private bool _ignoreNullValues = true;
 
-                    /// <summary>
-                    /// Registers a JsonSerializerContext for AOT-compatible JSON serialization.
-                    /// </summary>
-                    /// <typeparam name="TContext">The JsonSerializerContext type.</typeparam>
-                    /// <returns>The options instance for chaining.</returns>
-                    public ErrorOrEndpointOptions UseJsonContext<TContext>()
-                        where TContext : global::System.Text.Json.Serialization.JsonSerializerContext, new()
-                    {
-                        _jsonContextFactory = static () => new TContext();
-                        return this;
-                    }
+                                      /// <summary>
+                                      /// Registers a JsonSerializerContext for AOT-compatible JSON serialization.
+                                      /// </summary>
+                                      /// <typeparam name="TContext">The JsonSerializerContext type.</typeparam>
+                                      /// <returns>The options instance for chaining.</returns>
+                                      public ErrorOrEndpointOptions UseJsonContext<TContext>()
+                                          where TContext : global::System.Text.Json.Serialization.JsonSerializerContext, new()
+                                      {
+                                          _jsonContextFactory = static () => new TContext();
+                                          return this;
+                                      }
 
-                    /// <summary>
-                    /// Uses camelCase for JSON property names.
-                    /// </summary>
-                    /// <param name="enabled">Whether to enable camelCase (default: true).</param>
-                    /// <returns>The options instance for chaining.</returns>
-                    public ErrorOrEndpointOptions WithCamelCase(bool enabled = true)
-                    {
-                        _useCamelCase = enabled;
-                        return this;
-                    }
+                                      /// <summary>
+                                      /// Uses camelCase for JSON property names.
+                                      /// </summary>
+                                      /// <param name="enabled">Whether to enable camelCase (default: true).</param>
+                                      /// <returns>The options instance for chaining.</returns>
+                                      public ErrorOrEndpointOptions WithCamelCase(bool enabled = true)
+                                      {
+                                          _useCamelCase = enabled;
+                                          return this;
+                                      }
 
-                    /// <summary>
-                    /// Ignores null values when serializing JSON.
-                    /// </summary>
-                    /// <param name="enabled">Whether to ignore nulls (default: true).</param>
-                    /// <returns>The options instance for chaining.</returns>
-                    public ErrorOrEndpointOptions WithIgnoreNulls(bool enabled = true)
-                    {
-                        _ignoreNullValues = enabled;
-                        return this;
-                    }
+                                      /// <summary>
+                                      /// Ignores null values when serializing JSON.
+                                      /// </summary>
+                                      /// <param name="enabled">Whether to ignore nulls (default: true).</param>
+                                      /// <returns>The options instance for chaining.</returns>
+                                      public ErrorOrEndpointOptions WithIgnoreNulls(bool enabled = true)
+                                      {
+                                          _ignoreNullValues = enabled;
+                                          return this;
+                                      }
 
-                    /// <summary>
-                    /// Applies the configured options to the service collection.
-                    /// </summary>
-                    internal void Apply(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
-                    {
-                        services.ConfigureHttpJsonOptions(options =>
-                        {
-                            if (_jsonContextFactory is not null)
-                                options.SerializerOptions.TypeInfoResolverChain.Insert(0, _jsonContextFactory());
+                                      /// <summary>
+                                      /// Applies the configured options to the service collection.
+                                      /// </summary>
+                                      internal void Apply(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                      {
+                                          services.ConfigureHttpJsonOptions(options =>
+                                          {
+                                              if (_jsonContextFactory is not null)
+                                                  options.SerializerOptions.TypeInfoResolverChain.Insert(0, _jsonContextFactory());
 
-                            if (_useCamelCase)
-                                options.SerializerOptions.PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase;
+                                              if (_useCamelCase)
+                                                  options.SerializerOptions.PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase;
 
-                            if (_ignoreNullValues)
-                                options.SerializerOptions.DefaultIgnoreCondition = global::System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-                        });
-                    }
-                }
-            }
-            """;
+                                              if (_ignoreNullValues)
+                                                  options.SerializerOptions.DefaultIgnoreCondition = global::System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                                          });
+                                      }
+                                  }
+                              }
+                              """;
         spc.AddSource("ErrorOrEndpointOptions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
@@ -1051,8 +1042,8 @@ public sealed partial class ErrorOrEndpointGenerator
         // Collect registered types from user context
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-            foreach (var typeFqn in ctx.SerializableTypes)
-                registeredTypes.Add(typeFqn);
+        foreach (var typeFqn in ctx.SerializableTypes)
+            registeredTypes.Add(typeFqn);
 
         // Find missing types
         var missingTypes = new List<string>();
@@ -1099,9 +1090,7 @@ public sealed partial class ErrorOrEndpointGenerator
             sb.AppendLine("//");
         }
         else
-        {
             sb.AppendLine("// All required types are registered in your JsonSerializerContext.");
-        }
 
         if (!userContext.HasCamelCasePolicy)
         {
@@ -1163,13 +1152,14 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine($"            var problem = new {WellKnownTypes.Fqn.ProblemDetails}");
         code.AppendLine("            {");
         code.AppendLine("                Title = first.Code,");
-            code.AppendLine("                Detail = first.Description,");
-            code.AppendLine(
-                $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType, "first")} }}");
-            code.AppendLine("            };");
-            code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
-            code.AppendLine("            return problem.Status switch");
-            code.AppendLine("            {");        foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
+        code.AppendLine("                Detail = first.Description,");
+        code.AppendLine(
+            $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
+        code.AppendLine("            };");
+        code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
+        code.AppendLine("            return problem.Status switch");
+        code.AppendLine("            {");
+        foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
             code.AppendLine($"                {caseExpr},");
         code.AppendLine($"                _ => {ErrorMapping.GetDefaultProblemFactory()}");
         code.AppendLine("            };");
@@ -1260,15 +1250,12 @@ public sealed partial class ErrorOrEndpointGenerator
                     types.Add(p.TypeFqn);
 
             if (ep is { IsSse: true, SseItemTypeFqn: not null })
-            {
                 types.Add(ep.SseItemTypeFqn);
-            }
             else
             {
                 var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
                     ep.SuccessTypeFqn,
                     ep.SuccessKind,
-                    ep.HttpMethod,
                     ep.IsAcceptedResponse);
                 if (successInfo.HasBody)
                     types.Add(ep.SuccessTypeFqn);

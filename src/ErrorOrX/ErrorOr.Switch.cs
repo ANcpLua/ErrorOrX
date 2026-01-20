@@ -11,6 +11,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <param name="onError">The action to execute if the state is an error.</param>
     public void Switch(Action<TValue> onValue, Action<IReadOnlyList<Error>> onError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onError);
+
         if (IsError)
         {
             onError(Errors);
@@ -30,6 +33,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task SwitchAsync(Func<TValue, Task> onValue, Func<IReadOnlyList<Error>, Task> onError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onError);
+
         if (IsError)
         {
             await onError(Errors).ConfigureAwait(false);
@@ -49,6 +55,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <param name="onFirstError">The action to execute with the first error if the state is an error.</param>
     public void SwitchFirst(Action<TValue> onValue, Action<Error> onFirstError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onFirstError);
+
         if (IsError)
         {
             onFirstError(FirstError);
@@ -69,6 +78,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task SwitchFirstAsync(Func<TValue, Task> onValue, Func<Error, Task> onFirstError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onFirstError);
+
         if (IsError)
         {
             await onFirstError(FirstError).ConfigureAwait(false);

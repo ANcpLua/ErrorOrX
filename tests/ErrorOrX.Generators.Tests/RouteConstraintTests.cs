@@ -1,12 +1,9 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace ErrorOrX.Generators.Tests;
 
 public class RouteConstraintTests : GeneratorTestBase
 {
     [Fact]
-    public async Task Supports_Multiple_Constraints()
+    public Task Supports_Multiple_Constraints()
     {
         const string Source = """
                               using ErrorOr.Core.ErrorOr;
@@ -22,11 +19,31 @@ public class RouteConstraintTests : GeneratorTestBase
                               }
                               """;
 
-        await VerifyGeneratorAsync(Source);
+        return VerifyGeneratorAsync(Source);
     }
 
     [Fact]
-    public async Task Routes_With_Different_Constraints_Are_Not_Duplicates()
+    public Task AsParameters_Constructor_Params_Bind_Route_Parameters()
+    {
+        const string Source = """
+                              using ErrorOr.Core.ErrorOr;
+                              using ErrorOr.Endpoints;
+                              using Microsoft.AspNetCore.Http;
+
+                              public record SearchParams(int Id);
+
+                              public static class MyEndpoints
+                              {
+                                  [Get("/users/{id:int}")]
+                                  public static ErrorOr<string> GetUser([AsParameters] SearchParams p) => "ok";
+                              }
+                              """;
+
+        return VerifyGeneratorAsync(Source);
+    }
+
+    [Fact]
+    public Task Routes_With_Different_Constraints_Are_Not_Duplicates()
     {
         const string Source = """
                               using ErrorOr.Core.ErrorOr;
@@ -45,11 +62,11 @@ public class RouteConstraintTests : GeneratorTestBase
                               """;
 
         // This test will likely FAIL currently because both normalize to /users/{_}
-        await VerifyGeneratorAsync(Source);
+        return VerifyGeneratorAsync(Source);
     }
 
     [Fact]
-    public async Task CatchAll_Routes_Are_Normalized_Correctly()
+    public Task CatchAll_Routes_Are_Normalized_Correctly()
     {
         const string Source = """
                               using ErrorOr.Core.ErrorOr;
@@ -68,6 +85,6 @@ public class RouteConstraintTests : GeneratorTestBase
                               """;
 
         // These SHOULD be reported as duplicates
-        await VerifyGeneratorAsync(Source);
+        return VerifyGeneratorAsync(Source);
     }
 }

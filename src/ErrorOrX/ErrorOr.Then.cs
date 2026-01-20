@@ -11,8 +11,12 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     The result from calling <paramref name="onValue" /> if state is value; otherwise the original
     ///     <see cref="Errors" />.
     /// </returns>
-    public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, ErrorOr<TNextValue>> onValue) =>
-        IsError ? _errors : onValue(Value);
+    public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, ErrorOr<TNextValue>> onValue)
+    {
+        _ = Throw.IfNull(onValue);
+
+        return IsError ? new(_errors) : onValue(Value);
+    }
 
     /// <summary>
     ///     If the state is a value, the provided <paramref name="action" /> is invoked.
@@ -21,9 +25,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public ErrorOr<TValue> ThenDo(Action<TValue> action)
     {
+        _ = Throw.IfNull(action);
+
         if (IsError)
         {
-            return _errors;
+            return new(_errors);
         }
 
         action(Value);
@@ -42,9 +48,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, TNextValue> onValue)
     {
+        _ = Throw.IfNull(onValue);
+
         if (IsError)
         {
-            return _errors;
+            return new(_errors);
         }
 
         return onValue(Value);
@@ -62,9 +70,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TNextValue>> ThenAsync<TNextValue>(Func<TValue, Task<ErrorOr<TNextValue>>> onValue)
     {
+        _ = Throw.IfNull(onValue);
+
         if (IsError)
         {
-            return _errors;
+            return new(_errors);
         }
 
         return await onValue(Value).ConfigureAwait(false);
@@ -77,9 +87,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public async Task<ErrorOr<TValue>> ThenDoAsync(Func<TValue, Task> action)
     {
+        _ = Throw.IfNull(action);
+
         if (IsError)
         {
-            return _errors;
+            return new(_errors);
         }
 
         await action(Value).ConfigureAwait(false);
@@ -99,9 +111,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TNextValue>> ThenAsync<TNextValue>(Func<TValue, Task<TNextValue>> onValue)
     {
+        _ = Throw.IfNull(onValue);
+
         if (IsError)
         {
-            return _errors;
+            return new(_errors);
         }
 
         return await onValue(Value).ConfigureAwait(false);

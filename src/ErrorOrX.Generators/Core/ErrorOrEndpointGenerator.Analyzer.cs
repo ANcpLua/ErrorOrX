@@ -29,7 +29,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
                     ep.SuccessTypeFqn,
                     ep.SuccessKind,
-                    ep.HttpMethod,
                     ep.IsAcceptedResponse);
 
                 if (successInfo.HasBody && neededTypes.Add(ep.SuccessTypeFqn))
@@ -50,8 +49,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-            foreach (var typeFqn in ctx.SerializableTypes)
-                registeredTypes.Add(typeFqn);
+        foreach (var typeFqn in ctx.SerializableTypes)
+            registeredTypes.Add(typeFqn);
 
         foreach (var neededType in neededTypes)
         {
@@ -90,19 +89,24 @@ public sealed partial class ErrorOrEndpointGenerator
             // 1. Success type (1)
             // 2. BadRequest for binding (1)
             // 3. InternalServerError safety net (1)
-            // 4. Inferred error types (variable)
-            var baseCount = 3; // success + binding + safety net
-            var errorTypeCount = ep.InferredErrorTypeNames.IsDefaultOrEmpty
-                ? 0
-                : ep.InferredErrorTypeNames.AsImmutableArray().Distinct().Count();
+            // 4. UnsupportedMediaType if body present (1)
+            var hasBodyBinding = HasBodyParam(ep) || HasFormParams(ep);
+            var baseCount = 3 + (hasBodyBinding ? 1 : 0);
 
-            // Validation adds 1 (ValidationProblem is different from BadRequest)
-            var hasValidation = !ep.InferredErrorTypeNames.IsDefaultOrEmpty &&
-                                ep.InferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
+            var errorTypeCount = 0;
+            if (!ep.InferredErrorTypeNames.IsDefaultOrEmpty)
+                foreach (var type in ep.InferredErrorTypeNames.AsImmutableArray().Distinct())
+                {
+                    // Failure/Unexpected map to InternalServerError (500), which is already in baseCount
+                    if (type is ErrorMapping.Failure or ErrorMapping.Unexpected)
+                        continue;
 
-            // Total unique types (approximate - some may share status codes)
-            var totalTypes =
-                baseCount + errorTypeCount - (hasValidation ? 1 : 0); // -1 because Validation shares 400 slot
+                    // All others (Validation, NotFound, Conflict, etc.) map to distinct types
+                    errorTypeCount++;
+                }
+
+            // Total unique types
+            var totalTypes = baseCount + errorTypeCount;
 
             if (totalTypes > maxArity || !ep.InferredCustomErrors.IsDefaultOrEmpty)
                 spc.ReportDiagnostic(Diagnostic.Create(
@@ -151,17 +155,20 @@ internal static class JsonContextProvider
                 }
             }
             else if (attrName == WellKnownTypes.JsonSourceGenerationOptionsAttribute)
-            {
                 // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
                 foreach (var namedArg in attr.NamedArguments)
-                    if (namedArg.Key == "PropertyNamingPolicy" &&
-                        namedArg.Value.Value is int policyValue &&
-                        policyValue == 1) // CamelCase = 1
+                {
+                    if (namedArg.Key != "PropertyNamingPolicy") continue;
+
+                    var enumValue = namedArg.Value.Value;
+                    if (namedArg.Value.Type is INamedTypeSymbol enumType &&
+                        enumType.GetMembers("CamelCase").FirstOrDefault() is IFieldSymbol camelCaseField &&
+                        camelCaseField.ConstantValue?.Equals(enumValue) == true)
                     {
                         hasCamelCasePolicy = true;
                         break;
                     }
-            }
+                }
         }
 
         if (serializableTypes.Count is 0)

@@ -56,7 +56,7 @@ public class FailIfTests
 
         // Act
         var result = errorOrString
-            .FailIf(static str => str == string.Empty, Error.Failure());
+            .FailIf(static str => string.IsNullOrEmpty(str), Error.Failure());
 
         // Assert
         result.IsError.Should().BeTrue();

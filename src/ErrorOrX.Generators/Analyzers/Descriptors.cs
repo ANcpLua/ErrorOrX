@@ -15,6 +15,11 @@ public static class Descriptors
 {
     private const string Category = "ErrorOr.Endpoints";
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AOT Safety Diagnostics (AOT001-AOT009)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private const string AotSafetyCategory = "ErrorOr.AotSafety";
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Errors - Must fix, won't compile or will fail at runtime
@@ -203,18 +208,18 @@ public static class Descriptors
         true);
 
     /// <summary>
-    ///     Complex type parameter on GET/DELETE requires explicit binding attribute.
-    ///     GET/DELETE cannot have implicit body binding, so the user must specify
-    ///     [FromQuery], [AsParameters], or [FromServices].
+    ///     Complex type parameter on bodyless/custom method requires explicit binding attribute.
+    ///     Bodyless methods cannot have implicit body binding, so the user must specify
+    ///     [AsParameters], [FromBody], or [FromServices].
     /// </summary>
     public static readonly DiagnosticDescriptor AmbiguousParameterBinding = new(
         "EOE025",
         "Ambiguous parameter binding",
         "Parameter '{0}' of type '{1}' on {2} endpoint requires explicit binding attribute. " +
-        "Use [FromQuery] for query string, [AsParameters] for expanded binding, " +
+        "Use [AsParameters] for query/route expansion, [FromBody] to force body binding, " +
         "or [FromServices] for DI injection.",
         Category,
-        DiagnosticSeverity.Error,
+        DiagnosticSeverity.Warning,
         true);
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -272,13 +277,6 @@ public static class Descriptors
         Category,
         DiagnosticSeverity.Warning,
         true);
-
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // AOT Safety Diagnostics (AOT001-AOT009)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private const string AotSafetyCategory = "ErrorOr.AotSafety";
 
     /// <summary>
     ///     Activator.CreateInstance is not AOT-compatible.

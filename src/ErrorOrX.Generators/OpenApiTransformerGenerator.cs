@@ -37,9 +37,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     }
 
     private static IncrementalValueProvider<EquatableArray<OpenApiEndpointInfo>> CombineHttpMethodProviders(
-        IncrementalGeneratorInitializationContext context)
-    {
-        return IncrementalProviderExtensions.CombineNine(
+        IncrementalGeneratorInitializationContext context) =>
+        IncrementalProviderExtensions.CombineNine(
             CreateEndpointProvider(context, WellKnownTypes.GetAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PostAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PutAttribute),
@@ -49,7 +48,6 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             CreateEndpointProvider(context, WellKnownTypes.OptionsAttribute),
             CreateEndpointProvider(context, WellKnownTypes.TraceAttribute),
             CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute));
-    }
 
     private static IncrementalValuesProvider<OpenApiEndpointInfo> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
@@ -79,7 +77,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         var attrClassName = attrClass.ToDisplayString();
 
-        var (httpMethod, _) = attrClassName switch
+        var (httpMethod, pattern) = attrClassName switch
         {
             WellKnownTypes.GetAttribute => (WellKnownTypes.HttpMethod.Get, GetPattern(attr)),
             WellKnownTypes.PostAttribute => (WellKnownTypes.HttpMethod.Post, GetPattern(attr)),
@@ -93,7 +91,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             _ => (null, null)
         };
 
-        if (httpMethod is null)
+        if (httpMethod is null || pattern is null)
             return null;
 
         // Extract XML documentation
@@ -102,14 +100,22 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         // Extract containing type info for tag generation
         var containingType = method.ContainingType;
-        var className = containingType.Name;
-        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(className, method.Name);
+        var containingTypeFqn = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
+
+        // Normalized pattern for matching (remove leading slash if present, handle duplicates logic)
+        // But for OpenAPI context.Description.RelativePath usually has NO leading slash for route groups?
+        // Actually context.Description.RelativePath usually matches the full route pattern.
+        // We will store it exactly as extracted from attribute.
+        // Note: HttpMethod needs to be UPPER CASE for matching.
 
         return new OpenApiEndpointInfo(
             operationId,
             tagName,
             summary,
-            description);
+            description,
+            httpMethod.ToUpperInvariant(),
+            pattern);
     }
 
     private static string GetPattern(AttributeData attr)
@@ -165,6 +171,20 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         return (summary, description);
     }
 
+    private static string GetReflectionFullName(INamedTypeSymbol symbol)
+    {
+        var typeNames = new Stack<string>();
+        for (var current = symbol; current is not null; current = current.ContainingType)
+            typeNames.Push(current.MetadataName);
+
+        var typeName = string.Join("+", typeNames);
+        var ns = symbol.ContainingNamespace?.IsGlobalNamespace == true
+            ? null
+            : symbol.ContainingNamespace?.ToDisplayString();
+
+        return string.IsNullOrEmpty(ns) ? typeName : $"{ns}.{typeName}";
+    }
+
     private static TypeMetadataInfo? ExtractTypeMetadata(
         GeneratorSyntaxContext ctx,
         CancellationToken ct)
@@ -172,9 +192,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         if (ctx.Node is not TypeDeclarationSyntax typeDecl)
             return null;
 
-        var symbol = ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct);
         // Skip null symbols and compiler-generated types
-        if (symbol is null || symbol.IsImplicitlyDeclared)
+        if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol || symbol.IsImplicitlyDeclared)
             return null;
 
         // Skip types without XML docs
@@ -186,7 +205,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         if (summary is null)
             return null;
 
-        return new TypeMetadataInfo(symbol.Name, summary);
+        var typeKey = GetReflectionFullName(symbol);
+
+        return new TypeMetadataInfo(typeKey, summary);
     }
 
     private static void Emit(
@@ -207,6 +228,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("using System.Threading;");
         code.AppendLine("using System.Threading.Tasks;");
         code.AppendLine("using Microsoft.AspNetCore.OpenApi;");
+        code.AppendLine("using Microsoft.AspNetCore.Routing;");
         code.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         code.AppendLine("using Microsoft.OpenApi;");
         code.AppendLine();
@@ -262,7 +284,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // Collect operations with XML docs
         var opsWithDocs = endpoints
             .Where(static e => !string.IsNullOrEmpty(e.Summary) || !string.IsNullOrEmpty(e.Description))
-            .OrderBy(static e => e.OperationId, StringComparer.Ordinal).ToList();
+            .OrderBy(static e => e.Pattern, StringComparer.Ordinal)
+            .ThenBy(static e => e.HttpMethod, StringComparer.Ordinal).ToList();
 
         if (opsWithDocs.Count is 0)
             return false;
@@ -293,7 +316,20 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        OpenApiOperationTransformerContext context,");
         code.AppendLine("        CancellationToken cancellationToken)");
         code.AppendLine("    {");
-        code.AppendLine("        var operationId = operation.OperationId;");
+        code.AppendLine("        string? operationId = null;");
+        code.AppendLine("        var metadata = context.Description.ActionDescriptor?.EndpointMetadata;");
+        code.AppendLine("        if (metadata is not null)");
+        code.AppendLine("        {");
+        code.AppendLine("            for (var i = 0; i < metadata.Count; i++)");
+        code.AppendLine("            {");
+        code.AppendLine("                if (metadata[i] is IEndpointNameMetadata nameMetadata)");
+        code.AppendLine("                {");
+        code.AppendLine("                    operationId = nameMetadata.EndpointName;");
+        code.AppendLine("                    break;");
+        code.AppendLine("                }");
+        code.AppendLine("            }");
+        code.AppendLine("        }");
+        code.AppendLine();
         code.AppendLine("        if (operationId is not null && OperationDocs.TryGetValue(operationId, out var docs))");
         code.AppendLine("        {");
         code.AppendLine("            if (docs.Summary is not null)");
@@ -311,7 +347,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static bool EmitSchemaTransformer(StringBuilder code, ImmutableArray<TypeMetadataInfo> types)
     {
-        var typesWithDocs = types.OrderBy(static t => t.TypeName, StringComparer.Ordinal).ToList();
+        var typesWithDocs = types.OrderBy(static t => t.TypeKey, StringComparer.Ordinal).ToList();
 
         if (typesWithDocs.Count is 0)
             return false;
@@ -328,7 +364,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        {");
 
         foreach (var type in typesWithDocs)
-            code.AppendLine($"            [\"{type.TypeName}\"] = \"{EscapeString(type.Description)}\",");
+            code.AppendLine($"            [\"{type.TypeKey}\"] = \"{EscapeString(type.Description)}\",");
 
         code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
         code.AppendLine();
@@ -337,8 +373,10 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        OpenApiSchemaTransformerContext context,");
         code.AppendLine("        CancellationToken cancellationToken)");
         code.AppendLine("    {");
-        code.AppendLine("        var typeName = context.JsonTypeInfo.Type.Name;");
-        code.AppendLine("        if (TypeDescriptions.TryGetValue(typeName, out var description))");
+        // Use FullName for robust matching (matches generator's FQN key)
+        code.AppendLine("        var type = context.JsonTypeInfo.Type;");
+        code.AppendLine("        var typeName = type.IsGenericType ? type.GetGenericTypeDefinition().FullName : type.FullName;");
+        code.AppendLine("        if (typeName is not null && TypeDescriptions.TryGetValue(typeName, out var description))");
         code.AppendLine("        {");
         code.AppendLine("            schema.Description ??= description;");
         code.AppendLine("        }");
@@ -415,13 +453,11 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static string EscapeString(string s)
-    {
-        return s
+    private static string EscapeString(string s) =>
+        s
             .Replace("\\", @"\\")
             .Replace("\"", "\\\"")
             .Replace("\r", "\\r")
             .Replace("\n", "\\n");
-    }
 #pragma warning restore EPS06
 }

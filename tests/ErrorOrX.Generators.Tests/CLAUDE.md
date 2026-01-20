@@ -140,11 +140,11 @@ using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
 
 ## Test Files
 
-| File                              | Tests                                  |
-|-----------------------------------|----------------------------------------|
-| `DuplicateRouteTests.cs`          | EOE004 duplicate route detection       |
-| `ErrorOrEndpointAnalyzerTests.cs` | EOE001, EOE002, etc. analyzer rules    |
-| `ParameterBindingTests.cs`        | Smart parameter binding inference      |
+| File                              | Tests                               |
+|-----------------------------------|-------------------------------------|
+| `DuplicateRouteTests.cs`          | EOE004 duplicate route detection    |
+| `ErrorOrEndpointAnalyzerTests.cs` | EOE001, EOE002, etc. analyzer rules |
+| `ParameterBindingTests.cs`        | Smart parameter binding inference   |
 
 ## Debugging Generator Output
 

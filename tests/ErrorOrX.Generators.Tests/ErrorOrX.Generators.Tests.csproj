@@ -3,9 +3,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <OutputType>Exe</OutputType>
         <RootNamespace>ErrorOrX.Generators.Tests</RootNamespace>
-        <!-- Suppress code analysis warnings in test code -->
-        <!-- AOT001-AOT005: AOT safety warnings - tests legitimately use reflection -->
-        <NoWarn>$(NoWarn);CA1820;CA2201;CA1826;CA1859;CA1812;CA1852;NU1603;IDE1006;AOT001;AOT002;AOT003;AOT004;AOT005</NoWarn>
+        <!-- Tests legitimately use reflection to introspect analyzer/generator types -->
+        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="xunit.v3.mtp-v2"/>

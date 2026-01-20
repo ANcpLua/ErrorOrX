@@ -192,7 +192,7 @@ public readonly record struct Error
         foreach (var keyValuePair in metadata)
         {
             if (!otherMetadata.TryGetValue(keyValuePair.Key, out var otherValue) ||
-                !keyValuePair.Value.Equals(otherValue))
+                !Equals(keyValuePair.Value, otherValue))
             {
                 return false;
             }

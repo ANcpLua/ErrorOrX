@@ -131,9 +131,15 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
             .Select(ParseGenerateJsonContextOption);
+        var referenceArities = context.MetadataReferencesProvider
+            .Select(static (reference, _) => ResultsUnionTypeBuilder.GetResultsUnionArity(reference))
+            .CollectAsEquatableArray();
+        var maxResultsUnionArity = referenceArities
+            .Select(static (arities, _) => ResultsUnionTypeBuilder.DetectMaxArity(arities.AsImmutableArray()))
+            .WithTrackingName("ResultsUnionMaxArity");
 
         context.RegisterSourceOutput(
-            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption),
+            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(maxResultsUnionArity),
             EmitMappingsAndRunAnalysis);
     }
 
@@ -158,12 +164,27 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             deleteProvider, patchProvider, baseProvider);
     }
 
+    private static string GetEndpointBindingTrackingName(string attributeName)
+    {
+        return attributeName switch
+        {
+            WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
+            WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
+            WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
+            WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
+            WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
+            WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
+            _ => "EndpointBindingFlow.Unknown"
+        };
+    }
+
     private static void EmitMappingsAndRunAnalysis(
         SourceProductionContext spc,
-        ((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts), bool GenerateJsonContext) data)
+        (((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts),
+            bool GenerateJsonContext),
+            int MaxResultsUnionArity) data)
     {
-        var ((endpoints, jsonContexts), generateJsonContext) = data;
-        const int maxResultsUnionArity = 6;
+        var (((endpoints, jsonContexts), generateJsonContext), maxResultsUnionArity) = data;
 
         var endpointArray = endpoints.IsDefaultOrEmpty
             ? ImmutableArray<EndpointDescriptor>.Empty
@@ -197,22 +218,25 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 attributeName,
                 static (node, _) => node is MethodDeclarationSyntax,
                 static (ctx, _) => ctx)
-            .SelectMany(static (ctx, ct) =>
+            .SelectFlow(static (ctx, ct) =>
             {
                 // Lazy creation avoids caching ITypeSymbol (breaks incremental)
                 var errorOrContext = new ErrorOrContext(ctx.SemanticModel.Compilation);
-                return AnalyzeEndpointFlows(ctx, errorOrContext, ct);
+                return AnalyzeEndpointFlow(ctx, errorOrContext, ct);
             })
-            .ReportAndContinue(context);
+            .WithTrackingName(GetEndpointBindingTrackingName(attributeName))
+            .ReportAndContinue(context)
+            .SelectMany(static (endpoints, _) => endpoints.AsImmutableArray());
     }
 
-    private static ImmutableArray<DiagnosticFlow<EndpointDescriptor>> AnalyzeEndpointFlows(
+    private static DiagnosticFlow<EquatableArray<EndpointDescriptor>> AnalyzeEndpointFlow(
         GeneratorAttributeSyntaxContext ctx,
         ErrorOrContext errorOrContext,
         CancellationToken ct)
     {
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
-            return ImmutableArray<DiagnosticFlow<EndpointDescriptor>>.Empty;
+            return DiagnosticFlow.Ok(
+                new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
 
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
@@ -271,7 +295,12 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             flows.Add(flow);
         }
 
-        return flows.ToImmutable();
+        if (flows.Count is 0)
+            return DiagnosticFlow.Ok(
+                new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
+
+        return DiagnosticFlow.Collect(flows.ToImmutable())
+            .Select(static endpoints => new EquatableArray<EndpointDescriptor>(endpoints));
     }
 
     private static DiagnosticFlow<EndpointDescriptor> ProcessAttributeFlow(
@@ -282,8 +311,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        var attrClass = attr.AttributeClass;
-        if (attrClass is null) return DiagnosticFlow.Fail<EndpointDescriptor>();
+        if (attr.AttributeClass is not { } attrClass) return DiagnosticFlow.Fail<EndpointDescriptor>();
         var attrName = attrClass.Name;
 
         var (httpMethod, pattern) = ExtractHttpMethodAndPattern(attr, attrName);
@@ -301,23 +329,22 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .Select(static r => r.Name)
             .ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Bind parameters
-        var bindingDiagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        var bindingResult = BindParameters(analysis.Method, routeParamNames, bindingDiagnostics, errorOrContext,
+        var bindingFlow = RouteBindingHelper.BindRouteParameters(
+            analysis.Method,
+            routeParamNames,
+            errorOrContext,
             httpMethod);
-        if (!bindingResult.IsValid)
-            return DiagnosticFlow.Fail<EndpointDescriptor>(bindingDiagnostics.ToImmutable().AsEquatableArray());
+        if (!bindingFlow.IsSuccess)
+            return DiagnosticFlow.Fail<EndpointDescriptor>(bindingFlow.Diagnostics);
 
-        builder.AddRange(bindingDiagnostics);
+        builder.AddRange(bindingFlow.Diagnostics.AsImmutableArray());
+        var bindingAnalysis = bindingFlow.ValueOrDefault();
 
         // Validate route pattern
         builder.AddRange(RouteValidator.ValidatePattern(pattern, analysis.Method));
 
         // Extract method parameter info for route binding validation
-        var methodParams = bindingResult.Parameters
-            .Where(static p => p.Source == EndpointParameterSource.Route)
-            .Select(static p => new RouteMethodParameterInfo(p.Name, p.KeyName ?? p.Name, p.TypeFqn, p.IsNullable))
-            .ToImmutableArray();
+        var methodParams = bindingAnalysis.RouteParameters.AsImmutableArray();
 
         // Validate route parameters are bound
         builder.AddRange(RouteValidator.ValidateParameterBindings(
@@ -335,7 +362,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.ReturnInfo.IsAsync,
             analysis.Method.ContainingType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "Unknown",
             analysis.Method.Name,
-            new EquatableArray<EndpointParameter>(bindingResult.Parameters),
+            bindingAnalysis.Parameters,
             analysis.InferredErrorTypeNames,
             analysis.InferredCustomErrors,
             analysis.ProducesErrors,
@@ -356,20 +383,16 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         AttributeData attr,
         string attrName)
     {
-        var httpMethod = attrName switch
-        {
-            "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
-            "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
-            "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
-            "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
-            "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
-            "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when
-                attr.ConstructorArguments is [{ Value: string m }, ..]
-                => m.ToUpperInvariant(),
-            _ => null
-        };
-
-        if (httpMethod is null)
+        if (attrName switch
+            {
+                "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
+                "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
+                "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
+                "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
+                "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
+                "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when attr.ConstructorArguments is [{ Value: string m }, ..] => m.ToUpperInvariant(),
+                _ => null
+            } is not { } httpMethod)
             return (null, "/");
 
         // Extract pattern

@@ -13,6 +13,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> Else<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, TValue> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.Else(onError);
@@ -44,6 +46,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ElseAsync<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, Task<TValue>> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.ElseAsync(onError).ConfigureAwait(false);
@@ -76,6 +80,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> Else<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, Error> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.Else(onError);
@@ -92,6 +98,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> Else<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, IReadOnlyList<Error>> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.Else(onError);
@@ -122,6 +130,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ElseAsync<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, Task<Error>> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.ElseAsync(onError).ConfigureAwait(false);
@@ -138,6 +148,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ElseAsync<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, Task<IReadOnlyList<Error>>> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.ElseAsync(onError).ConfigureAwait(false);
@@ -168,6 +180,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ElseDo<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Action<IReadOnlyList<Error>> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.ElseDo(onError);
@@ -183,6 +197,8 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ElseDoAsync<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<IReadOnlyList<Error>, Task> onError)
     {
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.ElseDoAsync(onError).ConfigureAwait(false);

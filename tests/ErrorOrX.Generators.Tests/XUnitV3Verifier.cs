@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
-using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 

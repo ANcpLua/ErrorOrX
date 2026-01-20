@@ -1,0 +1,101 @@
+name: AOT Publish Smoke
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  aot-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Resolve package versions
+        id: versions
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          def read_text(path, tag):
+              root = ET.parse(path).getroot()
+              node = root.find(f".//{tag}")
+              return (node.text or "").strip()
+
+          version_prefix = read_text("version.props", "VersionPrefix")
+          version_suffix = read_text("version.props", "VersionSuffix")
+          version = version_prefix if not version_suffix else f"{version_prefix}-{version_suffix}"
+
+          root = ET.parse("Directory.Packages.props").getroot()
+          openapi_version = None
+          for node in root.findall(".//PackageVersion"):
+              if node.get("Include") == "Microsoft.AspNetCore.OpenApi":
+                  openapi_version = node.get("Version")
+                  break
+          if not openapi_version:
+              raise SystemExit("Microsoft.AspNetCore.OpenApi version not found.")
+
+          output_path = os.environ["GITHUB_OUTPUT"]
+          with open(output_path, "a", encoding="utf-8") as output:
+              output.write(f"version={version}\n")
+              output.write(f"openapi_version={openapi_version}\n")
+          PY
+
+      - name: Pack local packages
+        run: |
+          dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }}
+          dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }}
+
+      - name: Create AOT sample (package-based)
+        run: |
+          project_dir="$RUNNER_TEMP/errororx-aot-sample"
+          mkdir -p "$project_dir"
+          cp -R samples/ErrorOrX.Sample/. "$project_dir/"
+
+          cat > "$project_dir/nuget.config" <<EOF
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local-artifacts" value="${GITHUB_WORKSPACE}/artifacts" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+
+          cat > "$project_dir/ErrorOrX.Sample.csproj" <<EOF
+          <Project Sdk="Microsoft.NET.Sdk.Web">
+            <PropertyGroup>
+              <TargetFramework>net10.0</TargetFramework>
+              <RootNamespace>ErrorOrX.Sample</RootNamespace>
+              <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+              <CompilerGeneratedFilesOutputPath>\$(BaseIntermediateOutputPath)\\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+              <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
+            </PropertyGroup>
+
+            <ItemGroup>
+              <Using Include="ErrorOr" />
+              <Using Include="ErrorOrX.Sample" />
+              <Using Include="ErrorOrX.Sample.Domain" />
+            </ItemGroup>
+
+            <ItemGroup>
+              <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="${{ steps.versions.outputs.openapi_version }}" />
+              <PackageReference Include="ErrorOrX" Version="${{ steps.versions.outputs.version }}" />
+              <PackageReference Include="ErrorOrX.Generators" Version="${{ steps.versions.outputs.version }}" PrivateAssets="all" />
+            </ItemGroup>
+          </Project>
+          EOF
+
+      - name: Publish AOT
+        run: dotnet publish -c Release -r linux-x64 -p:PublishAot=true --self-contained --configfile nuget.config
+        working-directory: ${{ runner.temp }}/errororx-aot-sample

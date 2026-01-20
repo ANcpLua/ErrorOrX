@@ -133,10 +133,7 @@ internal static class WellKnownTypes
         /// <summary>
         ///     Returns true if the HTTP method typically has no request body.
         /// </summary>
-        public static bool IsBodyless(string method)
-        {
-            return method.ToUpperInvariant() is Get or Head or Options or Delete;
-        }
+        public static bool IsBodyless(string method) => method.ToUpperInvariant() is Get or Head or Options or Delete;
     }
 
     /// <summary>
@@ -251,8 +248,8 @@ internal static class WellKnownTypes
             public const string InternalServerError = $"{T}.InternalServerError";
             public const string ValidationProblem = $"{T}.ValidationProblem";
             public const string Problem = $"{T}.Problem";
+            public const string StatusCode = $"{T}.StatusCode";
             public const string ServerSentEvents = $"{T}.ServerSentEvents";
-            public const string UnsupportedMediaType = $"{T}.UnsupportedMediaType";
         }
 
         /// <summary>
@@ -277,7 +274,6 @@ internal static class WellKnownTypes
             public const string ValidationProblem = $"{H}.ValidationProblem";
             public const string ProblemHttpResult = $"{H}.ProblemHttpResult";
             public const string StatusCodeHttpResult = $"{H}.StatusCodeHttpResult";
-            public const string UnsupportedMediaType = $"{H}.UnsupportedMediaTypeHttpResult";
 
             /// <summary>
             ///     Results union type for typed endpoint returns.

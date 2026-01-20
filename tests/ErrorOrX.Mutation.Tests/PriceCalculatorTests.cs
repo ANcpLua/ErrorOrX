@@ -1,4 +1,3 @@
-using Xunit;
 using ErrorOrX.Sample;
 
 namespace ErrorOrX.Mutation.Tests;
@@ -8,8 +7,8 @@ public class PriceCalculatorTests
     [Fact]
     public void ApplyDiscountCorrectly()
     {
-        decimal price = 100;
-        decimal discountPercent = 10;
+        const decimal price = 100;
+        const decimal discountPercent = 10;
 
         var calculator = new PriceCalculator();
 

@@ -6,9 +6,15 @@ public class ErrorNullMetadataTests
     public void Equals_WhenMetadataContainsNullValue_ShouldNotThrow()
     {
         // Arrange
-        var metadata = new Dictionary<string, object?> { ["Key"] = null };
+        var metadata = new Dictionary<string, object?>
+        {
+            ["Key"] = null
+        };
         var error1 = Error.Validation("Code", "Description", metadata!);
-        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?> { ["Key"] = null }!);
+        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        {
+            ["Key"] = null
+        }!);
 
         // Act
         // This is expected to throw NullReferenceException in the current implementation
@@ -25,8 +31,14 @@ public class ErrorNullMetadataTests
     public void Equals_WhenOneMetadataValueIsNullAndOtherIsNot_ShouldReturnFalse()
     {
         // Arrange
-        var error1 = Error.Validation("Code", "Description", new Dictionary<string, object?> { ["Key"] = null }!);
-        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?> { ["Key"] = "Value" }!);
+        var error1 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        {
+            ["Key"] = null
+        }!);
+        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        {
+            ["Key"] = "Value"
+        }!);
 
         // Act
         var result = error1.Equals(error2);

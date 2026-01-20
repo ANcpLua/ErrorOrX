@@ -9,7 +9,7 @@ public static class ErrorOrOrExtensions
     ///     Generates an error code from the type name and suffix.
     ///     Centralizes error code generation for easy strategy changes.
     /// </summary>
-    private static string Code<T>(string suffix) => $"{typeof(T).Name}.{suffix}";
+    private static string Code<T>(string suffix) => $"{Cache<T>.Name}.{suffix}";
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a NotFound error.
@@ -20,7 +20,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : class =>
         value is not null
             ? value
-            : Error.NotFound(Code<TValue>("NotFound"), description ?? $"{typeof(TValue).Name} not found");
+            : Error.NotFound(Code<TValue>("NotFound"), description ?? $"{Cache<TValue>.Name} not found");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a NotFound error.
@@ -30,7 +30,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : struct =>
         value.HasValue
             ? value.Value
-            : Error.NotFound(Code<TValue>("NotFound"), description ?? $"{typeof(TValue).Name} not found");
+            : Error.NotFound(Code<TValue>("NotFound"), description ?? $"{Cache<TValue>.Name} not found");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a Validation error.
@@ -40,7 +40,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : class =>
         value is not null
             ? value
-            : Error.Validation(Code<TValue>("Invalid"), description ?? $"{typeof(TValue).Name} is invalid");
+            : Error.Validation(Code<TValue>("Invalid"), description ?? $"{Cache<TValue>.Name} is invalid");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a Validation error.
@@ -50,7 +50,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : struct =>
         value.HasValue
             ? value.Value
-            : Error.Validation(Code<TValue>("Invalid"), description ?? $"{typeof(TValue).Name} is invalid");
+            : Error.Validation(Code<TValue>("Invalid"), description ?? $"{Cache<TValue>.Name} is invalid");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns an Unauthorized error.
@@ -100,7 +100,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : class =>
         value is not null
             ? value
-            : Error.Conflict(Code<TValue>("Conflict"), description ?? $"{typeof(TValue).Name} conflict");
+            : Error.Conflict(Code<TValue>("Conflict"), description ?? $"{Cache<TValue>.Name} conflict");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a Conflict error.
@@ -110,7 +110,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : struct =>
         value.HasValue
             ? value.Value
-            : Error.Conflict(Code<TValue>("Conflict"), description ?? $"{typeof(TValue).Name} conflict");
+            : Error.Conflict(Code<TValue>("Conflict"), description ?? $"{Cache<TValue>.Name} conflict");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a Failure error.
@@ -120,7 +120,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : class =>
         value is not null
             ? value
-            : Error.Failure(Code<TValue>("Failure"), description ?? $"{typeof(TValue).Name} operation failed");
+            : Error.Failure(Code<TValue>("Failure"), description ?? $"{Cache<TValue>.Name} operation failed");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns a Failure error.
@@ -130,7 +130,7 @@ public static class ErrorOrOrExtensions
         string? description = null) where TValue : struct =>
         value.HasValue
             ? value.Value
-            : Error.Failure(Code<TValue>("Failure"), description ?? $"{typeof(TValue).Name} operation failed");
+            : Error.Failure(Code<TValue>("Failure"), description ?? $"{Cache<TValue>.Name} operation failed");
 
     /// <summary>
     ///     Returns the value if not null; otherwise returns an Unexpected error.
@@ -174,8 +174,11 @@ public static class ErrorOrOrExtensions
     /// </summary>
     public static ErrorOr<TValue> OrError<TValue>(
         this TValue? value,
-        Func<Error> errorFactory) where TValue : class =>
-        value is not null ? value : errorFactory();
+        Func<Error> errorFactory) where TValue : class
+    {
+        Throw.IfNull(errorFactory);
+        return value is not null ? value : errorFactory();
+    }
 
     /// <summary>
     ///     Returns the value if not null; otherwise invokes the error factory.
@@ -183,6 +186,14 @@ public static class ErrorOrOrExtensions
     /// </summary>
     public static ErrorOr<TValue> OrError<TValue>(
         this TValue? value,
-        Func<Error> errorFactory) where TValue : struct =>
-        value.HasValue ? value.Value : errorFactory();
+        Func<Error> errorFactory) where TValue : struct
+    {
+        Throw.IfNull(errorFactory);
+        return value.HasValue ? value.Value : errorFactory();
+    }
+
+    private static class Cache<T>
+    {
+        public static readonly string Name = typeof(T).Name;
+    }
 }

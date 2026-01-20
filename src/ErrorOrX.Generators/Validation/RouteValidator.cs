@@ -17,8 +17,13 @@ namespace ErrorOr.Generators;
 internal static class RouteValidator
 {
     // Matches {paramName} or {paramName:constraint} or {paramName:constraint(arg)} or {*catchAll} or {paramName?}
+    // Support multiple constraints like {id:int:min(1)}
     private static readonly Regex SRouteParameterRegexInstance = new(
-        @"\{(?<star>\*)?(?<n>[a-zA-Z_][a-zA-Z0-9_]*)(?::(?<constraint>[a-zA-Z]+)(?:\([^)]*\))?)?(?<optional>\?)?\}",
+        @"(?<!\{)\{(?<star>\*)?(?<n>[a-zA-Z_][a-zA-Z0-9_]*)(?<constraints>(?::[a-zA-Z]+(?:\([^)]*\))?)*)(?<optional>\?)?\}(?!\})",
+        RegexOptions.Compiled);
+
+    private static readonly Regex SIndividualConstraintRegex = new(
+        @":(?<name>[a-zA-Z]+)(?:\((?<args>[^)]*)\))?",
         RegexOptions.Compiled);
 
     /// <summary>
@@ -82,7 +87,10 @@ internal static class RouteValidator
     ///     when the parameter is any type that supports ToString().
     /// </summary>
     internal static readonly FrozenSet<string> FormatOnlyConstraints =
-        new[] { "min", "max", "range", "minlength", "maxlength", "length", "regex", "required", "nonfile" }
+        new[]
+            {
+                "min", "max", "range", "minlength", "maxlength", "length", "regex", "required", "nonfile"
+            }
             .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -93,7 +101,10 @@ internal static class RouteValidator
         if (string.IsNullOrWhiteSpace(pattern))
             return ImmutableArray<RouteParameterInfo>.Empty;
 
-        var matches = SRouteParameterRegexInstance.Matches(pattern);
+        // Strip escaped braces first to avoid false positives
+        var cleanPattern = pattern.Replace("{{", "").Replace("}}", "");
+
+        var matches = SRouteParameterRegexInstance.Matches(cleanPattern);
         if (matches.Count is 0)
             return ImmutableArray<RouteParameterInfo>.Empty;
 
@@ -102,11 +113,25 @@ internal static class RouteValidator
         foreach (Match match in matches)
         {
             var name = match.Groups["n"].Value;
-            var constraint = match.Groups["constraint"].Success ? match.Groups["constraint"].Value : null;
+            var constraintsRaw = match.Groups["constraints"].Value;
             var isOptional = match.Groups["optional"].Success;
             var isCatchAll = match.Groups["star"].Success;
 
-            builder.Add(new RouteParameterInfo(name, constraint, isOptional, isCatchAll));
+            // Parse individual constraints if present
+            var constraintList = new List<string>();
+            if (!string.IsNullOrEmpty(constraintsRaw))
+            {
+                var cMatches = SIndividualConstraintRegex.Matches(constraintsRaw);
+                foreach (Match cMatch in cMatches)
+                    constraintList.Add(cMatch.Groups["name"].Value);
+            }
+
+            // We use the first type-constraining constraint for validation purposes
+            // In Minimal APIs, constraints are additive, but usually only one defines the primitive type
+            var primaryConstraint = constraintList.FirstOrDefault(static c => ConstraintToTypes.ContainsKey(c))
+                                    ?? constraintList.FirstOrDefault();
+
+            builder.Add(new RouteParameterInfo(name, primaryConstraint, isOptional, isCatchAll));
         }
 
         return builder.ToImmutable();
@@ -134,16 +159,18 @@ internal static class RouteValidator
         }
 
         // Check for empty parameter names: {}
-        if (pattern.Contains("{}"))
+        // But ignore escaped braces {{}}
+        var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
+        if (escapedStripped.Contains("{}"))
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
                 location,
                 pattern,
                 "Route contains empty parameter '{}'. Parameter names are required."));
 
-        // Check for unclosed braces
-        var openCount = pattern.Count(static c => c == '{');
-        var closeCount = pattern.Count(static c => c == '}');
+        // Check for unclosed braces, ignoring escaped ones
+        var openCount = escapedStripped.Count(static c => c == '{');
+        var closeCount = escapedStripped.Count(static c => c == '}');
         if (openCount != closeCount)
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
@@ -207,7 +234,7 @@ internal static class RouteValidator
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // Build lookup of method parameters by their bound route name
-        var methodParamsByRouteName = BuildMethodParamsByRouteName(methodParams);
+        var methodParamsByRouteName = BuildRouteParameterLookup(methodParams, requireTypeFqn: true);
 
         foreach (var rp in routeParams)
             ValidateRouteConstraint(rp, methodParamsByRouteName, location, diagnostics);
@@ -215,16 +242,28 @@ internal static class RouteValidator
         return diagnostics.ToImmutable();
     }
 
-    private static Dictionary<string, RouteMethodParameterInfo> BuildMethodParamsByRouteName(
-        ImmutableArray<RouteMethodParameterInfo> methodParams)
+    /// <summary>
+    ///     Builds a lookup dictionary of method parameters keyed by their bound route name.
+    /// </summary>
+    /// <param name="methodParams">The method parameters to index.</param>
+    /// <param name="requireTypeFqn">If true, only include parameters with non-null TypeFqn.</param>
+    /// <returns>Dictionary keyed by route name (case-insensitive).</returns>
+    internal static Dictionary<string, RouteMethodParameterInfo> BuildRouteParameterLookup(
+        ImmutableArray<RouteMethodParameterInfo> methodParams,
+        bool requireTypeFqn = false)
     {
-        var methodParamsByRouteName =
-            new Dictionary<string, RouteMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
-        foreach (var mp in methodParams)
-            if (mp.BoundRouteName is not null && mp.TypeFqn is not null)
-                methodParamsByRouteName[mp.BoundRouteName] = mp;
+        var lookup = new Dictionary<string, RouteMethodParameterInfo>(StringComparer.OrdinalIgnoreCase);
 
-        return methodParamsByRouteName;
+        foreach (var param in methodParams)
+        {
+            if (requireTypeFqn && param.TypeFqn is null)
+                continue;
+
+            var routeName = param.BoundRouteName ?? param.Name;
+            lookup[routeName] = param;
+        }
+
+        return lookup;
     }
 
     private static void ValidateRouteConstraint(
@@ -251,7 +290,7 @@ internal static class RouteValidator
         if (!ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
             return; // Unknown constraint - skip validation (could be custom)
 
-        var actualTypeFqn = UnwrapNullableType(typeFqn, routeParam.IsOptional || methodParam.IsNullable);
+        var actualTypeFqn = TypeNameHelper.UnwrapNullable(typeFqn, routeParam.IsOptional || methodParam.IsNullable);
         if (MatchesExpectedType(actualTypeFqn, expectedTypes))
             return;
 
@@ -335,27 +374,6 @@ internal static class RouteValidator
     }
 
     /// <summary>
-    ///     Unwraps Nullable&lt;T&gt; to get the underlying type.
-    /// </summary>
-    private static string UnwrapNullableType(string typeFqn, bool shouldUnwrap)
-    {
-        if (!shouldUnwrap)
-            return typeFqn;
-
-        // Handle nullable reference type annotation (string?)
-        if (typeFqn.EndsWith("?", StringComparison.Ordinal))
-            return typeFqn[..^1];
-
-        // Handle Nullable<T> for value types
-        var normalized = TypeNameHelper.Normalize(typeFqn);
-        if (normalized.StartsWith("System.Nullable<", StringComparison.Ordinal) &&
-            normalized.EndsWith(">", StringComparison.Ordinal))
-            return normalized["System.Nullable<".Length..^1];
-
-        return typeFqn;
-    }
-
-    /// <summary>
     ///     Detects duplicate routes across all registered endpoints.
     /// </summary>
     public static ImmutableArray<Diagnostic> DetectDuplicateRoutes(ImmutableArray<EndpointDescriptor> endpoints)
@@ -368,10 +386,9 @@ internal static class RouteValidator
 
         foreach (var ep in endpoints)
         {
-            var normalizedPattern = NormalizeRoutePattern(ep.Pattern);
-            var key = $"{ep.HttpMethod.ToUpperInvariant()} {normalizedPattern}";
+            var normalizedKey = CanonicalizeRoute(ep.HttpMethod, ep.Pattern);
 
-            if (routeMap.TryGetValue(key, out var existing))
+            if (routeMap.TryGetValue(normalizedKey, out var existing))
                 diagnostics.Add(Diagnostic.Create(
                     Descriptors.DuplicateRoute,
                     Location.None,
@@ -380,26 +397,69 @@ internal static class RouteValidator
                     TypeNameHelper.ExtractShortName(existing.HandlerContainingTypeFqn),
                     existing.HandlerMethodName));
             else
-                routeMap[key] = ep;
+                routeMap[normalizedKey] = ep;
         }
 
         return diagnostics.ToImmutable();
     }
 
     /// <summary>
-    ///     Normalizes route patterns for duplicate detection.
-    ///     Replaces parameter names with placeholders since {id} and {userId} are structurally equivalent.
+    ///     Canonicalizes a route for duplicate detection.
+    ///     Matches ASP.NET Core logic: method + segment structure + constraint types + catch-all.
     /// </summary>
-    private static string NormalizeRoutePattern(string pattern)
+    private static string CanonicalizeRoute(string httpMethod, string pattern)
     {
-        var normalized = Regex.Replace(pattern, @"\{[^}]+\}", "{_}");
+        // 1. Normalize Method
+        var method = httpMethod.ToUpperInvariant();
 
-        if (!normalized.StartsWith("/"))
-            normalized = "/" + normalized;
+        // 2. Normalize Pattern
+        var p = pattern.Trim();
+        if (!p.StartsWith("/")) p = "/" + p;
+        if (p.Length > 1 && p.EndsWith("/")) p = p[..^1];
 
-        if (normalized.Length > 1 && normalized.EndsWith("/"))
-            normalized = normalized[..^1];
+        // 3. Process segments
+        var segments = p.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>(segments.Length + 1)
+        {
+            method
+        };
 
-        return normalized;
+        foreach (var segment in segments)
+        {
+            // Ignore escaped braces for segment matching
+            var cleanSegment = segment.Replace("{{", "").Replace("}}", "");
+
+            var match = SRouteParameterRegexInstance.Match(cleanSegment);
+            if (match.Success)
+            {
+                var isCatchAll = match.Groups["star"].Success;
+                var constraintsRaw = match.Groups["constraints"].Value;
+
+                // Canonicalize constraints
+                var cList = new List<string>();
+                if (!string.IsNullOrEmpty(constraintsRaw))
+                {
+                    var cMatches = SIndividualConstraintRegex.Matches(constraintsRaw);
+                    foreach (Match cm in cMatches)
+                    {
+                        var cName = cm.Groups["name"].Value.ToLowerInvariant();
+                        // Only type-impacting constraints matter for uniqueness in simple routing
+                        if (ConstraintToTypes.ContainsKey(cName))
+                            cList.Add(cName);
+                    }
+                }
+
+                cList.Sort(StringComparer.Ordinal);
+
+                var marker = isCatchAll ? "{**}" : "{?}";
+                var constraints = cList.Count > 0 ? ":" + string.Join(":", cList) : "";
+                result.Add(marker + constraints);
+            }
+            else
+                // Literal segment
+                result.Add(segment.ToLowerInvariant());
+        }
+
+        return string.Join("/", result);
     }
 }

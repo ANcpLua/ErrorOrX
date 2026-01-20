@@ -2,6 +2,39 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Consolidated type unwrapping logic**: Moved duplicate `UnwrapNullableType` implementations from `RouteValidator` and
+  `ErrorOrEndpointAnalyzer` into `TypeNameHelper.UnwrapNullable`. Reduces code duplication and ensures consistent
+  nullable type handling across the generator.
+
+- **Consolidated route parameter lookup**: Unified `BuildMethodParamsByRouteName` and `BuildRouteMethodParameterLookup`
+  into `RouteValidator.BuildRouteParameterLookup` with optional `requireTypeFqn` parameter. Eliminates duplicate
+  dictionary-building logic between generator and analyzer.
+
+- **Decomposed EmitInvoker method**: Refactored 95-line `EmitInvoker` into focused single-responsibility methods:
+  `ComputeInvokerContext`, `EmitBodyCode`, `EmitErrorHandling`, `EmitWrapperMethod`, `EmitCoreMethod`. Introduced
+  `InvokerContext` record struct with clear flag separation (`HasFormBinding`, `HasBodyBinding`, `NeedsAwait`).
+  Generated code is byte-identical to previous version.
+
+- **Removed Match API dependency from generated code**: The fallback error handling path now uses the minimal
+  `ErrorOr<T>` interface (`IsError`/`Errors`/`Value`) instead of the convenience `Match` API. This reduces the
+  runtime coupling between generated endpoints and the ErrorOr library, making the generated code more portable
+  and easier to understand. Removed the unused `GetMatchFactoryWithLocation` helper and `MatchFactory` property
+  from `SuccessResponseInfo`.
+
+### Fixed
+
+- **Test analyzer cleanups**: Sealed test helper records, added a shared `Unreachable` helper, and adjusted interface
+  tests to satisfy CA1820, CA1812, CA1826, and CA2201.
+
+### Documentation
+
+- **Enterprise guidance**: Documented upstreaming `Throw.UnreachableException` changes to ANcpLua.NET.Sdk and bumping
+  `global.json` `msbuild-sdks` to the new SDK version (plus `Directory.Packages.props` if a package reference is added).
+
 ## [2.6.3] - 2026-01-18
 
 ### Removed

@@ -19,6 +19,9 @@ public static partial class ErrorOrExtensions
     public static async Task<TNextValue> Match<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, TNextValue> onValue, Func<IReadOnlyList<Error>, TNextValue> onError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.Match(onValue, onError);
@@ -43,6 +46,9 @@ public static partial class ErrorOrExtensions
     public static async Task<TNextValue> MatchAsync<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, Task<TNextValue>> onValue, Func<IReadOnlyList<Error>, Task<TNextValue>> onError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.MatchAsync(onValue, onError).ConfigureAwait(false);
@@ -66,6 +72,9 @@ public static partial class ErrorOrExtensions
     public static async Task<TNextValue> MatchFirst<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, TNextValue> onValue, Func<Error, TNextValue> onFirstError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onFirstError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return result.MatchFirst(onValue, onFirstError);
@@ -90,6 +99,9 @@ public static partial class ErrorOrExtensions
     public static async Task<TNextValue> MatchFirstAsync<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, Task<TNextValue>> onValue, Func<Error, Task<TNextValue>> onFirstError)
     {
+        _ = Throw.IfNull(onValue);
+        _ = Throw.IfNull(onFirstError);
+
         var result = await errorOr.ConfigureAwait(false);
 
         return await result.MatchFirstAsync(onValue, onFirstError).ConfigureAwait(false);

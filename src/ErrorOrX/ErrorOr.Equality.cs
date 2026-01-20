@@ -16,7 +16,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         if (!IsError)
         {
-            return _value.GetHashCode();
+            return _value?.GetHashCode() ?? 0;
         }
 
         var hashCode = new HashCode();

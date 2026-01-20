@@ -232,7 +232,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// <summary>
     ///     Infers the parameter source based on HTTP method and type analysis.
     ///     POST/PUT/PATCH with complex types → Body
-    ///     GET/DELETE with complex types → Error EOE025
+    ///     Other methods with complex types → Service + EOE025 warning (explicit binding recommended)
     ///     Service types (interfaces, abstract, DI patterns) → Service
     ///     Fallback → Service
     /// </summary>
@@ -245,8 +245,10 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var type = meta.Symbol.Type;
 
+        var isLikelyService = IsLikelyServiceType(type);
+
         // Service types: interfaces, abstract classes, and DI naming patterns
-        if (IsLikelyServiceType(type))
+        if (isLikelyService)
             return ParameterSuccess(in meta, EndpointParameterSource.Service);
 
         // Check if type is complex (DTO)
@@ -256,14 +258,16 @@ public sealed partial class ErrorOrEndpointGenerator
             if (httpMethod is "POST" or "PUT" or "PATCH")
                 return ParameterSuccess(in meta, EndpointParameterSource.Body);
 
-            // GET, DELETE with complex type → Error EOE025
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.AmbiguousParameterBinding,
-                method.Locations.FirstOrDefault() ?? Location.None,
-                meta.Name,
-                meta.TypeFqn,
-                httpMethod));
-            return ParameterClassificationResult.Error;
+            // Bodyless/custom methods: do not infer body; prefer DI but warn for DTO-like types.
+            if (!isLikelyService)
+                diagnostics.Add(DiagnosticInfo.Create(
+                    Descriptors.AmbiguousParameterBinding,
+                    method.Locations.FirstOrDefault() ?? Location.None,
+                    meta.Name,
+                    meta.TypeFqn,
+                    httpMethod));
+
+            return ParameterSuccess(in meta, EndpointParameterSource.Service);
         }
 
         // Fallback: treat as service injection (BCL handles resolution at runtime)
@@ -391,7 +395,7 @@ public sealed partial class ErrorOrEndpointGenerator
             IMethodSymbol _,
             ImmutableArray<DiagnosticInfo>.Builder __,
             ErrorOrContext context)
-    // ReSharper restore UnusedParameter.Local
+        // ReSharper restore UnusedParameter.Local
     {
         if (meta.IsFormFile)
             return ParameterSuccess(in meta, EndpointParameterSource.FormFile, formName: meta.FormName);
@@ -533,9 +537,8 @@ public sealed partial class ErrorOrEndpointGenerator
         string? queryName = null,
         string? keyedServiceKey = null,
         string? formName = null,
-        CustomBindingMethod customBinding = CustomBindingMethod.None)
-    {
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        CustomBindingMethod customBinding = CustomBindingMethod.None) =>
+        new(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             source,
@@ -547,7 +550,6 @@ public sealed partial class ErrorOrEndpointGenerator
             default,
             customBinding,
             meta.RequiresValidation));
-    }
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
     {
@@ -636,9 +638,7 @@ public sealed partial class ErrorOrEndpointGenerator
             }
             else if (constructed.MetadataName == "IBindableFromHttpContext`1" &&
                      constructed.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http")
-            {
                 return true;
-            }
         }
 
         return false;
@@ -658,13 +658,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member, ErrorOrContext context)
     {
-        if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method)
-            return CustomBindingMethod.None;
-
-        if (!IsTaskLike(method.ReturnType, context))
-            return CustomBindingMethod.None;
-
-        if (method.Parameters.Length < 1 || !context.IsHttpContext(method.Parameters[0].Type))
+        if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method || !IsTaskLike(method.ReturnType, context) || method.Parameters.Length < 1 || !context.IsHttpContext(method.Parameters[0].Type))
             return CustomBindingMethod.None;
 
         if (method.Parameters.Length >= 2 && context.IsParameterInfo(method.Parameters[1].Type))
@@ -678,9 +672,9 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type is not INamedTypeSymbol named) return false;
         var constructed = named.ConstructedFrom;
 
-        return (context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT)) ||
-               (context.ValueTaskOfT is not null &&
-                SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT));
+        return context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT) ||
+               context.ValueTaskOfT is not null &&
+               SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT);
     }
 
     private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -697,16 +691,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static CustomBindingMethod ClassifyTryParseMember(ISymbol member, ErrorOrContext context)
     {
-        if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method)
-            return CustomBindingMethod.None;
-
-        if (method.Parameters.Length < 2)
-            return CustomBindingMethod.None;
-
-        if (!IsStringOrCharSpan(method.Parameters[0].Type, context))
-            return CustomBindingMethod.None;
-
-        if (method.Parameters[^1].RefKind != RefKind.Out)
+        if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method || method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) || method.Parameters[^1].RefKind != RefKind.Out)
             return CustomBindingMethod.None;
 
         if (method.Parameters.Length >= 3)
@@ -747,9 +732,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         ITypeSymbol? itemType = null;
         if (type is IArrayTypeSymbol arrayType)
-        {
             itemType = arrayType.ElementType;
-        }
         else if (type is INamedTypeSymbol { IsGenericType: true } named)
         {
             var origin = named.ConstructedFrom;
@@ -762,18 +745,16 @@ public sealed partial class ErrorOrEndpointGenerator
             : (false, null, null);
     }
 
-    private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context)
-    {
-        return (context.ListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.ListOfT)) ||
-               (context.IListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.IListOfT)) ||
-               (context.IEnumerableOfT is not null &&
-                SymbolEqualityComparer.Default.Equals(origin, context.IEnumerableOfT)) ||
-               (context.IReadOnlyListOfT is not null &&
-                SymbolEqualityComparer.Default.Equals(origin, context.IReadOnlyListOfT)) ||
-               (context.ICollectionOfT is not null &&
-                SymbolEqualityComparer.Default.Equals(origin, context.ICollectionOfT)) ||
-               (context.HashSetOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.HashSetOfT));
-    }
+    private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context) =>
+        context.ListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.ListOfT) ||
+        context.IListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.IListOfT) ||
+        context.IEnumerableOfT is not null &&
+        SymbolEqualityComparer.Default.Equals(origin, context.IEnumerableOfT) ||
+        context.IReadOnlyListOfT is not null &&
+        SymbolEqualityComparer.Default.Equals(origin, context.IReadOnlyListOfT) ||
+        context.ICollectionOfT is not null &&
+        SymbolEqualityComparer.Default.Equals(origin, context.ICollectionOfT) ||
+        context.HashSetOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.HashSetOfT);
 
     private static (bool IsNullable, bool IsNonNullableValueType) GetParameterNullability(
         ITypeSymbol type,
@@ -856,14 +837,14 @@ public sealed partial class ErrorOrEndpointGenerator
 
         public bool IsMatch(ISymbol? attributeClass)
         {
-            var display = attributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            if (display is null) return false;
+            if (attributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is not { } display) return false;
 
             if (display.StartsWith("global::"))
                 display = display[8..];
 
+            // Strict match: Must match FQN or ShortName (if FQN not available/provided)
+            // We drop loose EndsWith matching to avoid collisions
             return display == _fullName ||
-                   display.EndsWith($".{_shortName}") ||
                    display == _shortName ||
                    display == _shortNameWithoutAttr;
         }

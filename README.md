@@ -190,6 +190,18 @@ app.MapErrorOrEndpoints();
 app.Run();
 ```
 
+Optional: if you do not define a `JsonSerializerContext`, the generator emits `ErrorOrJsonContext.g.cs` with all
+required types. If you do define one, it emits a helper file listing missing `[JsonSerializable]` types and warns
+when the CamelCase policy is missing (EOE040).
+
+Optional: disable generator JSON context emission (you must supply your own context for AOT):
+
+```xml
+<PropertyGroup>
+    <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
+</PropertyGroup>
+```
+
 #### Available Options
 
 ```csharp
@@ -198,6 +210,8 @@ services.AddErrorOrEndpoints(options => options
     .WithCamelCase()                              // Use camelCase naming (default: true)
     .WithIgnoreNulls());                          // Ignore null values (default: true)
 ```
+
+Note: `AddErrorOrEndpoints` is generated only when endpoints include JSON bodies or responses.
 
 ### How It Works
 

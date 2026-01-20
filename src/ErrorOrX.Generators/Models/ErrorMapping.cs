@@ -42,14 +42,6 @@ internal static class ErrorMapping
     private static readonly HashSet<string> ErrorTypeSet = new(AllErrorTypes, StringComparer.Ordinal);
 
     /// <summary>
-    ///     Returns true if the name is a known ErrorType member.
-    /// </summary>
-    public static bool IsKnownErrorType(string name)
-    {
-        return ErrorTypeSet.Contains(name);
-    }
-
-    /// <summary>
     ///     All ErrorType name → Entry mappings. This is the CANONICAL source.
     /// </summary>
     private static readonly Dictionary<string, Entry> Mappings = new(StringComparer.Ordinal)
@@ -95,41 +87,6 @@ internal static class ErrorMapping
         500);
 
     /// <summary>
-    ///     Gets the mapping entry for an ErrorType name.
-    /// </summary>
-    public static Entry Get(string errorTypeName)
-    {
-        return Mappings.TryGetValue(errorTypeName, out var entry) ? entry : DefaultEntry;
-    }
-
-    /// <summary>
-    ///     Gets the HTTP status code for an ErrorType name.
-    /// </summary>
-    public static int GetStatusCode(string errorTypeName)
-    {
-        return Get(errorTypeName).StatusCode;
-    }
-
-    /// <summary>
-    ///     Gets the TypedResults factory call for an ErrorType name.
-    /// </summary>
-    public static string GetFactory(string errorTypeName)
-    {
-        return Get(errorTypeName).Factory;
-    }
-
-    /// <summary>
-    ///     Generates the switch expression body for ErrorType → Status mapping.
-    ///     Derives from the canonical mappings.
-    /// </summary>
-    public static string GenerateStatusSwitch(string errorTypeFqn)
-    {
-        var cases = Mappings
-            .Select(kvp => $"{errorTypeFqn}.{kvp.Key} => {kvp.Value.StatusCode}");
-        return string.Join(", ", cases) + ", _ => first.NumericType is >= 100 and <= 599 ? first.NumericType : 500";
-    }
-
-    /// <summary>
     ///     Canonical mapping of HTTP status codes to TypedResults factories.
     ///     Used by GenerateStatusToFactoryCases().
     /// </summary>
@@ -145,24 +102,50 @@ internal static class ErrorMapping
     };
 
     /// <summary>
+    ///     Returns true if the name is a known ErrorType member.
+    /// </summary>
+    public static bool IsKnownErrorType(string name) => ErrorTypeSet.Contains(name);
+
+    /// <summary>
+    ///     Gets the mapping entry for an ErrorType name.
+    /// </summary>
+    public static Entry Get(string errorTypeName) => Mappings.TryGetValue(errorTypeName, out var entry) ? entry : DefaultEntry;
+
+    /// <summary>
+    ///     Gets the HTTP status code for an ErrorType name.
+    /// </summary>
+    public static int GetStatusCode(string errorTypeName) => Get(errorTypeName).StatusCode;
+
+    /// <summary>
+    ///     Gets the TypedResults factory call for an ErrorType name.
+    /// </summary>
+    public static string GetFactory(string errorTypeName) => Get(errorTypeName).Factory;
+
+    /// <summary>
+    ///     Generates the switch expression body for ErrorType → Status mapping.
+    ///     Derives from the canonical mappings.
+    /// </summary>
+    public static string GenerateStatusSwitch(string errorTypeFqn, string variableName = "first")
+    {
+        var cases = Mappings
+            .Select(kvp => $"{errorTypeFqn}.{kvp.Key} => {kvp.Value.StatusCode}");
+        return string.Join(", ", cases) + $", _ => {variableName}.NumericType is >= 100 and <= 599 ? {variableName}.NumericType : 500";
+    }
+
+    /// <summary>
     ///     Generates switch cases for status code → factory mapping.
     ///     For use in emitted support methods.
     /// </summary>
     public static IEnumerable<string> GenerateStatusToFactoryCases()
     {
         foreach (var kvp in StatusToFactory.OrderBy(static x => x.Key))
-            if (kvp.Key != 400) // Skip 400 - handled by validation
-                yield return $"{kvp.Key} => {kvp.Value.Factory}";
+            yield return $"{kvp.Key} => {kvp.Value.Factory}";
     }
 
     /// <summary>
     ///     Gets the default Problem() factory expression for unknown status codes.
     /// </summary>
-    public static string GetDefaultProblemFactory()
-    {
-        return
-            $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
-    }
+    public static string GetDefaultProblemFactory() => $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
 
     /// <summary>
     ///     Entry representing an ErrorType mapping.

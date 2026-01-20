@@ -178,6 +178,5 @@ src/ErrorOrX/
 ├── ErrorType.cs                # ErrorType enum
 ├── IErrorOr.cs                 # Non-generic interface
 ├── Results.cs                  # Result marker types (Deleted, Updated, etc.)
-├── TypedResults.cs             # ASP.NET TypedResults helpers
 └── EmptyErrors.cs              # Empty error collection singleton
 ```

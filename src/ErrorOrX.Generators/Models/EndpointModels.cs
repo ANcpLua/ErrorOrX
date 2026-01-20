@@ -192,8 +192,7 @@ internal readonly record struct SuccessResponseInfo(
     string ResultTypeFqn,
     int StatusCode,
     bool HasBody,
-    string Factory,
-    string MatchFactory);
+    string Factory);
 
 /// <summary>
 ///     Result of union type computation.
@@ -270,11 +269,19 @@ internal readonly record struct OpenApiEndpointInfo(
     string OperationId,
     string TagName,
     string? Summary,
-    string? Description);
+    string? Description,
+    string HttpMethod,
+    string Pattern);
 
 /// <summary>
 ///     Immutable type metadata for schema generation.
 /// </summary>
-internal readonly record struct TypeMetadataInfo(
-    string TypeName,
+internal readonly record struct TypeMetadataInfo(string TypeKey,
     string Description);
+
+/// <summary>
+///     Result of route binding analysis containing bound parameters and route-specific extraction.
+/// </summary>
+internal readonly record struct RouteBindingAnalysis(
+    EquatableArray<EndpointParameter> Parameters,
+    EquatableArray<RouteMethodParameterInfo> RouteParameters);

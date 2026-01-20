@@ -18,13 +18,12 @@ ErrorOr<Todo> GetById(int id)   →       .WithName("TodoApi_GetById")
                                          await __result.ExecuteAsync(ctx);
                                      }
 
-                                     // Core logic returns typed Results union (for OpenAPI)
-                                     static Task<Results<Ok<Todo>, NotFound<ProblemDetails>, ...>> Invoke_Ep1_Core(...)
+                                     // Core logic uses minimal interface (IsError/Errors/Value)
+                                     static Task<IResult> Invoke_Ep1_Core(...)
                                      {
                                          var result = TodoApi.GetById(id);
-                                         return result.Match(
-                                             value => TypedResults.Ok(value),
-                                             errors => /* map to problem details */);
+                                         if (result.IsError) return ToProblem(result.Errors);
+                                         return TypedResults.Ok(result.Value);
                                      }
 ```
 
@@ -38,6 +37,27 @@ ErrorOr<Todo> GetById(int id)   →       .WithName("TodoApi_GetById")
 | Generate JSON context           | AOT requires `[JsonSerializable]` for all types                                       |
 | Wire route parameters           | Extract from route template, bind from HttpContext                                    |
 | **Smart parameter binding**     | Infer `[FromBody]`/`[FromServices]` based on HTTP method and type                     |
+
+### Minimal Interface Principle
+
+Generated code uses only the **minimal `ErrorOr<T>` interface**: `IsError`, `Errors`, `Value`.
+
+```csharp
+// ✅ Correct - uses minimal interface
+if (result.IsError) return ToProblem(result.Errors);
+return TypedResults.Ok(result.Value);
+
+// ❌ Avoid - creates dependency on convenience API
+return result.Match(
+    value => TypedResults.Ok(value),
+    errors => ToProblem(errors));
+```
+
+**Why?**
+- Reduces runtime coupling to ErrorOr library internals
+- Generated code is more portable and self-contained
+- Simpler to understand and debug
+- Consistent pattern across all code paths (SSE, union types, fallback)
 
 ### AOT-Compatible Handler Pattern
 
@@ -285,6 +305,35 @@ src/
 | `EndpointModels.cs` | All data structures (EndpointDescriptor, MiddlewareInfo, etc.) |
 | `WellKnownTypes.cs` | All FQN string constants                                       |
 | `Descriptors.cs`    | All diagnostics (EOE001-EOE040)                                |
+| `TypeNameHelper.cs` | Type name manipulation (normalize, unwrap, compare, extract)   |
+| `RouteValidator.cs` | Route validation AND route parameter lookup building           |
+
+## Before Writing New Helper Code
+
+**ALWAYS search for existing implementations before writing new utility methods.**
+
+Type manipulation helpers are especially prone to duplication. Two distinct concepts exist:
+
+| Concept | API | Location |
+|---------|-----|----------|
+| **Symbol-based** (Roslyn `ITypeSymbol`) | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `ErrorOrContext.cs` |
+| **String-based** (FQN strings) | `TypeNameHelper.UnwrapNullable(string, bool)` | `TypeNameHelper.cs` |
+
+Before adding any type manipulation code, check `TypeNameHelper.cs` for:
+- `Normalize()` - removes `global::` prefixes and trailing `?`
+- `UnwrapNullable()` - unwraps `Nullable<T>` and `?` annotation
+- `StripGlobalPrefix()` - removes `global::` prefix only
+- `ExtractShortName()` - gets short type name from FQN
+- `IsStringType()` / `IsPrimitiveJsonType()` - type classification
+- `TypeNamesMatch()` - compares types handling aliases
+- `GetKeywordAlias()` - maps BCL types to C# keywords
+
+Before adding route/binding helpers, check `RouteValidator.cs` for:
+- `BuildRouteParameterLookup()` - builds parameter dictionary by route name
+- `ExtractRouteParameters()` - parses route template
+- `ValidateConstraintTypes()` - validates constraint/type compatibility
+
+**If you need similar functionality, extend the existing helper rather than duplicating.**
 
 ## Diagnostics
 
@@ -340,3 +389,9 @@ dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release
 | `ErrorOrX.Generators` | `netstandard2.0` | `analyzers/dotnet/cs/ErrorOrX.Generators.dll` |
 
 Consumers reference `ErrorOrX.Generators` which declares a dependency on `ErrorOrX`.
+
+## Maintenance Notes
+
+- When extending shared SDK helpers (for example, `Throw.UnreachableException`), upstream the change in
+  ANcpLua.NET.Sdk, bump the package version, and update `global.json` `msbuild-sdks` (plus `Directory.Packages.props`
+  if a package reference is added).

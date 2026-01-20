@@ -119,7 +119,7 @@ public class ErrorOrInstantiationTests
     {
         // Arrange
         List<Error> errors = [Error.Validation("User.Name", "Name is too short")];
-        var errorOrPerson = ErrorOr<Person>.From(errors);
+        var errorOrPerson = errors.ToErrorOr<Person>();
 
         // Act & Assert
         errorOrPerson.IsError.Should().BeTrue();
@@ -131,7 +131,7 @@ public class ErrorOrInstantiationTests
     {
         // Arrange
         List<Error> errors = [Error.Validation("User.Name", "Name is too short")];
-        var errorOrPerson = ErrorOr<Person>.From(errors);
+        var errorOrPerson = errors.ToErrorOr<Person>();
 
         // Act & Assert
         errorOrPerson.IsError.Should().BeTrue();
@@ -143,7 +143,7 @@ public class ErrorOrInstantiationTests
     {
         // Arrange
         List<Error> errors = [Error.Validation("User.Name", "Name is too short")];
-        var errorOrPerson = ErrorOr<Person>.From(errors);
+        var errorOrPerson = errors.ToErrorOr<Person>();
 
         // Act
         var act = () => errorOrPerson.Value;
@@ -278,7 +278,7 @@ public class ErrorOrInstantiationTests
     public void ImplicitCastErrorList_WhenAccessingErrors_ShouldReturnErrorList()
     {
         // Arrange
-        List<Error> errors =
+        Error[] errors =
         [
             Error.Validation("User.Name", "Name is too short"),
             Error.Validation("User.Age", "User is too young")
@@ -289,7 +289,7 @@ public class ErrorOrInstantiationTests
 
         // Assert
         errorOrPerson.IsError.Should().BeTrue();
-        errorOrPerson.Errors.Should().HaveCount(errors.Count).And.BeEquivalentTo(errors);
+        errorOrPerson.Errors.Should().HaveCount(errors.Length).And.BeEquivalentTo(errors);
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public class ErrorOrInstantiationTests
     public void ImplicitCastErrorList_WhenAccessingFirstError_ShouldReturnFirstError()
     {
         // Arrange
-        List<Error> errors =
+        Error[] errors =
         [
             Error.Validation("User.Name", "Name is too short"),
             Error.Validation("User.Age", "User is too young")
@@ -360,7 +360,7 @@ public class ErrorOrInstantiationTests
     public void CreateErrorOr_WhenEmptyErrorsList_ShouldThrow()
     {
         // Act
-        Func<ErrorOr<int>> errorOrInt = static () => new List<Error>();
+        Func<ErrorOr<int>> errorOrInt = static () => new List<Error>().ToErrorOr<int>();
 
         // Assert
         var exception = errorOrInt.Should().ThrowExactly<ArgumentException>().Which;
@@ -387,7 +387,7 @@ public class ErrorOrInstantiationTests
     [Fact]
     public void CreateErrorOr_WhenNullIsPassedAsErrorsList_ShouldThrowArgumentNullException()
     {
-        Func<ErrorOr<int>> act = static () => default(List<Error>)!;
+        Func<ErrorOr<int>> act = static () => default(List<Error>)!.ToErrorOr<int>();
 
         act.Should().ThrowExactly<ArgumentNullException>()
             .And.ParamName.Should().Be("errors");
@@ -411,5 +411,5 @@ public class ErrorOrInstantiationTests
             .And.ParamName.Should().Be("value");
     }
 
-    private record Person(string Name);
+    private sealed record Person(string Name);
 }

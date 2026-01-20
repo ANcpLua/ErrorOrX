@@ -1,8 +1,4 @@
-using System.Threading.Tasks;
 using ANcpLua.Roslyn.Utilities.Testing;
-using AwesomeAssertions;
-using ErrorOr.Generators;
-using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -158,6 +154,6 @@ public class GeneratorCachingTests : GeneratorTestBase
         using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
         using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
 
-        result.IsCached();
+        result.IsCached("EndpointBindingFlow");
     }
 }

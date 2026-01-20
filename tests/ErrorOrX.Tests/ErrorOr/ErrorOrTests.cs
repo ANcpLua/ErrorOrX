@@ -11,7 +11,15 @@ public class ErrorOrTests
     public void Error_WithMetadata_ShouldContainMetadata()
     {
         // Arrange
-        var metadata = new Dictionary<string, object> { { "Field", "Email" }, { "AttemptedValue", "invalid-email" } };
+        var metadata = new Dictionary<string, object>
+        {
+            {
+                "Field", "Email"
+            },
+            {
+                "AttemptedValue", "invalid-email"
+            }
+        };
 
         // Act
         var error = Error.Validation("User.InvalidEmail", "Invalid email format", metadata);
@@ -125,7 +133,7 @@ public class ErrorOrTests
         {
             Error.Failure("Test.Error1", "First error"), Error.Failure("Test.Error2", "Second error")
         };
-        ErrorOr<int> result = errors.ToList();
+        ErrorOr<int> result = errors;
 
         // Act
         var actualErrors = result.Errors;
@@ -156,7 +164,7 @@ public class ErrorOrTests
         // Arrange
         var firstError = Error.Failure("Test.Error1", "First error");
         var secondError = Error.Failure("Test.Error2", "Second error");
-        ErrorOr<int> result = new List<Error> { firstError, secondError };
+        ErrorOr<int> result = (Error[])[firstError, secondError];
 
         // Act
         var error = result.FirstError;
@@ -214,15 +222,12 @@ public class ErrorOrTests
     [Fact]
     public void ImplicitConversion_FromErrorList_ShouldCreateErrorResult()
     {
-        // Arrange
-        var errors = new List<Error>
-        {
+        // Arrange & Act
+        ErrorOr<string> result = (Error[])
+        [
             Error.Validation("Test.Validation1", "First validation error"),
             Error.Validation("Test.Validation2", "Second validation error")
-        };
-
-        // Act
-        ErrorOr<string> result = errors;
+        ];
 
         // Assert
         result.IsError.Should().BeTrue();

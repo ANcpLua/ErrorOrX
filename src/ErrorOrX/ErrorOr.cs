@@ -1,9 +1,3 @@
-// CA1000: Static From method on generic type is standard functional programming API design.
-// CA1002: List<Error> is exposed intentionally for ergonomic API - users commonly work with List<T>.
-#pragma warning disable CA1000, CA1002
-
-using Microsoft.Shared.Diagnostics;
-
 namespace ErrorOr;
 
 /// <summary>
@@ -25,7 +19,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
     private ErrorOr(in Error error) => _errors = [error];
 
-    private ErrorOr(List<Error> errors)
+    internal ErrorOr(IReadOnlyList<Error> errors)
     {
         _ = Throw.IfNull(errors);
 
@@ -36,7 +30,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
                 nameof(errors));
         }
 
-        _errors = errors;
+        _errors = [.. errors];
     }
 
     private ErrorOr(TValue value) => _value = Throw.IfNull(value);
@@ -111,11 +105,6 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
             return _errors[0];
         }
     }
-
-    /// <summary>
-    ///     Creates an <see cref="ErrorOr{TValue}" /> from a list of errors.
-    /// </summary>
-    public static ErrorOr<TValue> From(List<Error> errors) => errors;
 
     /// <summary>
     ///     Returns a string representation of the ErrorOr instance.

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Reflection.Metadata;
 using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
@@ -11,15 +13,56 @@ namespace ErrorOr.Generators;
 internal static class ResultsUnionTypeBuilder
 {
     /// <summary>
-    ///     Default max arity for Results union types. Detected from compilation when possible.
+    ///     Default max arity for Results union types.
     ///     BCL provides Results`2 through Results`6 (may increase in future versions).
     /// </summary>
     private const int DefaultMaxArity = 6;
 
+    internal static int DetectMaxArity(ImmutableArray<int> referenceArities)
+    {
+        var maxArity = DefaultMaxArity;
+
+        if (referenceArities.IsDefaultOrEmpty)
+            return maxArity;
+
+        foreach (var arity in referenceArities)
+            if (arity > maxArity)
+                maxArity = arity;
+
+        return maxArity;
+    }
+
+    internal static int GetResultsUnionArity(MetadataReference reference)
+    {
+        if (reference is not PortableExecutableReference peReference)
+            return 0;
+
+        try
+        {
+            if (peReference.GetMetadata() is not AssemblyMetadata assemblyMetadata)
+                return 0;
+
+            var maxArity = 0;
+            foreach (var module in assemblyMetadata.GetModules())
+            {
+                var reader = module.GetMetadataReader();
+                if (!IsHttpResultsAssembly(reader))
+                    continue;
+
+                TryUpdateMaxArity(reader, ref maxArity);
+            }
+
+            return maxArity;
+        }
+        catch (BadImageFormatException)
+        {
+            return 0;
+        }
+    }
+
     internal static SuccessResponseInfo GetSuccessResponseInfo(
         string successTypeFqn,
         SuccessKind successKind,
-        string httpMethod,
         bool isAcceptedResponse = false)
     {
         // Handle [AcceptedResponse] attribute first (highest precedence)
@@ -28,8 +71,7 @@ internal static class ResultsUnionTypeBuilder
                 $"{WellKnownTypes.Fqn.HttpResults.Accepted}<{successTypeFqn}>",
                 202,
                 true,
-                $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)",
-                $"value => {WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, value)");
+                $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)");
 
         // Map marker types to their correct status codes
         return successKind switch
@@ -38,29 +80,25 @@ internal static class ResultsUnionTypeBuilder
                 WellKnownTypes.Fqn.HttpResults.Ok,
                 200,
                 false,
-                $"{WellKnownTypes.Fqn.TypedResults.Ok}()",
-                $"_ => {WellKnownTypes.Fqn.TypedResults.Ok}()"),
+                $"{WellKnownTypes.Fqn.TypedResults.Ok}()"),
 
             SuccessKind.Created => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.Created,
                 201,
                 false,
-                $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)",
-                $"_ => {WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)"),
+                $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)"),
 
             SuccessKind.Updated => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
                 false,
-                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()",
-                $"_ => {WellKnownTypes.Fqn.TypedResults.NoContent}()"),
+                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             SuccessKind.Deleted => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
                 false,
-                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()",
-                $"_ => {WellKnownTypes.Fqn.TypedResults.NoContent}()"),
+                $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             // Not a marker type - use default 200 OK regardless of method (Minimal API parity)
             // 201 Created is only for Created<T> / CreatedAtRoute<T> which users must return explicitly via ErrorOr<Created>
@@ -68,27 +106,8 @@ internal static class ResultsUnionTypeBuilder
                 $"{WellKnownTypes.Fqn.HttpResults.Ok}<{successTypeFqn}>",
                 200,
                 true,
-                $"{WellKnownTypes.Fqn.TypedResults.Ok}(result.Value)",
-                $"value => {WellKnownTypes.Fqn.TypedResults.Ok}(value)")
+                $"{WellKnownTypes.Fqn.TypedResults.Ok}(result.Value)")
         };
-    }
-
-    /// <summary>
-    ///     Detects the maximum supported Results arity from the compilation.
-    ///     Checks for Results`2 through Results`10 and returns the highest found.
-    /// </summary>
-    public static int DetectMaxArity(Compilation compilation)
-    {
-        // Check from highest to lowest, return first found
-        for (var arity = 10; arity >= 2; arity--)
-        {
-            var typeName = $"Microsoft.AspNetCore.Http.HttpResults.Results`{arity}";
-            var type = compilation.GetBestTypeByMetadataName(typeName);
-            if (type is not null)
-                return arity;
-        }
-
-        return DefaultMaxArity;
     }
 
     /// <summary>
@@ -98,7 +117,6 @@ internal static class ResultsUnionTypeBuilder
     public static UnionTypeResult ComputeReturnType(
         string successTypeFqn,
         SuccessKind successKind,
-        string httpMethod,
         EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<CustomErrorInfo> inferredCustomErrors,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
@@ -112,7 +130,7 @@ internal static class ResultsUnionTypeBuilder
         var includedStatuses = new HashSet<int>();
 
         // 1 & 2. Success and Binding outcomes (always present)
-        AddSuccessAndBindingOutcomes(successTypeFqn, successKind, httpMethod, isAcceptedResponse, hasBodyBinding,
+        AddSuccessAndBindingOutcomes(successTypeFqn, successKind, isAcceptedResponse, hasBodyBinding,
             unionEntries, includedStatuses);
 
         // 3. Built-in ErrorTypes (mapped to static BCL types)
@@ -123,15 +141,13 @@ internal static class ResultsUnionTypeBuilder
         // 4. Middleware-induced status codes (401/403 for auth, 429 for rate limiting)
         AddMiddlewareOutcomes(middleware, unionEntries, includedStatuses);
 
-        // 5. Custom errors and declared [ProducesError] (force fallback if unknown)
-
-        // 6. Decision: use union only when outcomes ≤ maxArity AND no dynamic/unknown outcomes
+        // 5. Decision: use union only when outcomes ≤ maxArity AND no dynamic/unknown outcomes
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
             return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware);
 
-        // 7. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
+        // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
             .OrderBy(static e => e.Status)
             .Select(static e => e.TypeFqn);
@@ -180,13 +196,12 @@ internal static class ResultsUnionTypeBuilder
     private static void AddSuccessAndBindingOutcomes(
         string successTypeFqn,
         SuccessKind successKind,
-        string httpMethod,
         bool isAcceptedResponse,
         bool hasBodyBinding,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
-        var successInfo = GetSuccessResponseInfo(successTypeFqn, successKind, httpMethod, isAcceptedResponse);
+        var successInfo = GetSuccessResponseInfo(successTypeFqn, successKind, isAcceptedResponse);
         unionEntries.Add((successInfo.StatusCode, successInfo.ResultTypeFqn));
         includedStatuses.Add(successInfo.StatusCode);
 
@@ -206,6 +221,42 @@ internal static class ResultsUnionTypeBuilder
         unionEntries.Add((500,
             $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>"));
         includedStatuses.Add(500);
+    }
+
+    private static bool IsHttpResultsAssembly(MetadataReader reader)
+    {
+        var assemblyDef = reader.GetAssemblyDefinition();
+        var name = reader.GetString(assemblyDef.Name);
+        return string.Equals(name, "Microsoft.AspNetCore.Http.Results", StringComparison.Ordinal);
+    }
+
+    private static void TryUpdateMaxArity(MetadataReader reader, ref int maxArity)
+    {
+        foreach (var handle in reader.TypeDefinitions)
+        {
+            var typeDef = reader.GetTypeDefinition(handle);
+            if (!IsResultsUnionType(reader, typeDef))
+                continue;
+
+            var arity = typeDef.GetGenericParameters().Count;
+            if (arity > maxArity)
+                maxArity = arity;
+        }
+    }
+
+    private static bool IsResultsUnionType(MetadataReader reader, TypeDefinition typeDef)
+    {
+        if (!typeDef.Namespace.IsNil)
+        {
+            var ns = reader.GetString(typeDef.Namespace);
+            if (!string.Equals(ns, "Microsoft.AspNetCore.Http.HttpResults", StringComparison.Ordinal))
+                return false;
+        }
+        else
+            return false;
+
+        var name = reader.GetString(typeDef.Name);
+        return string.Equals(name, "Results", StringComparison.Ordinal);
     }
 
     private static bool AddInferredErrorOutcomes(
@@ -266,7 +317,10 @@ internal static class ResultsUnionTypeBuilder
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
         MiddlewareInfo middleware = default)
     {
-        var allStatuses = new HashSet<int> { 400 }; // Always include binding failure
+        var allStatuses = new HashSet<int>
+        {
+            400
+        }; // Always include binding failure
 
         CollectInferredErrorStatuses(inferredErrorTypeNames, allStatuses);
         CollectDeclaredErrorStatuses(declaredProducesErrors, allStatuses);

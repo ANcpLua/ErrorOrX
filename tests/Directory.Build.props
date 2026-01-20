@@ -6,6 +6,6 @@
     <PropertyGroup>
         <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
         <!-- NU1009: SDK-injected ANcpLua.Analyzers conflicts with CPM PackageVersion (known SDK limitation) -->
-        <NoWarn>$(NoWarn);NU1009</NoWarn>
+        <NoWarn>$(NoWarn);NU1009;MSB4011</NoWarn>
     </PropertyGroup>
 </Project>

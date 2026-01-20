@@ -103,11 +103,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         // Check for Expression.Compile()
         if (IsExpressionCompile(method))
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.ExpressionCompile,
                 invocation.GetLocation()));
-        }
     }
 
     private static void AnalyzeDynamic(SyntaxNodeAnalysisContext context)
@@ -121,47 +119,34 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         var typeInfo = context.SemanticModel.GetTypeInfo(identifier, context.CancellationToken);
         if (typeInfo.Type is IDynamicTypeSymbol)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.DynamicKeyword,
                 identifier.GetLocation()));
-        }
     }
 
-    private static bool IsActivatorCreateInstance(IMethodSymbol method)
-    {
-        return method.ContainingType?.ToDisplayString() == "System.Activator" &&
-               method.Name == "CreateInstance";
-    }
+    private static bool IsActivatorCreateInstance(IMethodSymbol method) =>
+        method.ContainingType?.ToDisplayString() == "System.Activator" &&
+        method.Name == "CreateInstance";
 
-    private static bool IsTypeGetType(IMethodSymbol method)
-    {
-        return IsSystemType(method.ContainingType) &&
-               method.Name == "GetType" &&
-               method.Parameters.Length > 0 &&
-               method.Parameters[0].Type.SpecialType == SpecialType.System_String;
-    }
+    private static bool IsTypeGetType(IMethodSymbol method) =>
+        IsSystemType(method.ContainingType) &&
+        method is
+        {
+            Name: "GetType",
+            Parameters.Length: > 0
+        } &&
+        method.Parameters[0].Type.SpecialType == SpecialType.System_String;
 
-    private static bool IsReflectionMethod(IMethodSymbol method)
-    {
-        if (!IsSystemType(method.ContainingType))
-            return false;
+    private static bool IsReflectionMethod(IMethodSymbol method) => IsSystemType(method.ContainingType) && ReflectionMethods.Contains(method.Name);
 
-        return ReflectionMethods.Contains(method.Name);
-    }
-
-    private static bool IsSystemType(INamedTypeSymbol? type)
-    {
-        return type?.ToDisplayString() == "System.Type";
-    }
+    private static bool IsSystemType(INamedTypeSymbol? type) => type?.ToDisplayString() == "System.Type";
 
     private static bool IsExpressionCompile(IMethodSymbol method)
     {
         if (method.Name != "Compile")
             return false;
 
-        var containingType = method.ContainingType;
-        if (containingType is null)
+        if (method.ContainingType is not { } containingType)
             return false;
 
         // Check if it's on LambdaExpression or Expression<TDelegate>
@@ -173,7 +158,11 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
     private static string GetTypeArgument(IMethodSymbol method, InvocationExpressionSyntax invocation)
     {
         // Generic type argument: Activator.CreateInstance<T>()
-        if (method.IsGenericMethod && method.TypeArguments.Length > 0)
+        if (method is
+            {
+                IsGenericMethod: true,
+                TypeArguments.Length: > 0
+            })
             return method.TypeArguments[0].ToDisplayString();
 
         // Runtime type argument: Activator.CreateInstance(typeof(T))
@@ -193,10 +182,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
             return null;
 
         var firstArg = invocation.ArgumentList.Arguments[0].Expression;
-        if (firstArg is LiteralExpressionSyntax { Token.Value: string value })
-            return value;
-
-        return firstArg.ToString();
+        return firstArg is LiteralExpressionSyntax { Token.Value: string value } ? value : firstArg.ToString();
     }
 
     private static string? GetReceiverTypeName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
@@ -210,12 +196,10 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         // variable.GetType().GetProperties() - get the type from semantic model
         var receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-        if (receiverType?.ToDisplayString() == "System.Type")
-        {
+        return receiverType?.ToDisplayString() == "System.Type"
+            ?
             // It's a Type variable, try to find what it represents
-            return "T";
-        }
-
-        return receiverType?.ToDisplayString();
+            "T"
+            : receiverType?.ToDisplayString();
     }
 }

@@ -1,17 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using AwesomeAssertions;
-using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
-using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 
-public sealed class DiagnosticsAlignmentTests
+public sealed partial class DiagnosticsAlignmentTests
 {
     [Fact]
     public void Diagnostics_AreAligned_With_Docs_And_AnalyzerReleases()
@@ -48,40 +41,34 @@ public sealed class DiagnosticsAlignmentTests
         {
             var release = releaseData.GetRule(descriptor.Id);
             release.Should().NotBeNull($"release notes must include {descriptor.Id}");
-            release!.Category.Should().Be(descriptor.Category, $"{descriptor.Id} category must match descriptor");
+            release.Category.Should().Be(descriptor.Category, $"{descriptor.Id} category must match descriptor");
             release.Severity.Should().Be(descriptor.Severity, $"{descriptor.Id} severity must match descriptor");
             if (release.TitleIsAuthoritative)
                 release.Title.Should().Be(descriptor.Title, $"{descriptor.Id} title must match descriptor");
         }
     }
 
-    private static IReadOnlyList<DescriptorInfo> LoadDescriptors()
-    {
-        return typeof(Descriptors).GetFields(BindingFlags.Public | BindingFlags.Static)
+    private static List<DescriptorInfo> LoadDescriptors() =>
+        typeof(Descriptors).GetFields(BindingFlags.Public | BindingFlags.Static)
             .Where(static f => f.FieldType == typeof(DiagnosticDescriptor))
             .Select(static f => (DiagnosticDescriptor)f.GetValue(null)!)
             .Select(static d => new DescriptorInfo(
                 d.Id,
                 d.Title.ToString(),
-                d.MessageFormat.ToString(),
                 d.DefaultSeverity,
                 d.Category))
             .OrderBy(static d => d.Id, StringComparer.Ordinal)
             .ToList();
-    }
 
     private sealed record DescriptorInfo(
         string Id,
         string Title,
-        string Message,
         DiagnosticSeverity Severity,
         string Category);
 
     private sealed record DocInfo(string Title, DiagnosticSeverity Severity);
 
-    private sealed record ReleaseRule(
-        string Id,
-        string Category,
+    private sealed record ReleaseRule(string Category,
         DiagnosticSeverity Severity,
         string Title,
         bool TitleIsAuthoritative);
@@ -91,25 +78,16 @@ public sealed class DiagnosticsAlignmentTests
         Dictionary<string, ReleaseRule> ChangedRules,
         HashSet<string> RemovedRuleIds)
     {
-        public ReleaseRule? GetRule(string id)
-        {
-            if (ChangedRules.TryGetValue(id, out var changed))
-                return changed;
-            return NewRules.TryGetValue(id, out var added) ? added : null;
-        }
+        public ReleaseRule? GetRule(string id) => ChangedRules.TryGetValue(id, out var changed) ? changed : NewRules.GetValueOrDefault(id);
     }
 
-    private static class DiagnosticsDocsParser
+    private static partial class DiagnosticsDocsParser
     {
-        private static readonly Regex HeadingRegex = new(
-            @"^###\s+(?<id>[A-Z]+\d+)\s+-\s+(?<title>.+)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex HeadingRegex = MyRegex();
 
-        private static readonly Regex SeverityRegex = new(
-            @"^\*\*Severity:\*\*\s+(?<severity>[A-Za-z]+)\s*$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex SeverityRegex = MyRegex1();
 
-        public static IReadOnlyDictionary<string, DocInfo> Parse(string path)
+        public static Dictionary<string, DocInfo> Parse(string path)
         {
             var content = File.ReadAllText(path);
             var matches = HeadingRegex.Matches(content);
@@ -134,25 +112,16 @@ public sealed class DiagnosticsAlignmentTests
 
             return result;
         }
+
+        [GeneratedRegex(@"^###\s+(?<id>[A-Z]+\d+)\s+-\s+(?<title>.+)$", RegexOptions.Multiline | RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
+
+        [GeneratedRegex(@"^\*\*Severity:\*\*\s+(?<severity>[A-Za-z]+)\s*$", RegexOptions.Multiline | RegexOptions.Compiled)]
+        private static partial Regex MyRegex1();
     }
 
     private static class AnalyzerReleasesParser
     {
-        private enum ReleaseSection
-        {
-            None,
-            NewRules,
-            RemovedRules,
-            ChangedRules
-        }
-
-        private enum TableType
-        {
-            None,
-            Standard,
-            Changed
-        }
-
         public static ReleaseData Parse(string repoRoot)
         {
             var shipped = ParseFile(Path.Combine(repoRoot, "src", "ErrorOrX.Generators", "AnalyzerReleases.Shipped.md"));
@@ -227,7 +196,7 @@ public sealed class DiagnosticsAlignmentTests
                         var category = cells[1];
                         var severity = SeverityParser.Parse(cells[2]);
                         var notes = cells[3];
-                        AddUnique(newRules, id, new ReleaseRule(id, category, severity, notes, true), path);
+                        AddUnique(newRules, id, new ReleaseRule(category, severity, notes, true), path);
                     }
                     else if (section == ReleaseSection.RemovedRules)
                     {
@@ -249,7 +218,7 @@ public sealed class DiagnosticsAlignmentTests
                         var category = cells[1];
                         var severity = SeverityParser.Parse(cells[2]);
                         var notes = cells[5];
-                        AddUnique(changedRules, id, new ReleaseRule(id, category, severity, notes, false), path);
+                        AddUnique(changedRules, id, new ReleaseRule(category, severity, notes, false), path);
                     }
                 }
             }
@@ -285,6 +254,21 @@ public sealed class DiagnosticsAlignmentTests
 
             return cells;
         }
+
+        private enum ReleaseSection
+        {
+            None,
+            NewRules,
+            RemovedRules,
+            ChangedRules
+        }
+
+        private enum TableType
+        {
+            None,
+            Standard,
+            Changed
+        }
     }
 
     private static class SeverityParser
@@ -299,18 +283,18 @@ public sealed class DiagnosticsAlignmentTests
                 return DiagnosticSeverity.Info;
             if (value.Equals("Hidden", StringComparison.OrdinalIgnoreCase))
                 return DiagnosticSeverity.Hidden;
-            if (value.Equals("Suggestion", StringComparison.OrdinalIgnoreCase))
-                return DiagnosticSeverity.Info;
-
-            throw new InvalidOperationException($"Unknown severity '{value}'");
+            return value.Equals("Suggestion", StringComparison.OrdinalIgnoreCase) ? DiagnosticSeverity.Info : throw new InvalidOperationException($"Unknown severity '{value}'");
         }
     }
 
-    private static class RuleIdParser
+    private static partial class RuleIdParser
     {
-        private static readonly Regex RuleIdRegex = new(@"^[A-Z]+\d+$", RegexOptions.Compiled);
+        private static readonly Regex RuleIdRegex = MyRegex();
 
         public static bool IsMatch(string value) => RuleIdRegex.IsMatch(value);
+
+        [GeneratedRegex(@"^[A-Z]+\d+$", RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
     }
 
     private static class RepoRootLocator

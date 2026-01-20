@@ -1,15 +1,13 @@
-using ErrorOr;
 using Xunit.Sdk;
 
 namespace ErrorOrX.Tests.TestUtils;
 
 public class SerializableError : IXunitSerializable
 {
-    public Error Value { get; private set; }
-
     public SerializableError() { }
 
     public SerializableError(Error error) => Value = error;
+    public Error Value { get; private set; }
 
     public void Deserialize(IXunitSerializationInfo info)
     {
@@ -23,7 +21,7 @@ public class SerializableError : IXunitSerializable
         if (metadataCount >= 0)
         {
             metadata = new Dictionary<string, object>();
-            for (int i = 0; i < metadataCount; i++)
+            for (var i = 0; i < metadataCount; i++)
             {
                 var key = info.GetValue<string>($"MetadataKey_{i}") ?? string.Empty;
                 var value = info.GetValue<string>($"MetadataValue_{i}") ?? string.Empty;
@@ -47,7 +45,7 @@ public class SerializableError : IXunitSerializable
         else
         {
             info.AddValue("MetadataCount", Value.Metadata.Count);
-            int i = 0;
+            var i = 0;
             foreach (var kvp in Value.Metadata)
             {
                 info.AddValue($"MetadataKey_{i}", kvp.Key);

@@ -2,7 +2,7 @@ namespace ErrorOrX.Tests.ErrorOr;
 
 public class ErrorOrInterfaceTests
 {
-    private record TestPerson(string Name, int Age);
+    private sealed record TestPerson(string Name, int Age);
 
     #region IErrorOr Interface - Success State
 
@@ -11,10 +11,9 @@ public class ErrorOrInterfaceTests
     {
         // Arrange
         ErrorOr<int> errorOr = 5;
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var errors = interfaceErrorOr.Errors;
+        var errors = ((IErrorOr)errorOr).Errors;
 
         // Assert
         errors.Should().BeNull();
@@ -25,10 +24,9 @@ public class ErrorOrInterfaceTests
     {
         // Arrange
         ErrorOr<int> errorOr = 5;
-        IErrorOr<int> interfaceErrorOr = errorOr;
 
         // Act
-        var value = interfaceErrorOr.Value;
+        var value = ((IErrorOr<int>)errorOr).Value;
 
         // Assert
         value.Should().Be(5);
@@ -39,10 +37,9 @@ public class ErrorOrInterfaceTests
     {
         // Arrange
         ErrorOr<string> errorOr = "success";
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var isError = interfaceErrorOr.IsError;
+        var isError = ((IErrorOr)errorOr).IsError;
 
         // Assert
         isError.Should().BeFalse();
@@ -58,10 +55,9 @@ public class ErrorOrInterfaceTests
         // Arrange
         var error = Error.Validation("Test.Error", "Test error description");
         ErrorOr<int> errorOr = error;
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var errors = interfaceErrorOr.Errors;
+        var errors = ((IErrorOr)errorOr).Errors;
 
         // Assert
         errors.Should().NotBeNull();
@@ -72,17 +68,16 @@ public class ErrorOrInterfaceTests
     public void AccessingIErrorOrErrors_WhenIsErrorWithMultipleErrors_ShouldReturnAllErrors()
     {
         // Arrange
-        List<Error> expectedErrors =
+        Error[] expectedErrors =
         [
             Error.Validation("Error.One", "First error"),
             Error.NotFound("Error.Two", "Second error"),
             Error.Conflict("Error.Three", "Third error")
         ];
         ErrorOr<int> errorOr = expectedErrors;
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var errors = interfaceErrorOr.Errors;
+        var errors = ((IErrorOr)errorOr).Errors;
 
         // Assert
         errors.Should().NotBeNull();
@@ -95,10 +90,9 @@ public class ErrorOrInterfaceTests
     {
         // Arrange
         ErrorOr<int> errorOr = Error.Failure();
-        IErrorOr<int> interfaceErrorOr = errorOr;
 
         // Act
-        var act = () => interfaceErrorOr.Value;
+        var act = () => ((IErrorOr<int>)errorOr).Value;
 
         // Assert
         act.Should().ThrowExactly<InvalidOperationException>()
@@ -111,10 +105,9 @@ public class ErrorOrInterfaceTests
     {
         // Arrange
         ErrorOr<string> errorOr = Error.NotFound();
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var isError = interfaceErrorOr.IsError;
+        var isError = ((IErrorOr)errorOr).IsError;
 
         // Assert
         isError.Should().BeTrue();
@@ -130,13 +123,9 @@ public class ErrorOrInterfaceTests
         // Arrange
         ErrorOr<int> errorOr = 42;
 
-        // Act
-        IErrorOr<int> genericInterface = errorOr;
-        IErrorOr baseInterface = errorOr;
-
         // Assert
-        genericInterface.Should().BeAssignableTo<IErrorOr>();
-        baseInterface.Should().NotBeNull();
+        errorOr.Should().BeAssignableTo<IErrorOr<int>>();
+        errorOr.Should().BeAssignableTo<IErrorOr>();
     }
 
     [Fact]
@@ -161,10 +150,9 @@ public class ErrorOrInterfaceTests
         // Arrange
         var expectedPerson = new TestPerson("John", 30);
         ErrorOr<TestPerson> errorOr = expectedPerson;
-        IErrorOr<TestPerson> interfaceErrorOr = errorOr;
 
         // Act
-        var actualPerson = interfaceErrorOr.Value;
+        var actualPerson = ((IErrorOr<TestPerson>)errorOr).Value;
 
         // Assert
         actualPerson.Should().Be(expectedPerson);
@@ -178,15 +166,16 @@ public class ErrorOrInterfaceTests
         ErrorOr<int> intErrorOr = sharedError;
         ErrorOr<string> stringErrorOr = sharedError;
 
-        // Act
-        IErrorOr intInterface = intErrorOr;
-        IErrorOr stringInterface = stringErrorOr;
-
         // Assert
-        intInterface.IsError.Should().BeTrue();
-        stringInterface.IsError.Should().BeTrue();
-        intInterface.Errors!.First().Should().Be(sharedError);
-        stringInterface.Errors!.First().Should().Be(sharedError);
+        ((IErrorOr)intErrorOr).IsError.Should().BeTrue();
+        ((IErrorOr)stringErrorOr).IsError.Should().BeTrue();
+        var intErrors = ((IErrorOr)intErrorOr).Errors;
+        Unreachable.ThrowIf(intErrors is null);
+        intErrors[0].Should().Be(sharedError);
+
+        var stringErrors = ((IErrorOr)stringErrorOr).Errors;
+        Unreachable.ThrowIf(stringErrors is null);
+        stringErrors[0].Should().Be(sharedError);
     }
 
     #endregion
@@ -197,12 +186,14 @@ public class ErrorOrInterfaceTests
     public void IErrorOrValue_WhenValueIsReferenceType_ShouldReturnSameReference()
     {
         // Arrange
-        var list = new List<int> { 1, 2, 3 };
+        var list = new List<int>
+        {
+            1, 2, 3
+        };
         ErrorOr<List<int>> errorOr = list;
-        IErrorOr<List<int>> interfaceErrorOr = errorOr;
 
         // Act
-        var result = interfaceErrorOr.Value;
+        var result = ((IErrorOr<List<int>>)errorOr).Value;
 
         // Assert
         result.Should().BeSameAs(list);
@@ -214,11 +205,10 @@ public class ErrorOrInterfaceTests
         // Arrange
         var error = Error.Conflict();
         ErrorOr<int> errorOr = error;
-        IErrorOr interfaceErrorOr = errorOr;
 
         // Act
-        var errors1 = interfaceErrorOr.Errors;
-        var errors2 = interfaceErrorOr.Errors;
+        var errors1 = ((IErrorOr)errorOr).Errors;
+        var errors2 = ((IErrorOr)errorOr).Errors;
 
         // Assert
         errors1.Should().BeSameAs(errors2);

@@ -7,8 +7,6 @@ public class SwitchTests
     {
         // Arrange
         ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
-        void ElsesAction(IReadOnlyList<Error> _) => throw new Exception("Should not be called");
 
         // Act
         var action = () => errorOrPerson.Switch(
@@ -17,15 +15,18 @@ public class SwitchTests
 
         // Assert
         action.Should().NotThrow();
+        return;
+
+        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
+
+        static void ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw();
     }
 
     [Fact]
     public void CallingSwitch_WhenIsError_ShouldExecuteElseAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new List<Error> { Error.Validation(), Error.Conflict() };
-        void ThenAction(Person _) => throw new Exception("Should not be called");
-        void ElsesAction(IReadOnlyList<Error> errors) => errors.Should().BeEquivalentTo(errorOrPerson.Errors);
+        ErrorOr<Person> errorOrPerson = (Error[])[Error.Validation(), Error.Conflict()];
 
         // Act
         var action = () => errorOrPerson.Switch(
@@ -34,6 +35,11 @@ public class SwitchTests
 
         // Assert
         action.Should().NotThrow();
+        return;
+
+        static void ThenAction(Person _) => Unreachable.Throw();
+
+        void ElsesAction(IReadOnlyList<Error> errors) => errors.Should().BeEquivalentTo(errorOrPerson.Errors);
     }
 
     [Fact]
@@ -41,8 +47,6 @@ public class SwitchTests
     {
         // Arrange
         ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
-        void OnFirstErrorAction(Error _) => throw new Exception("Should not be called");
 
         // Act
         var action = () => errorOrPerson.SwitchFirst(
@@ -51,18 +55,18 @@ public class SwitchTests
 
         // Assert
         action.Should().NotThrow();
+        return;
+
+        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
+
+        static void OnFirstErrorAction(Error _) => Unreachable.Throw();
     }
 
     [Fact]
     public void CallingSwitchFirst_WhenIsError_ShouldExecuteOnFirstErrorAction()
     {
         // Arrange
-        ErrorOr<Person> errorOrPerson = new List<Error> { Error.Validation(), Error.Conflict() };
-        void ThenAction(Person _) => throw new Exception("Should not be called");
-
-        void OnFirstErrorAction(Error errors)
-            => errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
-                .And.BeEquivalentTo(errorOrPerson.FirstError);
+        ErrorOr<Person> errorOrPerson = (Error[])[Error.Validation(), Error.Conflict()];
 
         // Act
         var action = () => errorOrPerson.SwitchFirst(
@@ -71,6 +75,13 @@ public class SwitchTests
 
         // Assert
         action.Should().NotThrow();
+        return;
+
+        static void ThenAction(Person _) => Unreachable.Throw();
+
+        void OnFirstErrorAction(Error errors)
+            => errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
+                .And.BeEquivalentTo(errorOrPerson.FirstError);
     }
 
     [Fact]
@@ -78,8 +89,6 @@ public class SwitchTests
     {
         // Arrange
         ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
-        void OnFirstErrorAction(Error _) => throw new Exception("Should not be called");
 
         // Act
         var action = () => errorOrPerson
@@ -88,6 +97,11 @@ public class SwitchTests
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
+
+        static void OnFirstErrorAction(Error _) => Unreachable.Throw();
     }
 
     [Fact]
@@ -95,8 +109,6 @@ public class SwitchTests
     {
         // Arrange
         ErrorOr<Person> errorOrPerson = new Person("Amichai");
-        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
-        void ElsesAction(IReadOnlyList<Error> _) => throw new Exception("Should not be called");
 
         // Act
         var action = () => errorOrPerson
@@ -105,7 +117,12 @@ public class SwitchTests
 
         // Assert
         await action.Should().NotThrowAsync();
+        return;
+
+        void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
+
+        static void ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw();
     }
 
-    private record Person(string Name);
+    private sealed record Person(string Name);
 }

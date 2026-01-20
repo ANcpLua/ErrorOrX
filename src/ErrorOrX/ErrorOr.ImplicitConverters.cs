@@ -1,8 +1,3 @@
-// CA1002: List<Error> is exposed intentionally for ergonomic API - users commonly work with List<T>.
-#pragma warning disable CA1002
-
-using Microsoft.Shared.Diagnostics;
-
 namespace ErrorOr;
 
 public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
@@ -18,14 +13,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     public static implicit operator ErrorOr<TValue>(Error error) => new(error);
 
     /// <summary>
-    ///     Creates an <see cref="ErrorOr{TValue}" /> from a list of errors.
-    /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors" /> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="errors" /> is an empty list.</exception>
-    public static implicit operator ErrorOr<TValue>(List<Error> errors) => new(errors);
-
-    /// <summary>
-    ///     Creates an <see cref="ErrorOr{TValue}" /> from a list of errors.
+    ///     Creates an <see cref="ErrorOr{TValue}" /> from an array of errors.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors" /> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="errors" /> is an empty array.</exception>

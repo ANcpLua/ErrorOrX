@@ -1,8 +1,4 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using AwesomeAssertions;
-using Xunit;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -32,7 +28,10 @@ public class BclValidationTests
     public void BclValidator_WorksWithValidationAttributes()
     {
         // Verify BCL Validator.TryValidateObject works as expected
-        var model = new TestModelWithRequired { Name = null };
+        var model = new TestModelWithRequired
+        {
+            Name = null
+        };
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
@@ -45,7 +44,10 @@ public class BclValidationTests
     [Fact]
     public void BclValidator_PassesForValidModel()
     {
-        var model = new TestModelWithRequired { Name = "Valid Name" };
+        var model = new TestModelWithRequired
+        {
+            Name = "Valid Name"
+        };
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 
@@ -59,7 +61,10 @@ public class BclValidationTests
     [Fact]
     public void BclValidator_WorksWithIValidatableObject()
     {
-        var model = new TestModelWithIValidatableObject { Value = -1 };
+        var model = new TestModelWithIValidatableObject
+        {
+            Value = -1
+        };
         var context = new ValidationContext(model);
         var results = new List<ValidationResult>();
 

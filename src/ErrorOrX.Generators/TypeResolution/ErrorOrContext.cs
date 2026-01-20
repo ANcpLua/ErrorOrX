@@ -334,13 +334,11 @@ internal sealed class ErrorOrContext
     }
 
     /// <summary>Unwraps Nullable&lt;T&gt; to get the underlying type.</summary>
-    public static ITypeSymbol UnwrapNullable(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol
+    public static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>
+        type is INamedTypeSymbol
         {
             IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T
         } n
             ? n.TypeArguments[0]
             : type;
-    }
 }

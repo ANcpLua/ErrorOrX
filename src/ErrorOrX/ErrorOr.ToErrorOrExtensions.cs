@@ -15,7 +15,7 @@ public static partial class ErrorOrExtensions
     /// <summary>
     ///     Creates an <see cref="ErrorOr{TValue}" /> instance with the given <paramref name="errors" />.
     /// </summary>
-    public static ErrorOr<TValue> ToErrorOr<TValue>(this List<Error> errors) => errors;
+    public static ErrorOr<TValue> ToErrorOr<TValue>(this IReadOnlyList<Error> errors) => new(errors);
 
     /// <summary>
     ///     Creates an <see cref="ErrorOr{TValue}" /> instance with the given <paramref name="errors" />.

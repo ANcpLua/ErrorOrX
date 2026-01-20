@@ -58,6 +58,17 @@
         <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all"/>
     </ItemGroup>
 
+    <!-- Expose dependencies to projects referencing this generator via ProjectReference -->
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetDependencyTargetPaths">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll" IncludeRuntimeDependency="false"/>
+        </ItemGroup>
+    </Target>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
     </ItemGroup>
