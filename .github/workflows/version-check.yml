@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Verify pinned package versions
-        run: pwsh ./eng/verify-published-versions.ps1
+        uses: ANcpLua/ANcpLua.NET.Sdk/.github/actions/version-pin-check@actions-version-pin-check-v1
