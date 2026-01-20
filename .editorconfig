@@ -10,5 +10,7 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 [*.cs]
-# AL0025: Prefer static lambda
-dotnet_diagnostic.AL0025.severity = suggestion
+# ANcpLua.Analyzers rules
+dotnet_diagnostic.AL0025.severity = suggestion  # Prefer static lambda
+dotnet_diagnostic.AL0026.severity = warning     # DateTime.Now/UtcNow
+dotnet_diagnostic.AL0027.severity = warning     # Newtonsoft.Json
