@@ -8,7 +8,7 @@ namespace ErrorOrX.Generators.Tests;
 
 public abstract class GeneratorTestBase
 {
-    protected static readonly Type[] RequiredTypes =
+    private static readonly Type[] RequiredTypes =
     [
         typeof(HttpContext),
         typeof(TypedResults),
@@ -19,24 +19,30 @@ public abstract class GeneratorTestBase
         typeof(Error)
     ];
 
-    protected static async Task VerifyGeneratorAsync(string source)
+    /// <summary>
+    ///     Runs the ErrorOrEndpointGenerator on the provided source and returns the result
+    ///     for fluent assertions (IsClean, Compiles, IsCached, etc.).
+    /// </summary>
+    protected static async Task<GeneratorResult> RunAsync(string source)
     {
         using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(source);
+        return await Test<ErrorOrEndpointGenerator>.Run(source, TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    ///     Runs the generator and verifies output using Verify snapshots.
+    /// </summary>
+    protected static async Task VerifyAsync(string source)
+    {
+        using var result = await RunAsync(source);
 
         await Verify(new
         {
             GeneratedSources = result.Files
-                .Select(static f => new
-                {
-                    f.HintName, Source = f.Content
-                })
+                .Select(static f => new { f.HintName, Source = f.Content })
                 .OrderBy(static s => s.HintName),
             Diagnostics = result.Diagnostics
-                .Select(static d => new
-                {
-                    d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage()
-                })
+                .Select(static d => new { d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage() })
                 .OrderBy(static d => d.Id)
         }).UseDirectory("Snapshots");
     }

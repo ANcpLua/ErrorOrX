@@ -6,14 +6,14 @@ public class ErrorNullMetadataTests
     public void Equals_WhenMetadataContainsNullValue_ShouldNotThrow()
     {
         // Arrange
-        var metadata = new Dictionary<string, object?>
+        var metadata = new Dictionary<string, object>
         {
-            ["Key"] = null
+            ["Key"] = null!
         };
         var error1 = Error.Validation("Code", "Description", metadata);
-        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object>
         {
-            ["Key"] = null
+            ["Key"] = null!
         });
 
         // Act
@@ -31,11 +31,11 @@ public class ErrorNullMetadataTests
     public void Equals_WhenOneMetadataValueIsNullAndOtherIsNot_ShouldReturnFalse()
     {
         // Arrange
-        var error1 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        var error1 = Error.Validation("Code", "Description", new Dictionary<string, object>
         {
-            ["Key"] = null
+            ["Key"] = null!
         });
-        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object?>
+        var error2 = Error.Validation("Code", "Description", new Dictionary<string, object>
         {
             ["Key"] = "Value"
         });

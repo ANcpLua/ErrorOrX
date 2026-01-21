@@ -66,7 +66,7 @@ public class MyAnalyzerTests : AnalyzerTestBase<MyAnalyzer>
             // {|EOE001:markedSpan|} - diagnostic expected here
             """;
 
-        await VerifyAnalyzerAsync(source);
+        await VerifyAsync(source);
     }
 }
 ```

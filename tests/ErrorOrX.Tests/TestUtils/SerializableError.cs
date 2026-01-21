@@ -2,9 +2,14 @@ using Xunit.Sdk;
 
 namespace ErrorOrX.Tests.TestUtils;
 
-public class SerializableError(Error error) : IXunitSerializable
+public class SerializableError : IXunitSerializable
 {
-    public Error Value { get; private set; } = error;
+    public Error Value { get; private set; }
+
+    // Required by xUnit for deserialization
+    public SerializableError() => Value = Error.Unexpected();
+
+    public SerializableError(Error error) => Value = error;
 
     public void Deserialize(IXunitSerializationInfo info)
     {

@@ -1,5 +1,3 @@
-using ANcpLua.Roslyn.Utilities.Testing;
-
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
@@ -23,10 +21,8 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
-        // Verify generator produces output
         result.Files.Should().NotBeEmpty();
     }
 
@@ -52,8 +48,7 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
         result.Files.Should().NotBeEmpty();
     }
@@ -83,8 +78,7 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
         result.Files.Should().NotBeEmpty();
     }
@@ -105,10 +99,8 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
-        // Verify no diagnostics are produced for valid code
         result.IsClean();
     }
 
@@ -128,10 +120,8 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
-        // Verify generated code compiles successfully
         result.Compiles();
     }
 
@@ -151,8 +141,7 @@ public class GeneratorCachingTests : GeneratorTestBase
                               }
                               """;
 
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
-        using var result = await Test<ErrorOrEndpointGenerator>.Run(Source, TestContext.Current.CancellationToken);
+        using var result = await RunAsync(Source);
 
         result.IsCached("EndpointBindingFlow");
     }

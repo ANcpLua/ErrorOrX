@@ -31,7 +31,7 @@ public class DuplicateRouteTests : GeneratorTestBase
                               }
                               """;
 
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 
     [Fact]
@@ -63,6 +63,6 @@ public class DuplicateRouteTests : GeneratorTestBase
                               }
                               """;
 
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 }

@@ -19,7 +19,7 @@ public class RouteConstraintTests : GeneratorTestBase
                               }
                               """;
 
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class RouteConstraintTests : GeneratorTestBase
                               }
                               """;
 
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class RouteConstraintTests : GeneratorTestBase
                               """;
 
         // This test will likely FAIL currently because both normalize to /users/{_}
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 
     [Fact]
@@ -85,6 +85,6 @@ public class RouteConstraintTests : GeneratorTestBase
                               """;
 
         // These SHOULD be reported as duplicates
-        return VerifyGeneratorAsync(Source);
+        return VerifyAsync(Source);
     }
 }

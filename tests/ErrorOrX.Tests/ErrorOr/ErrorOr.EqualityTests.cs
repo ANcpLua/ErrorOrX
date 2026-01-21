@@ -90,8 +90,8 @@ public sealed class ErrorOrEqualityTests
     [MemberData(nameof(Names))]
     public void Equals_WhenTwoInstancesHaveEqualValues_ShouldReturnTrue(string name)
     {
-        ErrorOr<Person> errorOrPerson1 = new Person();
-        ErrorOr<Person> errorOrPerson2 = new Person();
+        ErrorOr<Person> errorOrPerson1 = new Person(name);
+        ErrorOr<Person> errorOrPerson2 = new Person(name);
 
         var result = errorOrPerson1.Equals(errorOrPerson2);
 
@@ -102,8 +102,8 @@ public sealed class ErrorOrEqualityTests
     [MemberData(nameof(DifferentNames))]
     public void Equals_WhenTwoInstancesHaveDifferentValues_ShouldReturnFalse(string name1, string name2)
     {
-        ErrorOr<Person> errorOrPerson1 = new Person();
-        ErrorOr<Person> errorOrPerson2 = new Person();
+        ErrorOr<Person> errorOrPerson1 = new Person(name1);
+        ErrorOr<Person> errorOrPerson2 = new Person(name2);
 
         var result = errorOrPerson1.Equals(errorOrPerson2);
 
@@ -114,8 +114,8 @@ public sealed class ErrorOrEqualityTests
     [MemberData(nameof(Names))]
     public void GetHashCode_WhenTwoInstancesHaveEqualValues_ShouldReturnSameHashCode(string name)
     {
-        ErrorOr<Person> errorOrPerson1 = new Person();
-        ErrorOr<Person> errorOrPerson2 = new Person();
+        ErrorOr<Person> errorOrPerson1 = new Person(name);
+        ErrorOr<Person> errorOrPerson2 = new Person(name);
 
         var hashCode1 = errorOrPerson1.GetHashCode();
         var hashCode2 = errorOrPerson2.GetHashCode();
@@ -129,8 +129,8 @@ public sealed class ErrorOrEqualityTests
         string name1,
         string name2)
     {
-        ErrorOr<Person> errorOrPerson1 = new Person();
-        ErrorOr<Person> errorOrPerson2 = new Person();
+        ErrorOr<Person> errorOrPerson1 = new Person(name1);
+        ErrorOr<Person> errorOrPerson2 = new Person(name2);
 
         var hashCode1 = errorOrPerson1.GetHashCode();
         var hashCode2 = errorOrPerson2.GetHashCode();
@@ -173,5 +173,5 @@ public sealed class ErrorOrEqualityTests
         hashCode1.Should().NotBe(hashCode2);
     }
 
-    private sealed record Person;
+    private sealed record Person(string Name);
 }

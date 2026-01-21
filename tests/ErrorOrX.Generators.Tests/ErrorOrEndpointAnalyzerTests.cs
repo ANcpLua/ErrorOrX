@@ -30,7 +30,7 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
                               }
                               """ + AttributesSource;
 
-        return VerifyAnalyzerAsync(Source);
+        return VerifyAsync(Source);
     }
 
     [Fact]
@@ -46,6 +46,6 @@ public class ErrorOrEndpointAnalyzerTests : AnalyzerTestBase<ErrorOrEndpointAnal
                               }
                               """ + AttributesSource;
 
-        return VerifyAnalyzerAsync(Source);
+        return VerifyAsync(Source);
     }
 }
