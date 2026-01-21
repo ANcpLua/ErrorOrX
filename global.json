@@ -5,9 +5,9 @@
         "allowPrerelease": true
   },
   "msbuild-sdks": {
-    "ANcpLua.NET.Sdk": "1.6.17",
-    "ANcpLua.NET.Sdk.Web": "1.6.17",
-    "ANcpLua.NET.Sdk.Test": "1.6.17",
+    "ANcpLua.NET.Sdk": "1.6.18",
+    "ANcpLua.NET.Sdk.Web": "1.6.18",
+    "ANcpLua.NET.Sdk.Test": "1.6.18",
     "ANcpLua.Roslyn.Utilities.Testing": "1.14.0",
     "ANcpLua.Roslyn.Utilities": "1.14.0"
   },
