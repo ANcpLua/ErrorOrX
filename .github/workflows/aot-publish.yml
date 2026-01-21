@@ -51,10 +51,12 @@ jobs:
               output.write(f"openapi_version={openapi_version}\n")
           PY
 
-      - name: Pack local packages
+      - name: Build and pack local packages
         run: |
-          dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }}
-          dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }}
+          dotnet build src/ErrorOrX/ErrorOrX.csproj -c Release
+          dotnet build src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release
+          dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }} --no-build
+          dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.versions.outputs.version }} --no-build
 
       - name: Create AOT sample (package-based)
         run: |
