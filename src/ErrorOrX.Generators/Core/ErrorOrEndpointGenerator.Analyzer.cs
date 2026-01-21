@@ -90,7 +90,7 @@ public sealed partial class ErrorOrEndpointGenerator
             // 2. BadRequest for binding (1)
             // 3. InternalServerError safety net (1)
             // 4. UnsupportedMediaType if body present (1)
-            var hasBodyBinding = HasBodyParam(ep) || HasFormParams(ep);
+            var hasBodyBinding = ep.HasBodyOrFormBinding;
             var baseCount = 3 + (hasBodyBinding ? 1 : 0);
 
             var errorTypeCount = 0;

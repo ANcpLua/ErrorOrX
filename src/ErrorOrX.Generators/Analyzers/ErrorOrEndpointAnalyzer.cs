@@ -1,10 +1,8 @@
 using System.Collections.Immutable;
-using System.Text.RegularExpressions;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using RegexMatch = System.Text.RegularExpressions.Match;
 using SymbolMatch = ANcpLua.Roslyn.Utilities.Matching.Match;
 
 namespace ErrorOr.Analyzers;
@@ -369,13 +367,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // Matches {paramName} or {paramName:constraint} or {paramName:constraint(arg)} or {*catchAll} or {paramName?}
-    private static readonly Regex SRouteParameterWithConstraintRegex = new(
-        @"\{(?<star>\*)?(?<n>[a-zA-Z_][a-zA-Z0-9_]*)(?::(?<constraint>[a-zA-Z]+)(?:\([^)]*\))?)?(?<optional>\?)?\}",
-        RegexOptions.Compiled);
-
     /// <summary>
     ///     Extracts route parameters with their constraints from a route pattern.
+    ///     Delegates to RouteValidator which is the single source of truth for route parsing.
     /// </summary>
     private static ImmutableArray<RouteParameterInfo> ExtractRouteParametersWithConstraints(string pattern) => RouteValidator.ExtractRouteParameters(pattern);
 
@@ -442,21 +436,22 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             return issues;
         }
 
+        // Strip escaped braces before validation (matches RouteValidator behavior)
+        // This prevents false positives for routes like /api/{{version}}/users
+        var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
+
         // Check for empty parameter names: {}
-        if (pattern.Contains("{}")) issues.Add("Route contains empty parameter '{}'. Parameter names are required");
+        if (escapedStripped.Contains("{}")) issues.Add("Route contains empty parameter '{}'. Parameter names are required");
 
         // Check for unclosed braces
-        var openCount = pattern.Count(static c => c == '{');
-        var closeCount = pattern.Count(static c => c == '}');
+        var openCount = escapedStripped.Count(static c => c == '{');
+        var closeCount = escapedStripped.Count(static c => c == '}');
         if (openCount != closeCount) issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
 
-        // Check for duplicate parameter names
+        // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (RegexMatch match in SRouteParameterWithConstraintRegex.Matches(pattern))
-        {
-            var name = match.Groups["n"].Value;
-            if (!paramNames.Add(name)) issues.Add($"Route contains duplicate parameter '{{{name}}}'");
-        }
+        foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
+            if (!paramNames.Add(rp.Name)) issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
 
         return issues;
     }

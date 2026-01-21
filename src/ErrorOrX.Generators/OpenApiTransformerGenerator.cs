@@ -257,7 +257,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static void EmitTagTransformer(StringBuilder code, string tagName)
     {
-        var safeTagName = SanitizeIdentifier(tagName);
+        var safeTagName = tagName.SanitizeIdentifier();
         code.AppendLine("/// <summary>");
         code.AppendLine($"/// Document transformer for tag: {tagName}");
         code.AppendLine($"/// Generated from: [ErrorOrEndpoint] attribute on *{tagName}Endpoints class");
@@ -304,8 +304,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         foreach (var op in opsWithDocs)
         {
-            var summary = op.Summary is not null ? $"\"{EscapeString(op.Summary)}\"" : "null";
-            var description = op.Description is not null ? $"\"{EscapeString(op.Description)}\"" : "null";
+            var summary = op.Summary is not null ? $"\"{op.Summary.EscapeCSharpString()}\"" : "null";
+            var description = op.Description is not null ? $"\"{op.Description.EscapeCSharpString()}\"" : "null";
             code.AppendLine($"            [\"{op.OperationId}\"] = ({summary}, {description}),");
         }
 
@@ -364,7 +364,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        {");
 
         foreach (var type in typesWithDocs)
-            code.AppendLine($"            [\"{type.TypeKey}\"] = \"{EscapeString(type.Description)}\",");
+            code.AppendLine($"            [\"{type.TypeKey}\"] = \"{type.Description.EscapeCSharpString()}\",");
 
         code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
         code.AppendLine();
@@ -413,7 +413,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // Register tag transformers (1:1 - one per tag)
         foreach (var tag in tags)
         {
-            var safeTagName = SanitizeIdentifier(tag);
+            var safeTagName = tag.SanitizeIdentifier();
             code.AppendLine($"            // Tag: {tag}");
             code.AppendLine($"            options.AddDocumentTransformer(new Tag_{safeTagName}_Transformer());");
         }
@@ -440,24 +440,5 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("    }");
         code.AppendLine("}");
     }
-
-    private static string SanitizeIdentifier(string name)
-    {
-        var sb = new StringBuilder(name.Length);
-        foreach (var c in name)
-            if (char.IsLetterOrDigit(c) || c == '_')
-                sb.Append(c);
-            else
-                sb.Append('_');
-
-        return sb.ToString();
-    }
-
-    private static string EscapeString(string s) =>
-        s
-            .Replace("\\", @"\\")
-            .Replace("\"", "\\\"")
-            .Replace("\r", "\\r")
-            .Replace("\n", "\\n");
 #pragma warning restore EPS06
 }

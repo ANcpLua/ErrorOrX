@@ -16,6 +16,57 @@ namespace ErrorOr.Generators;
 public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 {
     /// <summary>
+    ///     Incremental pipeline tracking names for caching diagnostics.
+    /// </summary>
+    private static class TrackingNames
+    {
+        public const string ResultsUnionMaxArity = "ResultsUnionMaxArity";
+
+        public static string EndpointBindingFlow(string attributeName) => attributeName switch
+        {
+            WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
+            WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
+            WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
+            WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
+            WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
+            WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
+            _ => "EndpointBindingFlow.Unknown"
+        };
+    }
+
+    /// <summary>
+    ///     Small focused helpers for common pipeline operations.
+    /// </summary>
+    private static class Helpers
+    {
+        /// <summary>
+        ///     Converts EquatableArray to ImmutableArray, returning Empty if default/empty.
+        /// </summary>
+        public static ImmutableArray<T> AsArrayOrEmpty<T>(EquatableArray<T> array) where T : IEquatable<T> =>
+            array.IsDefaultOrEmpty ? ImmutableArray<T>.Empty : array.AsImmutableArray();
+
+        /// <summary>
+        ///     Maps attribute name to HTTP method, returning null for unrecognized attributes.
+        /// </summary>
+        public static string? TryGetHttpMethod(string attrName, ImmutableArray<TypedConstant> args) => attrName switch
+        {
+            "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
+            "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
+            "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
+            "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
+            "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
+            "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when args is [{ Value: string m }, ..] => m.ToUpperInvariant(),
+            _ => null
+        };
+
+        /// <summary>
+        ///     Creates an empty endpoint descriptor flow for early-exit scenarios.
+        /// </summary>
+        public static DiagnosticFlow<EquatableArray<EndpointDescriptor>> EmptyEndpointFlow() =>
+            DiagnosticFlow.Ok(new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
+    }
+
+    /// <summary>
     ///     Emits the marker attributes that users apply to their endpoint handler methods.
     ///     This must be registered by this generator (not just OpenApiTransformerGenerator)
     ///     because ForAttributeWithMetadataName only sees types from PostInitializationOutput
@@ -136,7 +187,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .CollectAsEquatableArray();
         var maxResultsUnionArity = referenceArities
             .Select(static (arities, _) => ResultsUnionTypeBuilder.DetectMaxArity(arities.AsImmutableArray()))
-            .WithTrackingName("ResultsUnionMaxArity");
+            .WithTrackingName(TrackingNames.ResultsUnionMaxArity);
 
         context.RegisterSourceOutput(
             endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(maxResultsUnionArity),
@@ -164,19 +215,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             deleteProvider, patchProvider, baseProvider);
     }
 
-    private static string GetEndpointBindingTrackingName(string attributeName)
-    {
-        return attributeName switch
-        {
-            WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
-            WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
-            WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
-            WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
-            WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
-            WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
-            _ => "EndpointBindingFlow.Unknown"
-        };
-    }
 
     private static void EmitMappingsAndRunAnalysis(
         SourceProductionContext spc,
@@ -185,13 +223,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             int MaxResultsUnionArity) data)
     {
         var (((endpoints, jsonContexts), generateJsonContext), maxResultsUnionArity) = data;
-
-        var endpointArray = endpoints.IsDefaultOrEmpty
-            ? ImmutableArray<EndpointDescriptor>.Empty
-            : endpoints.AsImmutableArray();
-        var jsonContextArray = jsonContexts.IsDefaultOrEmpty
-            ? ImmutableArray<JsonContextInfo>.Empty
-            : jsonContexts.AsImmutableArray();
+        var endpointArray = Helpers.AsArrayOrEmpty(endpoints);
+        var jsonContextArray = Helpers.AsArrayOrEmpty(jsonContexts);
 
         ReportDuplicateRoutes(spc, endpointArray);
 
@@ -224,7 +257,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                 var errorOrContext = new ErrorOrContext(ctx.SemanticModel.Compilation);
                 return AnalyzeEndpointFlow(ctx, errorOrContext, ct);
             })
-            .WithTrackingName(GetEndpointBindingTrackingName(attributeName))
+            .WithTrackingName(TrackingNames.EndpointBindingFlow(attributeName))
             .ReportAndContinue(context)
             .SelectMany(static (endpoints, _) => endpoints.AsImmutableArray());
     }
@@ -235,8 +268,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         CancellationToken ct)
     {
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
-            return DiagnosticFlow.Ok(
-                new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
+            return Helpers.EmptyEndpointFlow();
 
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
@@ -296,8 +328,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         }
 
         if (flows.Count is 0)
-            return DiagnosticFlow.Ok(
-                new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
+            return Helpers.EmptyEndpointFlow();
 
         return DiagnosticFlow.Collect(flows.ToImmutable())
             .Select(static endpoints => new EquatableArray<EndpointDescriptor>(endpoints));
@@ -383,24 +414,16 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         AttributeData attr,
         string attrName)
     {
-        if (attrName switch
-            {
-                "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
-                "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
-                "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
-                "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
-                "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
-                "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when attr.ConstructorArguments is [{ Value: string m }, ..] => m.ToUpperInvariant(),
-                _ => null
-            } is not { } httpMethod)
+        var httpMethod = Helpers.TryGetHttpMethod(attrName, attr.ConstructorArguments);
+        if (httpMethod is null)
             return (null, "/");
 
-        // Extract pattern
+        // Extract pattern - index differs for ErrorOrEndpoint (has httpMethod arg first)
         var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
-        var pattern = "/";
-        if (attr.ConstructorArguments.Length > patternIndex &&
-            attr.ConstructorArguments[patternIndex].Value is string p)
-            pattern = p;
+        var pattern = attr.ConstructorArguments.Length > patternIndex &&
+                      attr.ConstructorArguments[patternIndex].Value is string p
+            ? p
+            : "/";
 
         return (httpMethod, pattern);
     }

@@ -1,4 +1,4 @@
-using System.Text;
+using ANcpLua.Roslyn.Utilities;
 
 namespace ErrorOr.Generators;
 
@@ -171,16 +171,8 @@ internal static class TypeNameHelper
         var className = ExtractShortName(containingTypeFqn);
         var tagName = GetTagName(className);
         var normalizedType = StripGlobalPrefix(containingTypeFqn);
-        var opPrefix = SanitizeIdentifier(normalizedType);
+        var opPrefix = normalizedType.SanitizeIdentifier();
 
         return (tagName, $"{opPrefix}_{methodName}");
-    }
-
-    private static string SanitizeIdentifier(string value)
-    {
-        var sb = new StringBuilder(value.Length);
-        foreach (var c in value)
-            sb.Append(char.IsLetterOrDigit(c) ? c : '_');
-        return sb.ToString();
     }
 }

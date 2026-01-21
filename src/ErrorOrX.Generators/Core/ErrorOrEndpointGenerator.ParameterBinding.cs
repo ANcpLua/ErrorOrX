@@ -560,7 +560,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static RoutePrimitiveKind? TryGetRoutePrimitiveKind(ITypeSymbol type, ErrorOrContext context)
     {
-        type = ErrorOrContext.UnwrapNullable(type);
+        type = type.UnwrapNullable();
 
         return type.SpecialType switch
         {
@@ -613,7 +613,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool IsPrimitiveOrWellKnownType(ITypeSymbol type, ErrorOrContext context)
     {
-        type = ErrorOrContext.UnwrapNullable(type);
+        type = type.UnwrapNullable();
 
         // Check for primitive types (int, string, bool, etc.)
         if (type.SpecialType is not SpecialType.None)
@@ -715,7 +715,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool IsFormatProvider(ITypeSymbol type, ErrorOrContext context)
     {
-        type = ErrorOrContext.UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (context.IFormatProvider is not null)
             return SymbolEqualityComparer.Default.Equals(type, context.IFormatProvider);
 
@@ -726,7 +726,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static (bool IsCollection, ITypeSymbol? ItemType, RoutePrimitiveKind? Kind) AnalyzeCollectionType(
         ITypeSymbol type, ErrorOrContext context)
     {
-        type = ErrorOrContext.UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (type.SpecialType == SpecialType.System_String)
             return (false, null, null);
 
@@ -923,7 +923,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static bool IsComplexType(ITypeSymbol type, ErrorOrContext context)
     {
-        type = ErrorOrContext.UnwrapNullable(type);
+        type = type.UnwrapNullable();
 
         // Primitives are not complex
         if (type.SpecialType is not SpecialType.None)

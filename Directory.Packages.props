@@ -9,10 +9,10 @@
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.14.0"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.14.0"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.16.0"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.16.0"/>
         <!-- Code Quality Analyzers -->
-        <PackageVersion Include="ANcpLua.Analyzers" Version="1.6.15"/>
+        <PackageVersion Include="ANcpLua.Analyzers" Version="1.9.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4"/>
         <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.5"/>
         <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>

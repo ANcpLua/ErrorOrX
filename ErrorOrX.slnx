@@ -4,6 +4,24 @@
         <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" />
     </Folder>
     <Folder Name="/samples/">
+        <File Path="samples\Archive\IncrementalValuesProviderExtensions copy.cs" />
+        <File Path="samples\Archive\ISymbolExtensions copy.cs" />
+        <File Path="samples\Archive\ITypeSymbolExtensions copy.cs" />
+        <File Path="samples\Archive\RequiredSymbols copy.cs" />
+        <File Path="samples\Archive\RequiredSymbols.cs" />
+        <File Path="samples\Archive\ValidatableProperty copy.cs" />
+        <File Path="samples\Archive\ValidatableProperty.cs" />
+        <File Path="samples\Archive\ValidatableType copy.cs" />
+        <File Path="samples\Archive\ValidatableType.cs" />
+        <File Path="samples\Archive\ValidatableTypeComparer copy.cs" />
+        <File Path="samples\Archive\ValidatableTypeComparer.cs" />
+        <File Path="samples\Archive\ValidationAttribute copy.cs" />
+        <File Path="samples\Archive\ValidationAttribute.cs" />
+        <File Path="samples\Archive\ValidationsGenerator.AddValidation.cs" />
+        <File Path="samples\Archive\ValidationsGenerator.AttributeParser.cs" />
+        <File Path="samples\Archive\ValidationsGenerator.cs" />
+        <File Path="samples\Archive\ValidationsGenerator.EndpointsParser.cs" />
+        <File Path="samples\Archive\ValidationsGenerator.TypesParser.cs" />
         <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj" />
     </Folder>
     <Folder Name="/tests/">

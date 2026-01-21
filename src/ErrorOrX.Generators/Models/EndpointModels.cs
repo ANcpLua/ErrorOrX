@@ -183,7 +183,31 @@ internal readonly record struct EndpointDescriptor(
     string? SseItemTypeFqn = null,
     bool IsAcceptedResponse = false,
     string? LocationIdPropertyName = null,
-    MiddlewareInfo Middleware = default);
+    MiddlewareInfo Middleware = default)
+{
+    /// <summary>
+    ///     Returns true if any parameter is bound from body.
+    /// </summary>
+    public bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == EndpointParameterSource.Body);
+
+    /// <summary>
+    ///     Returns true if any parameter is bound from form-related sources.
+    /// </summary>
+    public bool HasFormParams => HandlerParameters.AsImmutableArray().Any(static p =>
+        p.Source is EndpointParameterSource.Form or EndpointParameterSource.FormFile
+            or EndpointParameterSource.FormFiles or EndpointParameterSource.FormCollection);
+
+    /// <summary>
+    ///     Returns true if endpoint has body or form binding (for OpenAPI and validation).
+    /// </summary>
+    public bool HasBodyOrFormBinding => HasBodyParam || HasFormParams;
+
+    /// <summary>
+    ///     Returns true if any parameter uses BindAsync custom binding.
+    /// </summary>
+    public bool HasBindAsyncParam => HandlerParameters.AsImmutableArray().Any(static p =>
+        p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam);
+}
 
 /// <summary>
 ///     Success response information for OpenAPI metadata.

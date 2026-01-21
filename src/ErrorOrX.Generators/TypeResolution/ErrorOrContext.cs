@@ -283,7 +283,7 @@ internal sealed class ErrorOrContext
         if (type is null)
             return false;
 
-        type = UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (Stream is not null)
             return type.IsOrInheritsFrom(Stream);
 
@@ -297,7 +297,7 @@ internal sealed class ErrorOrContext
         if (type is null)
             return false;
 
-        type = UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (PipeReader is not null)
             return type.IsOrInheritsFrom(PipeReader);
 
@@ -311,7 +311,7 @@ internal sealed class ErrorOrContext
         if (type is null)
             return false;
 
-        type = UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (CancellationToken is not null)
             return SymbolEqualityComparer.Default.Equals(type, CancellationToken);
 
@@ -325,20 +325,11 @@ internal sealed class ErrorOrContext
         if (type is null)
             return false;
 
-        type = UnwrapNullable(type);
+        type = type.UnwrapNullable();
         if (ParameterInfo is not null)
             return SymbolEqualityComparer.Default.Equals(type, ParameterInfo);
 
         return type.Name == "ParameterInfo" &&
                type.ContainingNamespace.ToDisplayString() == "System.Reflection";
     }
-
-    /// <summary>Unwraps Nullable&lt;T&gt; to get the underlying type.</summary>
-    public static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>
-        type is INamedTypeSymbol
-        {
-            IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T
-        } n
-            ? n.TypeArguments[0]
-            : type;
 }
