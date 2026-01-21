@@ -79,6 +79,7 @@ jobs:
             <PropertyGroup>
               <TargetFramework>net10.0</TargetFramework>
               <RootNamespace>ErrorOrX.Sample</RootNamespace>
+              <ImplicitUsings>enable</ImplicitUsings>
               <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
               <CompilerGeneratedFilesOutputPath>\$(BaseIntermediateOutputPath)\\GeneratedFiles</CompilerGeneratedFilesOutputPath>
               <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
