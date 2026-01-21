@@ -77,8 +77,6 @@
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-        <!-- SDK 1.6.19 package has 1.13.0, source has 1.14.0 - needs republish -->
-        <ANcpLuaRoslynUtilitiesVersion>1.14.0</ANcpLuaRoslynUtilitiesVersion>
         <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot);roslynUtilsVersion=$(ANcpLuaRoslynUtilitiesVersion)</NuspecProperties>
     </PropertyGroup>
 </Project>
