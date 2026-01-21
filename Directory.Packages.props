@@ -34,6 +34,9 @@
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
         <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.3.2"/>
         <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2"/>
+        <!-- xunit v2 for Stryker compatibility (no MTP support yet) -->
+        <PackageVersion Include="xunit" Version="2.9.3"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2"/>
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0"/>
         <!-- ASP.NET Core -->
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>

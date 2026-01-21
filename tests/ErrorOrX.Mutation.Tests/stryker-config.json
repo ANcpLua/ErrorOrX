@@ -1,0 +1,36 @@
+{
+    "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/Stryker.schema.json",
+    "stryker-config": {
+        "project-info": {
+            "name": "github.com/AnotherCoreLib/ErrorOrX",
+            "module": "ErrorOrX"
+        },
+        "project": "ErrorOrX.csproj",
+        "reporters": [
+            "progress",
+            "html",
+            "cleartext"
+        ],
+        "verbosity": "info",
+        "concurrency": 4,
+        "mutation-level": "Standard",
+        "mutate": [
+            "**/*.cs",
+            "!**/obj/**",
+            "!**/bin/**",
+            "!**/*.g.cs",
+            "!**/*.generated.cs"
+        ],
+        "ignore-mutations": [
+            "string"
+        ],
+        "thresholds": {
+            "high": 80,
+            "low": 60,
+            "break": 0
+        },
+        "coverage-analysis": "perTest",
+        "disable-bail": false,
+        "disable-mix-mutants": false
+    }
+}
