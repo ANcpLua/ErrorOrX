@@ -77,7 +77,7 @@
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-        <!-- Override SDK version until 1.6.17+ propagates to NuGet -->
+        <!-- Override: SDK 1.6.19 still pins 1.13.0, we need 1.14.0 -->
         <ANcpLuaRoslynUtilitiesVersion>1.14.0</ANcpLuaRoslynUtilitiesVersion>
         <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot);roslynUtilsVersion=$(ANcpLuaRoslynUtilitiesVersion)</NuspecProperties>
     </PropertyGroup>
