@@ -103,4 +103,101 @@ internal static class IncrementalProviderExtensions
             return new EquatableArray<T>(builder.ToImmutable());
         });
     }
+
+    /// <summary>
+    ///     Concatenates two collected arrays into a flattened values provider.
+    ///     Chainable: <c>p1.CollectAsEquatableArray().Concat(p2.CollectAsEquatableArray())</c>
+    /// </summary>
+    /// <remarks>
+    ///     Pattern from .NET Foundation validation generator.
+    ///     Enables flexible provider composition without fixed-arity methods.
+    /// </remarks>
+    public static IncrementalValuesProvider<T> Concat<T>(
+        this IncrementalValueProvider<EquatableArray<T>> first,
+        IncrementalValueProvider<EquatableArray<T>> second)
+        where T : IEquatable<T>
+    {
+        return first.Combine(second)
+            .SelectMany(static (tuple, _) =>
+            {
+                var (left, right) = tuple;
+
+                if (left.IsDefaultOrEmpty && right.IsDefaultOrEmpty)
+                    return ImmutableArray<T>.Empty;
+
+                var leftArr = left.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : left.AsImmutableArray();
+                var rightArr = right.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : right.AsImmutableArray();
+
+                var builder = ImmutableArray.CreateBuilder<T>(leftArr.Length + rightArr.Length);
+                builder.AddRange(leftArr);
+                builder.AddRange(rightArr);
+                return builder.ToImmutable();
+            });
+    }
+
+    /// <summary>
+    ///     Concatenates a collected array with a values provider.
+    ///     Enables mixing collected and uncollected providers.
+    /// </summary>
+    public static IncrementalValuesProvider<T> Concat<T>(
+        this IncrementalValueProvider<EquatableArray<T>> first,
+        IncrementalValuesProvider<T> second)
+        where T : IEquatable<T>
+    {
+        return first.Combine(second.CollectAsEquatableArray())
+            .SelectMany(static (tuple, _) =>
+            {
+                var (left, right) = tuple;
+
+                if (left.IsDefaultOrEmpty && right.IsDefaultOrEmpty)
+                    return ImmutableArray<T>.Empty;
+
+                var leftArr = left.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : left.AsImmutableArray();
+                var rightArr = right.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : right.AsImmutableArray();
+
+                var builder = ImmutableArray.CreateBuilder<T>(leftArr.Length + rightArr.Length);
+                builder.AddRange(leftArr);
+                builder.AddRange(rightArr);
+                return builder.ToImmutable();
+            });
+    }
+
+    /// <summary>
+    ///     Collects and concatenates with another collected array, returning EquatableArray.
+    ///     Final step in a concat chain when you need EquatableArray for further combining.
+    /// </summary>
+    public static IncrementalValueProvider<EquatableArray<T>> ConcatAndCollect<T>(
+        this IncrementalValueProvider<EquatableArray<T>> first,
+        IncrementalValueProvider<EquatableArray<T>> second)
+        where T : IEquatable<T>
+    {
+        return first.Combine(second)
+            .Select(static (tuple, _) =>
+            {
+                var (left, right) = tuple;
+
+                if (left.IsDefaultOrEmpty && right.IsDefaultOrEmpty)
+                    return new EquatableArray<T>(ImmutableArray<T>.Empty);
+
+                var leftArr = left.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : left.AsImmutableArray();
+                var rightArr = right.IsDefaultOrEmpty
+                    ? ImmutableArray<T>.Empty
+                    : right.AsImmutableArray();
+
+                var builder = ImmutableArray.CreateBuilder<T>(leftArr.Length + rightArr.Length);
+                builder.AddRange(leftArr);
+                builder.AddRange(rightArr);
+                return new EquatableArray<T>(builder.ToImmutable());
+            });
+    }
 }

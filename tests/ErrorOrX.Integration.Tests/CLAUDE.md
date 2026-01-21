@@ -1,6 +1,16 @@
+---
+See [Root CLAUDE.md](/Users/ancplua/ErrorOrX/CLAUDE.md) for project context.
+---
+
 # ErrorOrX.Integration.Tests
 
 Integration tests that verify ErrorOrX-generated endpoints behave identically to native ASP.NET Core Minimal APIs at runtime.
+
+## Package Details
+
+- **Target**: `net10.0`
+- **SDK**: `Microsoft.NET.Sdk.Web`
+- **Namespace**: `ErrorOrX.Integration.Tests`
 
 ## Purpose
 
@@ -165,7 +175,9 @@ public async Task Descriptive_Test_Name()
 
 ## Dependencies
 
-- `xunit.v3.mtp-v2` - xUnit v3 with Microsoft Testing Platform
-- `AwesomeAssertions` - Fluent assertions
-- `Microsoft.AspNetCore.Mvc.Testing` - `WebApplicationFactory` infrastructure
-- `Microsoft.AspNetCore.OpenApi` - OpenAPI support (for future OpenAPI tests)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| xunit.v3.mtp-v2 | 3.2.2 | xUnit v3 with Microsoft Testing Platform |
+| AwesomeAssertions | 9.3.0 | Fluent assertions |
+| Microsoft.AspNetCore.Mvc.Testing | 10.0.2 | WebApplicationFactory infrastructure |
+| Microsoft.AspNetCore.OpenApi | 10.0.2 | OpenAPI support (for future tests) |

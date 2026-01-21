@@ -390,6 +390,18 @@ dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release
 
 Consumers reference `ErrorOrX.Generators` which declares a dependency on `ErrorOrX`.
 
+## Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| ANcpLua.Roslyn.Utilities | 1.16.0 | Roslyn incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | 1.16.0 | Generator testing framework |
+| ANcpLua.Analyzers | 1.9.0 | Code quality analyzers |
+| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
+| xunit.v3 | 3.2.2 | Testing framework with MTP |
+| AwesomeAssertions | 9.3.0 | Fluent assertions |
+| Microsoft.SourceLink.GitHub | 10.0.102 | Source Link support |
+
 ## Maintenance Notes
 
 - When extending shared SDK helpers (for example, `Throw.UnreachableException`), upstream the change in

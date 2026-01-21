@@ -50,9 +50,12 @@ return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors)
 
 ## Dependencies
 
-- `Microsoft.CodeAnalysis.CSharp` - Roslyn APIs
-- `ANcpLua.Roslyn.Utilities` - Bundled in package
-- `PolySharp` - C# polyfills for netstandard2.0
+| Package | Version | Purpose |
+|---------|---------|---------|
+| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
+| ANcpLua.Roslyn.Utilities | 1.16.0 | Bundled in package |
+| PolySharp | 1.15.0 | C# polyfills for netstandard2.0 |
+| ANcpLua.Analyzers | 1.9.0 | Code quality analyzers |
 
 ## Package Structure
 

@@ -9,8 +9,14 @@ Unit tests for the ErrorOrX source generators and analyzers.
 
 ## Test Framework
 
-- **xUnit v3** with Microsoft Testing Platform (MTP)
-- **ANcpLua.Roslyn.Utilities.Testing** for generator testing utilities
+| Package | Version | Purpose |
+|---------|---------|---------|
+| xunit.v3.mtp-v2 | 3.2.2 | xUnit v3 with Microsoft Testing Platform |
+| AwesomeAssertions | 9.3.0 | Fluent assertions |
+| ANcpLua.Roslyn.Utilities.Testing | 1.16.0 | Generator testing utilities |
+| Verify.XunitV3 | 31.9.4 | Snapshot testing |
+| Verify.SourceGenerators | 2.5.0 | Generator output verification |
+| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
 
 ## Running Tests
 

@@ -141,6 +141,33 @@ ErrorOr<User> result = GetUser(id)
     .FailIf(user => !user.IsActive, Error.Forbidden("User.Inactive", "User is inactive"));
 ```
 
+### `Or*` - Nullable-to-ErrorOr conversion
+
+Convert nullable values to `ErrorOr<T>` with auto-generated error codes:
+
+```csharp
+// Auto-generates error code from type name (e.g., "Todo.NotFound")
+return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
+return user.OrUnauthorized("Invalid credentials");
+return record.OrValidation("Record is invalid");
+
+// Custom errors
+return value.OrError(Error.Custom(422, "Custom.Code", "Custom message"));
+return value.OrError(() => BuildExpensiveError());  // Lazy evaluation
+```
+
+| Extension           | Error Type   | HTTP | Auto-Generated Code Pattern |
+|---------------------|--------------|------|----------------------------|
+| `.OrNotFound()`     | NotFound     | 404  | `{TypeName}.NotFound`      |
+| `.OrValidation()`   | Validation   | 400  | `{TypeName}.Invalid`       |
+| `.OrUnauthorized()` | Unauthorized | 401  | `{TypeName}.Unauthorized`  |
+| `.OrForbidden()`    | Forbidden    | 403  | `{TypeName}.Forbidden`     |
+| `.OrConflict()`     | Conflict     | 409  | `{TypeName}.Conflict`      |
+| `.OrFailure()`      | Failure      | 500  | `{TypeName}.Failure`       |
+| `.OrUnexpected()`   | Unexpected   | 500  | `{TypeName}.Unexpected`    |
+| `.OrError(Error)`   | Any          | Any  | User-provided              |
+| `.OrError(Func)`    | Any          | Any  | User-provided (lazy)       |
+
 ## Dependencies
 
 - `Microsoft.AspNetCore.App` framework reference (for `TypedResults` helpers in endpoints)
@@ -169,6 +196,7 @@ src/ErrorOrX/
 ├── ErrorOr.ImplicitConverters.cs # T → ErrorOr<T>, Error → ErrorOr<T>
 ├── ErrorOr.Match.cs            # Match transformation
 ├── ErrorOr.MatchExtensions.cs  # Match extensions
+├── ErrorOr.OrExtensions.cs     # Or* nullable-to-ErrorOr extensions
 ├── ErrorOr.Switch.cs           # Switch side effects
 ├── ErrorOr.SwitchExtensions.cs # Switch extensions
 ├── ErrorOr.Then.cs             # Then chaining
