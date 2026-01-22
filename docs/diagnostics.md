@@ -183,9 +183,99 @@ Type used with `[AsParameters]` must have an accessible constructor.
 
 `[FromHeader]` must be string, a primitive with `TryParse`, or a collection thereof.
 
+### EOE017 - Anonymous return type not supported
+
+**Severity:** Error
+
+Handler methods cannot return `ErrorOr<T>` with an anonymous type. Anonymous types have no stable identity for JSON serialization.
+
+```csharp
+// Error: anonymous type
+[Get("/data")]
+public static ErrorOr<object> GetData() => new { Name = "test" };  // EOE017
+
+// Fixed: use named type
+[Get("/data")]
+public static ErrorOr<DataResponse> GetData() => new DataResponse { Name = "test" };
+```
+
+### EOE018 - Nested [AsParameters] not supported
+
+**Severity:** Error
+
+`[AsParameters]` types cannot contain properties that are also marked with `[AsParameters]`. Recursive parameter expansion is not supported.
+
+```csharp
+// Error: nested [AsParameters]
+public class OuterParams {
+    [AsParameters]
+    public InnerParams Inner { get; set; }  // EOE018
+}
+
+// Fixed: flatten or use single level
+public class FlatParams {
+    public string Name { get; set; }
+    public int Page { get; set; }
+}
+```
+
+### EOE019 - Nullable [AsParameters] not supported
+
+**Severity:** Error
+
+`[AsParameters]` cannot be applied to nullable types. Parameter expansion requires a concrete instance.
+
+```csharp
+// Error: nullable
+[Get("/users")]
+public static ErrorOr<List<User>> Get([AsParameters] SearchParams? search)  // EOE019
+
+// Fixed: non-nullable
+[Get("/users")]
+public static ErrorOr<List<User>> Get([AsParameters] SearchParams search)
+```
+
 ---
 
-## Route Constraint Diagnostics (EOE020-EOE029)
+## Type Accessibility Diagnostics (EOE020-EOE022)
+
+### EOE020 - Inaccessible type in endpoint
+
+**Severity:** Error
+
+Private or protected types cannot be used in endpoint signatures. Generated code cannot access them.
+
+```csharp
+// Error: private type
+private class SecretRequest { }
+
+[Post("/data")]
+public static ErrorOr<Result> Post([FromBody] SecretRequest req)  // EOE020
+
+// Fixed: make accessible
+internal class InternalRequest { }
+
+[Post("/data")]
+public static ErrorOr<Result> Post([FromBody] InternalRequest req)
+```
+
+### EOE021 - Type parameter not supported
+
+**Severity:** Error
+
+Generic type parameters (open generics) cannot be used in endpoint return types. The generator cannot emit code for unbound generic types.
+
+```csharp
+// Error: type parameter
+public static ErrorOr<T> GetItem<T>(int id) where T : class  // EOE021
+
+// Fixed: use concrete type
+public static ErrorOr<User> GetUser(int id)
+```
+
+---
+
+## Route Constraint Diagnostics (EOE023-EOE029)
 
 ### EOE023 - Route constraint type mismatch
 
@@ -292,6 +382,100 @@ internal partial class AppJsonContext : JsonSerializerContext { }
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(User))]
 internal partial class AppJsonContext : JsonSerializerContext { }
+```
+
+---
+
+## API Versioning Diagnostics (EOE050-EOE059)
+
+### EOE050 - Version-neutral with mappings
+
+**Severity:** Warning
+
+Endpoint is marked `[ApiVersionNeutral]` but also has `[MapToApiVersion]`. These are mutually exclusive.
+
+```csharp
+// Warning: conflicting attributes
+[ApiVersionNeutral]
+[MapToApiVersion("2.0")]
+[Get("/health")]
+public static ErrorOr<HealthStatus> Check() => ...
+
+// Fixed: use one or the other
+[ApiVersionNeutral]
+[Get("/health")]
+public static ErrorOr<HealthStatus> Check() => ...
+```
+
+### EOE051 - Mapped version not declared
+
+**Severity:** Warning
+
+Endpoint maps to a version that isn't declared with `[ApiVersion]` on the class.
+
+```csharp
+// Warning: 2.0 not in declared versions
+[ApiVersion("1.0")]
+public static class UsersEndpoints
+{
+    [MapToApiVersion("2.0")]  // EOE051
+    [Get("/users")]
+    public static ErrorOr<List<User>> GetAll() => ...
+}
+
+// Fixed: declare all versions
+[ApiVersion("1.0")]
+[ApiVersion("2.0")]
+public static class UsersEndpoints { }
+```
+
+### EOE052 - Asp.Versioning package not referenced
+
+**Severity:** Warning
+
+Endpoint uses API versioning but the `Asp.Versioning.Http` package is not referenced.
+
+```bash
+# Fix: install the package
+dotnet add package Asp.Versioning.Http
+```
+
+### EOE053 - Endpoint missing versioning
+
+**Severity:** Info
+
+Endpoint has no version information but other endpoints in the project use API versioning.
+
+```csharp
+// Info: other endpoints use versioning, but this one doesn't
+[Get("/legacy")]
+public static ErrorOr<Data> GetLegacy() => ...
+
+// Fixed: declare version scope
+[ApiVersion("1.0")]
+[Get("/legacy")]
+public static ErrorOr<Data> GetLegacy() => ...
+
+// Or mark as version-neutral
+[ApiVersionNeutral]
+[Get("/legacy")]
+public static ErrorOr<Data> GetLegacy() => ...
+```
+
+### EOE054 - Invalid API version format
+
+**Severity:** Error
+
+`[ApiVersion]` has an invalid format. Use "major.minor" or just "major".
+
+```csharp
+// Error: invalid format
+[ApiVersion("v1")]  // EOE054
+[ApiVersion("1.0.0")]  // EOE054
+
+// Fixed: use valid format
+[ApiVersion("1.0")]
+[ApiVersion("2")]
 ```
 
 ---
