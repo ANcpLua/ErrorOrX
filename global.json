@@ -7,7 +7,7 @@
   "msbuild-sdks": {
     "ANcpLua.NET.Sdk": "1.6.21",
     "ANcpLua.NET.Sdk.Web": "1.6.21",
-    "ANcpLua.NET.Sdk.Test": "1.6.21",
+    "ANcpLua.NET.Sdk.Test": "1.6.23",
     "ANcpLua.Roslyn.Utilities.Testing": "1.16.0",
     "ANcpLua.Roslyn.Utilities": "1.16.0"
   },
