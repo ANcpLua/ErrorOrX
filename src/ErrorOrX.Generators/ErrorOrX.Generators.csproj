@@ -48,14 +48,14 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
         <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true"/>
-        <PackageReference Include="PolySharp" PrivateAssets="all"/>
+        <!-- PolySharp removed - using Polyfills.cs to avoid type conflicts with test projects -->
     </ItemGroup>
 
     <!-- ═══════════════════════════════════════════════════════════════════════════
-         CODE QUALITY ANALYZERS (not using ANcpLua.NET.Sdk, so explicit reference needed)
+         CODE QUALITY ANALYZERS (not using ANcpLua.NET.Sdk, so explicit version)
          ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
-        <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all"/>
+        <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all" VersionOverride="1.10.2"/>
     </ItemGroup>
 
     <!-- Expose dependencies to projects referencing this generator via ProjectReference -->
