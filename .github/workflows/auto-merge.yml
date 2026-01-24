@@ -45,7 +45,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr merge --auto --squash "$PR_URL"
 
-      - name: Comment on major updates
+      - name: Request Claude review for major updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -56,12 +56,13 @@ jobs:
         run: |
           gh pr comment "$PR_URL" --body "## ⚠️ Major Version Update
 
-          This is a **major version update** that may contain breaking changes.
+          @claude Please review this major version update for breaking changes and merge if safe.
 
-          **Manual review required.**
+          | Dependency | Update |
+          |------------|--------|
+          | \`$DEP_NAMES\` | \`$PREV_VERSION\` → \`$NEW_VERSION\` |
 
-          Dependency: \`$DEP_NAMES\`
-          Update: \`$PREV_VERSION\` → \`$NEW_VERSION\`"
+          Check the changelog and verify compatibility."
 
   renovate-auto-merge:
     name: Renovate auto-merge
