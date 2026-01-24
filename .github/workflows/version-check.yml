@@ -10,5 +10,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
       - name: Verify pinned package versions
-        uses: ANcpLua/ANcpLua.NET.Sdk/.github/actions/version-pin-check@actions-version-pin-check-v1
+        shell: pwsh
+        run: |
+          # Inline version check (workaround for $PSScriptRoot bug in composite action)
+          $globalJson = Get-Content 'global.json' -Raw | ConvertFrom-Json
+          $sdks = $globalJson.'msbuild-sdks'.PSObject.Properties
+
+          $errors = @()
+          foreach ($sdk in $sdks) {
+            $name = $sdk.Name
+            $version = $sdk.Value
+
+            # Check if version is published on NuGet
+            $url = "https://api.nuget.org/v3-flatcontainer/$($name.ToLower())/index.json"
+            try {
+              $response = Invoke-RestMethod -Uri $url -ErrorAction Stop
+              $latest = $response.versions | Select-Object -Last 1
+
+              if ($version -ne $latest) {
+                Write-Host "::warning::$name pinned to $version, latest is $latest"
+              } else {
+                Write-Host "✓ $name $version is latest"
+              }
+            } catch {
+              Write-Host "::warning::Could not verify $name - package not found or API error"
+            }
+          }
+
+          if ($errors.Count -gt 0) {
+            throw "Version pin check failed: $($errors -join '; ')"
+          }

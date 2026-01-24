@@ -39,6 +39,7 @@ public readonly record struct Error
     /// </summary>
     public Dictionary<string, object>? Metadata { get; }
 
+    /// <inheritdoc />
     public bool Equals(Error other)
     {
         if (Type != other.Type ||
@@ -156,11 +157,14 @@ public readonly record struct Error
         Dictionary<string, object>? metadata = null) =>
         new(code, description, (ErrorType)type, metadata);
 
-    public override int GetHashCode() =>
-        Metadata is null ? HashCode.Combine(Code, Description, Type, NumericType) : ComposeHashCode();
-
-    private int ComposeHashCode()
+    /// <inheritdoc />
+    public override int GetHashCode()
     {
+        if (Metadata is null)
+        {
+            return HashCode.Combine(Code, Description, Type, NumericType);
+        }
+
         var hashCode = new HashCode();
 
         hashCode.Add(Code);
@@ -168,7 +172,7 @@ public readonly record struct Error
         hashCode.Add(Type);
         hashCode.Add(NumericType);
 
-        foreach (var keyValuePair in Metadata!)
+        foreach (var keyValuePair in Metadata)
         {
             hashCode.Add(keyValuePair.Key);
             hashCode.Add(keyValuePair.Value);

@@ -2,6 +2,7 @@ namespace ErrorOr;
 
 public readonly partial record struct ErrorOr<TValue>
 {
+    /// <inheritdoc />
     public bool Equals(ErrorOr<TValue> other)
     {
         if (!IsError)
@@ -12,6 +13,7 @@ public readonly partial record struct ErrorOr<TValue>
         return other.IsError && CheckIfErrorsAreEqual(_errors, other._errors);
     }
 
+    /// <inheritdoc />
     public override int GetHashCode()
     {
         if (!IsError)

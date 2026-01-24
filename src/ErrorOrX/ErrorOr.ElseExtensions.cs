@@ -1,5 +1,8 @@
 namespace ErrorOr;
 
+/// <summary>
+///     Extension methods for <see cref="ErrorOr{TValue}" />.
+/// </summary>
 public static partial class ErrorOrExtensions
 {
     /// <summary>

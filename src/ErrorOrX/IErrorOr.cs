@@ -1,5 +1,9 @@
 namespace ErrorOr;
 
+/// <summary>
+///     Generic interface for <see cref="ErrorOr{TValue}" />.
+/// </summary>
+/// <typeparam name="TValue">The type of the success value.</typeparam>
 public interface IErrorOr<out TValue> : IErrorOr
 {
     /// <summary>
