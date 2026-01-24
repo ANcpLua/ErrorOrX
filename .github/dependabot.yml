@@ -12,7 +12,9 @@ updates:
       interval: "weekly"
     groups:
       ancplua-sdk:
-        patterns: ["ANcpLua*"]
+        patterns: ["ANcpLua.NET.Sdk*", "ANcpSdk.*"]
+      ancplua-roslyn:
+        patterns: ["ANcpLua.Roslyn.*", "ANcpLua.Analyzers"]
       roslyn:
         patterns: ["Microsoft.CodeAnalysis*"]
       testing:
