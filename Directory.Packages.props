@@ -14,7 +14,7 @@
         <!-- Code Quality Analyzers (Update to override SDK versions) -->
         <PackageVersion Update="ANcpLua.Analyzers" Version="1.10.2"/>
         <PackageVersion Update="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4"/>
-        <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.5"/>
+        <PackageVersion Update="Microsoft.Sbom.Targets" Version="4.1.5"/>
         <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>
         <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.8.2-beta.1"/>
         <PackageVersion Include="ErrorProne.NET.Structs" Version="0.6.1-beta.1"/>
