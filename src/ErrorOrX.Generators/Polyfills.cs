@@ -76,7 +76,7 @@ namespace System.Runtime.CompilerServices
         public string FeatureName { get; }
 
         /// <summary>Gets or sets a value indicating whether the compiler can choose to allow access to the location where this attribute is applied if it does not understand FeatureName.</summary>
-        public bool IsOptional { get; init; }
+        public bool IsOptional { get; set; }
     }
 
     /// <summary>Indicates the type of the async method builder that should be used by a language compiler to build the attributed async method or to build the attributed type when used as the return type of an async method.</summary>
