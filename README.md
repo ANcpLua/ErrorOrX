@@ -133,6 +133,26 @@ Result.Updated   // 204 No Content
 Result.Deleted   // 204 No Content
 ```
 
+## Interface Types with `[ReturnsError]`
+
+Document possible errors on interface methods for OpenAPI generation:
+
+```csharp
+public interface ITodoService
+{
+    [ReturnsError(ErrorType.NotFound, "Todo.NotFound")]
+    [ReturnsError(ErrorType.Validation, "Todo.Invalid")]
+    ErrorOr<Todo> GetById(int id);
+}
+
+[Get("/todos/{id}")]
+public static ErrorOr<Todo> GetById(int id, ITodoService svc) =>
+    svc.GetById(id);
+// Generates: Results<Ok<Todo>, NotFound<ProblemDetails>, ValidationProblem>
+```
+
+The generator reads `[ReturnsError]` attributes from interface/abstract methods to build the complete `Results<...>` union for OpenAPI documentation.
+
 ## Smart Parameter Binding
 
 The generator automatically infers parameter sources:
