@@ -210,11 +210,7 @@ Disable generator JSON context if providing your own:
 
 ## Documentation
 
-- [API Reference](docs/api.md)
-- [Parameter Binding](docs/parameter-binding.md)
-- [Diagnostics](docs/diagnostics.md)
-- [Changelog](CHANGELOG.md)
-
-## License
-
-MIT
+- [API Reference](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/api.md)
+- [Parameter Binding](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/parameter-binding.md)
+- [Diagnostics](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/diagnostics.md)
+- [Changelog](https://github.com/ANcpLua/ErrorOrX/blob/main/CHANGELOG.md)
