@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-01-25
+
+### Fixed
+
+- **Package installation issue**: Removed `developmentDependency=true` from `.nuspec` to prevent NuGet from automatically adding `PrivateAssets=all` when installing via `dotnet add package`. Added MSBuild target in `.props` that explicitly adds ErrorOrX reference with `PrivateAssets=none` if not already present. Users no longer need to manually edit `.csproj` after installation.
+
 ## [3.0.0] - 2026-01-25
 
 ### Changed
