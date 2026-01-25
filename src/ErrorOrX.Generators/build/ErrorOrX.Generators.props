@@ -30,8 +30,22 @@
         <CompilerVisibleProperty Include="PublishAot"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Ensure ErrorOrX flows to consuming projects (not blocked by PrivateAssets=all) -->
-        <PackageReference Update="ErrorOrX" PrivateAssets="none"/>
-    </ItemGroup>
+    <!--
+        Workaround for developmentDependency=true hiding ErrorOrX runtime.
+        When ErrorOrX.Generators is installed via 'dotnet add package', NuGet adds
+        PrivateAssets=all due to developmentDependency=true. This target runs after
+        NuGet restore and adds an explicit ErrorOrX reference if missing.
+    -->
+    <Target Name="EnsureErrorOrXRuntimeFlows" BeforeTargets="ResolvePackageAssets">
+        <ItemGroup>
+            <!-- Get the version of ErrorOrX.Generators that was installed -->
+            <_ErrorOrXGenVersion Include="@(PackageReference->WithMetadataValue('Identity', 'ErrorOrX.Generators')->Metadata('Version'))" />
+
+            <!-- Add ErrorOrX with same version if not already present with PrivateAssets=none -->
+            <PackageReference Include="ErrorOrX"
+                              Version="%(_ErrorOrXGenVersion.Identity)"
+                              Condition="'%(_ErrorOrXGenVersion.Identity)' != '' AND '@(PackageReference->WithMetadataValue('Identity', 'ErrorOrX'))' == ''"
+                              PrivateAssets="none" />
+        </ItemGroup>
+    </Target>
 </Project>

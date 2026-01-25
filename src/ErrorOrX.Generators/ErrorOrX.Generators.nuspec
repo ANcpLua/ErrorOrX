@@ -14,7 +14,6 @@
         <copyright>Copyright (c) 2025 Alexander Nachtmann</copyright>
         <tags>ErrorOr;SourceGenerator;MinimalAPI;ASP.NET;Roslyn;CodeGen;AOT;OpenAPI;Swagger;Railway</tags>
         <repository type="git" url="https://github.com/ANcpLua/ErrorOrX"/>
-        <developmentDependency>true</developmentDependency>
         <dependencies>
             <group targetFramework="net10.0">
                 <dependency id="ErrorOrX" version="$version$"/>
