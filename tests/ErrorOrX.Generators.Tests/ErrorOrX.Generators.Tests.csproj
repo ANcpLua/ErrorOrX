@@ -3,14 +3,11 @@
         <TargetFramework>net10.0</TargetFramework>
         <OutputType>Exe</OutputType>
         <RootNamespace>ErrorOrX.Generators.Tests</RootNamespace>
-        <!-- Tests legitimately use reflection to introspect analyzer/generator types -->
-        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005</NoWarn>
+        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005;CS1591</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="xunit.v3.mtp-v2"/>
         <PackageReference Include="AwesomeAssertions"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing"/>
         <PackageReference Include="Verify.XunitV3"/>
         <PackageReference Include="Verify.SourceGenerators"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
@@ -29,11 +26,11 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" ReferenceOutputAssembly="true" OutputItemType="Analyzer"/>
+        <!-- ReferenceOutputAssembly=true now safe - PolySharp replaced with internal Polyfills.cs -->
+        <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true"/>
         <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <!-- Generator dependency must be loaded as analyzer alongside the generator -->
         <Analyzer Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"/>
     </ItemGroup>
 </Project>

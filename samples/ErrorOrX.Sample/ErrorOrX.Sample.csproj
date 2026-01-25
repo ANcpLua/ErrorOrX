@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+    <!-- Import generator props for ProjectReference (NuGet does this automatically) -->
+    <Import Project="../../src/ErrorOrX.Generators/build/ErrorOrX.Generators.props"/>
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>ErrorOrX.Sample</RootNamespace>

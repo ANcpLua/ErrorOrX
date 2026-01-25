@@ -11,6 +11,16 @@ insert_final_newline = true
 
 [*.cs]
 # ANcpLua.Analyzers rules
-dotnet_diagnostic.AL0025.severity = suggestion  # Prefer static lambda
-dotnet_diagnostic.AL0026.severity = warning     # DateTime.Now/UtcNow
-dotnet_diagnostic.AL0027.severity = warning     # Newtonsoft.Json
+dotnet_diagnostic.AL0025.severity = warning # Prefer static lambda
+dotnet_diagnostic.AL0026.severity = warning # DateTime.Now/UtcNow
+dotnet_diagnostic.AL0027.severity = warning # Newtonsoft.Json
+
+# Pattern matching style rules (auto-fixable)
+dotnet_diagnostic.IDE0019.severity = suggestion # Use pattern matching to avoid 'as' followed by null check
+dotnet_diagnostic.IDE0020.severity = suggestion # Use pattern matching to avoid 'is' check followed by cast
+dotnet_diagnostic.IDE0078.severity = suggestion # Use pattern matching
+dotnet_diagnostic.IDE0083.severity = suggestion # Use pattern matching (not null)
+dotnet_diagnostic.IDE0170.severity = suggestion # Simplify property pattern
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion

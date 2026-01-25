@@ -47,6 +47,8 @@ internal static class ErrorMapping
     private static readonly Dictionary<string, Entry> Mappings = new(StringComparer.Ordinal)
     {
         // 4xx Client Errors
+        // Validation: errors parameter is Dictionary<string, string[]>?
+        // Conversion from List<Error> to validation errors dict handled by ToProblem() emitted helper
         [Validation] = new Entry(
             WellKnownTypes.Fqn.HttpResults.ValidationProblem,
             $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(errors)",
@@ -88,6 +90,9 @@ internal static class ErrorMapping
 
     /// <summary>
     ///     Canonical mapping of HTTP status codes to TypedResults factories.
+    ///     Maps both core ErrorType status codes and custom error status codes (via Error.Custom()).
+    ///     Includes codes not in the core ErrorType enum (e.g., 422 Unprocessable Entity) to support
+    ///     additional HTTP semantics for specialized validation scenarios.
     ///     Used by GenerateStatusToFactoryCases().
     /// </summary>
     private static readonly Dictionary<int, CustomEntry> StatusToFactory = new()

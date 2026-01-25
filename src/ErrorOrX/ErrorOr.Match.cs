@@ -1,6 +1,6 @@
 namespace ErrorOr;
 
-public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
+public readonly partial record struct ErrorOr<TValue>
 {
     /// <summary>
     ///     Executes the appropriate function based on the state of the <see cref="ErrorOr{TValue}" />.

@@ -9,8 +9,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Produces_Output_For_Simple_Endpoint()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace CachingTest;
 
@@ -30,8 +30,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Produces_Output_For_Multiple_Endpoints()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace CachingTest;
 
@@ -57,8 +57,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Handles_Complex_Parameters()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
                               using Microsoft.AspNetCore.Mvc;
 
                               namespace CachingTest;
@@ -87,8 +87,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Produces_Clean_Output()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace CleanTest;
 
@@ -108,8 +108,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Compiles_Without_Errors()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace CompileTest;
 
@@ -129,8 +129,8 @@ public class GeneratorCachingTests : GeneratorTestBase
     public async Task Generator_Caches_Output_When_Source_Unchanged()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace CachingTest;
 

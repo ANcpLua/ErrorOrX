@@ -1,20 +1,20 @@
 <Project>
-  <!-- Centralized semantic version properties -->
-  <PropertyGroup>
-    <!-- Major.Minor.Patch -->
-    <VersionPrefix>2.6.3</VersionPrefix>
+    <!-- Centralized semantic version properties -->
+    <PropertyGroup>
+        <!-- Major.Minor.Patch -->
+        <VersionPrefix>2.6.3</VersionPrefix>
 
-    <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
-    <VersionSuffix></VersionSuffix>
+        <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
+        <VersionSuffix></VersionSuffix>
 
-    <!-- Effective Version -->
-    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
-    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
+        <!-- Effective Version -->
+        <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
+        <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
 
-    <!-- Derived versions -->
-    <PackageVersion>$(Version)</PackageVersion>
-    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
-    <InformationalVersion>$(Version)</InformationalVersion>
-  </PropertyGroup>
+        <!-- Derived versions -->
+        <PackageVersion>$(Version)</PackageVersion>
+        <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+        <FileVersion>$(Version)</FileVersion>
+        <InformationalVersion>$(Version)</InformationalVersion>
+    </PropertyGroup>
 </Project>

@@ -4,14 +4,27 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ErrorOrX.Generators.svg)](https://www.nuget.org/packages/ErrorOrX.Generators/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Discriminated unions for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full AOT
-support.
+Railway-Oriented Programming for .NET with source-generated ASP.NET Core Minimal API integration. Zero boilerplate, full
+Native AOT support.
+
+## Features
+
+- **Discriminated Unions** - `ErrorOr<T>` represents success or a list of typed errors
+- **Fluent API** - Chain operations with `Then`, `Else`, `Match`, `Switch`, and `FailIf`
+- **Nullable Extensions** - Convert nullable values with `OrNotFound()`, `OrValidation()`, and more
+- **Source Generator** - Auto-generates `MapErrorOrEndpoints()` from attributed static methods
+- **Smart Binding** - Automatic parameter inference based on HTTP method and type
+- **OpenAPI Ready** - Typed `Results<...>` unions for complete API documentation
+- **Native AOT** - Reflection-free code generation with JSON serialization contexts
+- **Middleware Support** - Emits fluent calls for `[Authorize]`, `[EnableRateLimiting]`, `[OutputCache]`
 
 ## Installation
 
 ```bash
 dotnet add package ErrorOrX.Generators
 ```
+
+This package includes both the source generator and the `ErrorOrX` runtime library.
 
 ## Quick Start
 
@@ -42,19 +55,34 @@ public static class TodoApi
 }
 ```
 
-## Nullable-to-ErrorOr Extensions
+## Error Types
 
-Convert nullable values to `ErrorOr<T>` with fluent extensions:
+Create structured errors mapped to HTTP status codes:
 
 ```csharp
-// Auto-generates error code from type name (e.g., "Todo.NotFound")
+Error.Validation("User.InvalidEmail", "Email format is invalid")   // 400
+Error.Unauthorized("Auth.InvalidToken", "Token has expired")       // 401
+Error.Forbidden("Auth.InsufficientRole", "Admin role required")    // 403
+Error.NotFound("User.NotFound", "User does not exist")             // 404
+Error.Conflict("User.Duplicate", "Email already registered")       // 409
+Error.Failure("Db.ConnectionFailed", "Database unavailable")       // 500
+Error.Unexpected("Unknown", "An unexpected error occurred")        // 500
+Error.Custom(422, "Validation.Complex", "Complex validation failed")
+```
+
+## Nullable-to-ErrorOr Extensions
+
+Convert nullable values to `ErrorOr<T>` with auto-generated error codes:
+
+```csharp
+// Error code auto-generated from type name (e.g., "Todo.NotFound")
 return _todos.Find(t => t.Id == id).OrNotFound($"Todo {id} not found");
 return user.OrUnauthorized("Invalid credentials");
 return record.OrValidation("Record is invalid");
 
 // Custom errors
 return value.OrError(Error.Custom(422, "Custom.Code", "Custom message"));
-return value.OrError(() => BuildExpensiveError());
+return value.OrError(() => BuildExpensiveError());  // Lazy evaluation
 ```
 
 | Extension           | Error Type   | HTTP | Description              |
@@ -69,34 +97,12 @@ return value.OrError(() => BuildExpensiveError());
 | `.OrError(Error)`   | Any          | Any  | Custom error             |
 | `.OrError(Func)`    | Any          | Any  | Lazy custom error        |
 
-## Error Types
-
-```csharp
-Error.Validation("User.InvalidEmail", "Email format is invalid")
-Error.NotFound("User.NotFound", "User does not exist")
-Error.Conflict("User.Duplicate", "Email already registered")
-Error.Unauthorized("Auth.InvalidToken", "Token has expired")
-Error.Forbidden("Auth.InsufficientRole", "Admin role required")
-Error.Failure("Db.ConnectionFailed", "Database unavailable")
-Error.Unexpected("Unknown", "An unexpected error occurred")
-Error.Custom(422, "Validation.Complex", "Complex validation failed")
-```
-
-| Factory                | HTTP | Use Case                   |
-|------------------------|------|----------------------------|
-| `Error.Validation()`   | 400  | Input/request validation   |
-| `Error.Unauthorized()` | 401  | Authentication required    |
-| `Error.Forbidden()`    | 403  | Insufficient permissions   |
-| `Error.NotFound()`     | 404  | Resource doesn't exist     |
-| `Error.Conflict()`     | 409  | State conflict (duplicate) |
-| `Error.Failure()`      | 500  | Known operational failure  |
-| `Error.Unexpected()`   | 500  | Unhandled/unknown error    |
-| `Error.Custom()`       | Any  | Custom HTTP status code    |
-
 ## Fluent API
 
+Chain operations using railway-oriented programming patterns:
+
 ```csharp
-// Chain operations (railway-oriented programming)
+// Chain operations - errors short-circuit the pipeline
 var result = ValidateOrder(request)
     .Then(order => ProcessPayment(order))
     .Then(order => CreateShipment(order))
@@ -117,6 +123,8 @@ GetUser(id).Switch(
 ```
 
 ## Result Markers
+
+Use semantic markers for endpoints without response bodies:
 
 ```csharp
 Result.Success   // 200 OK (no body)
@@ -145,6 +153,8 @@ public static ErrorOr<Todo> GetById(
 
 ## Middleware Attributes
 
+Middleware attributes are automatically translated to fluent calls:
+
 ```csharp
 [Post("/admin")]
 [Authorize("Admin")]
@@ -156,45 +166,34 @@ public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
 
 ## Native AOT
 
-Fully compatible with `PublishAot=true`. The generator produces reflection-free code that works seamlessly with Native
-AOT compilation.
-
-### Setup
-
-1. Create a `JsonSerializerContext` with `[JsonSerializable]` attributes for your endpoint types:
-
-```csharp
-[JsonSourceGenerationOptions(
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-[JsonSerializable(typeof(Todo))]
-[JsonSerializable(typeof(Todo[]))]
-[JsonSerializable(typeof(List<Todo>))]
-[JsonSerializable(typeof(CreateTodoRequest))]
-[JsonSerializable(typeof(ProblemDetails))]
-[JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext;
-```
-
-2. Register it in `Program.cs`:
+Fully compatible with `PublishAot=true`. For custom JSON configuration:
 
 ```csharp
 var builder = WebApplication.CreateSlimBuilder(args);
 
-// Fluent configuration - CamelCase and IgnoreNulls enabled by default
 builder.Services.AddErrorOrEndpoints(options => options
-    .UseJsonContext<AppJsonSerializerContext>());
+    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context
+    .WithCamelCase()                              // Use camelCase (default: true)
+    .WithIgnoreNulls());                          // Ignore nulls (default: true)
 
 var app = builder.Build();
 app.MapErrorOrEndpoints();
 app.Run();
 ```
 
-Optional: if you do not define a `JsonSerializerContext`, the generator emits `ErrorOrJsonContext.g.cs` with all
-required types. If you do define one, it emits a helper file listing missing `[JsonSerializable]` types and warns
-when the CamelCase policy is missing (EOE040).
+Create a `JsonSerializerContext` with your endpoint types:
 
-Optional: disable generator JSON context emission (you must supply your own context for AOT):
+```csharp
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(Todo))]
+[JsonSerializable(typeof(CreateTodoRequest))]
+[JsonSerializable(typeof(ProblemDetails))]
+internal partial class AppJsonSerializerContext : JsonSerializerContext;
+```
+
+Disable generator JSON context if providing your own:
 
 ```xml
 <PropertyGroup>
@@ -202,27 +201,12 @@ Optional: disable generator JSON context emission (you must supply your own cont
 </PropertyGroup>
 ```
 
-#### Available Options
+## Packages
 
-```csharp
-services.AddErrorOrEndpoints(options => options
-    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context for AOT
-    .WithCamelCase()                              // Use camelCase naming (default: true)
-    .WithIgnoreNulls());                          // Ignore null values (default: true)
-```
-
-Note: `AddErrorOrEndpoints` is generated only when endpoints include JSON bodies or responses.
-
-### How It Works
-
-The generator emits AOT-compatible endpoint handlers using a wrapper pattern:
-
-1. **Typed Map methods** - Uses `MapGet`, `MapPost`, etc. instead of `MapMethods` with delegate cast
-2. **ExecuteAsync pattern** - Handlers return `Task` and explicitly write responses via `IResult.ExecuteAsync()`
-3. **No reflection** - All routing and serialization uses compile-time generated code
-
-This design avoids the reflection-based `RequestDelegateFactory` path that requires JSON metadata for
-`Task<Results<...>>` types, which cannot be satisfied for BCL generic types at compile time.
+| Package               | Target           | Description                          |
+|-----------------------|------------------|--------------------------------------|
+| `ErrorOrX.Generators` | `netstandard2.0` | Source generator (includes ErrorOrX) |
+| `ErrorOrX`            | `net10.0`        | Runtime library (auto-referenced)    |
 
 ## Documentation
 

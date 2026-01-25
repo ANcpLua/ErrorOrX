@@ -1,6 +1,8 @@
 using ANcpLua.Roslyn.Utilities.Testing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +18,12 @@ public abstract class GeneratorTestBase
         typeof(IEndpointNameMetadata),
         typeof(IServiceCollection),
         typeof(OpenApiServiceCollectionExtensions),
-        typeof(Error)
+        typeof(Error),
+        // Middleware attributes for auth/rate-limiting tests
+        typeof(AuthorizeAttribute),
+        typeof(AllowAnonymousAttribute),
+        typeof(EnableRateLimitingAttribute),
+        typeof(DisableRateLimitingAttribute)
     ];
 
     /// <summary>

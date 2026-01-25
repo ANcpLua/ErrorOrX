@@ -472,7 +472,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies [AsParameters] with proper EOE013/EOE014 diagnostics.
+    ///     Classifies [AsParameters] with proper EOE013/EOE014/EOE018/EOE019 diagnostics.
     /// </summary>
     private static ParameterClassificationResult ClassifyAsParameters(
         in ParameterMeta meta,
@@ -482,6 +482,14 @@ public sealed partial class ErrorOrEndpointGenerator
         ErrorOrContext context,
         string httpMethod)
     {
+        // EOE019: [AsParameters] cannot be nullable
+        if (meta.IsNullable)
+        {
+            diagnostics.Add(DiagnosticInfo.Create(Descriptors.NullableAsParametersNotSupported,
+                method.Locations.FirstOrDefault() ?? Location.None, meta.Name));
+            return ParameterClassificationResult.Error;
+        }
+
         // EOE013: [AsParameters] can only be used on class or struct types
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
         {
@@ -507,6 +515,17 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var paramSymbol in constructor.Parameters)
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
+
+            // EOE018: Nested [AsParameters] not supported
+            if (childMeta.HasAsParameters)
+            {
+                diagnostics.Add(DiagnosticInfo.Create(Descriptors.NestedAsParametersNotSupported,
+                    method.Locations.FirstOrDefault() ?? Location.None,
+                    typeSymbol.ToDisplayString(),
+                    paramSymbol.Name));
+                return ParameterClassificationResult.Error;
+            }
+
             var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod);
 
             if (result.IsError)
@@ -583,17 +602,17 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static RoutePrimitiveKind? TryGetRoutePrimitiveKindBySymbol(ISymbol type, ErrorOrContext context)
     {
-        if (context.Guid is not null && SymbolEqualityComparer.Default.Equals(type, context.Guid))
+        if (context.Guid is not null && type.IsEqualTo(context.Guid))
             return RoutePrimitiveKind.Guid;
-        if (context.DateTime is not null && SymbolEqualityComparer.Default.Equals(type, context.DateTime))
+        if (context.DateTime is not null && type.IsEqualTo(context.DateTime))
             return RoutePrimitiveKind.DateTime;
-        if (context.DateTimeOffset is not null && SymbolEqualityComparer.Default.Equals(type, context.DateTimeOffset))
+        if (context.DateTimeOffset is not null && type.IsEqualTo(context.DateTimeOffset))
             return RoutePrimitiveKind.DateTimeOffset;
-        if (context.DateOnly is not null && SymbolEqualityComparer.Default.Equals(type, context.DateOnly))
+        if (context.DateOnly is not null && type.IsEqualTo(context.DateOnly))
             return RoutePrimitiveKind.DateOnly;
-        if (context.TimeOnly is not null && SymbolEqualityComparer.Default.Equals(type, context.TimeOnly))
+        if (context.TimeOnly is not null && type.IsEqualTo(context.TimeOnly))
             return RoutePrimitiveKind.TimeOnly;
-        if (context.TimeSpan is not null && SymbolEqualityComparer.Default.Equals(type, context.TimeSpan))
+        if (context.TimeSpan is not null && type.IsEqualTo(context.TimeSpan))
             return RoutePrimitiveKind.TimeSpan;
 
         return null;
@@ -633,7 +652,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
             if (context.BindableFromHttpContext is not null)
             {
-                if (SymbolEqualityComparer.Default.Equals(constructed, context.BindableFromHttpContext))
+                if (constructed.IsEqualTo(context.BindableFromHttpContext))
                     return true;
             }
             else if (constructed.MetadataName == "IBindableFromHttpContext`1" &&
@@ -672,9 +691,9 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type is not INamedTypeSymbol named) return false;
         var constructed = named.ConstructedFrom;
 
-        return context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT) ||
+        return context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT) ||
                context.ValueTaskOfT is not null &&
-               SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT);
+               constructed.IsEqualTo(context.ValueTaskOfT);
     }
 
     private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -707,7 +726,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType == SpecialType.System_String) return true;
 
         if (type is INamedTypeSymbol { IsGenericType: true } named && context.ReadOnlySpanOfT is not null)
-            return SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, context.ReadOnlySpanOfT) &&
+            return named.ConstructedFrom.IsEqualTo(context.ReadOnlySpanOfT) &&
                    named.TypeArguments is [{ SpecialType: SpecialType.System_Char }];
 
         return false;
@@ -717,7 +736,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         type = type.UnwrapNullable();
         if (context.IFormatProvider is not null)
-            return SymbolEqualityComparer.Default.Equals(type, context.IFormatProvider);
+            return type.IsEqualTo(context.IFormatProvider);
 
         return type.Name == "IFormatProvider" &&
                type.ContainingNamespace.ToDisplayString() == "System";
@@ -746,15 +765,15 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context) =>
-        context.ListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.ListOfT) ||
-        context.IListOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.IListOfT) ||
+        context.ListOfT is not null && origin.IsEqualTo(context.ListOfT) ||
+        context.IListOfT is not null && origin.IsEqualTo(context.IListOfT) ||
         context.IEnumerableOfT is not null &&
-        SymbolEqualityComparer.Default.Equals(origin, context.IEnumerableOfT) ||
+        origin.IsEqualTo(context.IEnumerableOfT) ||
         context.IReadOnlyListOfT is not null &&
-        SymbolEqualityComparer.Default.Equals(origin, context.IReadOnlyListOfT) ||
+        origin.IsEqualTo(context.IReadOnlyListOfT) ||
         context.ICollectionOfT is not null &&
-        SymbolEqualityComparer.Default.Equals(origin, context.ICollectionOfT) ||
-        context.HashSetOfT is not null && SymbolEqualityComparer.Default.Equals(origin, context.HashSetOfT);
+        origin.IsEqualTo(context.ICollectionOfT) ||
+        context.HashSetOfT is not null && origin.IsEqualTo(context.HashSetOfT);
 
     private static (bool IsNullable, bool IsNonNullableValueType) GetParameterNullability(
         ITypeSymbol type,
@@ -776,7 +795,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         AttributeData? attr = null;
         foreach (var a in parameter.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(a.AttributeClass, context.FromKeyedServices))
+            if (a.AttributeClass.IsEqualTo(context.FromKeyedServices))
             {
                 attr = a;
                 break;
@@ -796,7 +815,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var attributes = parameter.GetAttributes();
 
         if (attributeSymbol is not null && attributes.Any(attr =>
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attributeSymbol)))
+                attr.AttributeClass.IsEqualTo(attributeSymbol)))
             return true;
 
         var matcher = new AttributeNameMatcher(attributeName);
@@ -812,7 +831,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (attributeSymbol is not null)
         {
             var attr = attributes.FirstOrDefault(a =>
-                SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeSymbol));
+                a.AttributeClass.IsEqualTo(attributeSymbol));
             if (attr is not null) return ExtractNameFromAttribute(attr);
         }
 

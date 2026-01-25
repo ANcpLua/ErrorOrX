@@ -24,7 +24,8 @@ internal static class Unreachable
     public static void Throw(
         bool condition,
         string? message = null,
-        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "",
+        [CallerArgumentExpression(nameof(condition))]
+        string conditionExpression = "",
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)
@@ -35,7 +36,8 @@ internal static class Unreachable
     public static T Throw<T>(
         [DoesNotReturnIf(true)] bool condition,
         string? message = null,
-        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "",
+        [CallerArgumentExpression(nameof(condition))]
+        string conditionExpression = "",
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)
@@ -45,7 +47,8 @@ internal static class Unreachable
     public static void ThrowIf(
         [DoesNotReturnIf(true)] bool condition,
         string? message = null,
-        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "",
+        [CallerArgumentExpression(nameof(condition))]
+        string conditionExpression = "",
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)
@@ -56,7 +59,8 @@ internal static class Unreachable
     public static T ThrowIf<T>(
         [DoesNotReturnIf(true)] bool condition,
         string? message = null,
-        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "",
+        [CallerArgumentExpression(nameof(condition))]
+        string conditionExpression = "",
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)

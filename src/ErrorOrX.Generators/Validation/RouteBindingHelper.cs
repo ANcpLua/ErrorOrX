@@ -36,7 +36,7 @@ internal static class RouteBindingHelper
         return flow;
     }
 
-    public static EquatableArray<RouteMethodParameterInfo> ExtractRouteMethodParameters(
+    private static EquatableArray<RouteMethodParameterInfo> ExtractRouteMethodParameters(
         ImmutableArray<EndpointParameter> parameters)
     {
         if (parameters.IsDefaultOrEmpty)

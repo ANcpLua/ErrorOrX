@@ -15,9 +15,6 @@ namespace ErrorOr.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 {
-    // EPS06: Roslyn's readonly struct API causes unavoidable defensive copies.
-#pragma warning disable EPS06
-
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -97,11 +94,12 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // Extract XML documentation
         var xmlDoc = method.GetDocumentationCommentXml();
         var (summary, description) = ParseXmlDoc(xmlDoc);
+        var parameterDocs = ParseParamTags(xmlDoc);
 
         // Extract containing type info for tag generation
         var containingType = method.ContainingType;
         var containingTypeFqn = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var (tagName, operationId) = TypeNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
+        var (tagName, operationId) = EndpointNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
 
         // Normalized pattern for matching (remove leading slash if present, handle duplicates logic)
         // But for OpenAPI context.Description.RelativePath usually has NO leading slash for route groups?
@@ -115,7 +113,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             summary,
             description,
             httpMethod.ToUpperInvariant(),
-            pattern);
+            pattern,
+            new EquatableArray<(string, string)>(parameterDocs));
     }
 
     private static string GetPattern(AttributeData attr)
@@ -169,6 +168,46 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
                 .Trim();
 
         return (summary, description);
+    }
+
+    private static ImmutableArray<(string ParamName, string Description)> ParseParamTags(string? xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml) || xml is null)
+            return ImmutableArray<(string, string)>.Empty;
+
+        var parameters = new List<(string, string)>();
+        var searchPos = 0;
+
+        while (true)
+        {
+            var paramStart = xml.IndexOf("<param name=\"", searchPos, StringComparison.Ordinal);
+            if (paramStart < 0) break;
+
+            var nameStart = paramStart + 13;
+            var nameEnd = xml.IndexOf("\"", nameStart, StringComparison.Ordinal);
+            if (nameEnd < 0) break;
+
+            var paramName = xml.Substring(nameStart, nameEnd - nameStart);
+
+            var contentStart = xml.IndexOf(">", nameEnd, StringComparison.Ordinal);
+            if (contentStart < 0) break;
+            contentStart++;
+
+            var contentEnd = xml.IndexOf("</param>", contentStart, StringComparison.Ordinal);
+            if (contentEnd < 0) break;
+
+            var description = xml.Substring(contentStart, contentEnd - contentStart)
+                .Trim()
+                .Replace("\r\n", " ")
+                .Replace("\n", " ")
+                .Trim();
+            if (!string.IsNullOrWhiteSpace(description))
+                parameters.Add((paramName, description));
+
+            searchPos = contentEnd + 8;
+        }
+
+        return parameters.ToImmutableArray();
     }
 
     private static string GetReflectionFullName(INamedTypeSymbol symbol)
@@ -281,14 +320,20 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static bool EmitOperationTransformer(StringBuilder code, ImmutableArray<OpenApiEndpointInfo> endpoints)
     {
-        // Collect operations with XML docs
+        // Collect operations with XML docs (summary/description OR parameter docs)
         var opsWithDocs = endpoints
-            .Where(static e => !string.IsNullOrEmpty(e.Summary) || !string.IsNullOrEmpty(e.Description))
+            .Where(static e => !string.IsNullOrEmpty(e.Summary) || !string.IsNullOrEmpty(e.Description) ||
+                               !e.ParameterDocs.IsDefaultOrEmpty)
             .OrderBy(static e => e.Pattern, StringComparer.Ordinal)
             .ThenBy(static e => e.HttpMethod, StringComparer.Ordinal).ToList();
 
         if (opsWithDocs.Count is 0)
             return false;
+
+        // Collect operations with parameter docs
+        var opsWithParamDocs = opsWithDocs
+            .Where(static e => !e.ParameterDocs.IsDefaultOrEmpty)
+            .ToList();
 
         code.AppendLine("/// <summary>");
         code.AppendLine("/// Operation transformer that applies XML documentation to operations.");
@@ -302,11 +347,31 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        new Dictionary<string, (string? Summary, string? Description)>");
         code.AppendLine("        {");
 
-        foreach (var op in opsWithDocs)
+        foreach (var op in opsWithDocs.Where(static e =>
+                     !string.IsNullOrEmpty(e.Summary) || !string.IsNullOrEmpty(e.Description)))
         {
             var summary = op.Summary is not null ? $"\"{op.Summary.EscapeCSharpString()}\"" : "null";
             var description = op.Description is not null ? $"\"{op.Description.EscapeCSharpString()}\"" : "null";
             code.AppendLine($"            [\"{op.OperationId}\"] = ({summary}, {description}),");
+        }
+
+        code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
+        code.AppendLine();
+
+        // Emit parameter docs dictionary
+        code.AppendLine("    // Pre-computed parameter descriptions from XML <param> tags");
+        code.AppendLine(
+            "    private static readonly FrozenDictionary<string, FrozenDictionary<string, string>> ParameterDocs =");
+        code.AppendLine("        new Dictionary<string, FrozenDictionary<string, string>>");
+        code.AppendLine("        {");
+
+        foreach (var op in opsWithParamDocs)
+        {
+            code.AppendLine($"            [\"{op.OperationId}\"] = new Dictionary<string, string>");
+            code.AppendLine("            {");
+            foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
+                code.AppendLine($"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
+            code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }
 
         code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
@@ -330,13 +395,30 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("            }");
         code.AppendLine("        }");
         code.AppendLine();
-        code.AppendLine("        if (operationId is not null && OperationDocs.TryGetValue(operationId, out var docs))");
+        code.AppendLine("        if (operationId is null)");
+        code.AppendLine("            return Task.CompletedTask;");
+        code.AppendLine();
+        code.AppendLine("        // Apply summary and description");
+        code.AppendLine("        if (OperationDocs.TryGetValue(operationId, out var docs))");
         code.AppendLine("        {");
         code.AppendLine("            if (docs.Summary is not null)");
         code.AppendLine("                operation.Summary ??= docs.Summary;");
         code.AppendLine("            if (docs.Description is not null)");
         code.AppendLine("                operation.Description ??= docs.Description;");
         code.AppendLine("        }");
+        code.AppendLine();
+        code.AppendLine("        // Apply parameter descriptions");
+        code.AppendLine("        if (ParameterDocs.TryGetValue(operationId, out var paramDocs) && operation.Parameters is not null)");
+        code.AppendLine("        {");
+        code.AppendLine("            foreach (var param in operation.Parameters)");
+        code.AppendLine("            {");
+        code.AppendLine("                if (param.Name is not null && paramDocs.TryGetValue(param.Name, out var paramDesc))");
+        code.AppendLine("                {");
+        code.AppendLine("                    param.Description ??= paramDesc;");
+        code.AppendLine("                }");
+        code.AppendLine("            }");
+        code.AppendLine("        }");
+        code.AppendLine();
         code.AppendLine("        return Task.CompletedTask;");
         code.AppendLine("    }");
         code.AppendLine("}");
@@ -355,28 +437,34 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("/// <summary>");
         code.AppendLine("/// Schema transformer that applies type XML documentation to schemas.");
         code.AppendLine("/// Each entry is a strict 1:1 mapping from XML doc to schema description.");
+        code.AppendLine("/// AOT-safe: Uses Type as dictionary key (no runtime reflection).");
         code.AppendLine("/// </summary>");
         code.AppendLine("file sealed class XmlDocSchemaTransformer : IOpenApiSchemaTransformer");
         code.AppendLine("{");
-        code.AppendLine("    // Pre-computed type descriptions from XML docs");
-        code.AppendLine("    private static readonly FrozenDictionary<string, string> TypeDescriptions =");
-        code.AppendLine("        new Dictionary<string, string>");
+        code.AppendLine("    // Pre-computed type descriptions from XML docs (AOT-safe: Type keys resolved at compile-time)");
+        code.AppendLine("    private static readonly FrozenDictionary<Type, string> TypeDescriptions =");
+        code.AppendLine("        new Dictionary<Type, string>");
         code.AppendLine("        {");
 
         foreach (var type in typesWithDocs)
-            code.AppendLine($"            [\"{type.TypeKey}\"] = \"{type.Description.EscapeCSharpString()}\",");
+        {
+            // Convert reflection-style name (Namespace.Outer+Inner) to C# typeof expression (global::Namespace.Outer.Inner)
+            var typeofExpr = ConvertToTypeofExpression(type.TypeKey);
+            code.AppendLine($"            [typeof({typeofExpr})] = \"{type.Description.EscapeCSharpString()}\",");
+        }
 
-        code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
+        code.AppendLine("        }.ToFrozenDictionary();");
         code.AppendLine();
         code.AppendLine("    public Task TransformAsync(");
         code.AppendLine("        OpenApiSchema schema,");
         code.AppendLine("        OpenApiSchemaTransformerContext context,");
         code.AppendLine("        CancellationToken cancellationToken)");
         code.AppendLine("    {");
-        // Use FullName for robust matching (matches generator's FQN key)
+        // AOT-safe: Direct Type lookup without reflection
         code.AppendLine("        var type = context.JsonTypeInfo.Type;");
-        code.AppendLine("        var typeName = type.IsGenericType ? type.GetGenericTypeDefinition().FullName : type.FullName;");
-        code.AppendLine("        if (typeName is not null && TypeDescriptions.TryGetValue(typeName, out var description))");
+        code.AppendLine("        // For generic types, lookup the generic type definition");
+        code.AppendLine("        var lookupType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;");
+        code.AppendLine("        if (TypeDescriptions.TryGetValue(lookupType, out var description))");
         code.AppendLine("        {");
         code.AppendLine("            schema.Description ??= description;");
         code.AppendLine("        }");
@@ -386,6 +474,17 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine();
 
         return true;
+    }
+
+    /// <summary>
+    ///     Converts a reflection-style type name to a C# typeof expression.
+    ///     Example: "Namespace.Outer+Inner" → "global::Namespace.Outer.Inner"
+    /// </summary>
+    private static string ConvertToTypeofExpression(string reflectionName)
+    {
+        // Replace nested type separator (+) with C# dot notation
+        var csharpName = reflectionName.Replace('+', '.');
+        return $"global::{csharpName}";
     }
 
     private static void EmitRegistrationExtension(
@@ -440,5 +539,4 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("    }");
         code.AppendLine("}");
     }
-#pragma warning restore EPS06
 }

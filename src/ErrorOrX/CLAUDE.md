@@ -89,8 +89,8 @@ Usage with explicit response semantics:
 ```csharp
 [Delete("/todos/{id}")]
 public static ErrorOr<Deleted> Delete(int id, ITodoService svc)
-    => svc.Delete(id) 
-        ? Result.Deleted 
+    => svc.Delete(id)
+        ? Result.Deleted
         : Error.NotFound("Todo.NotFound", $"Todo {id} not found");
 
 [Post("/todos")]
@@ -157,16 +157,16 @@ return value.OrError(() => BuildExpensiveError());  // Lazy evaluation
 ```
 
 | Extension           | Error Type   | HTTP | Auto-Generated Code Pattern |
-|---------------------|--------------|------|----------------------------|
-| `.OrNotFound()`     | NotFound     | 404  | `{TypeName}.NotFound`      |
-| `.OrValidation()`   | Validation   | 400  | `{TypeName}.Invalid`       |
-| `.OrUnauthorized()` | Unauthorized | 401  | `{TypeName}.Unauthorized`  |
-| `.OrForbidden()`    | Forbidden    | 403  | `{TypeName}.Forbidden`     |
-| `.OrConflict()`     | Conflict     | 409  | `{TypeName}.Conflict`      |
-| `.OrFailure()`      | Failure      | 500  | `{TypeName}.Failure`       |
-| `.OrUnexpected()`   | Unexpected   | 500  | `{TypeName}.Unexpected`    |
-| `.OrError(Error)`   | Any          | Any  | User-provided              |
-| `.OrError(Func)`    | Any          | Any  | User-provided (lazy)       |
+|---------------------|--------------|------|-----------------------------|
+| `.OrNotFound()`     | NotFound     | 404  | `{TypeName}.NotFound`       |
+| `.OrValidation()`   | Validation   | 400  | `{TypeName}.Invalid`        |
+| `.OrUnauthorized()` | Unauthorized | 401  | `{TypeName}.Unauthorized`   |
+| `.OrForbidden()`    | Forbidden    | 403  | `{TypeName}.Forbidden`      |
+| `.OrConflict()`     | Conflict     | 409  | `{TypeName}.Conflict`       |
+| `.OrFailure()`      | Failure      | 500  | `{TypeName}.Failure`        |
+| `.OrUnexpected()`   | Unexpected   | 500  | `{TypeName}.Unexpected`     |
+| `.OrError(Error)`   | Any          | Any  | User-provided               |
+| `.OrError(Func)`    | Any          | Any  | User-provided (lazy)        |
 
 ## Dependencies
 

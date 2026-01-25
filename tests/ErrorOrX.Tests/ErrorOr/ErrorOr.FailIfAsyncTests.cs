@@ -129,5 +129,4 @@ public class FailIfAsyncTests
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
-
 }

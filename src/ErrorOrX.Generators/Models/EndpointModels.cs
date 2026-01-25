@@ -150,7 +150,13 @@ internal readonly record struct ErrorOrReturnTypeInfo(
     bool IsSse,
     string? SseItemTypeFqn,
     SuccessKind Kind,
-    string? IdPropertyName = null);
+    string? IdPropertyName = null,
+    bool IsAnonymousType = false,
+    bool IsInaccessibleType = false,
+    string? InaccessibleTypeName = null,
+    string? InaccessibleTypeAccessibility = null,
+    bool IsTypeParameter = false,
+    string? TypeParameterName = null);
 
 /// <summary>
 ///     Pre-computed method-level analysis shared across multiple HTTP method attributes.
@@ -183,12 +189,14 @@ internal readonly record struct EndpointDescriptor(
     string? SseItemTypeFqn = null,
     bool IsAcceptedResponse = false,
     string? LocationIdPropertyName = null,
-    MiddlewareInfo Middleware = default)
+    MiddlewareInfo Middleware = default,
+    VersioningInfo Versioning = default,
+    RouteGroupInfo RouteGroup = default)
 {
     /// <summary>
     ///     Returns true if any parameter is bound from body.
     /// </summary>
-    public bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == EndpointParameterSource.Body);
+    private bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == EndpointParameterSource.Body);
 
     /// <summary>
     ///     Returns true if any parameter is bound from form-related sources.
@@ -295,7 +303,8 @@ internal readonly record struct OpenApiEndpointInfo(
     string? Summary,
     string? Description,
     string HttpMethod,
-    string Pattern);
+    string Pattern,
+    EquatableArray<(string ParamName, string Description)> ParameterDocs);
 
 /// <summary>
 ///     Immutable type metadata for schema generation.
@@ -309,3 +318,85 @@ internal readonly record struct TypeMetadataInfo(string TypeKey,
 internal readonly record struct RouteBindingAnalysis(
     EquatableArray<EndpointParameter> Parameters,
     EquatableArray<RouteMethodParameterInfo> RouteParameters);
+
+/// <summary>
+///     Represents a single API version extracted from [ApiVersion] attribute.
+/// </summary>
+internal readonly record struct ApiVersionInfo(
+    int MajorVersion,
+    int? MinorVersion,
+    string? Status,
+    bool IsDeprecated)
+{
+    /// <summary>
+    ///     Returns the version string (e.g., "1.0", "2", "1.0-beta").
+    /// </summary>
+    public string ToVersionString()
+    {
+        var version = MinorVersion.HasValue
+            ? $"{MajorVersion}.{MinorVersion.Value}"
+            : MajorVersion.ToString();
+
+        return string.IsNullOrEmpty(Status) ? version : $"{version}-{Status}";
+    }
+}
+
+/// <summary>
+///     API versioning configuration extracted from endpoint class or method.
+/// </summary>
+internal readonly record struct VersioningInfo(
+    EquatableArray<ApiVersionInfo> SupportedVersions,
+    EquatableArray<ApiVersionInfo> MappedVersions,
+    bool IsVersionNeutral)
+{
+    /// <summary>
+    ///     Returns true if any versioning attributes were found.
+    /// </summary>
+    public bool HasVersioning => !SupportedVersions.IsDefaultOrEmpty || IsVersionNeutral;
+
+    /// <summary>
+    ///     Returns the versions this endpoint should be mapped to.
+    ///     Uses MappedVersions if specified, otherwise falls back to SupportedVersions.
+    /// </summary>
+    public EquatableArray<ApiVersionInfo> EffectiveVersions =>
+        MappedVersions.IsDefaultOrEmpty ? SupportedVersions : MappedVersions;
+}
+
+/// <summary>
+///     Aggregated version set information for all endpoints.
+/// </summary>
+internal readonly record struct GlobalVersionSet(
+    EquatableArray<ApiVersionInfo> AllVersions,
+    bool HasVersionNeutralEndpoints);
+
+/// <summary>
+///     Classifies how an endpoint relates to API versioning for route group emission.
+/// </summary>
+internal enum VersionScope
+{
+    /// <summary>No versioning attributes present.</summary>
+    None,
+
+    /// <summary>Available on all declared versions (no [MapToApiVersion]).</summary>
+    AllVersions,
+
+    /// <summary>Only specific versions via [MapToApiVersion].</summary>
+    Specific,
+
+    /// <summary>Version-neutral via [ApiVersionNeutral].</summary>
+    Neutral
+}
+
+/// <summary>
+///     Route group configuration extracted from [RouteGroup] attribute on containing type.
+/// </summary>
+internal readonly record struct RouteGroupInfo(
+    string? GroupPath,
+    string? ApiName,
+    bool UseVersionedApi)
+{
+    /// <summary>
+    ///     Returns true if route grouping is enabled for this endpoint.
+    /// </summary>
+    public bool HasRouteGroup => GroupPath is not null;
+}

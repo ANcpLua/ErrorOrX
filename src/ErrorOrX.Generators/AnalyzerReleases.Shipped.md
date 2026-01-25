@@ -18,6 +18,10 @@ EOE012 | ErrorOr.Endpoints | Error | Invalid [FromQuery] type
 EOE013 | ErrorOr.Endpoints | Error | Invalid [AsParameters] type
 EOE014 | ErrorOr.Endpoints | Error | [AsParameters] type has no constructor
 EOE016 | ErrorOr.Endpoints | Error | Invalid [FromHeader] type
+EOE017 | ErrorOr.Endpoints | Error | Anonymous return type not supported
+EOE018 | ErrorOr.Endpoints | Error | Nested [AsParameters] not supported
+EOE019 | ErrorOr.Endpoints | Error | Nullable [AsParameters] not supported
+EOE020 | ErrorOr.Endpoints | Error | Inaccessible type in endpoint
 EOE021 | ErrorOr.Endpoints | Error | Type parameter not supported
 EOE023 | ErrorOr.Endpoints | Warning | Route constraint type mismatch
 EOE025 | ErrorOr.Endpoints | Warning | Ambiguous parameter binding

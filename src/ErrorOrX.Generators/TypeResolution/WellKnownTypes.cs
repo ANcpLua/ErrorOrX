@@ -9,7 +9,6 @@ namespace ErrorOr.Generators;
 /// </summary>
 internal static class WellKnownTypes
 {
-    // ErrorOr attributes (moved from ErrorOr.Endpoints to ErrorOr namespace)
     public const string ErrorOrEndpointAttribute = "ErrorOr.ErrorOrEndpointAttribute";
     public const string GetAttribute = "ErrorOr.GetAttribute";
     public const string PostAttribute = "ErrorOr.PostAttribute";
@@ -23,18 +22,15 @@ internal static class WellKnownTypes
     public const string AcceptedResponseAttribute = "ErrorOr.AcceptedResponseAttribute";
     public const string ReturnsErrorAttribute = "ErrorOr.ReturnsErrorAttribute";
 
-    // ErrorOr core types
     public const string ErrorOrT = "ErrorOr.ErrorOr`1";
     public const string ErrorType = "ErrorOr.ErrorType";
     public const string Error = "ErrorOr.Error";
 
-    // ErrorOr result markers
     public const string Success = "ErrorOr.Success";
     public const string Created = "ErrorOr.Created";
     public const string Updated = "ErrorOr.Updated";
     public const string Deleted = "ErrorOr.Deleted";
 
-    // ASP.NET Core MVC
     public const string FromBodyAttribute = "Microsoft.AspNetCore.Mvc.FromBodyAttribute";
     public const string FromFormAttribute = "Microsoft.AspNetCore.Mvc.FromFormAttribute";
     public const string FromHeaderAttribute = "Microsoft.AspNetCore.Mvc.FromHeaderAttribute";
@@ -43,7 +39,6 @@ internal static class WellKnownTypes
     public const string FromServicesAttribute = "Microsoft.AspNetCore.Mvc.FromServicesAttribute";
     public const string ProblemDetails = "Microsoft.AspNetCore.Mvc.ProblemDetails";
 
-    // ASP.NET Core Http
     public const string AsParametersAttribute = "Microsoft.AspNetCore.Http.AsParametersAttribute";
     public const string HttpContext = "Microsoft.AspNetCore.Http.HttpContext";
     public const string HttpValidationProblemDetails = "Microsoft.AspNetCore.Http.HttpValidationProblemDetails";
@@ -53,18 +48,15 @@ internal static class WellKnownTypes
     public const string BindableFromHttpContext = "Microsoft.AspNetCore.Http.IBindableFromHttpContext`1";
     public const string TypedResults = "Microsoft.AspNetCore.Http.TypedResults";
 
-    // DI
     public const string FromKeyedServicesAttribute =
         "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 
-    // BCL Validation (base types for automatic detection)
     public const string ValidationAttribute = "System.ComponentModel.DataAnnotations.ValidationAttribute";
     public const string IValidatableObject = "System.ComponentModel.DataAnnotations.IValidatableObject";
     public const string Validator = "System.ComponentModel.DataAnnotations.Validator";
     public const string ValidationContext = "System.ComponentModel.DataAnnotations.ValidationContext";
     public const string ValidationResult = "System.ComponentModel.DataAnnotations.ValidationResult";
 
-    // System
     public const string CancellationToken = "System.Threading.CancellationToken";
     public const string JsonSerializableAttribute = "System.Text.Json.Serialization.JsonSerializableAttribute";
 
@@ -84,7 +76,6 @@ internal static class WellKnownTypes
     public const string ICollectionT = "System.Collections.Generic.ICollection`1";
     public const string HashSetT = "System.Collections.Generic.HashSet`1";
     public const string ReadOnlySpanT = "System.ReadOnlySpan`1";
-    public const string NullableT = "System.Nullable`1";
     public const string IFormatProvider = "System.IFormatProvider";
     public const string Guid = "System.Guid";
     public const string DateTime = "System.DateTime";
@@ -98,23 +89,26 @@ internal static class WellKnownTypes
 
     public const string SseItemT = "System.Net.ServerSentEvents.SseItem`1";
 
-    // Authorization attributes
     public const string AuthorizeAttribute = "Microsoft.AspNetCore.Authorization.AuthorizeAttribute";
     public const string AllowAnonymousAttribute = "Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute";
 
-    // Rate limiting attributes
     public const string EnableRateLimitingAttribute =
         "Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute";
 
     public const string DisableRateLimitingAttribute =
         "Microsoft.AspNetCore.RateLimiting.DisableRateLimitingAttribute";
 
-    // Output caching attributes
     public const string OutputCacheAttribute = "Microsoft.AspNetCore.OutputCaching.OutputCacheAttribute";
 
-    // CORS attributes
     public const string EnableCorsAttribute = "Microsoft.AspNetCore.Cors.EnableCorsAttribute";
     public const string DisableCorsAttribute = "Microsoft.AspNetCore.Cors.DisableCorsAttribute";
+
+    public const string ApiVersionAttribute = "Asp.Versioning.ApiVersionAttribute";
+    public const string ApiVersionNeutralAttribute = "Asp.Versioning.ApiVersionNeutralAttribute";
+    public const string MapToApiVersionAttribute = "Asp.Versioning.MapToApiVersionAttribute";
+    public const string ApiVersion = "Asp.Versioning.ApiVersion";
+
+    public const string RouteGroupAttribute = "ErrorOr.RouteGroupAttribute";
 
     /// <summary>
     ///     HTTP method constants to replace magic strings throughout the generator.
@@ -144,88 +138,30 @@ internal static class WellKnownTypes
     // ReSharper disable MemberHidesStaticFromOuterClass - Intentional: metadata vs codegen naming
     public static class Fqn
     {
-        // ErrorOr attributes
-        public const string ErrorOrEndpointAttribute = "global::ErrorOr.ErrorOrEndpointAttribute";
-        public const string GetAttribute = "global::ErrorOr.GetAttribute";
-        public const string PostAttribute = "global::ErrorOr.PostAttribute";
-        public const string PutAttribute = "global::ErrorOr.PutAttribute";
-        public const string DeleteAttribute = "global::ErrorOr.DeleteAttribute";
-        public const string PatchAttribute = "global::ErrorOr.PatchAttribute";
+        // Frequently used Fqn constants emitted in generated code
+        public const string ErrorType = "global::ErrorOr.ErrorType";
+        public const string Error = "global::ErrorOr.Error";
         public const string ProducesErrorAttribute = "global::ErrorOr.ProducesErrorAttribute";
         public const string AcceptedResponseAttribute = "global::ErrorOr.AcceptedResponseAttribute";
 
-        // ErrorOr core types
-        public const string ErrorOr = "global::ErrorOr.ErrorOr";
-        public const string ErrorType = "global::ErrorOr.ErrorType";
-        public const string Error = "global::ErrorOr.Error";
-        public const string ResultSuccess = "global::ErrorOr.Success";
-        public const string ResultCreated = "global::ErrorOr.Created";
-        public const string ResultUpdated = "global::ErrorOr.Updated";
-        public const string ResultDeleted = "global::ErrorOr.Deleted";
-
-        // ASP.NET Core MVC
-        public const string FromBodyAttribute = "global::Microsoft.AspNetCore.Mvc.FromBodyAttribute";
-        public const string FromFormAttribute = "global::Microsoft.AspNetCore.Mvc.FromFormAttribute";
-        public const string FromHeaderAttribute = "global::Microsoft.AspNetCore.Mvc.FromHeaderAttribute";
-        public const string FromQueryAttribute = "global::Microsoft.AspNetCore.Mvc.FromQueryAttribute";
-        public const string FromRouteAttribute = "global::Microsoft.AspNetCore.Mvc.FromRouteAttribute";
-        public const string FromServicesAttribute = "global::Microsoft.AspNetCore.Mvc.FromServicesAttribute";
         public const string ProblemDetails = "global::Microsoft.AspNetCore.Mvc.ProblemDetails";
-
-        public const string ProducesResponseTypeAttribute =
-            "global::Microsoft.AspNetCore.Mvc.ProducesResponseTypeAttribute";
-
         public const string ProducesResponseTypeMetadata =
             "global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata";
-
-        // ASP.NET Core Http
-        public const string AsParametersAttribute = "global::Microsoft.AspNetCore.Http.AsParametersAttribute";
-        public const string HttpContext = "global::Microsoft.AspNetCore.Http.HttpContext";
-        public const string Result = "global::Microsoft.AspNetCore.Http.IResult";
-
         public const string HttpValidationProblemDetails =
             "global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails";
+        public const string Result = "global::Microsoft.AspNetCore.Http.IResult";
 
-        public const string FormCollection = "global::Microsoft.AspNetCore.Http.IFormCollection";
-        public const string FormFile = "global::Microsoft.AspNetCore.Http.IFormFile";
-        public const string FormFileCollection = "global::Microsoft.AspNetCore.Http.IFormFileCollection";
-
-        // DI
-        public const string FromKeyedServicesAttribute =
-            "global::Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
-
-        // BCL Validation
         public const string Validator = "global::System.ComponentModel.DataAnnotations.Validator";
         public const string ValidationContext = "global::System.ComponentModel.DataAnnotations.ValidationContext";
         public const string ValidationResult = "global::System.ComponentModel.DataAnnotations.ValidationResult";
 
-        // System
-        public const string CancellationToken = "global::System.Threading.CancellationToken";
-
-        public const string JsonSerializableAttribute =
-            "global::System.Text.Json.Serialization.JsonSerializableAttribute";
-
-        public const string JsonSerializerContext = "global::System.Text.Json.Serialization.JsonSerializerContext";
         public const string JsonException = "global::System.Text.Json.JsonException";
-        public const string ParameterInfo = "global::System.Reflection.ParameterInfo";
-
-        public const string Task = "global::System.Threading.Tasks.Task";
-        public const string ValueTask = "global::System.Threading.Tasks.ValueTask";
-
-        public const string Stream = "global::System.IO.Stream";
-        public const string PipeReader = "global::System.IO.Pipelines.PipeReader";
 
         public const string List = "global::System.Collections.Generic.List";
         public const string Dictionary = "global::System.Collections.Generic.Dictionary";
         public const string ReadOnlyList = "global::System.Collections.Generic.IReadOnlyList";
 
-        public const string String = "global::System.String";
-        public const string Guid = "global::System.Guid";
-        public const string DateTime = "global::System.DateTime";
-        public const string DateTimeOffset = "global::System.DateTimeOffset";
-        public const string DateOnly = "global::System.DateOnly";
-        public const string TimeOnly = "global::System.TimeOnly";
-        public const string TimeSpan = "global::System.TimeSpan";
+        public const string ApiVersion = "global::Asp.Versioning.ApiVersion";
 
         /// <summary>
         ///     TypedResults factory method prefixes for generated code.

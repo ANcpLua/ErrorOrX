@@ -14,16 +14,25 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void AnalyzeJsonContextCoverage(
         SourceProductionContext spc,
         ImmutableArray<EndpointDescriptor> endpoints,
-        ImmutableArray<JsonContextInfo> userContexts)
+        ImmutableArray<JsonContextInfo> userContexts,
+        bool publishAot)
     {
         if (endpoints.IsDefaultOrEmpty)
             return;
 
-        var neededTypes = new HashSet<string>();
-        var typeToEndpoint = new Dictionary<string, string>();
+        // Collect body types and response types separately
+        var bodyTypes = new Dictionary<string, string>(); // typeFqn -> endpointName
+        var responseTypes = new Dictionary<string, string>();
 
         foreach (var ep in endpoints)
         {
+            // Collect body parameter types
+            foreach (var param in ep.HandlerParameters)
+                if (param.Source == EndpointParameterSource.Body)
+                    if (!bodyTypes.ContainsKey(param.TypeFqn))
+                        bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
+
+            // Collect response types
             if (!string.IsNullOrEmpty(ep.SuccessTypeFqn))
             {
                 var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
@@ -31,45 +40,73 @@ public sealed partial class ErrorOrEndpointGenerator
                     ep.SuccessKind,
                     ep.IsAcceptedResponse);
 
-                if (successInfo.HasBody && neededTypes.Add(ep.SuccessTypeFqn))
-                    typeToEndpoint[ep.SuccessTypeFqn] = ep.HandlerMethodName;
+                if (successInfo.HasBody && !responseTypes.ContainsKey(ep.SuccessTypeFqn))
+                    responseTypes[ep.SuccessTypeFqn] = ep.HandlerMethodName;
             }
-
-            foreach (var param in ep.HandlerParameters)
-                if (param.Source == EndpointParameterSource.Body)
-                    if (neededTypes.Add(param.TypeFqn))
-                        typeToEndpoint[param.TypeFqn] = ep.HandlerMethodName;
         }
 
-        neededTypes.Add(WellKnownTypes.Fqn.ProblemDetails);
-        neededTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
+        // Always need ProblemDetails for error responses
+        if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.ProblemDetails))
+            responseTypes[WellKnownTypes.Fqn.ProblemDetails] = "ErrorOr endpoints";
+        if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.HttpValidationProblemDetails))
+            responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = "ErrorOr endpoints";
 
+        // CRITICAL: If no user-defined JsonSerializerContext exists but we have body parameters,
+        // this is an ERROR in AOT mode. The generated ErrorOrJsonContext cannot be used by
+        // System.Text.Json source generator because Roslyn generators cannot see output from
+        // other generators.
+        // Only emit EOE041 when PublishAot=true to avoid false positives in non-AOT builds.
         if (userContexts.IsDefaultOrEmpty)
-            return;
+        {
+            // Report EOE041 for each body type - but only if PublishAot is enabled
+            if (publishAot)
+                foreach (var kvp in bodyTypes)
+                {
+                    if (kvp.Key.IsPrimitiveJsonType())
+                        continue;
 
+                    var displayType = kvp.Key.StripGlobalPrefix();
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        Descriptors.MissingJsonContextForBody,
+                        Location.None,
+                        kvp.Value,
+                        displayType));
+                }
+
+            // No point checking type registration if there's no context at all
+            return;
+        }
+
+        // User has a JsonSerializerContext - check if all needed types are registered
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
         foreach (var typeFqn in ctx.SerializableTypes)
             registeredTypes.Add(typeFqn);
 
-        foreach (var neededType in neededTypes)
+        // Combine all needed types
+        var allNeededTypes = new Dictionary<string, string>();
+        foreach (var kvp in bodyTypes)
+            if (!allNeededTypes.ContainsKey(kvp.Key))
+                allNeededTypes[kvp.Key] = kvp.Value;
+        foreach (var kvp in responseTypes)
+            if (!allNeededTypes.ContainsKey(kvp.Key))
+                allNeededTypes[kvp.Key] = kvp.Value;
+
+        foreach (var kvp in allNeededTypes)
         {
-            if (TypeNameHelper.IsPrimitiveJsonType(neededType))
+            if (kvp.Key.IsPrimitiveJsonType())
                 continue;
 
-            var isRegistered = registeredTypes.Any(rt => TypeNameHelper.TypeNamesMatch(neededType, rt));
+            var isRegistered = registeredTypes.Any(rt => kvp.Key.TypeNamesEqual(rt));
             if (!isRegistered)
             {
-                var displayType = TypeNameHelper.StripGlobalPrefix(neededType);
-                var endpointName = typeToEndpoint.TryGetValue(neededType, out var epName)
-                    ? epName
-                    : "ErrorOr endpoints";
+                var displayType = kvp.Key.StripGlobalPrefix();
 
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Descriptors.TypeNotInJsonContext,
                     Location.None,
                     displayType,
-                    endpointName));
+                    kvp.Value));
             }
         }
     }

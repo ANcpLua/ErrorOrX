@@ -1,6 +1,6 @@
 namespace ErrorOr;
 
-public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
+public readonly partial record struct ErrorOr<TValue>
 {
     /// <summary>
     ///     If the state is value, the provided function <paramref name="onValue" /> is invoked.

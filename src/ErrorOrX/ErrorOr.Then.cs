@@ -1,6 +1,6 @@
 namespace ErrorOr;
 
-public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
+public readonly partial record struct ErrorOr<TValue>
 {
     /// <summary>
     ///     If the state is a value, the provided function <paramref name="onValue" /> is executed and its result is returned.
@@ -15,7 +15,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     {
         _ = Throw.IfNull(onValue);
 
-        return IsError ? new(_errors) : onValue(Value);
+        return IsError ? new ErrorOr<TNextValue>(_errors) : onValue(Value);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
         if (IsError)
         {
-            return new(_errors);
+            return new ErrorOr<TValue>(_errors);
         }
 
         action(Value);
@@ -52,7 +52,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
         if (IsError)
         {
-            return new(_errors);
+            return new ErrorOr<TNextValue>(_errors);
         }
 
         return onValue(Value);
@@ -74,7 +74,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
         if (IsError)
         {
-            return new(_errors);
+            return new ErrorOr<TNextValue>(_errors);
         }
 
         return await onValue(Value).ConfigureAwait(false);
@@ -91,7 +91,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
         if (IsError)
         {
-            return new(_errors);
+            return new ErrorOr<TValue>(_errors);
         }
 
         await action(Value).ConfigureAwait(false);
@@ -115,7 +115,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
         if (IsError)
         {
-            return new(_errors);
+            return new ErrorOr<TNextValue>(_errors);
         }
 
         return await onValue(Value).ConfigureAwait(false);

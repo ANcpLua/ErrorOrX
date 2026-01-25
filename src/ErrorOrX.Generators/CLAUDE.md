@@ -43,6 +43,7 @@ return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors)
 ```
 
 **Why?**
+
 - Reduces runtime coupling to ErrorOr library internals
 - Generated code is more portable and self-contained
 - Simpler to understand and debug
@@ -50,12 +51,12 @@ return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors)
 
 ## Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
-| ANcpLua.Roslyn.Utilities | 1.16.0 | Bundled in package |
-| PolySharp | 1.15.0 | C# polyfills for netstandard2.0 |
-| ANcpLua.Analyzers | 1.9.0 | Code quality analyzers |
+| Package                       | Version | Purpose                         |
+|-------------------------------|---------|---------------------------------|
+| Microsoft.CodeAnalysis.CSharp | 5.0.0   | Roslyn APIs                     |
+| ANcpLua.Roslyn.Utilities      | 1.16.0  | Bundled in package              |
+| PolySharp                     | 1.15.0  | C# polyfills for netstandard2.0 |
+| ANcpLua.Analyzers             | 1.9.0   | Code quality analyzers          |
 
 ## Package Structure
 
@@ -322,11 +323,48 @@ new AcceptsMetadata(new[] { "application/json" }, typeof(CreateTodoRequest))
 // NOT: AcceptsMetadata(typeof(T), string[])  // Wrong order!
 ```
 
+## Route Constraint Validation (RouteValidator.cs)
+
+The generator validates route parameter types against route constraints.
+
+### Route Parameter Regex
+
+The route parameter extraction regex matches patterns like:
+
+- `{paramName}` - Simple parameter
+- `{paramName:constraint}` - Parameter with single constraint
+- `{paramName:int:min(1)}` - Multiple constraints
+- `{*catchAll}` - Catch-all parameter
+- `{paramName?}` - Optional parameter
+
+### Type-Constraining vs Format Constraints
+
+**Type-constraining constraints** validate CLR type compatibility:
+
+- `int`, `long`, `short`, `byte`, `sbyte` - Integer types
+- `uint`, `ulong`, `ushort` - Unsigned integer types
+- `decimal`, `double`, `float` - Floating point types
+- `bool` - Boolean
+- `guid` - System.Guid
+- `datetime`, `datetimeoffset`, `dateonly`, `timeonly`, `timespan` - Date/time types
+
+**Format-only constraints** validate string format at runtime but don't constrain CLR type:
+
+- `alpha`, `minlength`, `maxlength`, `length`, `regex`, `required`
+
+These format constraints work on string parameters and are skipped during type validation.
+
 ## Testing
 
 ```bash
-# Unit tests
-dotnet test tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj
+# All generator tests
+dotnet test --project tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj
+
+# Run specific test class (xUnit v3 MTP syntax)
+dotnet test --project tests/ErrorOrX.Generators.Tests --filter-class "*ResultsUnionTypeBuilder*"
+
+# Run specific test method
+dotnet test --project tests/ErrorOrX.Generators.Tests --filter-method "*Payload_Returns_Ok200*"
 
 # Verify generator output
 dotnet build samples/ErrorOrX.Sample --configuration Debug

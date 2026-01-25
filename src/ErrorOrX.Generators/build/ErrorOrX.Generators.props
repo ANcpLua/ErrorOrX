@@ -1,12 +1,33 @@
 <Project>
     <PropertyGroup>
-        <!-- Enable JSON context generation by default -->
-        <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">true</ErrorOrGenerateJsonContext>
+        <!--
+            IMPORTANT: ErrorOrGenerateJsonContext is disabled by default.
+
+            The generated ErrorOrJsonContext CANNOT be used for Native AOT because Roslyn
+            source generators cannot see output from other generators. The System.Text.Json
+            source generator will not process our generated JsonSerializerContext.
+
+            For AOT compatibility, you MUST create your own JsonSerializerContext:
+
+            [JsonSerializable(typeof(YourType))]
+            internal partial class AppJsonSerializerContext : JsonSerializerContext { }
+
+            And register it:
+            builder.Services.AddErrorOrEndpoints(o => o.UseJsonContext<AppJsonSerializerContext>());
+
+            See: https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg
+        -->
+        <ErrorOrGenerateJsonContext Condition="'$(ErrorOrGenerateJsonContext)' == ''">false</ErrorOrGenerateJsonContext>
+        <!-- Enable XML documentation for OpenAPI parameter descriptions -->
+        <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
+        <!-- Suppress XML doc warnings (CS1591: missing XML comment, CS1573: missing param tag) -->
+        <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <!-- Make MSBuild properties visible to the source generator -->
         <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext"/>
+        <CompilerVisibleProperty Include="PublishAot"/>
     </ItemGroup>
 
     <ItemGroup>

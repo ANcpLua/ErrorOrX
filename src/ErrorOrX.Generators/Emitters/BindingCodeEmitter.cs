@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using System.Text;
+using ANcpLua.Roslyn.Utilities;
 
 namespace ErrorOr.Generators.Emitters;
 
@@ -86,7 +86,7 @@ internal static class BindingCodeEmitter
     {
         var routeName = param.KeyName ?? param.Name;
         code.AppendLine(
-            TypeNameHelper.IsStringType(param.TypeFqn)
+            param.TypeFqn.IsStringType()
                 ? $"            if (!TryGetRouteValue(ctx, \"{routeName}\", out var {paramName})) return {bindFailFn}(\"{param.Name}\", \"is missing from route\");"
                 : $"            if (!TryGetRouteValue(ctx, \"{routeName}\", out var {paramName}Raw) || !{GetTryParseExpression(param.TypeFqn, paramName + "Raw", paramName, param.CustomBinding)}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
         return true;
@@ -121,7 +121,7 @@ internal static class BindingCodeEmitter
         code.AppendLine("            {");
 
         var usesBindFail = false;
-        if (TypeNameHelper.IsStringType(itemType))
+        if (itemType.IsStringType())
             code.AppendLine($"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
         else
         {
@@ -152,10 +152,11 @@ internal static class BindingCodeEmitter
             usesBindFail = true;
             code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
         }
+
         code.AppendLine("            }");
         code.AppendLine("            else");
         code.AppendLine("            {");
-        if (TypeNameHelper.IsStringType(param.TypeFqn))
+        if (param.TypeFqn.IsStringType())
             code.AppendLine($"                {paramName} = {paramName}Raw;");
         else
         {
@@ -163,6 +164,7 @@ internal static class BindingCodeEmitter
             code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw", paramName + "Temp", param.CustomBinding)}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
             code.AppendLine($"                {paramName} = {paramName}Temp;");
         }
+
         code.AppendLine("            }");
         return usesBindFail;
     }
@@ -184,6 +186,7 @@ internal static class BindingCodeEmitter
                 usesBindFail = true;
                 code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
             }
+
             code.AppendLine("            }");
             code.AppendLine("            else");
             code.AppendLine("            {");
@@ -191,7 +194,7 @@ internal static class BindingCodeEmitter
             code.AppendLine($"                foreach (var item in {paramName}Raw)");
             code.AppendLine("                {");
             code.AppendLine(
-                TypeNameHelper.IsStringType(itemType)
+                itemType.IsStringType()
                     ? $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);"
                     : $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
             code.AppendLine("                }");
@@ -212,10 +215,11 @@ internal static class BindingCodeEmitter
                 usesBindFail = true;
                 code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
             }
+
             code.AppendLine("            }");
             code.AppendLine("            else");
             code.AppendLine("            {");
-            if (TypeNameHelper.IsStringType(param.TypeFqn))
+            if (param.TypeFqn.IsStringType())
                 code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
             else
             {
@@ -223,6 +227,7 @@ internal static class BindingCodeEmitter
                 code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\"); {paramName} = {paramName}Temp;");
             }
         }
+
         code.AppendLine("            }");
         return usesBindFail;
     }
@@ -253,6 +258,7 @@ internal static class BindingCodeEmitter
                 var child = param.Children[i];
                 usesBindFail |= EmitParameterBinding(code, in child, $"{paramName}_f{i}", bindFailFn);
             }
+
             var args = string.Join(", ", param.Children.AsImmutableArray().Select((_, i) => $"{paramName}_f{i}"));
             code.AppendLine($"            var {paramName} = new {param.TypeFqn}({args});");
             return usesBindFail;
@@ -271,10 +277,11 @@ internal static class BindingCodeEmitter
             usesBindFailScalar = true;
             code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
         }
+
         code.AppendLine("            }");
         code.AppendLine("            else");
         code.AppendLine("            {");
-        if (TypeNameHelper.IsStringType(param.TypeFqn))
+        if (param.TypeFqn.IsStringType())
             code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
         else
         {
@@ -282,6 +289,7 @@ internal static class BindingCodeEmitter
             code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
             code.AppendLine($"                {paramName} = {paramName}Temp;");
         }
+
         code.AppendLine("            }");
         return usesBindFailScalar;
     }
@@ -297,6 +305,7 @@ internal static class BindingCodeEmitter
             usesBindFail |= EmitParameterBinding(code, in child, childVarName, bindFailFn);
             childVars.Add(BuildArgumentExpression(in child, childVarName));
         }
+
         code.AppendLine($"            var {paramName} = new {param.TypeFqn}({string.Join(", ", childVars)});");
         return usesBindFail;
     }
@@ -322,15 +331,22 @@ internal static class BindingCodeEmitter
 
     internal static string GetTryParseExpression(string typeFqn, string rawName, string outputName, CustomBindingMethod customBinding = CustomBindingMethod.None)
     {
-        if (customBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        if (customBinding is CustomBindingMethod.TryParse)
         {
             var baseType = typeFqn.TrimEnd('?');
             return $"{baseType}.TryParse({rawName}, out var {outputName})";
         }
 
+        if (customBinding is CustomBindingMethod.TryParseWithFormat)
+        {
+            var baseType = typeFqn.TrimEnd('?');
+            return $"{baseType}.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})";
+        }
+
         var normalized = typeFqn.Replace("global::", "").TrimEnd('?');
         return normalized switch
         {
+            // Integer types - no IFormatProvider overload
             "System.Int32" or "int" => $"int.TryParse({rawName}, out var {outputName})",
             "System.Int64" or "long" => $"long.TryParse({rawName}, out var {outputName})",
             "System.Int16" or "short" => $"short.TryParse({rawName}, out var {outputName})",
@@ -339,16 +355,27 @@ internal static class BindingCodeEmitter
             "System.UInt16" or "ushort" => $"ushort.TryParse({rawName}, out var {outputName})",
             "System.UInt32" or "uint" => $"uint.TryParse({rawName}, out var {outputName})",
             "System.UInt64" or "ulong" => $"ulong.TryParse({rawName}, out var {outputName})",
+            "System.Int128" => $"global::System.Int128.TryParse({rawName}, out var {outputName})",
+            "System.UInt128" => $"global::System.UInt128.TryParse({rawName}, out var {outputName})",
+
+            // Other types without IFormatProvider overload
             "System.Boolean" or "bool" => $"bool.TryParse({rawName}, out var {outputName})",
             "System.Guid" => $"global::System.Guid.TryParse({rawName}, out var {outputName})",
-            "System.DateTime" => $"global::System.DateTime.TryParse({rawName}, out var {outputName})",
-            "System.DateTimeOffset" => $"global::System.DateTimeOffset.TryParse({rawName}, out var {outputName})",
-            "System.TimeSpan" => $"global::System.TimeSpan.TryParse({rawName}, out var {outputName})",
-            "System.DateOnly" => $"global::System.DateOnly.TryParse({rawName}, out var {outputName})",
-            "System.TimeOnly" => $"global::System.TimeOnly.TryParse({rawName}, out var {outputName})",
-            "System.Double" or "double" => $"double.TryParse({rawName}, out var {outputName})",
-            "System.Single" or "float" => $"float.TryParse({rawName}, out var {outputName})",
-            "System.Decimal" or "decimal" => $"decimal.TryParse({rawName}, out var {outputName})",
+            "System.Uri" => $"global::System.Uri.TryCreate({rawName}, global::System.UriKind.RelativeOrAbsolute, out var {outputName})",
+
+            // Culture-sensitive floating point types - use InvariantCulture
+            "System.Decimal" or "decimal" => $"decimal.TryParse({rawName}, global::System.Globalization.NumberStyles.Number, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Double" or "double" => $"double.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Single" or "float" => $"float.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Half" => $"global::System.Half.TryParse({rawName}, global::System.Globalization.NumberStyles.Float, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+
+            // Culture-sensitive date/time types - use InvariantCulture
+            "System.DateTime" => $"global::System.DateTime.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
+            "System.DateTimeOffset" => $"global::System.DateTimeOffset.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
+            "System.DateOnly" => $"global::System.DateOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
+            "System.TimeOnly" => $"global::System.TimeOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
+            "System.TimeSpan" => $"global::System.TimeSpan.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+
             _ => "false"
         };
     }

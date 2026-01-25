@@ -16,57 +16,6 @@ namespace ErrorOr.Generators;
 public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 {
     /// <summary>
-    ///     Incremental pipeline tracking names for caching diagnostics.
-    /// </summary>
-    private static class TrackingNames
-    {
-        public const string ResultsUnionMaxArity = "ResultsUnionMaxArity";
-
-        public static string EndpointBindingFlow(string attributeName) => attributeName switch
-        {
-            WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
-            WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
-            WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
-            WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
-            WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
-            WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
-            _ => "EndpointBindingFlow.Unknown"
-        };
-    }
-
-    /// <summary>
-    ///     Small focused helpers for common pipeline operations.
-    /// </summary>
-    private static class Helpers
-    {
-        /// <summary>
-        ///     Converts EquatableArray to ImmutableArray, returning Empty if default/empty.
-        /// </summary>
-        public static ImmutableArray<T> AsArrayOrEmpty<T>(EquatableArray<T> array) where T : IEquatable<T> =>
-            array.IsDefaultOrEmpty ? ImmutableArray<T>.Empty : array.AsImmutableArray();
-
-        /// <summary>
-        ///     Maps attribute name to HTTP method, returning null for unrecognized attributes.
-        /// </summary>
-        public static string? TryGetHttpMethod(string attrName, ImmutableArray<TypedConstant> args) => attrName switch
-        {
-            "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
-            "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
-            "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
-            "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
-            "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
-            "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when args is [{ Value: string m }, ..] => m.ToUpperInvariant(),
-            _ => null
-        };
-
-        /// <summary>
-        ///     Creates an empty endpoint descriptor flow for early-exit scenarios.
-        /// </summary>
-        public static DiagnosticFlow<EquatableArray<EndpointDescriptor>> EmptyEndpointFlow() =>
-            DiagnosticFlow.Ok(new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
-    }
-
-    /// <summary>
     ///     Emits the marker attributes that users apply to their endpoint handler methods.
     ///     This must be registered by this generator (not just OpenApiTransformerGenerator)
     ///     because ForAttributeWithMetadataName only sees types from PostInitializationOutput
@@ -164,11 +113,75 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                                       public int? StatusCode { get; }
                                       public string ErrorCode { get; }
                                   }
+
+                                  /// <summary>
+                                  /// Marks a class as a route group for versioned API endpoints.
+                                  /// All endpoints in the class will be mapped under the specified path prefix
+                                  /// using the eShop-style NewVersionedApi() pattern when combined with [ApiVersion].
+                                  /// </summary>
+                                  [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false)]
+                                  public sealed class RouteGroupAttribute : global::System.Attribute
+                                  {
+                                      public RouteGroupAttribute(string path) => Path = path;
+                                      public string Path { get; }
+                                      public string? ApiName { get; set; }
+                                  }
                               }
                               """;
 
         // Use a different file name to avoid conflicts with OpenApiTransformerGenerator
         context.AddSource("ErrorOrEndpointAttributes.Mappings.g.cs", source);
+    }
+
+    /// <summary>
+    ///     Incremental pipeline tracking names for caching diagnostics.
+    /// </summary>
+    private static class TrackingNames
+    {
+        public const string ResultsUnionMaxArity = "ResultsUnionMaxArity";
+
+        public static string EndpointBindingFlow(string attributeName) => attributeName switch
+        {
+            WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
+            WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
+            WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
+            WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
+            WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
+            WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
+            _ => "EndpointBindingFlow.Unknown"
+        };
+    }
+
+    /// <summary>
+    ///     Small focused helpers for common pipeline operations.
+    /// </summary>
+    private static class Helpers
+    {
+        /// <summary>
+        ///     Converts EquatableArray to ImmutableArray, returning Empty if default/empty.
+        /// </summary>
+        public static ImmutableArray<T> AsArrayOrEmpty<T>(EquatableArray<T> array) where T : IEquatable<T> =>
+            array.IsDefaultOrEmpty ? ImmutableArray<T>.Empty : array.AsImmutableArray();
+
+        /// <summary>
+        ///     Maps attribute name to HTTP method, returning null for unrecognized attributes.
+        /// </summary>
+        public static string? TryGetHttpMethod(string attrName, ImmutableArray<TypedConstant> args) => attrName switch
+        {
+            "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
+            "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
+            "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
+            "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
+            "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
+            "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when args is [{ Value: string m }, ..] => m.ToUpperInvariant(),
+            _ => null
+        };
+
+        /// <summary>
+        ///     Creates an empty endpoint descriptor flow for early-exit scenarios.
+        /// </summary>
+        public static DiagnosticFlow<EquatableArray<EndpointDescriptor>> EmptyEndpointFlow() =>
+            DiagnosticFlow.Ok(new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
     }
     // EPS06: Roslyn's readonly struct API causes unavoidable defensive copies.
 #pragma warning disable EPS06
@@ -182,6 +195,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
             .Select(ParseGenerateJsonContextOption);
+        var publishAotOption = context.AnalyzerConfigOptionsProvider
+            .Select(ParsePublishAotOption);
         var referenceArities = context.MetadataReferencesProvider
             .Select(static (reference, _) => ResultsUnionTypeBuilder.GetResultsUnionArity(reference))
             .CollectAsEquatableArray();
@@ -190,7 +205,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .WithTrackingName(TrackingNames.ResultsUnionMaxArity);
 
         context.RegisterSourceOutput(
-            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(maxResultsUnionArity),
+            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(publishAotOption).Combine(maxResultsUnionArity),
             EmitMappingsAndRunAnalysis);
     }
 
@@ -198,6 +213,12 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     {
         options.GlobalOptions.TryGetValue("build_property.ErrorOrGenerateJsonContext", out var value);
         return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ParsePublishAotOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
+    {
+        options.GlobalOptions.TryGetValue("build_property.PublishAot", out var value);
+        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IncrementalValueProvider<EquatableArray<EndpointDescriptor>> CombineHttpMethodProviders(
@@ -215,14 +236,14 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             deleteProvider, patchProvider, baseProvider);
     }
 
-
     private static void EmitMappingsAndRunAnalysis(
         SourceProductionContext spc,
-        (((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts),
+        ((((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts),
             bool GenerateJsonContext),
+            bool PublishAot),
             int MaxResultsUnionArity) data)
     {
-        var (((endpoints, jsonContexts), generateJsonContext), maxResultsUnionArity) = data;
+        var ((((endpoints, jsonContexts), generateJsonContext), publishAot), maxResultsUnionArity) = data;
         var endpointArray = Helpers.AsArrayOrEmpty(endpoints);
         var jsonContextArray = Helpers.AsArrayOrEmpty(jsonContexts);
 
@@ -231,7 +252,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         if (!endpointArray.IsDefaultOrEmpty)
         {
             EmitEndpoints(spc, endpointArray, jsonContextArray, maxResultsUnionArity, generateJsonContext);
-            AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray);
+            AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray, publishAot);
             AnalyzeUnionTypeArity(spc, endpointArray, maxResultsUnionArity);
         }
     }
@@ -279,6 +300,27 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .Then(m =>
             {
                 var returnInfo = ExtractErrorOrReturnType(m.ReturnType, errorOrContext);
+
+                // EOE017: Anonymous return type
+                if (returnInfo.IsAnonymousType)
+                    return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
+                        DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
+
+                // EOE020: Inaccessible return type
+                if (returnInfo.IsInaccessibleType)
+                    return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
+                        DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
+                            returnInfo.InaccessibleTypeName ?? "unknown",
+                            m.Name,
+                            returnInfo.InaccessibleTypeAccessibility ?? "private"));
+
+                // EOE021: Type parameter in return type
+                if (returnInfo.IsTypeParameter)
+                    return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
+                        DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
+                            m.Name,
+                            returnInfo.TypeParameterName ?? "T"));
+
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))
                     : DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
@@ -385,6 +427,12 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         builder.AddRange(RouteValidator.ValidateConstraintTypes(
             routeParamInfos, methodParams, analysis.Method));
 
+        // Extract API versioning attributes
+        var versioning = ExtractVersioningAttributes(analysis.Method, errorOrContext);
+
+        // Extract route group configuration for eShop-style grouping
+        var routeGroup = ExtractRouteGroupInfo(analysis.Method, errorOrContext);
+
         var descriptor = new EndpointDescriptor(
             httpMethod,
             pattern,
@@ -401,7 +449,9 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.ReturnInfo.SseItemTypeFqn,
             analysis.IsAcceptedResponse,
             analysis.ReturnInfo.IdPropertyName,
-            analysis.Middleware);
+            analysis.Middleware,
+            versioning,
+            routeGroup);
 
         var flow = DiagnosticFlow.Ok(descriptor);
         foreach (var diag in builder)

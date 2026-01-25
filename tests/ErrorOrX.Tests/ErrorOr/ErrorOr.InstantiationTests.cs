@@ -360,7 +360,7 @@ public class ErrorOrInstantiationTests
     public void CreateErrorOr_WhenEmptyErrorsList_ShouldThrow()
     {
         // Act
-        Func<ErrorOr<int>> errorOrInt = static () => new List<Error>().ToErrorOr<int>();
+        var errorOrInt = static () => new List<Error>().ToErrorOr<int>();
 
         // Assert
         var exception = errorOrInt.Should().ThrowExactly<ArgumentException>().Which;
@@ -387,7 +387,7 @@ public class ErrorOrInstantiationTests
     [Fact]
     public void CreateErrorOr_WhenNullIsPassedAsErrorsList_ShouldThrowArgumentNullException()
     {
-        Func<ErrorOr<int>> act = static () => default(List<Error>)!.ToErrorOr<int>();
+        var act = static () => default(List<Error>)!.ToErrorOr<int>();
 
         act.Should().ThrowExactly<ArgumentNullException>()
             .And.ParamName.Should().Be("errors");

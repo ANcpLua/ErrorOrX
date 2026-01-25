@@ -15,6 +15,7 @@ public sealed partial class ErrorOrEndpointGenerator
 {
     /// <summary>
     ///     Extracts the ErrorOr return type information from a method's return type.
+    ///     Returns null SuccessTypeFqn for invalid types (anonymous, inaccessible).
     /// </summary>
     internal static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
     {
@@ -24,19 +25,42 @@ public sealed partial class ErrorOrEndpointGenerator
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload);
 
         var innerType = errorOrType.TypeArguments[0];
+
+        // EOE017: Anonymous types cannot be serialized
+        if (innerType.IsAnonymousType)
+            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, true);
+
+        // EOE020: Private/protected types cannot be accessed by generated code
+        if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
+            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
+                innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
+
+        // EOE021: Type parameters (open generics) cannot be used
+        if (innerType is ITypeParameterSymbol typeParam)
+            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                null, null, true, typeParam.Name);
+
+        // Also check if the inner type contains type parameters (e.g., List<T>)
+        if (innerType is INamedTypeSymbol namedInner && namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol))
+        {
+            var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
+            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                null, null, true, firstTypeParam.Name);
+        }
+
         var kind = SuccessKind.Payload;
 
         if (context.SuccessMarker is not null &&
-            SymbolEqualityComparer.Default.Equals(innerType, context.SuccessMarker))
+            innerType.IsEqualTo(context.SuccessMarker))
             kind = SuccessKind.Success;
         else if (context.CreatedMarker is not null &&
-                 SymbolEqualityComparer.Default.Equals(innerType, context.CreatedMarker))
+                 innerType.IsEqualTo(context.CreatedMarker))
             kind = SuccessKind.Created;
         else if (context.UpdatedMarker is not null &&
-                 SymbolEqualityComparer.Default.Equals(innerType, context.UpdatedMarker))
+                 innerType.IsEqualTo(context.UpdatedMarker))
             kind = SuccessKind.Updated;
         else if (context.DeletedMarker is not null &&
-                 SymbolEqualityComparer.Default.Equals(innerType, context.DeletedMarker))
+                 innerType.IsEqualTo(context.DeletedMarker))
             kind = SuccessKind.Deleted;
 
         if (TryUnwrapAsyncEnumerable(innerType, context, out var elementType))
@@ -63,38 +87,32 @@ public sealed partial class ErrorOrEndpointGenerator
     /// <summary>
     ///     Detects a suitable Id property on the success type for Location header generation.
     ///     Looks for properties named Id, ID, id (case-insensitive), preferring exact "Id" match.
+    ///     Searches through base types to find inherited Id properties.
     /// </summary>
     private static string? DetectIdProperty(ITypeSymbol type)
     {
-        if (type is not INamedTypeSymbol namedType)
-            return null;
-
         // Skip marker types and primitives
         if (type.SpecialType != SpecialType.None)
             return null;
 
         string? bestMatch = null;
 
-        foreach (var member in namedType.GetMembers())
+        for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
         {
-            if (member is not IPropertySymbol property)
-                continue;
+            foreach (var member in current.GetMembers())
+            {
+                // Pattern-as-spec: public readable property
+                if (member is not IPropertySymbol { DeclaredAccessibility: Accessibility.Public, GetMethod: not null } property)
+                    continue;
 
-            // Must be public, readable, and not write-only
-            if (property.DeclaredAccessibility != Accessibility.Public)
-                continue;
-            if (property.GetMethod is null)
-                continue;
+                // Exact match "Id" is preferred - return immediately
+                if (property.Name == "Id")
+                    return "Id";
 
-            var name = property.Name;
-
-            // Exact match "Id" is preferred
-            if (name == "Id")
-                return "Id";
-
-            // Case-insensitive match for fallback
-            if (string.Equals(name, "Id", StringComparison.OrdinalIgnoreCase))
-                bestMatch ??= name;
+                // Case-insensitive match for fallback
+                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
+                    bestMatch ??= property.Name;
+            }
         }
 
         return bestMatch;
@@ -107,7 +125,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
             context.IAsyncEnumerableOfT is not null &&
-            SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, context.IAsyncEnumerableOfT))
+            named.ConstructedFrom.IsEqualTo(context.IAsyncEnumerableOfT))
         {
             elementType = named.TypeArguments[0];
             return true;
@@ -124,7 +142,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
             context.SseItemOfT is not null &&
-            SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, context.SseItemOfT))
+            named.ConstructedFrom.IsEqualTo(context.SseItemOfT))
         {
             dataType = named.TypeArguments[0];
             return true;
@@ -141,8 +159,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var constructed = named.ConstructedFrom;
 
-        if (context.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(constructed, context.TaskOfT) || context.ValueTaskOfT is not null &&
-            SymbolEqualityComparer.Default.Equals(constructed, context.ValueTaskOfT))
+        if (context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT) || context.ValueTaskOfT is not null &&
+            constructed.IsEqualTo(context.ValueTaskOfT))
             return (named.TypeArguments[0], true);
 
         return (type, false);
@@ -155,7 +173,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
             context.ErrorOrOfT is not null &&
-            SymbolEqualityComparer.Default.Equals(named.ConstructedFrom, context.ErrorOrOfT))
+            named.ConstructedFrom.IsEqualTo(context.ErrorOrOfT))
         {
             errorOrType = named;
             return true;
@@ -191,7 +209,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var attr in method.GetAttributes())
             if (context.ProducesErrorAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, context.ProducesErrorAttribute))
+                attr.AttributeClass.IsEqualTo(context.ProducesErrorAttribute))
                 if (attr.ConstructorArguments is [{ Value: int statusCode }, ..])
                     results.Add(new ProducesErrorInfo(statusCode));
 
@@ -207,7 +225,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         foreach (var attr in method.GetAttributes())
             if (context.AcceptedResponseAttribute is not null &&
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, context.AcceptedResponseAttribute))
+                attr.AttributeClass.IsEqualTo(context.AcceptedResponseAttribute))
                 return true;
 
         return false;
@@ -386,7 +404,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var attr in method.GetAttributes())
         {
-            if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, context.ReturnsErrorAttribute))
+            if (!attr.AttributeClass.IsEqualTo(context.ReturnsErrorAttribute))
                 continue;
 
             var args = attr.ConstructorArguments;
@@ -444,21 +462,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
     {
-        var returnType = method.ReturnType;
-
-        // Handle Task<ErrorOr<T>> and ValueTask<ErrorOr<T>>
-        if (returnType is INamedTypeSymbol { IsGenericType: true } namedType)
-        {
-            var typeName = namedType.ConstructedFrom.ToDisplayString();
-            if (typeName.StartsWith("System.Threading.Tasks.Task<") ||
-                typeName.StartsWith("System.Threading.Tasks.ValueTask<"))
-                returnType = namedType.TypeArguments[0];
-        }
-
-        // Check if it's ErrorOr<T>
-        return returnType is INamedTypeSymbol { IsGenericType: true } errorOrType &&
-               context.ErrorOrOfT is not null &&
-               SymbolEqualityComparer.Default.Equals(errorOrType.ConstructedFrom, context.ErrorOrOfT);
+        // Reuse existing helpers - unwrap Task/ValueTask, then check for ErrorOr<T>
+        var (unwrapped, _) = UnwrapAsyncType(method.ReturnType, context);
+        return IsErrorOrType(unwrapped, context, out _);
     }
 
     private static bool TryHandleErrorFactoryInvocation(
@@ -504,18 +510,18 @@ public sealed partial class ErrorOrEndpointGenerator
         ISet<ISymbol> visitedSymbols,
         [NotNullWhen(true)] out ISymbol? symbol)
     {
-        symbol = null;
-        if (node is not IdentifierNameSyntax and not MemberAccessExpressionSyntax)
-            return false;
+        // Conditional assignment: only resolve symbol for relevant syntax nodes
+        symbol = node is IdentifierNameSyntax or MemberAccessExpressionSyntax
+            ? semanticModel.GetSymbolInfo(node).Symbol
+            : null;
 
-        symbol = semanticModel.GetSymbolInfo(node).Symbol;
-        if (symbol is null || !visitedSymbols.Add(symbol))
-            return false;
-
-        if (!SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, semanticModel.Compilation.Assembly))
-            return false;
-
-        return symbol is IPropertySymbol or IFieldSymbol or ILocalSymbol or IMethodSymbol;
+        // Chained guards with short-circuit evaluation:
+        // 1. Type check (also handles null)
+        // 2. Same-assembly check (avoid external symbols)
+        // 3. Add to visited (side-effect only if we'll use it, returns false if duplicate)
+        return symbol is IPropertySymbol or IFieldSymbol or ILocalSymbol or IMethodSymbol &&
+               symbol.ContainingAssembly.IsEqualTo(semanticModel.Compilation.Assembly) &&
+               visitedSymbols.Add(symbol);
     }
 
     private static SyntaxNode? GetBodyToScan(SyntaxNode syntax)
@@ -584,7 +590,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
         if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol || context.Error is null ||
-            !SymbolEqualityComparer.Default.Equals(symbol.ContainingType, context.Error))
+            !symbol.ContainingType.IsEqualTo(context.Error))
             return false;
 
         factoryName = symbol.Name;
@@ -635,7 +641,7 @@ public sealed partial class ErrorOrEndpointGenerator
         AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, AuthInfo current)
     {
         if (context.AuthorizeAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.AuthorizeAttribute))
+            attrClass.IsEqualTo(context.AuthorizeAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             policy ??= attr.NamedArguments.FirstOrDefault(static a => a.Key == "Policy").Value.Value as string;
@@ -647,7 +653,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (context.AllowAnonymousAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.AllowAnonymousAttribute))
+            attrClass.IsEqualTo(context.AllowAnonymousAttribute))
             return current with
             {
                 AllowAnonymous = true
@@ -660,7 +666,7 @@ public sealed partial class ErrorOrEndpointGenerator
         AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, RateLimitInfo current)
     {
         if (context.EnableRateLimitingAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.EnableRateLimitingAttribute))
+            attrClass.IsEqualTo(context.EnableRateLimitingAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             return current with
@@ -671,7 +677,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (context.DisableRateLimitingAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.DisableRateLimitingAttribute))
+            attrClass.IsEqualTo(context.DisableRateLimitingAttribute))
             return current with
             {
                 Disabled = true
@@ -684,7 +690,7 @@ public sealed partial class ErrorOrEndpointGenerator
         AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
     {
         if (context.OutputCacheAttribute is null ||
-            !SymbolEqualityComparer.Default.Equals(attrClass, context.OutputCacheAttribute))
+            !attrClass.IsEqualTo(context.OutputCacheAttribute))
             return current;
 
         var result = current with
@@ -712,7 +718,7 @@ public sealed partial class ErrorOrEndpointGenerator
         AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, CorsInfo current)
     {
         if (context.EnableCorsAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.EnableCorsAttribute))
+            attrClass.IsEqualTo(context.EnableCorsAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             return current with
@@ -723,13 +729,223 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (context.DisableCorsAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(attrClass, context.DisableCorsAttribute))
+            attrClass.IsEqualTo(context.DisableCorsAttribute))
             return current with
             {
                 Disabled = true
             };
 
         return current;
+    }
+
+    /// <summary>
+    ///     Extracts API versioning configuration from the method and its containing type.
+    ///     Looks for [ApiVersion], [MapToApiVersion], and [ApiVersionNeutral] attributes.
+    /// </summary>
+    internal static VersioningInfo ExtractVersioningAttributes(ISymbol method, ErrorOrContext context)
+    {
+        // If Asp.Versioning is not referenced, return empty
+        if (!context.HasApiVersioningSupport)
+            return default;
+
+        var supportedVersions = new List<ApiVersionInfo>();
+        var mappedVersions = new List<ApiVersionInfo>();
+        var isVersionNeutral = false;
+
+        // Extract from containing type first (class-level versioning)
+        if (method.ContainingType is { } containingType)
+            ExtractVersioningFromSymbol(containingType, context, supportedVersions, ref isVersionNeutral);
+
+        // Extract from method (method-level overrides or additions)
+        ExtractVersioningFromSymbol(method, context, supportedVersions, ref isVersionNeutral);
+
+        // Extract [MapToApiVersion] separately (only applies to method)
+        ExtractMappedVersions(method, context, mappedVersions);
+
+        return new VersioningInfo(
+            supportedVersions.Count > 0
+                ? new EquatableArray<ApiVersionInfo>([.. supportedVersions.Distinct()])
+                : default,
+            mappedVersions.Count > 0
+                ? new EquatableArray<ApiVersionInfo>([.. mappedVersions.Distinct()])
+                : default,
+            isVersionNeutral);
+    }
+
+    private static void ExtractVersioningFromSymbol(
+        ISymbol symbol,
+        ErrorOrContext context,
+        List<ApiVersionInfo> supportedVersions,
+        ref bool isVersionNeutral)
+    {
+        foreach (var attr in symbol.GetAttributes())
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            // Check for [ApiVersionNeutral]
+            if (context.ApiVersionNeutralAttribute is not null &&
+                attrClass.IsEqualTo(context.ApiVersionNeutralAttribute))
+            {
+                isVersionNeutral = true;
+                continue;
+            }
+
+            // Check for [ApiVersion(...)]
+            if (context.ApiVersionAttribute is not null &&
+                attrClass.IsEqualTo(context.ApiVersionAttribute))
+            {
+                var versionInfo = ParseApiVersionAttribute(attr);
+                if (versionInfo.HasValue)
+                    supportedVersions.Add(versionInfo.Value);
+            }
+        }
+    }
+
+    private static void ExtractMappedVersions(
+        ISymbol method,
+        ErrorOrContext context,
+        List<ApiVersionInfo> mappedVersions)
+    {
+        foreach (var attr in method.GetAttributes())
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            // Check for [MapToApiVersion(...)]
+            if (context.MapToApiVersionAttribute is not null &&
+                attrClass.IsEqualTo(context.MapToApiVersionAttribute))
+            {
+                var versionInfo = ParseApiVersionAttribute(attr);
+                if (versionInfo.HasValue)
+                    mappedVersions.Add(versionInfo.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Parses version info from [ApiVersion] or [MapToApiVersion] attribute.
+    ///     Supports multiple constructor overloads:
+    ///     - ApiVersion(string version) - e.g., "1.0", "2", "1.0-beta"
+    ///     - ApiVersion(int majorVersion, int minorVersion)
+    ///     - ApiVersion(double version) - e.g., 1.0
+    /// </summary>
+    private static ApiVersionInfo? ParseApiVersionAttribute(AttributeData attr)
+    {
+        var args = attr.ConstructorArguments;
+
+        if (args.Length is 0)
+            return null;
+
+        // Check for Deprecated named argument
+        var isDeprecated = attr.NamedArguments
+            .Any(static na => na is
+            {
+                Key: "Deprecated",
+                Value.Value: true
+            });
+
+        switch (args)
+        {
+            // ApiVersion(string version) - most common
+            case [{ Value: string versionString }]:
+                return ParseVersionString(versionString, isDeprecated);
+            // ApiVersion(int majorVersion, int minorVersion)
+            case [{ Value: int major }, { Value: int minor }]:
+                return new ApiVersionInfo(major, minor, null, isDeprecated);
+            // ApiVersion(double version) - e.g., 1.0
+            case [{ Value: double doubleVersion }]:
+            {
+                var majorPart = (int)doubleVersion;
+                var minorPart = (int)((doubleVersion - majorPart) * 10);
+                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
+            }
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    ///     Parses a version string like "1.0", "2", "1.0-beta" into ApiVersionInfo.
+    /// </summary>
+    private static ApiVersionInfo? ParseVersionString(string versionString, bool isDeprecated)
+    {
+        if (string.IsNullOrWhiteSpace(versionString))
+            return null;
+
+        // Handle status suffix (e.g., "1.0-beta")
+        string? status = null;
+        var dashIndex = versionString.IndexOf('-');
+        if (dashIndex > 0)
+        {
+            status = versionString[(dashIndex + 1)..];
+            versionString = versionString[..dashIndex];
+        }
+
+        // Parse major.minor
+        var parts = versionString.Split('.');
+
+        if (!int.TryParse(parts[0], out var major))
+            return null;
+
+        int? minor = null;
+        if (parts.Length > 1 && int.TryParse(parts[1], out var minorValue))
+            minor = minorValue;
+
+        return new ApiVersionInfo(major, minor, status, isDeprecated);
+    }
+
+    /// <summary>
+    ///     Extracts route group configuration from the containing type's [RouteGroup] attribute.
+    ///     This enables eShop-style route grouping with NewVersionedApi() and MapGroup().
+    /// </summary>
+    internal static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method, ErrorOrContext context)
+    {
+        // RouteGroup is only applied at class level
+        if (method.ContainingType is not { } containingType)
+            return default;
+
+        // If RouteGroupAttribute is not yet emitted/available, return default
+        if (context.RouteGroupAttribute is null)
+            return default;
+
+        var attrs = containingType.GetAttributes();
+        foreach (var attr in attrs)
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            if (!attrClass.IsEqualTo(context.RouteGroupAttribute))
+                continue;
+
+            // [RouteGroup(string path)]
+            // Optional: ApiName named argument
+            var args = attr.ConstructorArguments;
+            if (args is not [{ Value: string groupPath }])
+                continue;
+
+            // Extract optional ApiName from named arguments
+            string? apiName = null;
+            foreach (var namedArg in attr.NamedArguments)
+                if (namedArg is
+                    {
+                        Key: "ApiName",
+                        Value.Value: string name
+                    })
+                    apiName = name;
+
+            // UseVersionedApi is true if we have both RouteGroup and versioning attributes
+            var hasVersioning = containingType.GetAttributes()
+                .Any(a => a.AttributeClass is { } ac &&
+                          (context.ApiVersionAttribute is not null &&
+                           ac.IsEqualTo(context.ApiVersionAttribute) ||
+                           context.ApiVersionNeutralAttribute is not null &&
+                           ac.IsEqualTo(context.ApiVersionNeutralAttribute)));
+
+            return new RouteGroupInfo(groupPath, apiName, hasVersioning);
+        }
+
+        return default;
     }
 
     // Helper records for middleware extraction
