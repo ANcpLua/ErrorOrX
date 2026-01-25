@@ -160,16 +160,14 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
 
     private sealed class ReleaseRule
     {
-        public ReleaseRule(string id, string category, DiagnosticSeverity severity, string title, bool titleIsAuthoritative)
+        public ReleaseRule(string category, DiagnosticSeverity severity, string title, bool titleIsAuthoritative)
         {
-            Id = id;
             Category = category;
             Severity = severity;
             Title = title;
             TitleIsAuthoritative = titleIsAuthoritative;
         }
 
-        public string Id { get; }
         public string Category { get; }
         public DiagnosticSeverity Severity { get; }
         public string Title { get; }
@@ -510,7 +508,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
 
                         var notes = cells[3];
                         AddUnique(newRules, id,
-                            new ReleaseRule(id, category, severity, notes, true),
+                            new ReleaseRule(category, severity, notes, true),
                             file.Path,
                             issues);
                     }
@@ -541,7 +539,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
 
                         var notes = cells[5];
                         AddUnique(changedRules, id,
-                            new ReleaseRule(id, category, severity, notes, false),
+                            new ReleaseRule(category, severity, notes, false),
                             file.Path,
                             issues);
                     }

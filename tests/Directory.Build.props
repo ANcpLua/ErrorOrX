@@ -6,6 +6,7 @@
     <PropertyGroup>
         <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
         <!-- NU1009: SDK-injected ANcpLua.Analyzers conflicts with CPM PackageVersion (known SDK limitation) -->
-        <NoWarn>$(NoWarn);NU1009;MSB4011</NoWarn>
+        <!-- AL0018: Project uses Directory.Packages.props (CPM), not Version.props -->
+        <NoWarn>$(NoWarn);NU1009;MSB4011;AL0018</NoWarn>
     </PropertyGroup>
 </Project>

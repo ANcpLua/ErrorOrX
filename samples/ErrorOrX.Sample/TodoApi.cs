@@ -16,6 +16,7 @@ public static class TodoApi
     /// <summary>
     ///     Get todo by ID.
     /// </summary>
+    /// <param name="id">The unique identifier of the todo item.</param>
     [Get("/api/todos/{id:guid}")]
     public static Task<ErrorOr<Todo>> GetById([FromRoute] Guid id, [FromServices] ITodoService svc,
         CancellationToken ct) =>
@@ -24,6 +25,7 @@ public static class TodoApi
     /// <summary>
     ///     Create a new todo.
     /// </summary>
+    /// <param name="request">The todo creation request containing title and description.</param>
     [Post("/api/todos")]
     public static Task<ErrorOr<Todo>> Create(
         [FromBody] CreateTodoRequest request,

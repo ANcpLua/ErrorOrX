@@ -97,25 +97,25 @@ public static ErrorOr<Result> Upload(
 public static ErrorOr<Result> Upload([FromForm] IFormFile file) => ...
 ```
 
----
-
-## Warnings
-
 ### EOE007 - Type not AOT-serializable
 
-**Severity:** Warning
+**Severity:** Error
 
-Type used in endpoint is not registered in `JsonSerializerContext` for AOT.
+Type used in endpoint is not registered in any `JsonSerializerContext`. This is an **error** because Native AOT compilation will fail at runtime with cryptic errors.
 
 ```csharp
-// Warning: CustomType not in context
+// Error: CustomType not in context
 [Get("/data")]
-public static ErrorOr<CustomType> GetData() => ...
+public static ErrorOr<CustomType> GetData() => ...  // EOE007
 
 // Fix: add to your JsonSerializerContext
 [JsonSerializable(typeof(CustomType))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 ```
+
+---
+
+## Warnings
 
 ### EOE009 - Body on read-only HTTP method
 
@@ -187,7 +187,8 @@ Type used with `[AsParameters]` must have an accessible constructor.
 
 **Severity:** Error
 
-Handler methods cannot return `ErrorOr<T>` with an anonymous type. Anonymous types have no stable identity for JSON serialization.
+Handler methods cannot return `ErrorOr<T>` with an anonymous type. Anonymous types have no stable identity for JSON
+serialization.
 
 ```csharp
 // Error: anonymous type
@@ -203,7 +204,8 @@ public static ErrorOr<DataResponse> GetData() => new DataResponse { Name = "test
 
 **Severity:** Error
 
-`[AsParameters]` types cannot contain properties that are also marked with `[AsParameters]`. Recursive parameter expansion is not supported.
+`[AsParameters]` types cannot contain properties that are also marked with `[AsParameters]`. Recursive parameter
+expansion is not supported.
 
 ```csharp
 // Error: nested [AsParameters]
@@ -263,7 +265,8 @@ public static ErrorOr<Result> Post([FromBody] InternalRequest req)
 
 **Severity:** Error
 
-Generic type parameters (open generics) cannot be used in endpoint return types. The generator cannot emit code for unbound generic types.
+Generic type parameters (open generics) cannot be used in endpoint return types. The generator cannot emit code for
+unbound generic types.
 
 ```csharp
 // Error: type parameter
@@ -295,9 +298,9 @@ public static ErrorOr<User> Get(int id)
 
 ### EOE025 - Ambiguous parameter binding
 
-**Severity:** Warning
+**Severity:** Error
 
-Complex type parameter on a bodyless/custom method requires explicit binding. The generator will default to DI and warn.
+Complex type parameter on a bodyless/custom method requires explicit binding. This is an error because ambiguous binding can lead to runtime failures.
 
 ```csharp
 // Warning: SearchFilter is complex type on GET
@@ -383,6 +386,36 @@ internal partial class AppJsonContext : JsonSerializerContext { }
 [JsonSerializable(typeof(User))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 ```
+
+### EOE041 - Missing JsonSerializerContext for AOT
+
+**Severity:** Error
+
+**This is a critical AOT safety error.** Endpoint uses a request body parameter but no `JsonSerializerContext` was found in the project.
+
+**Why this is an error:** Roslyn source generators cannot see output from other generators. If ErrorOrX generates a `JsonSerializerContext`, the System.Text.Json source generator will **not** process it, and Native AOT serialization will fail at runtime with cryptic errors like "JsonTypeInfo metadata not found".
+
+```csharp
+// Error: no JsonSerializerContext exists
+[Post("/users")]
+public static ErrorOr<User> Create([FromBody] CreateUserRequest req) => ...  // EOE041
+
+// Fix: create your own JsonSerializerContext
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(CreateUserRequest))]
+[JsonSerializable(typeof(User))]
+[JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(HttpValidationProblemDetails))]
+internal partial class AppJsonSerializerContext : JsonSerializerContext { }
+
+// And register it in Program.cs:
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>());
+```
+
+**See also:** [ASP.NET Core Request Delegate Generator](https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg)
 
 ---
 

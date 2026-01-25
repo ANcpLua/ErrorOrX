@@ -14,10 +14,10 @@ Unit tests for the ErrorOrX runtime library.
 
 ## Test Framework
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| xunit.v3.mtp-v2 | 3.2.2 | xUnit v3 with Microsoft Testing Platform |
-| AwesomeAssertions | 9.3.0 | Fluent assertions |
+| Package           | Version | Purpose                                  |
+|-------------------|---------|------------------------------------------|
+| xunit.v3.mtp-v2   | 3.2.2   | xUnit v3 with Microsoft Testing Platform |
+| AwesomeAssertions | 9.3.0   | Fluent assertions                        |
 
 ## Running Tests
 
@@ -36,55 +36,55 @@ dotnet test --project tests/ErrorOrX.Tests --filter-method "*Should_Return_Value
 
 ### ErrorOr Tests (`ErrorOr/`)
 
-| Test File | Coverage |
-|-----------|----------|
-| `ErrorOr.InstantiationTests.cs` | Construction, implicit conversions |
-| `ErrorOr.EqualityTests.cs` | IEquatable implementation, operators |
-| `ErrorOr.HashCodeTests.cs` | GetHashCode consistency |
-| `ErrorOr.ImmutabilityTests.cs` | Immutability guarantees |
-| `ErrorOr.InterfaceTests.cs` | IErrorOr non-generic interface |
+| Test File                       | Coverage                             |
+|---------------------------------|--------------------------------------|
+| `ErrorOr.InstantiationTests.cs` | Construction, implicit conversions   |
+| `ErrorOr.EqualityTests.cs`      | IEquatable implementation, operators |
+| `ErrorOr.HashCodeTests.cs`      | GetHashCode consistency              |
+| `ErrorOr.ImmutabilityTests.cs`  | Immutability guarantees              |
+| `ErrorOr.InterfaceTests.cs`     | IErrorOr non-generic interface       |
 
 ### Fluent API Tests (`ErrorOr/`)
 
-| Test File | Coverage |
-|-----------|----------|
-| `ErrorOr.ThenTests.cs` | Then chaining (sync) |
-| `ErrorOr.ThenAsyncTests.cs` | ThenAsync variants |
-| `ErrorOr.ElseTests.cs` | Else fallback (sync) |
-| `ErrorOr.ElseAsyncTests.cs` | ElseAsync variants |
-| `ErrorOr.MatchTests.cs` | Match transformation (sync) |
-| `ErrorOr.MatchAsyncTests.cs` | MatchAsync variants |
-| `ErrorOr.SwitchTests.cs` | Switch side effects (sync) |
-| `ErrorOr.SwitchAsyncTests.cs` | SwitchAsync variants |
-| `ErrorOr.FailIfTests.cs` | FailIf conditional failure (sync) |
-| `ErrorOr.FailIfAsyncTests.cs` | FailIfAsync variants |
-| `ErrorOr.FailIfValidationTests.cs` | FailIf with validation errors |
-| `ErrorOr.ToErrorOrTests.cs` | ToErrorOr() helpers |
+| Test File                          | Coverage                          |
+|------------------------------------|-----------------------------------|
+| `ErrorOr.ThenTests.cs`             | Then chaining (sync)              |
+| `ErrorOr.ThenAsyncTests.cs`        | ThenAsync variants                |
+| `ErrorOr.ElseTests.cs`             | Else fallback (sync)              |
+| `ErrorOr.ElseAsyncTests.cs`        | ElseAsync variants                |
+| `ErrorOr.MatchTests.cs`            | Match transformation (sync)       |
+| `ErrorOr.MatchAsyncTests.cs`       | MatchAsync variants               |
+| `ErrorOr.SwitchTests.cs`           | Switch side effects (sync)        |
+| `ErrorOr.SwitchAsyncTests.cs`      | SwitchAsync variants              |
+| `ErrorOr.FailIfTests.cs`           | FailIf conditional failure (sync) |
+| `ErrorOr.FailIfAsyncTests.cs`      | FailIfAsync variants              |
+| `ErrorOr.FailIfValidationTests.cs` | FailIf with validation errors     |
+| `ErrorOr.ToErrorOrTests.cs`        | ToErrorOr() helpers               |
 
 ### Or Extensions Tests (`ErrorOr/`)
 
-| Test File | Coverage |
-|-----------|----------|
+| Test File                      | Coverage                                                                                            |
+|--------------------------------|-----------------------------------------------------------------------------------------------------|
 | `ErrorOr.OrExtensionsTests.cs` | OrNotFound, OrValidation, OrUnauthorized, OrForbidden, OrConflict, OrFailure, OrUnexpected, OrError |
 
 ### Error Tests (`Errors/`)
 
-| Test File | Coverage |
-|-----------|----------|
-| `ErrorTests.cs` | Error factory methods, properties |
-| `Error.EqualityTests.cs` | Error struct equality |
-| `Error.NullMetadataTests.cs` | Null metadata handling |
+| Test File                    | Coverage                          |
+|------------------------------|-----------------------------------|
+| `ErrorTests.cs`              | Error factory methods, properties |
+| `Error.EqualityTests.cs`     | Error struct equality             |
+| `Error.NullMetadataTests.cs` | Null metadata handling            |
 
 ### Results Tests (`Results/`)
 
-| Test File | Coverage |
-|-----------|----------|
+| Test File              | Coverage                                                       |
+|------------------------|----------------------------------------------------------------|
 | `TypedResultsTests.cs` | Result.Success, Result.Created, Result.Updated, Result.Deleted |
 
 ### Argument Validation Tests (`ErrorOr/`)
 
-| Test File | Coverage |
-|-----------|----------|
+| Test File                           | Coverage              |
+|-------------------------------------|-----------------------|
 | `ErrorOrArgumentValidationTests.cs` | Throw.IfNull behavior |
 
 ## Test Patterns

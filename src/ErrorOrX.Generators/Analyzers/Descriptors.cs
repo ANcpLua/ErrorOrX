@@ -14,16 +14,7 @@ namespace ErrorOr.Analyzers;
 public static class Descriptors
 {
     private const string Category = "ErrorOr.Endpoints";
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // AOT Safety Diagnostics (AOT001-AOT009)
-    // ═══════════════════════════════════════════════════════════════════════════
-
     private const string AotSafetyCategory = "ErrorOr.AotSafety";
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Errors - Must fix, won't compile or will fail at runtime
-    // ═══════════════════════════════════════════════════════════════════════════
 
     /// <summary>
     ///     Handler method must return ErrorOr&lt;T&gt;, Task&lt;ErrorOr&lt;T&gt;&gt;, or ValueTask&lt;ErrorOr&lt;T&gt;&gt;.
@@ -93,21 +84,33 @@ public static class Descriptors
         DiagnosticSeverity.Error,
         true);
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Warnings - Should review, potential issues
-    // ═══════════════════════════════════════════════════════════════════════════
-
     /// <summary>
     ///     Type used in endpoint not registered in JsonSerializerContext for AOT.
+    ///     This is an ERROR because AOT compilation will fail at runtime with cryptic errors.
     ///     (Generator-only: requires cross-file analysis)
     /// </summary>
     public static readonly DiagnosticDescriptor TypeNotInJsonContext = new(
         "EOE007",
         "Type not AOT-serializable",
-        "Type '{0}' used by '{1}' is not in any [JsonSerializable] context. Add it for NativeAOT support.",
+        "Type '{0}' used by '{1}' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof({0}))] to your JsonSerializerContext.",
         Category,
-        DiagnosticSeverity.Warning,
-        true);
+        DiagnosticSeverity.Error,
+        true,
+        helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
+
+    /// <summary>
+    ///     No JsonSerializerContext found but endpoint uses request body.
+    ///     Without a user-defined context, AOT serialization will fail.
+    ///     This is an ERROR because the generated JsonContext cannot be used by System.Text.Json source generator.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MissingJsonContextForBody = new(
+        "EOE041",
+        "Missing JsonSerializerContext for AOT",
+        "Endpoint '{0}' uses '{1}' as request body but no JsonSerializerContext was found. Create one with [JsonSerializable(typeof({1}))].",
+        Category,
+        DiagnosticSeverity.Error,
+        true,
+        helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
 
     /// <summary>
     ///     GET, HEAD, DELETE, OPTIONS should not have request bodies per HTTP semantics.
@@ -131,10 +134,6 @@ public static class Descriptors
         Category,
         DiagnosticSeverity.Warning,
         true);
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Parameter Binding Diagnostics (EOE011-EOE019)
-    // ═══════════════════════════════════════════════════════════════════════════
 
     /// <summary>
     ///     [FromRoute] parameter type is not a supported primitive and has no TryParse.
@@ -191,9 +190,65 @@ public static class Descriptors
         DiagnosticSeverity.Error,
         true);
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Route Constraint Diagnostics (EOE020-EOE029)
-    // ═══════════════════════════════════════════════════════════════════════════
+    /// <summary>
+    ///     Anonymous types cannot be used as ErrorOr value types.
+    ///     They have no stable identity for JSON serialization.
+    /// </summary>
+    public static readonly DiagnosticDescriptor AnonymousReturnTypeNotSupported = new(
+        "EOE017",
+        "Anonymous return type not supported",
+        "Method '{0}' returns ErrorOr with anonymous type. Anonymous types cannot be serialized. Use a named type instead.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
+
+    /// <summary>
+    ///     [AsParameters] types cannot contain nested [AsParameters] properties.
+    ///     Recursive parameter expansion is not supported.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NestedAsParametersNotSupported = new(
+        "EOE018",
+        "Nested [AsParameters] not supported",
+        "Type '{0}' used with [AsParameters] has property '{1}' also marked [AsParameters]. Nested parameter expansion is not supported.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
+
+    /// <summary>
+    ///     [AsParameters] cannot be applied to nullable types.
+    ///     Parameter expansion requires a concrete instance.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NullableAsParametersNotSupported = new(
+        "EOE019",
+        "Nullable [AsParameters] not supported",
+        "Parameter '{0}' with [AsParameters] cannot be nullable. Remove the '?' or use a non-nullable type.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
+
+    /// <summary>
+    ///     Private or protected types cannot be used in endpoint signatures.
+    ///     Generated code cannot access them.
+    /// </summary>
+    public static readonly DiagnosticDescriptor InaccessibleTypeNotSupported = new(
+        "EOE020",
+        "Inaccessible type in endpoint",
+        "Type '{0}' used by endpoint '{1}' is {2} and cannot be accessed by generated code. Make it internal or public.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
+
+    /// <summary>
+    ///     Type parameters (open generics) cannot be used in endpoint return types.
+    ///     The generator cannot emit code for unbound generic types.
+    /// </summary>
+    public static readonly DiagnosticDescriptor TypeParameterNotSupported = new(
+        "EOE021",
+        "Type parameter not supported",
+        "Method '{0}' uses type parameter '{1}' in return type. Generic type parameters cannot be used with ErrorOr endpoints.",
+        Category,
+        DiagnosticSeverity.Error,
+        true);
 
     /// <summary>
     ///     Route constraint type does not match parameter type.
@@ -219,13 +274,8 @@ public static class Descriptors
         "Use [AsParameters] for query/route expansion, [FromBody] to force body binding, " +
         "or [FromServices] for DI injection.",
         Category,
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Error,
         true);
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // OpenAPI / Documentation Diagnostics (EOE030-EOE039)
-    // Generator-only: require cross-file or complex analysis
-    // ═══════════════════════════════════════════════════════════════════════════
 
     /// <summary>
     ///     Endpoint has too many result types for Results&lt;...&gt; union.
@@ -276,6 +326,66 @@ public static class Descriptors
         "Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.",
         Category,
         DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     Endpoint is version-neutral but has explicit version mappings.
+    ///     [ApiVersionNeutral] and [MapToApiVersion] are mutually exclusive.
+    /// </summary>
+    public static readonly DiagnosticDescriptor VersionNeutralWithMappings = new(
+        "EOE050",
+        "Version-neutral with mappings",
+        "Endpoint '{0}' is marked [ApiVersionNeutral] but also has [MapToApiVersion]. Remove one or the other.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     Endpoint has [MapToApiVersion] for a version not declared with [ApiVersion].
+    ///     The mapped version should be one of the supported versions.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MappedVersionNotDeclared = new(
+        "EOE051",
+        "Mapped version not declared",
+        "Endpoint '{0}' maps to version '{1}' which is not declared in [ApiVersion]. Add [ApiVersion(\"{1}\")] to the class.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     Asp.Versioning.Http package is not referenced but [ApiVersion] attributes are used.
+    ///     Install the package: dotnet add package Asp.Versioning.Http
+    /// </summary>
+    public static readonly DiagnosticDescriptor ApiVersioningPackageNotReferenced = new(
+        "EOE052",
+        "Asp.Versioning package not referenced",
+        "Endpoint '{0}' uses API versioning but Asp.Versioning.Http package is not referenced",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     Endpoint has no [ApiVersion] attribute but other endpoints in the project use versioning.
+    ///     Consider adding version information or marking as [ApiVersionNeutral].
+    /// </summary>
+    public static readonly DiagnosticDescriptor EndpointMissingVersioning = new(
+        "EOE053",
+        "Endpoint missing versioning",
+        "Endpoint '{0}' has no version information but other endpoints use API versioning. " +
+        "Add [ApiVersion(\"X.Y\")] or [ApiVersionNeutral] to declare its version scope.",
+        Category,
+        DiagnosticSeverity.Info,
+        true);
+
+    /// <summary>
+    ///     [ApiVersion] has invalid format. Use "major.minor" or just "major".
+    /// </summary>
+    public static readonly DiagnosticDescriptor InvalidApiVersionFormat = new(
+        "EOE054",
+        "Invalid API version format",
+        "[ApiVersion(\"{0}\")] has invalid format. Use \"major.minor\" (e.g., \"1.0\") or \"major\" (e.g., \"2\").",
+        Category,
+        DiagnosticSeverity.Error,
         true);
 
     /// <summary>

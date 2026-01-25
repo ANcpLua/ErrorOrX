@@ -2,10 +2,7 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|------
-EOE017 | ErrorOr.Endpoints | Error | Anonymous return type not supported
-EOE018 | ErrorOr.Endpoints | Error | Nested [AsParameters] not supported
-EOE019 | ErrorOr.Endpoints | Error | Nullable [AsParameters] not supported
-EOE020 | ErrorOr.Endpoints | Error | Inaccessible type in endpoint
+EOE041 | ErrorOr.Endpoints | Error | Missing JsonSerializerContext for AOT
 
 ### Removed Rules
 
@@ -16,4 +13,5 @@ Rule ID | Category | Severity | Notes
 
 Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 --------|--------------|--------------|--------------|--------------|------
-EOE025 | ErrorOr.Endpoints | Warning | ErrorOr.Endpoints | Error | Downgraded to warning for bodyless/custom method inference
+EOE007 | ErrorOr.Endpoints | Error | ErrorOr.Endpoints | Warning | Type not in JsonSerializerContext is now an error for AOT safety
+EOE025 | ErrorOr.Endpoints | Error | ErrorOr.Endpoints | Warning | Ambiguous parameter binding is now an error

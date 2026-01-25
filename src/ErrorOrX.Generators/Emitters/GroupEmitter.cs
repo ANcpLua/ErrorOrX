@@ -93,7 +93,7 @@ internal static class GroupEmitter
 
         // Emit operation name
         code.AppendLine();
-        var operationId = $"{ep.HandlerContainingTypeFqn.Split('.').LastOrDefault()?.TrimStart('@') ?? "Unknown"}_{ep.HandlerMethodName}";
+        var (_, operationId) = EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
         code.AppendLine($"                .WithName(\"{operationId}\")");
 
         // For grouped endpoints with specific version mappings, emit MapToApiVersion
@@ -110,8 +110,9 @@ internal static class GroupEmitter
         if (ep.Versioning.IsVersionNeutral)
             code.AppendLine("                .IsApiVersionNeutral()");
 
-        // Emit middleware (same as ungrouped)
-        EmitMiddlewareCalls(code, in ep);
+        // Emit all endpoint metadata: tags, accepts, produces, middleware
+        // Uses shared helper for consistency with ungrouped endpoints
+        EndpointMetadataEmitter.EmitEndpointMetadata(code, in ep, "                ", maxArity);
 
         code.AppendLine("                ;");
     }
@@ -128,44 +129,6 @@ internal static class GroupEmitter
         "PATCH" => "MapPatch",
         _ => "MapMethods"
     };
-
-    /// <summary>
-    ///     Emits middleware fluent calls (authorization, rate limiting, etc.)
-    /// </summary>
-    private static void EmitMiddlewareCalls(StringBuilder code, in EndpointDescriptor ep)
-    {
-        var middleware = ep.Middleware;
-
-        // Authorization
-        if (middleware.RequiresAuthorization)
-            code.AppendLine(middleware.AuthorizationPolicy is not null ? $"                .RequireAuthorization(\"{middleware.AuthorizationPolicy}\")" : "                .RequireAuthorization()");
-        else if (middleware.AllowAnonymous)
-            code.AppendLine("                .AllowAnonymous()");
-
-        // Rate limiting
-        if (middleware.EnableRateLimiting)
-            code.AppendLine(middleware.RateLimitingPolicy is not null ? $"                .RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")" : "                .RequireRateLimiting()");
-        else if (middleware.DisableRateLimiting)
-            code.AppendLine("                .DisableRateLimiting()");
-
-        // Output cache
-        if (middleware.EnableOutputCache)
-        {
-            if (middleware.OutputCachePolicy is not null)
-                code.AppendLine($"                .CacheOutput(\"{middleware.OutputCachePolicy}\")");
-            else if (middleware.OutputCacheDuration.HasValue)
-                code.AppendLine(
-                    $"                .CacheOutput(p => p.Expire(TimeSpan.FromSeconds({middleware.OutputCacheDuration.Value})))");
-            else
-                code.AppendLine("                .CacheOutput()");
-        }
-
-        // CORS
-        if (middleware.EnableCors)
-            code.AppendLine(middleware.CorsPolicy is not null ? $"                .RequireCors(\"{middleware.CorsPolicy}\")" : "                .RequireCors()");
-        else if (middleware.DisableCors)
-            code.AppendLine("                .DisableCors()");
-    }
 
     /// <summary>
     ///     Context for emitting a route group's endpoints.

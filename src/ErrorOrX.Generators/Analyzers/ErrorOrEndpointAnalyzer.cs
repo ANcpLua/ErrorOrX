@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
@@ -238,7 +239,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             return; // Unknown constraint (e.g., custom) - skip validation
 
         // Get the actual type, unwrapping Nullable<T> for optional parameters
-        var actualTypeFqn = TypeNameHelper.UnwrapNullable(typeFqn, rp.IsOptional || mp.IsNullable);
+        var actualTypeFqn = typeFqn.UnwrapNullable(rp.IsOptional || mp.IsNullable);
 
         // Check if actual type matches any expected type
         if (!DoesTypeMatchConstraint(actualTypeFqn, expectedTypes))
@@ -451,16 +452,17 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
-            if (!paramNames.Add(rp.Name)) issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
+            if (!paramNames.Add(rp.Name))
+                issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
 
         return issues;
     }
 
-    private static bool IsStringType(string typeFqn) => TypeNameHelper.IsStringType(typeFqn);
+    private static bool IsStringType(string typeFqn) => typeFqn.IsStringType();
 
-    private static bool TypeNamesMatch(string actualFqn, string expected) => TypeNameHelper.TypeNamesMatch(actualFqn, expected);
+    private static bool TypeNamesMatch(string actualFqn, string expected) => actualFqn.TypeNamesEqual(expected);
 
-    private static string NormalizeTypeName(string typeFqn) => TypeNameHelper.Normalize(typeFqn);
+    private static string NormalizeTypeName(string typeFqn) => typeFqn.NormalizeTypeName();
 
     #endregion
 }

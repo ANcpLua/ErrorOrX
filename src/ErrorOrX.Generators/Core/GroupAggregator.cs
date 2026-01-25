@@ -16,74 +16,45 @@ internal static class GroupAggregator
     /// </summary>
     public static GroupingResult GroupEndpoints(ImmutableArray<EndpointDescriptor> endpoints)
     {
-        var groups = new Dictionary<string, List<IndexedEndpoint>>(StringComparer.OrdinalIgnoreCase);
-        var ungrouped = ImmutableArray.CreateBuilder<IndexedEndpoint>();
+        // Create indexed endpoints with original positions
+        var indexed = endpoints
+            .Select(static (ep, i) => new IndexedEndpoint(ep, i))
+            .ToImmutableArray();
 
-        for (var i = 0; i < endpoints.Length; i++)
-        {
-            var ep = endpoints[i];
-            var indexed = new IndexedEndpoint(ep, i);
-
-            if (ep.RouteGroup is
-                {
-                    HasRouteGroup: true,
-                    GroupPath:
-                    { } groupPath
-                })
-            {
-                if (!groups.TryGetValue(groupPath, out var list))
-                {
-                    list = new List<IndexedEndpoint>();
-                    groups[groupPath] = list;
-                }
-
-                list.Add(indexed);
-            }
-            else
-                ungrouped.Add(indexed);
-        }
-
-        var aggregates = ImmutableArray.CreateBuilder<RouteGroupAggregate>(groups.Count);
-        foreach (var kvp in groups)
-        {
-            var groupEndpoints = kvp.Value.ToImmutableArray();
-            var aggregate = CreateAggregate(kvp.Key, groupEndpoints);
-            aggregates.Add(aggregate);
-        }
-
-        // Sort groups by path for deterministic output
-        var sortedAggregates = aggregates.ToImmutable()
+        // Partition into grouped and ungrouped
+        var grouped = indexed
+            .Where(static x => x.Endpoint.RouteGroup.HasRouteGroup)
+            .GroupBy(
+                static x => x.Endpoint.RouteGroup.GroupPath!,
+                StringComparer.OrdinalIgnoreCase)
+            .Select(static g => CreateAggregate(g.Key, g.ToImmutableArray()))
             .OrderBy(static g => g.GroupPath, StringComparer.OrdinalIgnoreCase)
             .ToImmutableArray();
 
-        return new GroupingResult(sortedAggregates, ungrouped.ToImmutable());
+        var ungrouped = indexed
+            .Where(static x => !x.Endpoint.RouteGroup.HasRouteGroup)
+            .ToImmutableArray();
+
+        return new GroupingResult(grouped, ungrouped);
     }
 
     /// <summary>
     ///     Creates a route group aggregate from indexed endpoints.
     ///     Computes the union of all versions across endpoints in the group.
+    ///     API name is taken from the first endpoint's RouteGroup (should be consistent within group).
     /// </summary>
     private static RouteGroupAggregate CreateAggregate(string groupPath, ImmutableArray<IndexedEndpoint> endpoints)
     {
-        // Get API name from first endpoint (should be consistent within group)
+        // Get API name from first endpoint (assumed consistent within group)
         var apiName = endpoints.FirstOrDefault().Endpoint.RouteGroup.ApiName;
 
-        // Compute union of all versions and check for version-neutral
-        var allVersions = new HashSet<ApiVersionInfo>();
-        var hasVersionNeutral = false;
+        // Check for version-neutral endpoints
+        var hasVersionNeutral = endpoints.Any(static x => x.Endpoint.Versioning.IsVersionNeutral);
 
-        foreach (var indexed in endpoints)
-        {
-            var ep = indexed.Endpoint;
-            if (ep.Versioning.IsVersionNeutral)
-                hasVersionNeutral = true;
-
-            if (!ep.Versioning.SupportedVersions.IsDefaultOrEmpty)
-                foreach (var v in ep.Versioning.SupportedVersions.AsImmutableArray())
-                    allVersions.Add(v);
-        }
-
-        var sortedVersions = allVersions
+        // Compute union of all versions, sorted by major.minor
+        var sortedVersions = endpoints
+            .SelectMany(static x => x.Endpoint.Versioning.SupportedVersions.AsImmutableArray())
+            .Distinct()
             .OrderBy(static v => v.MajorVersion)
             .ThenBy(static v => v.MinorVersion ?? 0)
             .ToImmutableArray();
@@ -98,18 +69,17 @@ internal static class GroupAggregator
 
     /// <summary>
     ///     Determines the effective route pattern for an endpoint within a group.
-    ///     If the endpoint pattern starts with the group path, it's trimmed to the relative path.
+    ///     If the endpoint pattern starts with the group path, returns the relative portion.
+    ///     Otherwise returns the full pattern as-is.
     /// </summary>
     public static string GetRelativePattern(in EndpointDescriptor ep)
     {
         if (!ep.RouteGroup.HasRouteGroup || ep.RouteGroup.GroupPath is not { } groupPath)
             return ep.Pattern;
 
-        var pattern = ep.Pattern;
-
         // Normalize paths for comparison (remove leading slashes)
         var normalizedGroup = groupPath.TrimStart('/');
-        var normalizedPattern = pattern.TrimStart('/');
+        var normalizedPattern = ep.Pattern.TrimStart('/');
 
         // If pattern starts with group path, return the relative portion
         if (normalizedPattern.StartsWith(normalizedGroup, StringComparison.OrdinalIgnoreCase))
@@ -119,7 +89,7 @@ internal static class GroupAggregator
         }
 
         // Pattern doesn't include group prefix (already relative)
-        return pattern;
+        return ep.Pattern;
     }
 
     /// <summary>

@@ -4,12 +4,11 @@ namespace ErrorOrX.Tests.TestUtils;
 
 public class SerializableError : IXunitSerializable
 {
-    public Error Value { get; private set; }
-
     // Required by xUnit for deserialization
     public SerializableError() => Value = Error.Unexpected();
 
     public SerializableError(Error error) => Value = error;
+    public Error Value { get; private set; }
 
     public void Deserialize(IXunitSerializationInfo info)
     {

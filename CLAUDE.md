@@ -165,9 +165,37 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 
 ## MSBuild Properties
 
-| Property                     | Default | Purpose                                           |
-|------------------------------|---------|---------------------------------------------------|
-| `ErrorOrGenerateJsonContext` | `true`  | Emit `ErrorOrJsonContext` with all endpoint types |
+| Property                     | Default  | Purpose                                                                |
+|------------------------------|----------|------------------------------------------------------------------------|
+| `ErrorOrGenerateJsonContext` | `false`  | **Disabled by default.** See AOT JSON Context Requirements below.     |
+
+### AOT JSON Context Requirements
+
+**CRITICAL:** Roslyn source generators cannot see output from other generators. This means:
+
+1. If ErrorOrX generates `ErrorOrJsonContext`, the System.Text.Json source generator will **NOT** process it
+2. Native AOT serialization will fail at runtime with cryptic "JsonTypeInfo metadata not found" errors
+
+**You MUST create your own `JsonSerializerContext`:**
+
+```csharp
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(YourRequestType))]
+[JsonSerializable(typeof(YourResponseType))]
+[JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(HttpValidationProblemDetails))]
+internal partial class AppJsonSerializerContext : JsonSerializerContext { }
+```
+
+And register it:
+```csharp
+builder.Services.AddErrorOrEndpoints(options => options
+    .UseJsonContext<AppJsonSerializerContext>());
+```
+
+**EOE041 error** is emitted if you have `[FromBody]` parameters without a `JsonSerializerContext`.
 
 ## Consumer Setup
 
@@ -345,7 +373,7 @@ Before adding route/binding helpers, check `RouteValidator.cs` for:
 | EOE004 | Error    | Duplicate route                                         |
 | EOE005 | Error    | Invalid route pattern                                   |
 | EOE006 | Error    | Multiple body sources                                   |
-| EOE007 | Warning  | Type not AOT-serializable                               |
+| EOE007 | Error    | Type not AOT-serializable (not in JsonSerializerContext)|
 | EOE009 | Warning  | Body on read-only HTTP method                           |
 | EOE010 | Warning  | [AcceptedResponse] on read-only method                  |
 | EOE011 | Error    | Invalid [FromRoute] type                                |
@@ -359,6 +387,7 @@ Before adding route/binding helpers, check `RouteValidator.cs` for:
 | EOE032 | Warning  | Unknown error factory                                   |
 | EOE033 | Error    | Undocumented interface call                             |
 | EOE040 | Warning  | Missing CamelCase JSON policy                           |
+| EOE041 | Error    | Missing JsonSerializerContext for AOT (no user context) |
 
 ## ErrorType → HTTP (RFC 9110)
 

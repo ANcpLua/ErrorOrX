@@ -6,8 +6,8 @@ public class RouteConstraintTests : GeneratorTestBase
     public Task Supports_Multiple_Constraints()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace MyNamespace;
 
@@ -26,8 +26,8 @@ public class RouteConstraintTests : GeneratorTestBase
     public Task AsParameters_Constructor_Params_Bind_Route_Parameters()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
                               using Microsoft.AspNetCore.Http;
 
                               public record SearchParams(int Id);
@@ -46,8 +46,8 @@ public class RouteConstraintTests : GeneratorTestBase
     public Task Routes_With_Different_Constraints_Are_Not_Duplicates()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace MyNamespace;
 
@@ -69,8 +69,8 @@ public class RouteConstraintTests : GeneratorTestBase
     public Task CatchAll_Routes_Are_Normalized_Correctly()
     {
         const string Source = """
-                              using ErrorOr.Core.ErrorOr;
-                              using ErrorOr.Endpoints;
+                              using ErrorOr;
+                              
 
                               namespace MyNamespace;
 

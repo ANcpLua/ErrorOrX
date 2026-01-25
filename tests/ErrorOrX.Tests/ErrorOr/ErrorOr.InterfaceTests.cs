@@ -188,7 +188,9 @@ public class ErrorOrInterfaceTests
         // Arrange
         var list = new List<int>
         {
-            1, 2, 3
+            1,
+            2,
+            3
         };
         ErrorOr<List<int>> errorOr = list;
 
