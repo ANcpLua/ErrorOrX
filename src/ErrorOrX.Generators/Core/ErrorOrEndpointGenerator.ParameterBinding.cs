@@ -62,7 +62,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         var type = parameter.Type;
-        var typeFqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var typeFqn = type.GetFullyQualifiedName();
 
         var hasFromRoute = HasParameterAttribute(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute);
         var hasFromQuery = HasParameterAttribute(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute);
@@ -116,7 +116,7 @@ public sealed partial class ErrorOrEndpointGenerator
             isCancellationToken,
             isHttpContext,
             isNullable, isNonNullableValueType,
-            isCollection, itemType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), itemPrimitiveKind,
+            isCollection, itemType?.GetFullyQualifiedName(), itemPrimitiveKind,
             hasFromForm, formName, isFormFile, isFormFileCollection, isFormCollection,
             isStream, isPipeReader,
             DetectCustomBinding(type, context),
@@ -856,7 +856,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         public bool IsMatch(ISymbol? attributeClass)
         {
-            if (attributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is not { } display) return false;
+            if (attributeClass is not ITypeSymbol typeSymbol) return false;
+            var display = typeSymbol.GetFullyQualifiedName();
 
             if (display.StartsWith("global::"))
                 display = display[8..];

@@ -25,7 +25,7 @@ internal static class ErrorMapping
     /// <summary>
     ///     All known error type names in deterministic order for reproducible code generation.
     /// </summary>
-    public static readonly IReadOnlyList<string> AllErrorTypes =
+    private static readonly IReadOnlyList<string> AllErrorTypes =
     [
         Failure,
         Unexpected,

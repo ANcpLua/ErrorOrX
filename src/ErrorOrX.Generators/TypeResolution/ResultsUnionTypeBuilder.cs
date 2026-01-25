@@ -18,7 +18,8 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private const int DefaultMaxArity = 6;
 
-    internal static int DetectMaxArity(ImmutableArray<int> referenceArities)
+    internal static int
+        DetectMaxArity(ImmutableArray<int> referenceArities)
     {
         var maxArity = DefaultMaxArity;
 

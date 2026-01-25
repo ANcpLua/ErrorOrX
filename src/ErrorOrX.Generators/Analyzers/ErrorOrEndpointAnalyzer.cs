@@ -382,19 +382,17 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         foreach (var param in method.Parameters)
         {
-            // Check for body-related attributes
-            foreach (var attr in param.GetAttributes())
+            // Check for body-related attributes using HasAttribute
+            if (param.HasAttribute(WellKnownTypes.FromBodyAttribute))
             {
-                var attrName = attr.AttributeClass?.Name;
-                switch (attrName)
-                {
-                    case "FromBodyAttribute" or "FromBody":
-                        bodyCount++;
-                        goto nextParam;
-                    case "FromFormAttribute" or "FromForm":
-                        hasFromForm = true;
-                        goto nextParam;
-                }
+                bodyCount++;
+                continue;
+            }
+
+            if (param.HasAttribute(WellKnownTypes.FromFormAttribute))
+            {
+                hasFromForm = true;
+                continue;
             }
 
             // Check for body-related types using pattern matchers
@@ -404,8 +402,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                      IsFormFileCollection(param.Type) ||
                      IsFormCollection(param.Type))
                 hasFromForm = true;
-
-            nextParam: ;
         }
 
         // Multiple [FromBody] is always an error
@@ -415,17 +411,8 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
     }
 
-    private static bool HasAcceptedResponseAttribute(ISymbol method)
-    {
-        foreach (var attr in method.GetAttributes())
-        {
-            var name = attr.AttributeClass?.Name;
-            if (name is "AcceptedResponseAttribute" or "AcceptedResponse")
-                return true;
-        }
-
-        return false;
-    }
+    private static bool HasAcceptedResponseAttribute(ISymbol method) =>
+        method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
 
     private static List<string> ValidateRoutePattern(string pattern)
     {

@@ -183,8 +183,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         public static DiagnosticFlow<EquatableArray<EndpointDescriptor>> EmptyEndpointFlow() =>
             DiagnosticFlow.Ok(new EquatableArray<EndpointDescriptor>(ImmutableArray<EndpointDescriptor>.Empty));
     }
-    // EPS06: Roslyn's readonly struct API causes unavoidable defensive copies.
-#pragma warning disable EPS06
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -439,7 +437,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             successTypeFqn,
             analysis.ReturnInfo.Kind,
             analysis.ReturnInfo.IsAsync,
-            analysis.Method.ContainingType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "Unknown",
+            analysis.Method.ContainingType?.GetFullyQualifiedName() ?? "Unknown",
             analysis.Method.Name,
             bindingAnalysis.Parameters,
             analysis.InferredErrorTypeNames,
@@ -464,8 +462,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         AttributeData attr,
         string attrName)
     {
-        var httpMethod = Helpers.TryGetHttpMethod(attrName, attr.ConstructorArguments);
-        if (httpMethod is null)
+        if (Helpers.TryGetHttpMethod(attrName, attr.ConstructorArguments) is not { } httpMethod)
             return (null, "/");
 
         // Extract pattern - index differs for ErrorOrEndpoint (has httpMethod arg first)
@@ -477,6 +474,4 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         return (httpMethod, pattern);
     }
-
-#pragma warning restore EPS06
 }

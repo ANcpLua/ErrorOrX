@@ -55,7 +55,6 @@
          CODE QUALITY ANALYZERS (not using ANcpLua.NET.Sdk, so explicit version)
          ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
-        <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all" VersionOverride="1.10.2"/>
     </ItemGroup>
 
     <!-- Expose dependencies to projects referencing this generator via ProjectReference -->

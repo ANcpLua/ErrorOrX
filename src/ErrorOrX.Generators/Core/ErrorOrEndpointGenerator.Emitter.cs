@@ -81,7 +81,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Emit grouped endpoint mappings
         foreach (var ctx in groupContexts)
         foreach (var indexed in ctx.Group.Endpoints)
-            GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity, false);
+            GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
 
         // Emit ungrouped endpoint mappings (legacy pattern)
         foreach (var indexed in grouping.UngroupedEndpoints)
@@ -161,10 +161,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 ? $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion}, {v.MinorVersion.Value})"
                 : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
 
-            if (v.IsDeprecated)
-                code.AppendLine($"                .HasDeprecatedApiVersion({versionExpr})");
-            else
-                code.AppendLine($"                .HasApiVersion({versionExpr})");
+            code.AppendLine(v.IsDeprecated
+                ? $"                .HasDeprecatedApiVersion({versionExpr})"
+                : $"                .HasApiVersion({versionExpr})");
         }
 
         code.AppendLine("                .ReportApiVersions()");

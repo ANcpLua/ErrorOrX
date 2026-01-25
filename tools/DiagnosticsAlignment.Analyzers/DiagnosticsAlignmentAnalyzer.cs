@@ -20,14 +20,14 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         "ErrorOr.Internal",
         DiagnosticSeverity.Error,
         true,
-        customTags: new[]
-        {
+        customTags:
+        [
             WellKnownDiagnosticTags.CompilationEnd
-        });
+        ]);
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(DiagnosticsAlignmentMismatch);
+        [DiagnosticsAlignmentMismatch];
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -585,7 +585,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             if (cells.Length < expectedColumns)
             {
                 issues.Add($"Release notes invalid table row in {path}: '{line}'.");
-                return Array.Empty<string>();
+                return [];
             }
 
             return cells;

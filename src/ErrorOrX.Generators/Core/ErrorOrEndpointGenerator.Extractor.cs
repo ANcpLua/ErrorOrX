@@ -67,19 +67,19 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (TryUnwrapSseItem(elementType, context, out var sseDataType))
             {
-                var sseDataFqn = sseDataType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                var asyncEnumFqn = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                var sseDataFqn = sseDataType.GetFullyQualifiedName();
+                var asyncEnumFqn = innerType.GetFullyQualifiedName();
                 return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, true, sseDataFqn, kind);
             }
             else
             {
-                var elementFqn = elementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                var asyncEnumFqn = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                var elementFqn = elementType.GetFullyQualifiedName();
+                var asyncEnumFqn = innerType.GetFullyQualifiedName();
                 return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, true, elementFqn, kind);
             }
         }
 
-        var successTypeFqn = innerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var successTypeFqn = innerType.GetFullyQualifiedName();
         var idPropertyName = DetectIdProperty(innerType);
         return new ErrorOrReturnTypeInfo(successTypeFqn, isAsync, false, null, kind, idPropertyName);
     }

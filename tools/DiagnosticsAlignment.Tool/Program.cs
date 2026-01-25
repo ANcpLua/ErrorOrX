@@ -53,7 +53,7 @@ internal static partial class Program
             return Path.GetFullPath(rootArg);
 
         var current = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (current != null)
+        while (current is not null)
         {
             if (File.Exists(Path.Combine(current.FullName, "ErrorOrX.slnx")))
                 return current.FullName;
@@ -381,7 +381,7 @@ internal static partial class Program
             _ => null
         };
 
-        if (arguments == null)
+        if (arguments is null)
             return false;
 
         var args = arguments.Arguments;
@@ -390,7 +390,7 @@ internal static partial class Program
         var category = ReadStringArgument(args, 3, "category", constants);
         var severity = ReadSeverityArgument(args, 4, "defaultSeverity");
 
-        if (id == null || title == null || category == null || severity == null)
+        if (id is null || title is null || category is null || severity is null)
         {
             error = "Unable to parse DiagnosticDescriptor in Descriptors.cs.";
             return false;
@@ -407,7 +407,7 @@ internal static partial class Program
         Dictionary<string, string> constants)
     {
         var expression = GetArgumentExpression(args, index, name);
-        if (expression == null)
+        if (expression is null)
             return null;
 
         return expression switch

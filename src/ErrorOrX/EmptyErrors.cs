@@ -2,5 +2,5 @@ namespace ErrorOr;
 
 internal static class EmptyErrors
 {
-    public static IReadOnlyList<Error> Instance { get; } = Array.Empty<Error>();
+    public static IReadOnlyList<Error> Instance { get; } = [];
 }

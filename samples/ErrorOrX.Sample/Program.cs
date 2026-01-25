@@ -4,7 +4,7 @@ builder.Services
     .AddOpenApi()
     .AddSingleton(TimeProvider.System)
     .AddScoped<ITodoService, TodoService>()
-    .AddErrorOrEndpoints(options => options
+    .AddErrorOrEndpoints(static options => options
         .UseJsonContext<AppJsonSerializerContext>());
 
 var app = builder.Build();

@@ -98,7 +98,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         // Extract containing type info for tag generation
         var containingType = method.ContainingType;
-        var containingTypeFqn = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var containingTypeFqn = containingType.GetFullyQualifiedName();
         var (tagName, operationId) = EndpointNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
 
         // Normalized pattern for matching (remove leading slash if present, handle duplicates logic)
@@ -207,7 +207,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             searchPos = contentEnd + 8;
         }
 
-        return parameters.ToImmutableArray();
+        return [..parameters];
     }
 
     private static string GetReflectionFullName(INamedTypeSymbol symbol)

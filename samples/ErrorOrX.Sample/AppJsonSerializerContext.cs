@@ -10,6 +10,7 @@ namespace ErrorOrX.Sample;
 [JsonSerializable(typeof(Todo[]))]
 [JsonSerializable(typeof(List<Todo>))]
 [JsonSerializable(typeof(CreateTodoRequest))]
+[JsonSerializable(typeof(List<CreateTodoRequest>))]
 [JsonSerializable(typeof(UpdateTodoRequest))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]

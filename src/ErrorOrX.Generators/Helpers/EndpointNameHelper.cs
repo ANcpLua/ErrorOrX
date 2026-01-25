@@ -14,7 +14,7 @@ internal static class EndpointNameHelper
     ///     Computes the tag name from a containing type name.
     ///     Strips "Endpoints" suffix if present (e.g., "TodoEndpoints" -> "Todo").
     /// </summary>
-    public static string GetTagName(string className) =>
+    private static string GetTagName(string className) =>
         className.StripSuffix(EndpointsSuffix);
 
     /// <summary>

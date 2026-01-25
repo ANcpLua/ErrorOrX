@@ -326,20 +326,7 @@ internal readonly record struct ApiVersionInfo(
     int MajorVersion,
     int? MinorVersion,
     string? Status,
-    bool IsDeprecated)
-{
-    /// <summary>
-    ///     Returns the version string (e.g., "1.0", "2", "1.0-beta").
-    /// </summary>
-    public string ToVersionString()
-    {
-        var version = MinorVersion.HasValue
-            ? $"{MajorVersion}.{MinorVersion.Value}"
-            : MajorVersion.ToString();
-
-        return string.IsNullOrEmpty(Status) ? version : $"{version}-{Status}";
-    }
-}
+    bool IsDeprecated);
 
 /// <summary>
 ///     API versioning configuration extracted from endpoint class or method.
@@ -360,31 +347,6 @@ internal readonly record struct VersioningInfo(
     /// </summary>
     public EquatableArray<ApiVersionInfo> EffectiveVersions =>
         MappedVersions.IsDefaultOrEmpty ? SupportedVersions : MappedVersions;
-}
-
-/// <summary>
-///     Aggregated version set information for all endpoints.
-/// </summary>
-internal readonly record struct GlobalVersionSet(
-    EquatableArray<ApiVersionInfo> AllVersions,
-    bool HasVersionNeutralEndpoints);
-
-/// <summary>
-///     Classifies how an endpoint relates to API versioning for route group emission.
-/// </summary>
-internal enum VersionScope
-{
-    /// <summary>No versioning attributes present.</summary>
-    None,
-
-    /// <summary>Available on all declared versions (no [MapToApiVersion]).</summary>
-    AllVersions,
-
-    /// <summary>Only specific versions via [MapToApiVersion].</summary>
-    Specific,
-
-    /// <summary>Version-neutral via [ApiVersionNeutral].</summary>
-    Neutral
 }
 
 /// <summary>

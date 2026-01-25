@@ -21,19 +21,33 @@ internal static class GroupAggregator
             .Select(static (ep, i) => new IndexedEndpoint(ep, i))
             .ToImmutableArray();
 
-        // Partition into grouped and ungrouped
-        var grouped = indexed
-            .Where(static x => x.Endpoint.RouteGroup.HasRouteGroup)
-            .GroupBy(
-                static x => x.Endpoint.RouteGroup.GroupPath!,
-                StringComparer.OrdinalIgnoreCase)
-            .Select(static g => CreateAggregate(g.Key, g.ToImmutableArray()))
-            .OrderBy(static g => g.GroupPath, StringComparer.OrdinalIgnoreCase)
+        // Partition into grouped and ungrouped using explicit pattern matching for null-safety
+        var groupDict = new Dictionary<string, List<IndexedEndpoint>>(StringComparer.OrdinalIgnoreCase);
+        var ungroupedList = new List<IndexedEndpoint>();
+
+        foreach (var item in indexed)
+        {
+            if (item.Endpoint.RouteGroup.GroupPath is { } path)
+            {
+                if (!groupDict.TryGetValue(path, out var list))
+                {
+                    list = [];
+                    groupDict[path] = list;
+                }
+                list.Add(item);
+            }
+            else
+            {
+                ungroupedList.Add(item);
+            }
+        }
+
+        var grouped = groupDict
+            .OrderBy(static kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(static kvp => CreateAggregate(kvp.Key, kvp.Value.ToImmutableArray()))
             .ToImmutableArray();
 
-        var ungrouped = indexed
-            .Where(static x => !x.Endpoint.RouteGroup.HasRouteGroup)
-            .ToImmutableArray();
+        var ungrouped = ungroupedList.ToImmutableArray();
 
         return new GroupingResult(grouped, ungrouped);
     }

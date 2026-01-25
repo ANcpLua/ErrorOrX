@@ -175,37 +175,44 @@ internal static class JsonContextProvider
             !InheritsFromJsonSerializerContext(classSymbol))
             return ImmutableArray<JsonContextInfo>.Empty;
 
+        // Cache attributes to avoid multiple GetAttributes() calls
+        var attributes = classSymbol.GetAttributes();
+
+        // Extract all JsonSerializable types
         var serializableTypes = new List<string>();
-        var hasCamelCasePolicy = false;
-
-        foreach (var attr in classSymbol.GetAttributes())
+        foreach (var attr in attributes)
         {
-            var attrName = attr.AttributeClass?.ToDisplayString();
+            if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSerializableAttribute)
+                continue;
 
-            if (attrName == WellKnownTypes.JsonSerializableAttribute)
+            if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg } _, ..])
+                serializableTypes.Add(typeArg.GetFullyQualifiedName());
+        }
+
+        // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
+        var hasCamelCasePolicy = false;
+        foreach (var attr in attributes)
+        {
+            if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSourceGenerationOptionsAttribute)
+                continue;
+
+            foreach (var namedArg in attr.NamedArguments)
             {
-                if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg } _, ..])
+                if (namedArg.Key != "PropertyNamingPolicy")
+                    continue;
+
+                var enumValue = namedArg.Value.Value;
+                if (namedArg.Value.Type is INamedTypeSymbol enumType &&
+                    enumType.GetMembers("CamelCase").FirstOrDefault() is IFieldSymbol camelCaseField &&
+                    camelCaseField.ConstantValue?.Equals(enumValue) == true)
                 {
-                    var typeFqn = "global::" + typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        .Replace("global::", "");
-                    serializableTypes.Add(typeFqn);
+                    hasCamelCasePolicy = true;
+                    break;
                 }
             }
-            else if (attrName == WellKnownTypes.JsonSourceGenerationOptionsAttribute)
-                // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
-                foreach (var namedArg in attr.NamedArguments)
-                {
-                    if (namedArg.Key != "PropertyNamingPolicy") continue;
 
-                    var enumValue = namedArg.Value.Value;
-                    if (namedArg.Value.Type is INamedTypeSymbol enumType &&
-                        enumType.GetMembers("CamelCase").FirstOrDefault() is IFieldSymbol camelCaseField &&
-                        camelCaseField.ConstantValue?.Equals(enumValue) == true)
-                    {
-                        hasCamelCasePolicy = true;
-                        break;
-                    }
-                }
+            if (hasCamelCasePolicy)
+                break;
         }
 
         if (serializableTypes.Count is 0)
@@ -216,11 +223,14 @@ internal static class JsonContextProvider
             ? null
             : classSymbol.ContainingNamespace?.ToDisplayString();
 
-        return ImmutableArray.Create(new JsonContextInfo(
+        return
+        [
+            new JsonContextInfo(
             className,
             namespaceName,
             new EquatableArray<string>([.. serializableTypes]),
-            hasCamelCasePolicy));
+            hasCamelCasePolicy)
+        ];
     }
 
     /// <summary>

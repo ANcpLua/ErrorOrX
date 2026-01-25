@@ -79,8 +79,7 @@ internal static class GroupEmitter
         StringBuilder code,
         in IndexedEndpoint indexed,
         string groupVarName,
-        int maxArity,
-        bool hasGlobalVersionSet)
+        int maxArity)
     {
         var ep = indexed.Endpoint;
         var globalIndex = indexed.OriginalIndex;
@@ -89,7 +88,11 @@ internal static class GroupEmitter
         var relativePattern = GetRelativePattern(in ep);
 
         // Emit the map call against the group variable
-        code.Append($"            {groupVarName}.{GetMapMethod(ep.HttpMethod)}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
+        var mapMethod = GetMapMethod(ep.HttpMethod);
+        if (mapMethod == "MapMethods")
+            code.Append($"            {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})");
+        else
+            code.Append($"            {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
 
         // Emit operation name
         code.AppendLine();
@@ -127,6 +130,8 @@ internal static class GroupEmitter
         "PUT" => "MapPut",
         "DELETE" => "MapDelete",
         "PATCH" => "MapPatch",
+        "HEAD" => "MapMethods",
+        "OPTIONS" => "MapMethods",
         _ => "MapMethods"
     };
 
