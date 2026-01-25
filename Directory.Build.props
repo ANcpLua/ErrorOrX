@@ -3,9 +3,9 @@
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
 
-    <!-- Package versions for embedding -->
+    <!-- Package versions for embedding (must match Directory.Packages.props) -->
     <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.14.0</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.18.3</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
     <!-- Repo-wide build settings -->
