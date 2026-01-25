@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using VerifyTests;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -24,48 +25,15 @@ public static class ModuleInitializer
 }
 
 /// <summary>
-///     JSON converter for EquatableArray that serializes as a simple array.
+///     JSON converter for EquatableArray that serializes as a simple array without reflection.
 /// </summary>
 file sealed class EquatableArrayJsonConverter : WriteOnlyJsonConverter
 {
     public override void Write(VerifyJsonWriter writer, object value)
     {
-        // Use reflection to get the Items property and serialize as array
-        var type = value.GetType();
-        if (!type.IsGenericType || type.GetGenericTypeDefinition().Name != "EquatableArray`1")
-        {
-            writer.Serialize(value);
-            return;
-        }
-
-        // Get IsEmpty and Items through the interface
-        var isEmptyProperty = type.GetProperty("IsEmpty");
-        var isEmpty = isEmptyProperty?.GetValue(value) is true;
-
-        if (isEmpty)
-        {
-            writer.WriteStartArray();
-            writer.WriteEndArray();
-            return;
-        }
-
-        // Get Items (returns ImmutableArray<T>)
-        var itemsProperty = type.GetProperty("Items");
-        var items = itemsProperty?.GetValue(value);
-
-        if (items is null)
-        {
-            writer.WriteStartArray();
-            writer.WriteEndArray();
-            return;
-        }
-
-        // Convert to array and serialize
-        var immutableArrayType = items.GetType();
-        var toArrayMethod = immutableArrayType.GetMethod("ToArray");
-        var array = toArrayMethod?.Invoke(items, null);
-
-        writer.Serialize(array ?? Array.Empty<object>());
+        // EquatableArray<T> implements IEnumerable<T>, so we can serialize it directly
+        // Verify will handle the enumeration without needing reflection
+        writer.Serialize(value);
     }
 
     public override bool CanConvert(Type type) =>
