@@ -88,11 +88,12 @@ internal static class GroupEmitter
         var relativePattern = GetRelativePattern(in ep);
 
         // Emit the map call against the group variable
+        // Store builder for CompositeEndpointConventionBuilder
         var mapMethod = GetMapMethod(ep.HttpMethod);
         if (mapMethod == "MapMethods")
-            code.Append($"            {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})");
+            code.Append($"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})");
         else
-            code.Append($"            {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
+            code.Append($"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
 
         // Emit operation name
         code.AppendLine();
@@ -118,6 +119,7 @@ internal static class GroupEmitter
         EndpointMetadataEmitter.EmitEndpointMetadata(code, in ep, "                ", maxArity);
 
         code.AppendLine("                ;");
+        code.AppendLine($"            __endpointBuilders.Add(__ep{globalIndex});");
     }
 
     /// <summary>

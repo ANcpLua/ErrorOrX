@@ -61,8 +61,35 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        /// Maps all ErrorOr endpoints to the application's routing table.");
         code.AppendLine("        /// </summary>");
         code.AppendLine("        /// <param name=\"app\">The endpoint route builder to add mappings to.</param>");
-        code.AppendLine("        public static void MapErrorOrEndpoints(this IEndpointRouteBuilder app)");
+        code.AppendLine("        /// <returns>A convention builder for applying global conventions to all endpoints.</returns>");
+        code.AppendLine("        /// <exception cref=\"InvalidOperationException\">");
+        code.AppendLine("        /// Thrown when AddErrorOrEndpoints() was not called during service registration.");
+        code.AppendLine("        /// </exception>");
+        code.AppendLine("        /// <remarks>");
+        code.AppendLine("        /// This follows ASP.NET Core's convention builder pattern, enabling global");
+        code.AppendLine("        /// endpoint configuration like RequireAuthorization() or RequireRateLimiting().");
+        code.AppendLine("        /// </remarks>");
+        code.AppendLine("        /// <example>");
+        code.AppendLine("        /// <code>");
+        code.AppendLine("        /// app.MapErrorOrEndpoints()");
+        code.AppendLine("        ///    .RequireAuthorization()");
+        code.AppendLine("        ///    .RequireRateLimiting(\"api\");");
+        code.AppendLine("        /// </code>");
+        code.AppendLine("        /// </example>");
+        code.AppendLine("        public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)");
         code.AppendLine("        {");
+        code.AppendLine("            // Validate that AddErrorOrEndpoints() was called");
+        code.AppendLine("            var marker = app.ServiceProvider.GetService<ErrorOrEndpointsMarkerService>();");
+        code.AppendLine("            if (marker is null)");
+        code.AppendLine("            {");
+        code.AppendLine("                throw new InvalidOperationException(");
+        code.AppendLine("                    \"Unable to find the required services. \" +");
+        code.AppendLine("                    \"Please add all the required services by calling 'IServiceCollection.AddErrorOrEndpoints()' \" +");
+        code.AppendLine("                    \"in the application startup code.\");");
+        code.AppendLine("            }");
+        code.AppendLine();
+        code.AppendLine("            var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();");
+        code.AppendLine();
 
         // Group endpoints by [RouteGroup] attribute
         var grouping = GroupAggregator.GroupEndpoints(endpoints);
@@ -87,6 +114,8 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var indexed in grouping.UngroupedEndpoints)
             EmitMapCall(code, indexed.Endpoint, indexed.OriginalIndex, maxArity, ungroupedVersionSet.HasVersioning);
 
+        code.AppendLine();
+        code.AppendLine("            return new CompositeEndpointConventionBuilder(__endpointBuilders);");
         code.AppendLine("        }");
         code.AppendLine();
 
@@ -111,9 +140,10 @@ public sealed partial class ErrorOrEndpointGenerator
         var mapMethod = Emit.MapMethod(ep.HttpMethod);
 
         // Use typed Map* methods without Delegate cast for AOT compatibility
+        // Store builder for CompositeEndpointConventionBuilder
         code.AppendLine(mapMethod == "MapMethods"
-            ? $"            app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{index})"
-            : $"            app.{mapMethod}(@\"{ep.Pattern}\", Invoke_Ep{index})");
+            ? $"            var __ep{index} = app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{index})"
+            : $"            var __ep{index} = app.{mapMethod}(@\"{ep.Pattern}\", Invoke_Ep{index})");
 
         var (_, operationId) =
             EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
@@ -127,6 +157,7 @@ public sealed partial class ErrorOrEndpointGenerator
         EndpointMetadataEmitter.EmitEndpointMetadata(code, in ep, "                ", maxArity);
 
         code.AppendLine("                ;");
+        code.AppendLine($"            __endpointBuilders.Add(__ep{index});");
         code.AppendLine();
     }
 
@@ -840,28 +871,30 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitJsonConfigExtension(StringBuilder code)
     {
-        // Emit fluent builder: AddErrorOrEndpoints(Action<ErrorOrEndpointOptions>?)
+        // Emit fluent builder: AddErrorOrEndpoints() returns IErrorOrEndpointsBuilder
         code.AppendLine("        /// <summary>");
-        code.AppendLine("        /// Configures ErrorOr endpoints with fluent options.");
+        code.AppendLine("        /// Registers ErrorOr endpoint services and returns a builder for configuration.");
         code.AppendLine("        /// </summary>");
         code.AppendLine("        /// <param name=\"services\">The service collection to configure.</param>");
-        code.AppendLine("        /// <param name=\"configure\">Optional configuration action.</param>");
-        code.AppendLine("        /// <returns>The service collection for chaining.</returns>");
+        code.AppendLine("        /// <returns>A builder for further configuration.</returns>");
+        code.AppendLine("        /// <remarks>");
+        code.AppendLine("        /// This follows ASP.NET Core's builder pattern (like AddRazorComponents())");
+        code.AppendLine("        /// enabling fluent extension method chaining without callback nesting.");
+        code.AppendLine("        /// </remarks>");
         code.AppendLine("        /// <example>");
         code.AppendLine("        /// <code>");
-        code.AppendLine("        /// services.AddErrorOrEndpoints(options => options");
+        code.AppendLine("        /// builder.Services.AddErrorOrEndpoints()");
         code.AppendLine("        ///     .UseJsonContext&lt;AppJsonSerializerContext&gt;()");
         code.AppendLine("        ///     .WithCamelCase()");
-        code.AppendLine("        ///     .WithIgnoreNulls());");
+        code.AppendLine("        ///     .WithIgnoreNulls();");
         code.AppendLine("        /// </code>");
         code.AppendLine("        /// </example>");
         code.AppendLine(
-            "        public static IServiceCollection AddErrorOrEndpoints(this IServiceCollection services, System.Action<ErrorOrEndpointOptions>? configure = null)");
+            "        public static IErrorOrEndpointsBuilder AddErrorOrEndpoints(this IServiceCollection services)");
         code.AppendLine("        {");
-        code.AppendLine("            var options = new ErrorOrEndpointOptions();");
-        code.AppendLine("            configure?.Invoke(options);");
-        code.AppendLine("            options.Apply(services);");
-        code.AppendLine("            return services;");
+        code.AppendLine("            // Register marker service for validation in MapErrorOrEndpoints()");
+        code.AppendLine("            services.AddSingleton<ErrorOrEndpointsMarkerService>();");
+        code.AppendLine("            return new ErrorOrEndpointsBuilder(services);");
         code.AppendLine("        }");
         code.AppendLine();
     }
@@ -878,64 +911,130 @@ public sealed partial class ErrorOrEndpointGenerator
                               namespace ErrorOr.Generated
                               {
                                   /// <summary>
-                                  /// Options for configuring ErrorOr endpoints.
+                                  /// Marker service to verify that AddErrorOrEndpoints() was called.
                                   /// </summary>
-                                  public sealed class ErrorOrEndpointOptions
-                                  {
-                                      private global::System.Func<global::System.Text.Json.Serialization.JsonSerializerContext>? _jsonContextFactory;
-                                      private bool _useCamelCase = true;
-                                      private bool _ignoreNullValues = true;
+                                  /// <remarks>
+                                  /// This follows the ASP.NET Core pattern used by RazorComponentsMarkerService
+                                  /// to provide clear error messages when the service registration is missing.
+                                  /// </remarks>
+                                  internal sealed class ErrorOrEndpointsMarkerService { }
 
+                                  /// <summary>
+                                  /// Builder interface for configuring ErrorOr endpoints.
+                                  /// </summary>
+                                  /// <remarks>
+                                  /// This pattern follows ASP.NET Core's IRazorComponentsBuilder design,
+                                  /// enabling fluent extension method chaining without callback nesting.
+                                  /// </remarks>
+                                  public interface IErrorOrEndpointsBuilder
+                                  {
+                                      /// <summary>
+                                      /// Gets the service collection being configured.
+                                      /// </summary>
+                                      global::Microsoft.Extensions.DependencyInjection.IServiceCollection Services { get; }
+                                  }
+
+                                  /// <summary>
+                                  /// Default implementation of <see cref="IErrorOrEndpointsBuilder"/>.
+                                  /// </summary>
+                                  internal sealed class ErrorOrEndpointsBuilder : IErrorOrEndpointsBuilder
+                                  {
+                                      public ErrorOrEndpointsBuilder(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                      {
+                                          Services = services;
+                                      }
+
+                                      public global::Microsoft.Extensions.DependencyInjection.IServiceCollection Services { get; }
+                                  }
+
+                                  /// <summary>
+                                  /// Extension methods for <see cref="IErrorOrEndpointsBuilder"/>.
+                                  /// </summary>
+                                  public static class ErrorOrEndpointsBuilderExtensions
+                                  {
                                       /// <summary>
                                       /// Registers a JsonSerializerContext for AOT-compatible JSON serialization.
                                       /// </summary>
                                       /// <typeparam name="TContext">The JsonSerializerContext type.</typeparam>
-                                      /// <returns>The options instance for chaining.</returns>
-                                      public ErrorOrEndpointOptions UseJsonContext<TContext>()
+                                      /// <param name="builder">The builder instance.</param>
+                                      /// <returns>The builder instance for chaining.</returns>
+                                      public static IErrorOrEndpointsBuilder UseJsonContext<TContext>(this IErrorOrEndpointsBuilder builder)
                                           where TContext : global::System.Text.Json.Serialization.JsonSerializerContext, new()
                                       {
-                                          _jsonContextFactory = static () => new TContext();
-                                          return this;
+                                          builder.Services.ConfigureHttpJsonOptions(options =>
+                                          {
+                                              options.SerializerOptions.TypeInfoResolverChain.Insert(0, new TContext());
+                                          });
+                                          return builder;
                                       }
 
                                       /// <summary>
                                       /// Uses camelCase for JSON property names.
                                       /// </summary>
+                                      /// <param name="builder">The builder instance.</param>
                                       /// <param name="enabled">Whether to enable camelCase (default: true).</param>
-                                      /// <returns>The options instance for chaining.</returns>
-                                      public ErrorOrEndpointOptions WithCamelCase(bool enabled = true)
+                                      /// <returns>The builder instance for chaining.</returns>
+                                      public static IErrorOrEndpointsBuilder WithCamelCase(this IErrorOrEndpointsBuilder builder, bool enabled = true)
                                       {
-                                          _useCamelCase = enabled;
-                                          return this;
+                                          if (enabled)
+                                          {
+                                              builder.Services.ConfigureHttpJsonOptions(options =>
+                                              {
+                                                  options.SerializerOptions.PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase;
+                                              });
+                                          }
+                                          return builder;
                                       }
 
                                       /// <summary>
                                       /// Ignores null values when serializing JSON.
                                       /// </summary>
+                                      /// <param name="builder">The builder instance.</param>
                                       /// <param name="enabled">Whether to ignore nulls (default: true).</param>
-                                      /// <returns>The options instance for chaining.</returns>
-                                      public ErrorOrEndpointOptions WithIgnoreNulls(bool enabled = true)
+                                      /// <returns>The builder instance for chaining.</returns>
+                                      public static IErrorOrEndpointsBuilder WithIgnoreNulls(this IErrorOrEndpointsBuilder builder, bool enabled = true)
                                       {
-                                          _ignoreNullValues = enabled;
-                                          return this;
+                                          if (enabled)
+                                          {
+                                              builder.Services.ConfigureHttpJsonOptions(options =>
+                                              {
+                                                  options.SerializerOptions.DefaultIgnoreCondition = global::System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                                              });
+                                          }
+                                          return builder;
+                                      }
+                                  }
+
+                                  /// <summary>
+                                  /// Composite convention builder that applies conventions to multiple endpoints.
+                                  /// </summary>
+                                  /// <remarks>
+                                  /// This follows the ASP.NET Core pattern for applying global conventions
+                                  /// to all endpoints registered by MapErrorOrEndpoints().
+                                  /// </remarks>
+                                  internal sealed class CompositeEndpointConventionBuilder : global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder
+                                  {
+                                      private readonly global::System.Collections.Generic.List<global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder> _builders;
+
+                                      public CompositeEndpointConventionBuilder(global::System.Collections.Generic.List<global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder> builders)
+                                      {
+                                          _builders = builders;
                                       }
 
-                                      /// <summary>
-                                      /// Applies the configured options to the service collection.
-                                      /// </summary>
-                                      internal void Apply(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+                                      public void Add(global::System.Action<global::Microsoft.AspNetCore.Builder.EndpointBuilder> convention)
                                       {
-                                          services.ConfigureHttpJsonOptions(options =>
+                                          foreach (var builder in _builders)
                                           {
-                                              if (_jsonContextFactory is not null)
-                                                  options.SerializerOptions.TypeInfoResolverChain.Insert(0, _jsonContextFactory());
+                                              builder.Add(convention);
+                                          }
+                                      }
 
-                                              if (_useCamelCase)
-                                                  options.SerializerOptions.PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase;
-
-                                              if (_ignoreNullValues)
-                                                  options.SerializerOptions.DefaultIgnoreCondition = global::System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-                                          });
+                                      public void Finally(global::System.Action<global::Microsoft.AspNetCore.Builder.EndpointBuilder> finallyConvention)
+                                      {
+                                          foreach (var builder in _builders)
+                                          {
+                                              builder.Finally(finallyConvention);
+                                          }
                                       }
                                   }
                               }
