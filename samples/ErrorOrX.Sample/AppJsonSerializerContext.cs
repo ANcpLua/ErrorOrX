@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ErrorOrX.Sample;
 
-[JsonSourceGenerationOptions(
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+// JSON options configured via builder: .WithCamelCase().WithIgnoreNulls()
 [JsonSerializable(typeof(Todo))]
 [JsonSerializable(typeof(Todo[]))]
 [JsonSerializable(typeof(List<Todo>))]
