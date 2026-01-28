@@ -3,10 +3,10 @@
         <TargetFramework>net10.0</TargetFramework>
         <OutputType>Exe</OutputType>
         <RootNamespace>ErrorOrX.Generators.Tests</RootNamespace>
-        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005;CS1591</NoWarn>
+        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005;CS1591;AL0039</NoWarn>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="xunit.v3.mtp-v2"/>
+        <PackageReference Include="xunit.v3.mtp-v2" Condition="'@(PackageReference->WithMetadataValue('Identity', 'xunit.v3.mtp-v2'))' == ''"/>
         <PackageReference Include="AwesomeAssertions"/>
         <PackageReference Include="Verify.XunitV3"/>
         <PackageReference Include="Verify.SourceGenerators"/>
@@ -25,12 +25,13 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
-    <ItemGroup>
-        <!-- ReferenceOutputAssembly=true now safe - PolySharp replaced with internal Polyfills.cs -->
-        <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true"/>
-        <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
-    </ItemGroup>
+
     <ItemGroup>
         <Analyzer Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ErrorOrX.Generators\ErrorOrX.Generators.csproj"/>
+        <ProjectReference Include="..\..\src\ErrorOrX\ErrorOrX.csproj"/>
     </ItemGroup>
 </Project>

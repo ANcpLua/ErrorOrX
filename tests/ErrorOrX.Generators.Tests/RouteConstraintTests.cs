@@ -7,7 +7,7 @@ public class RouteConstraintTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace MyNamespace;
 
@@ -27,7 +27,7 @@ public class RouteConstraintTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
                               using Microsoft.AspNetCore.Http;
 
                               public record SearchParams(int Id);
@@ -47,7 +47,7 @@ public class RouteConstraintTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace MyNamespace;
 
@@ -70,7 +70,7 @@ public class RouteConstraintTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace MyNamespace;
 

@@ -109,6 +109,8 @@ internal static class WellKnownTypes
     public const string ApiVersion = "Asp.Versioning.ApiVersion";
 
     public const string RouteGroupAttribute = "ErrorOr.RouteGroupAttribute";
+    public const string AllowEmptyBodyAttribute = "ErrorOr.AllowEmptyBodyAttribute";
+    public const string EndpointMetadataAttribute = "ErrorOr.EndpointMetadataAttribute";
 
     /// <summary>
     ///     HTTP method constants to replace magic strings throughout the generator.
@@ -127,7 +129,10 @@ internal static class WellKnownTypes
         /// <summary>
         ///     Returns true if the HTTP method typically has no request body.
         /// </summary>
-        public static bool IsBodyless(string method) => method.ToUpperInvariant() is Get or Head or Options or Delete;
+        public static bool IsBodyless(string method)
+        {
+            return method.ToUpperInvariant() is Get or Head or Options or Delete or Trace;
+        }
     }
 
     /// <summary>
@@ -145,10 +150,13 @@ internal static class WellKnownTypes
         public const string AcceptedResponseAttribute = "global::ErrorOr.AcceptedResponseAttribute";
 
         public const string ProblemDetails = "global::Microsoft.AspNetCore.Mvc.ProblemDetails";
+
         public const string ProducesResponseTypeMetadata =
             "global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata";
+
         public const string HttpValidationProblemDetails =
             "global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails";
+
         public const string Result = "global::Microsoft.AspNetCore.Http.IResult";
 
         public const string Validator = "global::System.ComponentModel.DataAnnotations.Validator";

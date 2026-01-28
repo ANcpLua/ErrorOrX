@@ -10,7 +10,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace CachingTest;
 
@@ -31,7 +31,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace CachingTest;
 
@@ -58,7 +58,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
                               using Microsoft.AspNetCore.Mvc;
 
                               namespace CachingTest;
@@ -88,7 +88,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace CleanTest;
 
@@ -109,7 +109,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace CompileTest;
 
@@ -130,7 +130,7 @@ public class GeneratorCachingTests : GeneratorTestBase
     {
         const string Source = """
                               using ErrorOr;
-                              
+
 
                               namespace CachingTest;
 

@@ -186,12 +186,7 @@ public class ErrorOrInterfaceTests
     public void IErrorOrValue_WhenValueIsReferenceType_ShouldReturnSameReference()
     {
         // Arrange
-        var list = new List<int>
-        {
-            1,
-            2,
-            3
-        };
+        var list = new List<int> { 1, 2, 3 };
         ErrorOr<List<int>> errorOr = list;
 
         // Act
@@ -212,8 +207,9 @@ public class ErrorOrInterfaceTests
         var errors1 = ((IErrorOr)errorOr).Errors;
         var errors2 = ((IErrorOr)errorOr).Errors;
 
-        // Assert
-        errors1.Should().BeSameAs(errors2);
+        // Assert - ImmutableArray boxing may create different instances, but content should be equivalent
+        errors1.Should().BeEquivalentTo(errors2);
+        errors1.Should().ContainSingle().Which.Should().Be(error);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ANcpLua.Roslyn.Utilities;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,7 +27,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             // Collect body parameter types
             foreach (var param in ep.HandlerParameters)
-                if (param.Source == EndpointParameterSource.Body)
+                if (param.Source == ParameterSource.Body)
                     if (!bodyTypes.ContainsKey(param.TypeFqn))
                         bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
 
@@ -226,10 +225,10 @@ internal static class JsonContextProvider
         return
         [
             new JsonContextInfo(
-            className,
-            namespaceName,
-            new EquatableArray<string>([.. serializableTypes]),
-            hasCamelCasePolicy)
+                className,
+                namespaceName,
+                new EquatableArray<string>([.. serializableTypes]),
+                hasCamelCasePolicy)
         ];
     }
 

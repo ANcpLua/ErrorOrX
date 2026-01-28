@@ -60,14 +60,18 @@ internal static class GroupEmitter
                         ? $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion}, {v.MinorVersion.Value})"
                         : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
 
-                    code.Append(v.IsDeprecated ? $".HasDeprecatedApiVersion({versionExpr})" : $".HasApiVersion({versionExpr})");
+                    code.Append(v.IsDeprecated
+                        ? $".HasDeprecatedApiVersion({versionExpr})"
+                        : $".HasApiVersion({versionExpr})");
                 }
 
             code.AppendLine(";");
         }
         else
             // Simple group without versioning
+        {
             code.AppendLine($"            var {groupVarName} = app.MapGroup(\"{group.GroupPath}\");");
+        }
 
         return groupVarName;
     }
@@ -90,14 +94,14 @@ internal static class GroupEmitter
         // Emit the map call against the group variable
         // Store builder for CompositeEndpointConventionBuilder
         var mapMethod = GetMapMethod(ep.HttpMethod);
-        if (mapMethod == "MapMethods")
-            code.Append($"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})");
-        else
-            code.Append($"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
+        code.Append(mapMethod == "MapMethods"
+            ? $"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})"
+            : $"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
 
         // Emit operation name
         code.AppendLine();
-        var (_, operationId) = EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
+        var (_, operationId) =
+            EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
         code.AppendLine($"                .WithName(\"{operationId}\")");
 
         // For grouped endpoints with specific version mappings, emit MapToApiVersion
@@ -125,17 +129,20 @@ internal static class GroupEmitter
     /// <summary>
     ///     Gets the Map method name for the HTTP verb.
     /// </summary>
-    private static string GetMapMethod(string httpMethod) => httpMethod switch
+    private static string GetMapMethod(string httpMethod)
     {
-        "GET" => "MapGet",
-        "POST" => "MapPost",
-        "PUT" => "MapPut",
-        "DELETE" => "MapDelete",
-        "PATCH" => "MapPatch",
-        "HEAD" => "MapMethods",
-        "OPTIONS" => "MapMethods",
-        _ => "MapMethods"
-    };
+        return httpMethod switch
+        {
+            "GET" => "MapGet",
+            "POST" => "MapPost",
+            "PUT" => "MapPut",
+            "DELETE" => "MapDelete",
+            "PATCH" => "MapPatch",
+            "HEAD" => "MapMethods",
+            "OPTIONS" => "MapMethods",
+            _ => "MapMethods"
+        };
+    }
 
     /// <summary>
     ///     Context for emitting a route group's endpoints.

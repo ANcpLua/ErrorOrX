@@ -205,10 +205,8 @@ src/ErrorOrX/
 ├── ErrorOrFactory.cs           # ErrorOr static factory
 ├── ErrorType.cs                # ErrorType enum
 ├── IErrorOr.cs                 # Non-generic interface
-├── Results.cs                  # Result marker types (Deleted, Updated, etc.)
-└── EmptyErrors.cs              # Empty error collection singleton
+└── Results.cs                  # Result marker types (Deleted, Updated, etc.)
 ```
-
 
 <claude-mem-context>
 # Recent Activity

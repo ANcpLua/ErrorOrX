@@ -151,7 +151,8 @@ public static ErrorOr<Todo> GetById(int id, ITodoService svc) =>
 // Generates: Results<Ok<Todo>, NotFound<ProblemDetails>, ValidationProblem>
 ```
 
-The generator reads `[ReturnsError]` attributes from interface/abstract methods to build the complete `Results<...>` union for OpenAPI documentation.
+The generator reads `[ReturnsError]` attributes from interface/abstract methods to build the complete `Results<...>`
+union for OpenAPI documentation.
 
 ## Smart Parameter Binding
 

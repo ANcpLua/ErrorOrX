@@ -124,22 +124,32 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
                 identifier.GetLocation()));
     }
 
-    private static bool IsActivatorCreateInstance(IMethodSymbol method) =>
-        method.ContainingType?.ToDisplayString() == "System.Activator" &&
-        method.Name == "CreateInstance";
+    private static bool IsActivatorCreateInstance(IMethodSymbol method)
+    {
+        return method.ContainingType?.ToDisplayString() == "System.Activator" &&
+               method.Name == "CreateInstance";
+    }
 
-    private static bool IsTypeGetType(IMethodSymbol method) =>
-        IsSystemType(method.ContainingType) &&
-        method is
-        {
-            Name: "GetType",
-            Parameters.Length: > 0
-        } &&
-        method.Parameters[0].Type.SpecialType == SpecialType.System_String;
+    private static bool IsTypeGetType(IMethodSymbol method)
+    {
+        return IsSystemType(method.ContainingType) &&
+               method is
+               {
+                   Name: "GetType",
+                   Parameters.Length: > 0
+               } &&
+               method.Parameters[0].Type.SpecialType == SpecialType.System_String;
+    }
 
-    private static bool IsReflectionMethod(IMethodSymbol method) => IsSystemType(method.ContainingType) && ReflectionMethods.Contains(method.Name);
+    private static bool IsReflectionMethod(IMethodSymbol method)
+    {
+        return IsSystemType(method.ContainingType) && ReflectionMethods.Contains(method.Name);
+    }
 
-    private static bool IsSystemType(INamedTypeSymbol? type) => type?.ToDisplayString() == "System.Type";
+    private static bool IsSystemType(INamedTypeSymbol? type)
+    {
+        return type?.ToDisplayString() == "System.Type";
+    }
 
     private static bool IsExpressionCompile(IMethodSymbol method)
     {
@@ -151,7 +161,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         // Check if it's on LambdaExpression or Expression<TDelegate>
         var typeName = containingType.ToDisplayString();
-        return typeName.StartsWith("System.Linq.Expressions.Expression", StringComparison.Ordinal) ||
+        return typeName.StartsWithOrdinal("System.Linq.Expressions.Expression") ||
                typeName == "System.Linq.Expressions.LambdaExpression";
     }
 

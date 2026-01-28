@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ANcpLua.Roslyn.Utilities;
 
 namespace ErrorOr.Generators;
 
@@ -26,7 +25,6 @@ internal static class GroupAggregator
         var ungroupedList = new List<IndexedEndpoint>();
 
         foreach (var item in indexed)
-        {
             if (item.Endpoint.RouteGroup.GroupPath is { } path)
             {
                 if (!groupDict.TryGetValue(path, out var list))
@@ -34,17 +32,17 @@ internal static class GroupAggregator
                     list = [];
                     groupDict[path] = list;
                 }
+
                 list.Add(item);
             }
             else
             {
                 ungroupedList.Add(item);
             }
-        }
 
         var grouped = groupDict
             .OrderBy(static kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(static kvp => CreateAggregate(kvp.Key, kvp.Value.ToImmutableArray()))
+            .Select(static kvp => CreateAggregate(kvp.Key, [.. kvp.Value]))
             .ToImmutableArray();
 
         var ungrouped = ungroupedList.ToImmutableArray();
@@ -96,7 +94,7 @@ internal static class GroupAggregator
         var normalizedPattern = ep.Pattern.TrimStart('/');
 
         // If pattern starts with group path, return the relative portion
-        if (normalizedPattern.StartsWith(normalizedGroup, StringComparison.OrdinalIgnoreCase))
+        if (normalizedPattern.StartsWithIgnoreCase(normalizedGroup))
         {
             var relative = normalizedPattern[normalizedGroup.Length..].TrimStart('/');
             return string.IsNullOrEmpty(relative) ? "/" : "/" + relative;
@@ -132,11 +130,5 @@ internal static class GroupAggregator
     /// </summary>
     internal readonly record struct GroupingResult(
         ImmutableArray<RouteGroupAggregate> Groups,
-        ImmutableArray<IndexedEndpoint> UngroupedEndpoints)
-    {
-        /// <summary>
-        ///     Returns true if any endpoints use route grouping.
-        /// </summary>
-        public bool HasGroups => !Groups.IsDefaultOrEmpty;
-    }
+        ImmutableArray<IndexedEndpoint> UngroupedEndpoints);
 }

@@ -31,14 +31,14 @@ public class ErrorOrInstantiationTests
     }
 
     [Fact]
-    public void CreateFromFactory_WhenAccessingErrorsOrEmptyList_ShouldReturnEmptyList()
+    public void CreateFromFactory_WhenAccessingErrorsOrEmpty_ShouldReturnEmptyList()
     {
         // Arrange
         IEnumerable<string> value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act
-        var errors = errorOrPerson.ErrorsOrEmptyList;
+        var errors = errorOrPerson.ErrorsOrEmpty;
 
         // Assert
         errors.Should().BeEmpty();
@@ -87,14 +87,14 @@ public class ErrorOrInstantiationTests
     }
 
     [Fact]
-    public void CreateFromValue_WhenAccessingErrorsOrEmptyList_ShouldReturnEmptyList()
+    public void CreateFromValue_WhenAccessingErrorsOrEmpty_ShouldReturnEmptyList()
     {
         // Arrange
         IEnumerable<string> value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act
-        var errors = errorOrPerson.ErrorsOrEmptyList;
+        var errors = errorOrPerson.ErrorsOrEmpty;
 
         // Assert
         errors.Should().BeEmpty();
@@ -127,7 +127,7 @@ public class ErrorOrInstantiationTests
     }
 
     [Fact]
-    public void CreateFromErrorList_WhenAccessingErrorsOrEmptyList_ShouldReturnErrorList()
+    public void CreateFromErrorList_WhenAccessingErrorsOrEmpty_ShouldReturnErrorList()
     {
         // Arrange
         List<Error> errors = [Error.Validation("User.Name", "Name is too short")];
@@ -135,7 +135,7 @@ public class ErrorOrInstantiationTests
 
         // Act & Assert
         errorOrPerson.IsError.Should().BeTrue();
-        errorOrPerson.ErrorsOrEmptyList.Should().ContainSingle().Which.Should().Be(errors.Single());
+        errorOrPerson.ErrorsOrEmpty.Should().ContainSingle().Which.Should().Be(errors.Single());
     }
 
     [Fact]

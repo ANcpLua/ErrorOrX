@@ -5,6 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <IsPackable>false</IsPackable>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!-- Suppress ANcpLua.Analyzers rules - this tool doesn't use ANcpLua extensions -->
+        <NoWarn>$(NoWarn);AL0038;AL0039</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

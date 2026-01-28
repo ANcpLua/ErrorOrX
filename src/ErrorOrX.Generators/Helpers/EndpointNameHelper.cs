@@ -1,5 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
-
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -14,8 +12,10 @@ internal static class EndpointNameHelper
     ///     Computes the tag name from a containing type name.
     ///     Strips "Endpoints" suffix if present (e.g., "TodoEndpoints" -> "Todo").
     /// </summary>
-    private static string GetTagName(string className) =>
-        className.StripSuffix(EndpointsSuffix);
+    private static string GetTagName(string className)
+    {
+        return className.StripSuffix(EndpointsSuffix);
+    }
 
     /// <summary>
     ///     Computes both tag name and operation ID for an endpoint.

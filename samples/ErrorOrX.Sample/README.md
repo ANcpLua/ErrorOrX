@@ -1,6 +1,7 @@
 # ErrorOrX Sample Application
 
-This sample demonstrates all key features of **ErrorOrX** - a Railway-Oriented Programming library for .NET with source-generated ASP.NET Core Minimal API integration.
+This sample demonstrates all key features of **ErrorOrX** - a Railway-Oriented Programming library for .NET with
+source-generated ASP.NET Core Minimal API integration.
 
 ## What This Sample Demonstrates
 
@@ -74,12 +75,13 @@ public static Task<ErrorOr<Todo>> GetById(
 ```
 
 **What happens:**
+
 1. Generator creates `app.MapGet("/api/todos/{id:guid}", ...)`
 2. Extracts `id` from route
 3. Injects `ITodoService` from DI
 4. Maps `ErrorOr<Todo>` to:
-   - `200 OK` with `Todo` JSON body (success)
-   - `404 Not Found` with `ProblemDetails` (error)
+    - `200 OK` with `Todo` JSON body (success)
+    - `404 Not Found` with `ProblemDetails` (error)
 
 ### 2. Interface with [ReturnsError] (ITodoService.cs)
 
@@ -93,6 +95,7 @@ public interface ITodoService
 ```
 
 **What happens:**
+
 - Generator reads `[ReturnsError]` attributes
 - Produces `Results<Ok<Todo>, NotFound<ProblemDetails>>` for OpenAPI
 - Documents all possible error responses
@@ -108,6 +111,7 @@ public async Task<ErrorOr<Todo>> GetByIdAsync(Guid id, CancellationToken ct)
 ```
 
 **What happens:**
+
 - If `Find()` returns `null`, `.OrNotFound()` creates `Error.NotFound("Todo.NotFound", message)`
 - Error code `"Todo.NotFound"` is auto-generated from type name `Todo`
 - Returns `ErrorOr<Todo>` with either the todo or the error
@@ -124,6 +128,7 @@ internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
 **What happens:**
+
 - System.Text.Json source generator creates AOT-compatible serializers at compile time
 - No reflection needed at runtime
 - Works with `PublishAot=true`
@@ -138,6 +143,7 @@ app.MapErrorOrEndpoints(); // Auto-generated extension method
 ```
 
 **What happens:**
+
 - `AddErrorOrEndpoints()` registers the custom JSON context
 - `MapErrorOrEndpoints()` registers all endpoints from classes with `[Get]`, `[Post]`, etc.
 - Zero manual endpoint registration needed

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace ErrorOr;
 
 /// <summary>
@@ -6,7 +8,9 @@ namespace ErrorOr;
 /// <typeparam name="TValue">The type of the underlying <see cref="Value" />.</typeparam>
 public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 {
-    private readonly List<Error>? _errors = null;
+#pragma warning disable EPS11 // ImmutableArray is correctly handled via IsDefaultOrEmpty checks
+    private readonly ImmutableArray<Error> _errors;
+#pragma warning restore EPS11
     private readonly TValue? _value = default;
 
     /// <summary>
@@ -24,11 +28,9 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         _ = Throw.IfNull(errors);
 
         if (errors.Count is 0)
-        {
             throw new ArgumentException(
                 "Cannot create an ErrorOr<TValue> from an empty collection of errors. Provide at least one error.",
                 nameof(errors));
-        }
 
         _errors = [.. errors];
     }
@@ -42,7 +44,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     [MemberNotNullWhen(false, nameof(Errors))]
     [MemberNotNullWhen(true, nameof(Value))]
     [MemberNotNullWhen(true, nameof(_value))]
-    public bool IsSuccess => _errors is null;
+    public bool IsSuccess => _errors.IsDefaultOrEmpty;
 
     /// <summary>
     ///     Gets the list of errors.
@@ -56,7 +58,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <summary>
     ///     Gets the list of errors. If the state is not error, the list will be empty.
     /// </summary>
-    public IReadOnlyList<Error> ErrorsOrEmptyList => IsError ? _errors : EmptyErrors.Instance;
+    public IReadOnlyList<Error> ErrorsOrEmpty => IsError ? _errors : [];
 
     /// <summary>
     ///     Gets a value indicating whether the state is error.
@@ -65,10 +67,13 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     [MemberNotNullWhen(true, nameof(Errors))]
     [MemberNotNullWhen(false, nameof(Value))]
     [MemberNotNullWhen(false, nameof(_value))]
-    public bool IsError => _errors is not null;
+    public bool IsError => !_errors.IsDefaultOrEmpty;
 
     /// <inheritdoc />
     IReadOnlyList<Error>? IErrorOr.Errors => IsError ? _errors : null;
+
+    /// <inheritdoc />
+    IReadOnlyList<Error> IErrorOr.ErrorsOrEmpty => ErrorsOrEmpty;
 
     /// <summary>
     ///     Gets the value.

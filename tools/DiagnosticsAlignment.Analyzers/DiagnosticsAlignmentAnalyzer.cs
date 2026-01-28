@@ -51,7 +51,8 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
 
         var descriptors = DescriptorParser.Parse(descriptorsFile, context.CancellationToken, issues);
         CompareDocs(descriptors, DiagnosticsDocsParser.Parse(docsFile, context.CancellationToken, issues), issues);
-        CompareReleaseNotes(descriptors, AnalyzerReleasesParser.Parse(shippedFile, unshippedFile, context.CancellationToken, issues), issues);
+        CompareReleaseNotes(descriptors,
+            AnalyzerReleasesParser.Parse(shippedFile, unshippedFile, context.CancellationToken, issues), issues);
 
         if (issues.Count is 0)
             return;
@@ -85,10 +86,12 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             }
 
             if (!string.Equals(doc.Title, descriptor.Title, StringComparison.Ordinal))
-                issues.Add($"Docs title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Docs='{doc.Title}'.");
+                issues.Add(
+                    $"Docs title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Docs='{doc.Title}'.");
 
             if (doc.Severity != descriptor.Severity)
-                issues.Add($"Docs severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Docs='{doc.Severity}'.");
+                issues.Add(
+                    $"Docs severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Docs='{doc.Severity}'.");
         }
 
         foreach (var docId in docs.Keys)
@@ -111,14 +114,17 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             }
 
             if (!string.Equals(rule.Category, descriptor.Category, StringComparison.Ordinal))
-                issues.Add($"Release category mismatch for {descriptor.Id}. Descriptor='{descriptor.Category}' Release='{rule.Category}'.");
+                issues.Add(
+                    $"Release category mismatch for {descriptor.Id}. Descriptor='{descriptor.Category}' Release='{rule.Category}'.");
 
             if (rule.Severity != descriptor.Severity)
-                issues.Add($"Release severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Release='{rule.Severity}'.");
+                issues.Add(
+                    $"Release severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Release='{rule.Severity}'.");
 
             if (rule.TitleIsAuthoritative &&
                 !string.Equals(rule.Title, descriptor.Title, StringComparison.Ordinal))
-                issues.Add($"Release title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Release='{rule.Title}'.");
+                issues.Add(
+                    $"Release title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Release='{rule.Title}'.");
         }
 
         foreach (var ruleId in releases.AllRuleIds)
@@ -282,11 +288,19 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             return constants;
         }
 
-        private static bool IsStringType(TypeSyntax type) =>
-            type is PredefinedTypeSyntax { Keyword.ValueText: "string" } ||
-            string.Equals(type.ToString(), "string", StringComparison.Ordinal);
+        private static bool IsStringType(TypeSyntax type)
+        {
+            return type is PredefinedTypeSyntax { Keyword.ValueText: "string" } ||
+                   string.Equals(type.ToString(), "string", StringComparison.Ordinal);
+        }
 
-        private static bool IsDiagnosticDescriptorType(TypeSyntax type) => type is IdentifierNameSyntax { Identifier.ValueText: "DiagnosticDescriptor" } or QualifiedNameSyntax { Right.Identifier.ValueText: "DiagnosticDescriptor" };
+        private static bool IsDiagnosticDescriptorType(TypeSyntax type)
+        {
+            return type is IdentifierNameSyntax { Identifier.ValueText: "DiagnosticDescriptor" } or QualifiedNameSyntax
+            {
+                Right.Identifier.ValueText: "DiagnosticDescriptor"
+            };
+        }
 
         private static ArgumentListSyntax? GetArgumentList(ExpressionSyntax? expression)
         {
@@ -513,7 +527,9 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
                             issues);
                     }
                     else if (section == ReleaseSection.RemovedRules)
+                    {
                         removedRuleIds.Add(id);
+                    }
 
                     continue;
                 }
@@ -650,6 +666,9 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
     {
         private static readonly Regex RuleIdRegex = new(@"^[A-Z]+\d+$", RegexOptions.Compiled);
 
-        public static bool IsMatch(string value) => RuleIdRegex.IsMatch(value);
+        public static bool IsMatch(string value)
+        {
+            return RuleIdRegex.IsMatch(value);
+        }
     }
 }

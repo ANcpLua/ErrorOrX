@@ -54,6 +54,7 @@ return result.Match(
 ```
 
 **Why?**
+
 - Reduces runtime coupling to ErrorOr library internals
 - Generated code is more portable and self-contained
 - Simpler to understand and debug
@@ -165,9 +166,9 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 
 ## MSBuild Properties
 
-| Property                     | Default  | Purpose                                                                |
-|------------------------------|----------|------------------------------------------------------------------------|
-| `ErrorOrGenerateJsonContext` | `false`  | **Disabled by default.** See AOT JSON Context Requirements below.     |
+| Property                     | Default | Purpose                                                           |
+|------------------------------|---------|-------------------------------------------------------------------|
+| `ErrorOrGenerateJsonContext` | `false` | **Disabled by default.** See AOT JSON Context Requirements below. |
 
 ### AOT JSON Context Requirements
 
@@ -190,6 +191,7 @@ internal partial class AppJsonSerializerContext : JsonSerializerContext { }
 ```
 
 And register it:
+
 ```csharp
 builder.Services.AddErrorOrEndpoints(options => options
     .UseJsonContext<AppJsonSerializerContext>());
@@ -272,7 +274,6 @@ internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 src/
 ├── ErrorOrX/                    # Runtime library (net10.0)
-│   ├── EmptyErrors.cs
 │   ├── Error.cs
 │   ├── ErrorOr.cs
 │   ├── ErrorOr.Else.cs
@@ -342,12 +343,13 @@ src/
 
 Type manipulation helpers are especially prone to duplication. Two distinct concepts exist:
 
-| Concept | API | Location |
-|---------|-----|----------|
-| **Symbol-based** (Roslyn `ITypeSymbol`) | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `ErrorOrContext.cs` |
-| **String-based** (FQN strings) | `TypeNameHelper.UnwrapNullable(string, bool)` | `TypeNameHelper.cs` |
+| Concept                                 | API                                           | Location            |
+|-----------------------------------------|-----------------------------------------------|---------------------|
+| **Symbol-based** (Roslyn `ITypeSymbol`) | `ErrorOrContext.UnwrapNullable(ITypeSymbol)`  | `ErrorOrContext.cs` |
+| **String-based** (FQN strings)          | `TypeNameHelper.UnwrapNullable(string, bool)` | `TypeNameHelper.cs` |
 
 Before adding any type manipulation code, check `TypeNameHelper.cs` for:
+
 - `Normalize()` - removes `global::` prefixes and trailing `?`
 - `UnwrapNullable()` - unwraps `Nullable<T>` and `?` annotation
 - `StripGlobalPrefix()` - removes `global::` prefix only
@@ -357,6 +359,7 @@ Before adding any type manipulation code, check `TypeNameHelper.cs` for:
 - `GetKeywordAlias()` - maps BCL types to C# keywords
 
 Before adding route/binding helpers, check `RouteValidator.cs` for:
+
 - `BuildRouteParameterLookup()` - builds parameter dictionary by route name
 - `ExtractRouteParameters()` - parses route template
 - `ValidateConstraintTypes()` - validates constraint/type compatibility
@@ -365,29 +368,29 @@ Before adding route/binding helpers, check `RouteValidator.cs` for:
 
 ## Diagnostics
 
-| ID     | Severity | Description                                             |
-|--------|----------|---------------------------------------------------------|
-| EOE001 | Error    | Invalid return type                                     |
-| EOE002 | Error    | Handler must be static                                  |
-| EOE003 | Error    | Route parameter not bound                               |
-| EOE004 | Error    | Duplicate route                                         |
-| EOE005 | Error    | Invalid route pattern                                   |
-| EOE006 | Error    | Multiple body sources                                   |
-| EOE007 | Error    | Type not AOT-serializable (not in JsonSerializerContext)|
-| EOE009 | Warning  | Body on read-only HTTP method                           |
-| EOE010 | Warning  | [AcceptedResponse] on read-only method                  |
-| EOE011 | Error    | Invalid [FromRoute] type                                |
-| EOE012 | Error    | Invalid [FromQuery] type                                |
-| EOE013 | Error    | Invalid [AsParameters] type                             |
-| EOE014 | Error    | [AsParameters] type has no constructor                  |
-| EOE016 | Error    | Invalid [FromHeader] type                               |
-| EOE023 | Warning  | Route constraint type mismatch                          |
-| EOE025 | Error    | Ambiguous parameter binding (GET/DELETE + complex type) |
-| EOE030 | Info     | Too many result types for union                         |
-| EOE032 | Warning  | Unknown error factory                                   |
-| EOE033 | Error    | Undocumented interface call                             |
-| EOE040 | Warning  | Missing CamelCase JSON policy                           |
-| EOE041 | Error    | Missing JsonSerializerContext for AOT (no user context) |
+| ID     | Severity | Description                                              |
+|--------|----------|----------------------------------------------------------|
+| EOE001 | Error    | Invalid return type                                      |
+| EOE002 | Error    | Handler must be static                                   |
+| EOE003 | Error    | Route parameter not bound                                |
+| EOE004 | Error    | Duplicate route                                          |
+| EOE005 | Error    | Invalid route pattern                                    |
+| EOE006 | Error    | Multiple body sources                                    |
+| EOE007 | Error    | Type not AOT-serializable (not in JsonSerializerContext) |
+| EOE009 | Warning  | Body on read-only HTTP method                            |
+| EOE010 | Warning  | [AcceptedResponse] on read-only method                   |
+| EOE011 | Error    | Invalid [FromRoute] type                                 |
+| EOE012 | Error    | Invalid [FromQuery] type                                 |
+| EOE013 | Error    | Invalid [AsParameters] type                              |
+| EOE014 | Error    | [AsParameters] type has no constructor                   |
+| EOE016 | Error    | Invalid [FromHeader] type                                |
+| EOE023 | Warning  | Route constraint type mismatch                           |
+| EOE025 | Error    | Ambiguous parameter binding (GET/DELETE + complex type)  |
+| EOE030 | Info     | Too many result types for union                          |
+| EOE032 | Warning  | Unknown error factory                                    |
+| EOE033 | Error    | Undocumented interface call                              |
+| EOE040 | Warning  | Missing CamelCase JSON policy                            |
+| EOE041 | Error    | Missing JsonSerializerContext for AOT (no user context)  |
 
 ## ErrorType → HTTP (RFC 9110)
 
@@ -421,15 +424,15 @@ Consumers reference `ErrorOrX.Generators` which declares a dependency on `ErrorO
 
 ## Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| ANcpLua.Roslyn.Utilities | 1.16.0 | Roslyn incremental generator utilities |
-| ANcpLua.Roslyn.Utilities.Testing | 1.16.0 | Generator testing framework |
-| ANcpLua.Analyzers | 1.9.0 | Code quality analyzers |
-| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
-| xunit.v3 | 3.2.2 | Testing framework with MTP |
-| AwesomeAssertions | 9.3.0 | Fluent assertions |
-| Microsoft.SourceLink.GitHub | 10.0.102 | Source Link support |
+| Package                          | Version  | Purpose                                |
+|----------------------------------|----------|----------------------------------------|
+| ANcpLua.Roslyn.Utilities         | 1.16.0   | Roslyn incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | 1.16.0   | Generator testing framework            |
+| ANcpLua.Analyzers                | 1.9.0    | Code quality analyzers                 |
+| Microsoft.CodeAnalysis.CSharp    | 5.0.0    | Roslyn APIs                            |
+| xunit.v3                         | 3.2.2    | Testing framework with MTP             |
+| AwesomeAssertions                | 9.3.0    | Fluent assertions                      |
+| Microsoft.SourceLink.GitHub      | 10.0.102 | Source Link support                    |
 
 ## Maintenance Notes
 

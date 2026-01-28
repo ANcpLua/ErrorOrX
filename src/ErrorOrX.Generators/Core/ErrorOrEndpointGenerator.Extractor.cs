@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
@@ -17,7 +16,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Extracts the ErrorOr return type information from a method's return type.
     ///     Returns null SuccessTypeFqn for invalid types (anonymous, inaccessible).
     /// </summary>
-    internal static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
+    private static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
     {
         var (unwrapped, isAsync) = UnwrapAsyncType(returnType, context);
 
@@ -41,7 +40,8 @@ public sealed partial class ErrorOrEndpointGenerator
                 null, null, true, typeParam.Name);
 
         // Also check if the inner type contains type parameters (e.g., List<T>)
-        if (innerType is INamedTypeSymbol namedInner && namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol))
+        if (innerType is INamedTypeSymbol namedInner &&
+            namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol))
         {
             var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
@@ -98,11 +98,13 @@ public sealed partial class ErrorOrEndpointGenerator
         string? bestMatch = null;
 
         for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
-        {
             foreach (var member in current.GetMembers())
             {
                 // Pattern-as-spec: public readable property
-                if (member is not IPropertySymbol { DeclaredAccessibility: Accessibility.Public, GetMethod: not null } property)
+                if (member is not IPropertySymbol
+                    {
+                        DeclaredAccessibility: Accessibility.Public, GetMethod: not null
+                    } property)
                     continue;
 
                 // Exact match "Id" is preferred - return immediately
@@ -113,7 +115,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
                     bestMatch ??= property.Name;
             }
-        }
 
         return bestMatch;
     }
@@ -159,8 +160,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var constructed = named.ConstructedFrom;
 
-        if (context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT) || context.ValueTaskOfT is not null &&
-            constructed.IsEqualTo(context.ValueTaskOfT))
+        if ((context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT)) ||
+            (context.ValueTaskOfT is not null &&
+             constructed.IsEqualTo(context.ValueTaskOfT)))
             return (named.TypeArguments[0], true);
 
         return (type, false);
@@ -223,12 +225,9 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static bool HasAcceptedResponseAttribute(ISymbol method, ErrorOrContext context)
     {
-        foreach (var attr in method.GetAttributes())
-            if (context.AcceptedResponseAttribute is not null &&
-                attr.AttributeClass.IsEqualTo(context.AcceptedResponseAttribute))
-                return true;
-
-        return false;
+        return context.AcceptedResponseAttribute is { } attr
+            ? method.HasAttribute(attr)
+            : method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
     }
 
     private static SyntaxNode? GetMethodBody(ISymbol method)
@@ -742,7 +741,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Extracts API versioning configuration from the method and its containing type.
     ///     Looks for [ApiVersion], [MapToApiVersion], and [ApiVersionNeutral] attributes.
     /// </summary>
-    internal static VersioningInfo ExtractVersioningAttributes(ISymbol method, ErrorOrContext context)
+    private static VersioningInfo ExtractVersioningAttributes(ISymbol method, ErrorOrContext context)
     {
         // If Asp.Versioning is not referenced, return empty
         if (!context.HasApiVersioningSupport)
@@ -775,7 +774,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void ExtractVersioningFromSymbol(
         ISymbol symbol,
         ErrorOrContext context,
-        List<ApiVersionInfo> supportedVersions,
+        ICollection<ApiVersionInfo> supportedVersions,
         ref bool isVersionNeutral)
     {
         foreach (var attr in symbol.GetAttributes())
@@ -805,7 +804,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void ExtractMappedVersions(
         ISymbol method,
         ErrorOrContext context,
-        List<ApiVersionInfo> mappedVersions)
+        ICollection<ApiVersionInfo> mappedVersions)
     {
         foreach (var attr in method.GetAttributes())
         {
@@ -899,7 +898,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Extracts route group configuration from the containing type's [RouteGroup] attribute.
     ///     This enables eShop-style route grouping with NewVersionedApi() and MapGroup().
     /// </summary>
-    internal static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method, ErrorOrContext context)
+    private static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method, ErrorOrContext context)
     {
         // RouteGroup is only applied at class level
         if (method.ContainingType is not { } containingType)
@@ -935,17 +934,47 @@ public sealed partial class ErrorOrEndpointGenerator
                     apiName = name;
 
             // UseVersionedApi is true if we have both RouteGroup and versioning attributes
-            var hasVersioning = containingType.GetAttributes()
-                .Any(a => a.AttributeClass is { } ac &&
-                          (context.ApiVersionAttribute is not null &&
-                           ac.IsEqualTo(context.ApiVersionAttribute) ||
-                           context.ApiVersionNeutralAttribute is not null &&
-                           ac.IsEqualTo(context.ApiVersionNeutralAttribute)));
+            var hasVersioning = containingType.HasAttribute(WellKnownTypes.ApiVersionAttribute) ||
+                                containingType.HasAttribute(WellKnownTypes.ApiVersionNeutralAttribute);
 
             return new RouteGroupInfo(groupPath, apiName, hasVersioning);
         }
 
         return default;
+    }
+
+    /// <summary>
+    ///     Extracts metadata from [EndpointMetadata] attributes and [Obsolete] attribute.
+    /// </summary>
+    private static EquatableArray<MetadataEntry> ExtractMetadata(IMethodSymbol method)
+    {
+        var metadata = ImmutableArray.CreateBuilder<MetadataEntry>();
+
+        foreach (var attr in method.GetAttributes())
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            // [Obsolete] → deprecated metadata
+            if (attrClass.Name == "ObsoleteAttribute")
+            {
+                metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
+                if (attr.ConstructorArguments is [{ Value: string msg }, ..])
+                    metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
+                continue;
+            }
+
+            // [EndpointMetadata(key, value)]
+            if (attrClass.Name == "EndpointMetadataAttribute" &&
+                attr.ConstructorArguments is [{ Value: string key }, { Value: string value }])
+            {
+                metadata.Add(new MetadataEntry(key, value));
+            }
+        }
+
+        return metadata.Count > 0
+            ? new EquatableArray<MetadataEntry>(metadata.ToImmutable())
+            : default;
     }
 
     // Helper records for middleware extraction

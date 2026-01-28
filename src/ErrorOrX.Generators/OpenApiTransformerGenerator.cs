@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text;
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -34,8 +33,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     }
 
     private static IncrementalValueProvider<EquatableArray<OpenApiEndpointInfo>> CombineHttpMethodProviders(
-        IncrementalGeneratorInitializationContext context) =>
-        IncrementalProviderExtensions.CombineNine(
+        IncrementalGeneratorInitializationContext context)
+    {
+        return IncrementalProviderExtensions.CombineNine(
             CreateEndpointProvider(context, WellKnownTypes.GetAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PostAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PutAttribute),
@@ -45,6 +45,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             CreateEndpointProvider(context, WellKnownTypes.OptionsAttribute),
             CreateEndpointProvider(context, WellKnownTypes.TraceAttribute),
             CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute));
+    }
 
     private static IncrementalValuesProvider<OpenApiEndpointInfo> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
@@ -149,8 +150,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         string? description = null;
 
         // Simple XML parsing for summary and remarks
-        var summaryStart = xml.IndexOf("<summary>", StringComparison.Ordinal);
-        var summaryEnd = xml.IndexOf("</summary>", StringComparison.Ordinal);
+        var summaryStart = xml.IndexOfOrdinal("<summary>");
+        var summaryEnd = xml.IndexOfOrdinal("</summary>");
         if (summaryStart >= 0 && summaryEnd > summaryStart)
             summary = xml.Substring(summaryStart + 9, summaryEnd - summaryStart - 9)
                 .Trim()
@@ -158,8 +159,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
                 .Replace("\n", " ")
                 .Trim();
 
-        var remarksStart = xml.IndexOf("<remarks>", StringComparison.Ordinal);
-        var remarksEnd = xml.IndexOf("</remarks>", StringComparison.Ordinal);
+        var remarksStart = xml.IndexOfOrdinal("<remarks>");
+        var remarksEnd = xml.IndexOfOrdinal("</remarks>");
         if (remarksStart >= 0 && remarksEnd > remarksStart)
             description = xml.Substring(remarksStart + 9, remarksEnd - remarksStart - 9)
                 .Trim()
@@ -232,7 +233,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             return null;
 
         // Skip null symbols and compiler-generated types
-        if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol || symbol.IsImplicitlyDeclared)
+        if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol ||
+            symbol.IsImplicitlyDeclared)
             return null;
 
         // Skip types without XML docs
@@ -370,7 +372,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             code.AppendLine($"            [\"{op.OperationId}\"] = new Dictionary<string, string>");
             code.AppendLine("            {");
             foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
-                code.AppendLine($"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
+                code.AppendLine(
+                    $"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
             code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }
 
@@ -408,11 +411,13 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("        }");
         code.AppendLine();
         code.AppendLine("        // Apply parameter descriptions");
-        code.AppendLine("        if (ParameterDocs.TryGetValue(operationId, out var paramDocs) && operation.Parameters is not null)");
+        code.AppendLine(
+            "        if (ParameterDocs.TryGetValue(operationId, out var paramDocs) && operation.Parameters is not null)");
         code.AppendLine("        {");
         code.AppendLine("            foreach (var param in operation.Parameters)");
         code.AppendLine("            {");
-        code.AppendLine("                if (param.Name is not null && paramDocs.TryGetValue(param.Name, out var paramDesc))");
+        code.AppendLine(
+            "                if (param.Name is not null && paramDocs.TryGetValue(param.Name, out var paramDesc))");
         code.AppendLine("                {");
         code.AppendLine("                    param.Description ??= paramDesc;");
         code.AppendLine("                }");
@@ -441,7 +446,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("/// </summary>");
         code.AppendLine("file sealed class XmlDocSchemaTransformer : IOpenApiSchemaTransformer");
         code.AppendLine("{");
-        code.AppendLine("    // Pre-computed type descriptions from XML docs (AOT-safe: Type keys resolved at compile-time)");
+        code.AppendLine(
+            "    // Pre-computed type descriptions from XML docs (AOT-safe: Type keys resolved at compile-time)");
         code.AppendLine("    private static readonly FrozenDictionary<Type, string> TypeDescriptions =");
         code.AppendLine("        new Dictionary<Type, string>");
         code.AppendLine("        {");

@@ -148,10 +148,7 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error>
-            {
-                Error.Unexpected()
-            }));
+            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Unexpected() }));
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -168,10 +165,7 @@ public class ElseAsyncTests
         var result = await errorOrString
             .ThenAsync(Convert.ToIntAsync)
             .ThenAsync(Convert.ToStringAsync)
-            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error>
-            {
-                Error.Unexpected()
-            }));
+            .ElseAsync(static _ => Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Unexpected() }));
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -349,10 +343,7 @@ public class ElseAsyncTests
 
         // Act
         var result = await errorOrString.ElseAsync(static _ =>
-            Task.FromResult<IReadOnlyList<Error>>(new List<Error>
-            {
-                Error.Validation()
-            }));
+            Task.FromResult<IReadOnlyList<Error>>(new List<Error> { Error.Validation() }));
 
         // Assert
         result.IsError.Should().BeFalse();

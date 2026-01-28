@@ -26,6 +26,11 @@ public interface IErrorOr
     IReadOnlyList<Error>? Errors { get; }
 
     /// <summary>
+    ///     Gets the list of errors, or an empty list if no errors.
+    /// </summary>
+    IReadOnlyList<Error> ErrorsOrEmpty { get; }
+
+    /// <summary>
     ///     Gets a value indicating whether the state is error.
     /// </summary>
     bool IsError { get; }

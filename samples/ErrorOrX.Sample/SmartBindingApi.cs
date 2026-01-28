@@ -10,30 +10,42 @@ public static class SmartBindingApi
     ///     GET with route parameter - 'id' automatically bound from route.
     /// </summary>
     [Get("/api/smart/todos/{id:guid}")]
-    public static Task<ErrorOr<Todo>> GetTodo(Guid id, ITodoService svc, CancellationToken ct) =>
-        svc.GetByIdAsync(id, ct); // ✅ id → Route, svc → Service, ct → Auto-detected
+    public static Task<ErrorOr<Todo>> GetTodo(Guid id, ITodoService svc, CancellationToken ct)
+    {
+        return svc.GetByIdAsync(id, ct);
+        // ✅ id → Route, svc → Service, ct → Auto-detected
+    }
 
     /// <summary>
     ///     POST with complex type - 'request' automatically bound from body.
     /// </summary>
     [Post("/api/smart/todos")]
-    public static Task<ErrorOr<Todo>> CreateTodo(CreateTodoRequest request, ITodoService svc, CancellationToken ct) =>
-        svc.CreateAsync(request, ct); // ✅ request → Body (POST + complex type)
+    public static Task<ErrorOr<Todo>> CreateTodo(CreateTodoRequest request, ITodoService svc, CancellationToken ct)
+    {
+        return svc.CreateAsync(request, ct);
+        // ✅ request → Body (POST + complex type)
+    }
 
     /// <summary>
     ///     PUT with route parameter and body - both inferred automatically.
     /// </summary>
     [Put("/api/smart/todos/{id:guid}")]
     public static Task<ErrorOr<Updated>> UpdateTodo(Guid id, UpdateTodoRequest request, ITodoService svc,
-        CancellationToken ct) =>
-        svc.UpdateAsync(id, request, ct); // ✅ id → Route, request → Body, svc → Service
+        CancellationToken ct)
+    {
+        return svc.UpdateAsync(id, request, ct);
+        // ✅ id → Route, request → Body, svc → Service
+    }
 
     /// <summary>
     ///     DELETE with route parameter.
     /// </summary>
     [Delete("/api/smart/todos/{id:guid}")]
-    public static Task<ErrorOr<Deleted>> DeleteTodo(Guid id, ITodoService svc, CancellationToken ct) =>
-        svc.DeleteAsync(id, ct); // ✅ All parameters inferred
+    public static Task<ErrorOr<Deleted>> DeleteTodo(Guid id, ITodoService svc, CancellationToken ct)
+    {
+        return svc.DeleteAsync(id, ct);
+        // ✅ All parameters inferred
+    }
 
     /// <summary>
     ///     PATCH method - partially updates a todo.

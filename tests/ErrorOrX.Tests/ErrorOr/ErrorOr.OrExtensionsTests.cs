@@ -324,10 +324,7 @@ public class OrExtensionsTests
     public void OrNotFound_WithListFind_ShouldWorkAsExpected()
     {
         // Arrange
-        var people = new List<Person>
-        {
-            new("Alice"), new("Bob")
-        };
+        var people = new List<Person> { new("Alice"), new("Bob") };
 
         // Act
         var found = people.Find(static p => p.Name == "Alice").OrNotFound("Person not found");

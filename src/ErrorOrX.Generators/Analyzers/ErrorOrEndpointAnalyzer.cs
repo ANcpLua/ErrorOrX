@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
@@ -107,7 +106,8 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             var errorOrContext = new ErrorOrContext(context.Compilation);
 
-            var bindingFlow = RouteBindingHelper.BindRouteParameters(method, routeParamNames, errorOrContext, httpMethod);
+            var bindingFlow =
+                RouteBindingHelper.BindRouteParameters(method, routeParamNames, errorOrContext, httpMethod);
             if (bindingFlow.IsSuccess)
             {
                 var bindingAnalysis = bindingFlow.ValueOrDefault();
@@ -146,7 +146,8 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 httpMethod.ToUpperInvariant()));
 
         // EOE010: [AcceptedResponse] on read-only method
-        if (HasAcceptedResponseAttribute(method) && WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
+        if (HasAcceptedResponseAttribute(method, null) &&
+            WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
                 attributeLocation,
@@ -199,7 +200,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Checks if a constraint is format-only and doesn't constrain the CLR type.
     ///     Delegates to shared RouteValidator to avoid duplication.
     /// </summary>
-    private static bool IsFormatOnlyConstraint(string constraint) => RouteValidator.FormatOnlyConstraints.Contains(constraint);
+    private static bool IsFormatOnlyConstraint(string constraint)
+    {
+        return RouteValidator.FormatOnlyConstraints.Contains(constraint);
+    }
 
     /// <summary>
     ///     Validates that a catch-all parameter is bound to a string type.
@@ -264,7 +268,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    #region Helpers
 
     /// <summary>
     ///     Type matchers for body source detection using ANcpLua.Roslyn.Utilities.
@@ -276,22 +279,39 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static readonly TypeMatcher FormFileCollectionMatcher = SymbolMatch.Type().Named("IFormFileCollection");
     private static readonly TypeMatcher FormCollectionMatcher = SymbolMatch.Type().Named("IFormCollection");
 
-    private static bool IsErrorOr(ITypeSymbol type) =>
-        type is INamedTypeSymbol { Name: "ErrorOr", IsGenericType: true } named &&
-        named.ContainingNamespace?.ToDisplayString() is "ErrorOr" or "ErrorOr.Core.ErrorOr";
+    private static bool IsErrorOr(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol { Name: "ErrorOr", IsGenericType: true } named &&
+               named.ContainingNamespace?.ToDisplayString() is "ErrorOr" or "ErrorOr.Core.ErrorOr";
+    }
 
     /// <summary>
     ///     Type detection using fluent matchers from ANcpLua.Roslyn.Utilities.
     /// </summary>
-    private static bool IsStream(ITypeSymbol type) => StreamMatcher.Matches(type);
+    private static bool IsStream(ITypeSymbol type)
+    {
+        return StreamMatcher.Matches(type);
+    }
 
-    private static bool IsPipeReader(ITypeSymbol type) => PipeReaderMatcher.Matches(type);
+    private static bool IsPipeReader(ITypeSymbol type)
+    {
+        return PipeReaderMatcher.Matches(type);
+    }
 
-    private static bool IsFormFile(ITypeSymbol type) => FormFileMatcher.Matches(type);
+    private static bool IsFormFile(ITypeSymbol type)
+    {
+        return FormFileMatcher.Matches(type);
+    }
 
-    private static bool IsFormFileCollection(ITypeSymbol type) => FormFileCollectionMatcher.Matches(type);
+    private static bool IsFormFileCollection(ITypeSymbol type)
+    {
+        return FormFileCollectionMatcher.Matches(type);
+    }
 
-    private static bool IsFormCollection(ITypeSymbol type) => FormCollectionMatcher.Matches(type);
+    private static bool IsFormCollection(ITypeSymbol type)
+    {
+        return FormCollectionMatcher.Matches(type);
+    }
 
     private static List<(string HttpMethod, string Pattern, Location Location)> GetEndpointAttributes(
         ISymbol method)
@@ -372,7 +392,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Extracts route parameters with their constraints from a route pattern.
     ///     Delegates to RouteValidator which is the single source of truth for route parsing.
     /// </summary>
-    private static ImmutableArray<RouteParameterInfo> ExtractRouteParametersWithConstraints(string pattern) => RouteValidator.ExtractRouteParameters(pattern);
+    private static ImmutableArray<RouteParameterInfo> ExtractRouteParametersWithConstraints(string pattern)
+    {
+        return RouteValidator.ExtractRouteParameters(pattern);
+    }
 
     private static int CountBodySources(IMethodSymbol method)
     {
@@ -411,8 +434,12 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
     }
 
-    private static bool HasAcceptedResponseAttribute(ISymbol method) =>
-        method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
+    private static bool HasAcceptedResponseAttribute(ISymbol method, INamedTypeSymbol? acceptedResponseAttribute)
+    {
+        return acceptedResponseAttribute is not null
+            ? method.HasAttribute(acceptedResponseAttribute)
+            : method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
+    }
 
     private static List<string> ValidateRoutePattern(string pattern)
     {
@@ -429,7 +456,8 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
 
         // Check for empty parameter names: {}
-        if (escapedStripped.Contains("{}")) issues.Add("Route contains empty parameter '{}'. Parameter names are required");
+        if (escapedStripped.Contains("{}"))
+            issues.Add("Route contains empty parameter '{}'. Parameter names are required");
 
         // Check for unclosed braces
         var openCount = escapedStripped.Count(static c => c == '{');
@@ -445,11 +473,19 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return issues;
     }
 
-    private static bool IsStringType(string typeFqn) => typeFqn.IsStringType();
+    private static bool IsStringType(string typeFqn)
+    {
+        return typeFqn.IsStringType();
+    }
 
-    private static bool TypeNamesMatch(string actualFqn, string expected) => actualFqn.TypeNamesEqual(expected);
+    private static bool TypeNamesMatch(string actualFqn, string expected)
+    {
+        return actualFqn.TypeNamesEqual(expected);
+    }
 
-    private static string NormalizeTypeName(string typeFqn) => typeFqn.NormalizeTypeName();
+    private static string NormalizeTypeName(string typeFqn)
+    {
+        return typeFqn.NormalizeTypeName();
+    }
 
-    #endregion
 }

@@ -18,7 +18,7 @@ public static class AdvancedErrorHandlingApi
     {
         // Railway-Oriented Programming: validate → create → enrich
         return ValidateTitle(request.Title)
-            .ThenAsync(async _ => await svc.CreateAsync(request, ct))
+            .ThenAsync(_ => svc.CreateAsync(request, ct))
             .Then(static todo => EnrichTodo(todo));
     }
 
@@ -133,12 +133,14 @@ public static class AdvancedErrorHandlingApi
         ITodoService svc,
         CancellationToken ct)
     {
-        // Validate batch size
-        if (requests.Count > 10)
-            return Error.Validation("Batch.TooLarge", "Cannot create more than 10 todos at once");
-
-        if (requests.Count is 0)
-            return Error.Validation("Batch.Empty", "Must provide at least one todo");
+        switch (requests.Count)
+        {
+            // Validate batch size
+            case > 10:
+                return Error.Validation("Batch.TooLarge", "Cannot create more than 10 todos at once");
+            case 0:
+                return Error.Validation("Batch.Empty", "Must provide at least one todo");
+        }
 
         // Create all todos
         var todos = new List<Todo>();
@@ -181,13 +183,12 @@ public static class AdvancedErrorHandlingApi
         if (string.IsNullOrWhiteSpace(title))
             return Error.Validation("Todo.TitleEmpty", "Title cannot be empty");
 
-        if (title.Length < 3)
-            return Error.Validation("Todo.TitleTooShort", "Title must be at least 3 characters");
-
-        if (title.Length > 100)
-            return Error.Validation("Todo.TitleTooLong", "Title cannot exceed 100 characters");
-
-        return Result.Success;
+        return title.Length switch
+        {
+            < 3 => Error.Validation("Todo.TitleTooShort", "Title must be at least 3 characters"),
+            > 100 => Error.Validation("Todo.TitleTooLong", "Title cannot exceed 100 characters"),
+            _ => Result.Success
+        };
     }
 
     private static ErrorOr<Todo> EnrichTodo(Todo todo)

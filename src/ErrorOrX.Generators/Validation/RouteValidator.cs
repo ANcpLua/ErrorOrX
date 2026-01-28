@@ -1,7 +1,6 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
@@ -328,7 +327,7 @@ internal static class RouteValidator
             if (string.Equals(normalizedActual, expected, StringComparison.Ordinal))
                 return true;
 
-            if (normalizedActual.EndsWith("." + expected, StringComparison.Ordinal))
+            if (normalizedActual.EndsWithOrdinal("." + expected))
                 return true;
 
             var aliasedActual = normalizedActual.GetCSharpKeyword();
@@ -416,7 +415,9 @@ internal static class RouteValidator
                 result.Add(marker + constraints);
             }
             else
+            {
                 result.Add(segment.ToLowerInvariant());
+            }
         }
 
         return string.Join("/", result);

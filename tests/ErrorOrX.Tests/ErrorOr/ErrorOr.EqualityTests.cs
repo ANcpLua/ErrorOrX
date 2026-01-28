@@ -29,15 +29,7 @@ public sealed class ErrorOrEqualityTests
     public static readonly TheoryData<string> Names = ["Amichai", "feO2x"];
 
     public static readonly TheoryData<string, string> DifferentNames =
-        new()
-        {
-            {
-                "Amichai", "feO2x"
-            },
-            {
-                "Tyrion", "Cersei"
-            }
-        };
+        new() { { "Amichai", "feO2x" }, { "Tyrion", "Cersei" } };
 
     [Fact]
     public void Equals_WhenTwoInstancesHaveTheSameErrorsCollection_ShouldReturnTrue()
@@ -76,7 +68,8 @@ public sealed class ErrorOrEqualityTests
 
     [Theory]
     [MemberData(nameof(DifferentErrors))]
-    public void Equals_WhenTwoInstancesHaveDifferentErrors_ShouldReturnFalse(SerializableError[] errors1, SerializableError[] errors2)
+    public void Equals_WhenTwoInstancesHaveDifferentErrors_ShouldReturnFalse(SerializableError[] errors1,
+        SerializableError[] errors2)
     {
         ErrorOr<Person> errorOrPerson1 = errors1.Select(static e => e.Value).ToArray();
         ErrorOr<Person> errorOrPerson2 = errors2.Select(static e => e.Value).ToArray();

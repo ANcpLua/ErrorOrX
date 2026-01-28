@@ -39,13 +39,13 @@
     <Target Name="EnsureErrorOrXRuntimeFlows" BeforeTargets="ResolvePackageAssets">
         <ItemGroup>
             <!-- Get the version of ErrorOrX.Generators that was installed -->
-            <_ErrorOrXGenVersion Include="@(PackageReference->WithMetadataValue('Identity', 'ErrorOrX.Generators')->Metadata('Version'))" />
+            <_ErrorOrXGenVersion Include="@(PackageReference->WithMetadataValue('Identity', 'ErrorOrX.Generators')->Metadata('Version'))"/>
 
             <!-- Add ErrorOrX with same version if not already present with PrivateAssets=none -->
             <PackageReference Include="ErrorOrX"
                               Version="%(_ErrorOrXGenVersion.Identity)"
                               Condition="'%(_ErrorOrXGenVersion.Identity)' != '' AND '@(PackageReference->WithMetadataValue('Identity', 'ErrorOrX'))' == ''"
-                              PrivateAssets="none" />
+                              PrivateAssets="none"/>
         </ItemGroup>
     </Target>
 </Project>

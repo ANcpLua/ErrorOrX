@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text;
-using ANcpLua.Roslyn.Utilities;
 using ErrorOr.Analyzers;
 using ErrorOr.Generators.Emitters;
 using Microsoft.CodeAnalysis;
@@ -61,7 +60,8 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        /// Maps all ErrorOr endpoints to the application's routing table.");
         code.AppendLine("        /// </summary>");
         code.AppendLine("        /// <param name=\"app\">The endpoint route builder to add mappings to.</param>");
-        code.AppendLine("        /// <returns>A convention builder for applying global conventions to all endpoints.</returns>");
+        code.AppendLine(
+            "        /// <returns>A convention builder for applying global conventions to all endpoints.</returns>");
         code.AppendLine("        /// <exception cref=\"InvalidOperationException\">");
         code.AppendLine("        /// Thrown when AddErrorOrEndpoints() was not called during service registration.");
         code.AppendLine("        /// </exception>");
@@ -76,7 +76,8 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        ///    .RequireRateLimiting(\"api\");");
         code.AppendLine("        /// </code>");
         code.AppendLine("        /// </example>");
-        code.AppendLine("        public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)");
+        code.AppendLine(
+            "        public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)");
         code.AppendLine("        {");
         code.AppendLine("            // Validate that AddErrorOrEndpoints() was called");
         code.AppendLine("            var marker = app.ServiceProvider.GetService<ErrorOrEndpointsMarkerService>();");
@@ -84,11 +85,13 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            {");
         code.AppendLine("                throw new InvalidOperationException(");
         code.AppendLine("                    \"Unable to find the required services. \" +");
-        code.AppendLine("                    \"Please add all the required services by calling 'IServiceCollection.AddErrorOrEndpoints()' \" +");
+        code.AppendLine(
+            "                    \"Please add all the required services by calling 'IServiceCollection.AddErrorOrEndpoints()' \" +");
         code.AppendLine("                    \"in the application startup code.\");");
         code.AppendLine("            }");
         code.AppendLine();
-        code.AppendLine("            var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();");
+        code.AppendLine(
+            "            var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();");
         code.AppendLine();
 
         // Group endpoints by [RouteGroup] attribute
@@ -133,7 +136,8 @@ public sealed partial class ErrorOrEndpointGenerator
         spc.AddSource("ErrorOrEndpointMappings.cs", SourceText.From(code.ToString(), Encoding.UTF8));
     }
 
-    private static void EmitMapCall(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity, bool hasGlobalVersionSet = false)
+    private static void EmitMapCall(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity,
+        bool hasGlobalVersionSet = false)
     {
         code.AppendLine(
             $"            // {ep.HttpMethod} {ep.Pattern} -> {ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}");
@@ -297,17 +301,21 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (ep.IsSse)
         {
-            bodyCode.AppendLine($"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
+            bodyCode.AppendLine(
+                $"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
             bodyCode.AppendLine(
                 $"            return {ctx.WrapReturn($"{WellKnownTypes.Fqn.TypedResults.ServerSentEvents}(result.Value)")};");
         }
         else if (ctx.UnionResult.CanUseUnion)
+        {
             EmitUnionTypeErrorHandling(bodyCode, ep, ctx.UnionResult.ReturnTypeFqn, ctx.SuccessInfo, ctx.NeedsAwait);
+        }
         else
         {
             // Use minimal interface (IsError/Errors/Value) instead of convenience Match API
             var successFactory = GetSuccessFactoryWithLocation(ep, ctx.SuccessInfo);
-            bodyCode.AppendLine($"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
+            bodyCode.AppendLine(
+                $"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
             bodyCode.AppendLine($"            return {ctx.WrapReturn(successFactory)};");
         }
     }
@@ -429,7 +437,10 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         code.AppendLine("            if (result.IsError)");
         code.AppendLine("            {");
-        code.AppendLine("                var first = result.FirstError;");
+        // Guard against empty errors list (defensive - shouldn't happen but prevents IndexOutOfRange)
+        code.AppendLine(
+            $"                if (result.Errors.Count is 0) return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.Problem}(\"An error occurred but no details were provided.\")")};");
+        code.AppendLine("                var first = result.Errors[0];");
 
         EmitValidationHandling(code, ep, WrapReturn);
         EmitProblemDetailsBuilding(code);
@@ -443,7 +454,10 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine($"            return {WrapReturn(successFactory)};");
         return;
 
-        string WrapReturn(string expr) => needsAwait ? expr : $"Task.FromResult<{returnType}>({expr})";
+        string WrapReturn(string expr)
+        {
+            return needsAwait ? expr : $"Task.FromResult<{returnType}>({expr})";
+        }
     }
 
     /// <summary>
@@ -533,21 +547,22 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         return param.Source switch
         {
-            EndpointParameterSource.Route => EmitRouteBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Query => EmitQueryBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Header => EmitHeaderBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Body => EmitBodyBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Service => EmitServiceBinding(code, in param, paramName),
-            EndpointParameterSource.KeyedService => EmitKeyedServiceBinding(code, in param, paramName),
-            EndpointParameterSource.HttpContext => EmitHttpContextBinding(code, paramName),
-            EndpointParameterSource.CancellationToken => EmitCancellationTokenBinding(code, paramName),
-            EndpointParameterSource.Stream => EmitStreamBinding(code, paramName),
-            EndpointParameterSource.PipeReader => EmitPipeReaderBinding(code, paramName),
-            EndpointParameterSource.FormFile => EmitFormFileBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.FormFiles => EmitFormFilesBinding(code, paramName),
-            EndpointParameterSource.FormCollection => EmitFormCollectionBinding(code, paramName),
-            EndpointParameterSource.Form => EmitFormBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.AsParameters => EmitAsParametersBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Route => EmitRouteBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Query => EmitQueryBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Header => EmitHeaderBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Body => EmitBodyBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Service => EmitServiceBinding(code, in param, paramName),
+            var s when s == ParameterSource.KeyedService => EmitKeyedServiceBinding(code, in param, paramName),
+            var s when s == ParameterSource.HttpContext => EmitHttpContextBinding(code, paramName),
+            var s when s == ParameterSource.CancellationToken => EmitCancellationTokenBinding(code, paramName),
+            var s when s == ParameterSource.Stream => EmitStreamBinding(code, paramName),
+            var s when s == ParameterSource.PipeReader => EmitPipeReaderBinding(code, paramName),
+            var s when s == ParameterSource.FormFile => EmitFormFileBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.FormFiles => EmitFormFilesBinding(code, paramName),
+            var s when s == ParameterSource.FormCollection => EmitFormCollectionBinding(code, paramName),
+            var s when s == ParameterSource.Form => EmitFormBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.AsParameters => EmitAsParametersBinding(code, in param, paramName,
+                bindFailFn),
             _ => false
         };
     }
@@ -657,8 +672,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var usesBindFail = false;
         if (itemType.IsStringType())
+        {
             code.AppendLine(
                 $"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+        }
         else
         {
             usesBindFail = true;
@@ -669,7 +686,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         code.AppendLine("            }");
-        var isArray = param.TypeFqn.EndsWith("[]");
+        var isArray = param.TypeFqn.EndsWithOrdinal("[]");
         var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
         code.AppendLine($"            var {paramName} = {assignment};");
         return usesBindFail;
@@ -679,12 +696,14 @@ public sealed partial class ErrorOrEndpointGenerator
         string queryKey, string bindFailFn)
     {
         var usesBindFail = false;
-        var declType = param.TypeFqn.EndsWith("?") ? param.TypeFqn : param.TypeFqn + "?";
+        var declType = param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn : param.TypeFqn + "?";
         code.AppendLine($"            {declType} {paramName};");
         code.AppendLine($"            if (!TryGetQueryValue(ctx, \"{queryKey}\", out var {paramName}Raw))");
         code.AppendLine("            {");
         if (param.IsNullable)
+        {
             code.AppendLine($"                {paramName} = default;");
+        }
         else
         {
             usesBindFail = true;
@@ -695,7 +714,9 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (param.TypeFqn.IsStringType())
+        {
             code.AppendLine($"                {paramName} = {paramName}Raw;");
+        }
         else
         {
             usesBindFail = true;
@@ -721,7 +742,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
+            {
                 code.AppendLine($"                {paramName} = default!;");
+            }
             else
             {
                 usesBindFail = true;
@@ -739,19 +762,21 @@ public sealed partial class ErrorOrEndpointGenerator
                     ? $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);"
                     : $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
             code.AppendLine("                }");
-            var isArray = param.TypeFqn.EndsWith("[]");
+            var isArray = param.TypeFqn.EndsWithOrdinal("[]");
             var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
             code.AppendLine($"                {paramName} = {assignment};");
         }
         else
         {
-            var declType = param.TypeFqn.EndsWith("?") ? param.TypeFqn : param.TypeFqn + "?";
+            var declType = param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn : param.TypeFqn + "?";
             code.AppendLine($"            {declType} {paramName};");
             code.AppendLine(
                 $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
+            {
                 code.AppendLine($"                {paramName} = default;");
+            }
             else
             {
                 usesBindFail = true;
@@ -762,7 +787,9 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("            else");
             code.AppendLine("            {");
             if (param.TypeFqn.IsStringType())
+            {
                 code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
+            }
             else
             {
                 usesBindFail = true;
@@ -779,6 +806,49 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
+        // Determine effective behavior: explicit > nullability-based default
+        var effectiveBehavior = param.EmptyBodyBehavior;
+        if (effectiveBehavior == EmptyBodyBehavior.Default)
+            effectiveBehavior = param.IsNullable ? EmptyBodyBehavior.Allow : EmptyBodyBehavior.Disallow;
+
+        return effectiveBehavior switch
+        {
+            EmptyBodyBehavior.Allow => EmitBodyBindingAllow(code, in param, paramName, bindFailFn),
+            _ => EmitBodyBindingDisallow(code, in param, paramName, bindFailFn)
+        };
+    }
+
+    private static bool EmitBodyBindingAllow(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
+    {
+        // Allow empty bodies - check ContentLength before reading
+        code.AppendLine($"            {param.TypeFqn}? {paramName};");
+        code.AppendLine("            if (ctx.Request.ContentLength is null or 0)");
+        code.AppendLine("            {");
+        code.AppendLine($"                {paramName} = default;");
+        code.AppendLine("            }");
+        code.AppendLine("            else");
+        code.AppendLine("            {");
+        code.AppendLine("                if (!ctx.Request.HasJsonContentType()) return BindFail415();");
+        code.AppendLine("                try");
+        code.AppendLine("                {");
+        code.AppendLine(
+            $"                    {paramName} = await ctx.Request.ReadFromJsonAsync<{param.TypeFqn}>(cancellationToken: ctx.RequestAborted);");
+        code.AppendLine("                }");
+        code.AppendLine($"                catch ({WellKnownTypes.Fqn.JsonException})");
+        code.AppendLine("                {");
+        code.AppendLine($"                    return {bindFailFn}(\"{param.Name}\", \"has invalid JSON format\");");
+        code.AppendLine("                }");
+        code.AppendLine("            }");
+        return true;
+    }
+
+    private static bool EmitBodyBindingDisallow(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
+    {
+        // Disallow empty bodies - reject with 400 if empty
+        code.AppendLine("            if (ctx.Request.ContentLength is null or 0)");
+        code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
         code.AppendLine("            if (!ctx.Request.HasJsonContentType()) return BindFail415();");
         code.AppendLine($"            {param.TypeFqn}? {paramName};");
         code.AppendLine("            try");
@@ -814,13 +884,15 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var usesBindFailScalar = false;
         var fieldName = param.KeyName ?? param.Name;
-        var declType = param.IsNullable && !param.TypeFqn.EndsWith("?") ? param.TypeFqn + "?" : param.TypeFqn;
+        var declType = param.IsNullable && !param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn + "?" : param.TypeFqn;
         code.AppendLine($"            {declType} {paramName};");
         code.AppendLine(
             $"            if (!form.TryGetValue(\"{fieldName}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
         code.AppendLine("            {");
         if (param.IsNullable)
+        {
             code.AppendLine($"                {paramName} = default;");
+        }
         else
         {
             usesBindFailScalar = true;
@@ -831,7 +903,9 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (param.TypeFqn.IsStringType())
+        {
             code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
+        }
         else
         {
             usesBindFailScalar = true;
@@ -1130,7 +1204,9 @@ public sealed partial class ErrorOrEndpointGenerator
             sb.AppendLine("//");
         }
         else
+        {
             sb.AppendLine("// All required types are registered in your JsonSerializerContext.");
+        }
 
         if (!userContext.HasCamelCasePolicy)
         {
@@ -1204,53 +1280,28 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         return param.Source switch
         {
-            EndpointParameterSource.Body when !param.IsNullable => paramName + "!",
-            EndpointParameterSource.Route when param is { IsNullable: false, IsNonNullableValueType: false } =>
+            var s when s == ParameterSource.Body && !param.IsNullable => paramName + "!",
+            var s when s == ParameterSource.Route && param is { IsNullable: false, IsNonNullableValueType: false } =>
                 paramName + "!",
-            EndpointParameterSource.Query when param is { IsNullable: false, IsNonNullableValueType: true } =>
+            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: true } =>
                 paramName + ".Value",
-            EndpointParameterSource.Header when param is { IsNullable: false, IsNonNullableValueType: true } =>
+            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: true } =>
                 paramName + ".Value",
-            EndpointParameterSource.Query when param is { IsNullable: false, IsNonNullableValueType: false } =>
+            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: false } =>
                 paramName + "!",
-            EndpointParameterSource.Header when param is { IsNullable: false, IsNonNullableValueType: false } =>
+            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: false } =>
                 paramName + "!",
             _ => paramName
         };
     }
 
+    /// <summary>
+    ///     Delegates to <see cref="BindingCodeEmitter.GetTryParseExpression" /> for culture-invariant parsing.
+    /// </summary>
     private static string GetTryParseExpression(string typeFqn, string rawName, string outputName,
         CustomBindingMethod customBinding = CustomBindingMethod.None)
     {
-        if (customBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
-        {
-            var baseType = typeFqn.TrimEnd('?');
-            return $"{baseType}.TryParse({rawName}, out var {outputName})";
-        }
-
-        var normalized = typeFqn.Replace("global::", "").TrimEnd('?');
-        return normalized switch
-        {
-            "System.Int32" or "int" => $"int.TryParse({rawName}, out var {outputName})",
-            "System.Int64" or "long" => $"long.TryParse({rawName}, out var {outputName})",
-            "System.Int16" or "short" => $"short.TryParse({rawName}, out var {outputName})",
-            "System.Byte" or "byte" => $"byte.TryParse({rawName}, out var {outputName})",
-            "System.SByte" or "sbyte" => $"sbyte.TryParse({rawName}, out var {outputName})",
-            "System.UInt16" or "ushort" => $"ushort.TryParse({rawName}, out var {outputName})",
-            "System.UInt32" or "uint" => $"uint.TryParse({rawName}, out var {outputName})",
-            "System.UInt64" or "ulong" => $"ulong.TryParse({rawName}, out var {outputName})",
-            "System.Boolean" or "bool" => $"bool.TryParse({rawName}, out var {outputName})",
-            "System.Guid" => $"global::System.Guid.TryParse({rawName}, out var {outputName})",
-            "System.DateTime" => $"global::System.DateTime.TryParse({rawName}, out var {outputName})",
-            "System.DateTimeOffset" => $"global::System.DateTimeOffset.TryParse({rawName}, out var {outputName})",
-            "System.TimeSpan" => $"global::System.TimeSpan.TryParse({rawName}, out var {outputName})",
-            "System.DateOnly" => $"global::System.DateOnly.TryParse({rawName}, out var {outputName})",
-            "System.TimeOnly" => $"global::System.TimeOnly.TryParse({rawName}, out var {outputName})",
-            "System.Double" or "double" => $"double.TryParse({rawName}, out var {outputName})",
-            "System.Single" or "float" => $"float.TryParse({rawName}, out var {outputName})",
-            "System.Decimal" or "decimal" => $"decimal.TryParse({rawName}, out var {outputName})",
-            _ => "false"
-        };
+        return BindingCodeEmitter.GetTryParseExpression(typeFqn, rawName, outputName, customBinding);
     }
 
     private static ImmutableArray<EndpointDescriptor> SortEndpoints(ImmutableArray<EndpointDescriptor> endpoints)
@@ -1273,11 +1324,13 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var p in ep.HandlerParameters)
-                if (p.Source == EndpointParameterSource.Body)
+                if (p.Source == ParameterSource.Body)
                     types.Add(p.TypeFqn);
 
             if (ep is { IsSse: true, SseItemTypeFqn: not null })
+            {
                 types.Add(ep.SseItemTypeFqn);
+            }
             else
             {
                 var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
@@ -1302,15 +1355,18 @@ public sealed partial class ErrorOrEndpointGenerator
         /// <summary>
         ///     Maps HTTP verb to ASP.NET Core's Map* method name.
         /// </summary>
-        public static string MapMethod(string httpMethod) => httpMethod switch
+        public static string MapMethod(string httpMethod)
         {
-            "GET" => "MapGet",
-            "POST" => "MapPost",
-            "PUT" => "MapPut",
-            "DELETE" => "MapDelete",
-            "PATCH" => "MapPatch",
-            _ => "MapMethods"
-        };
+            return httpMethod switch
+            {
+                "GET" => "MapGet",
+                "POST" => "MapPost",
+                "PUT" => "MapPut",
+                "DELETE" => "MapDelete",
+                "PATCH" => "MapPatch",
+                _ => "MapMethods"
+            };
+        }
     }
 
     /// <summary>
@@ -1337,7 +1393,9 @@ public sealed partial class ErrorOrEndpointGenerator
         public string WrapperName => $"Invoke_Ep{Index}";
         public string CoreName => $"Invoke_Ep{Index}_Core";
 
-        public string WrapReturn(string expr) =>
-            NeedsAwait ? expr : $"Task.FromResult<{UnionResult.ReturnTypeFqn}>({expr})";
+        public string WrapReturn(string expr)
+        {
+            return NeedsAwait ? expr : $"Task.FromResult<{UnionResult.ReturnTypeFqn}>({expr})";
+        }
     }
 }

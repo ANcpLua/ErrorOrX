@@ -28,13 +28,16 @@ internal static class EndpointMetadataEmitter
         // 1. Tags for OpenAPI grouping
         code.AppendLine($"{indent}.WithTags(\"{tagName}\")");
 
-        // 2. Accepts metadata (Content-Type for request body)
+        // 2. Deprecation metadata from [Obsolete] attribute
+        EmitDeprecationMetadata(code, in ep, indent);
+
+        // 3. Accepts metadata (Content-Type for request body)
         EmitAcceptsMetadata(code, in ep, indent);
 
-        // 3. Produces metadata (OpenAPI response types)
+        // 4. Produces metadata (OpenAPI response types)
         EmitProducesMetadata(code, in ep, indent, maxArity);
 
-        // 4. Middleware fluent calls
+        // 5. Middleware fluent calls
         var middleware = ep.Middleware;
         EmitMiddlewareCalls(code, in middleware, indent);
     }
@@ -46,18 +49,14 @@ internal static class EndpointMetadataEmitter
     private static void EmitAcceptsMetadata(StringBuilder code, in EndpointDescriptor ep, string indent)
     {
         var bodyParam = ep.HandlerParameters.AsImmutableArray()
-            .FirstOrDefault(static p => p.Source == EndpointParameterSource.Body);
+            .FirstOrDefault(static p => p.Source == ParameterSource.Body);
 
         if (bodyParam.Name is not null)
-        {
             code.AppendLine(
                 $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
-        }
         else if (ep.HasFormParams)
-        {
             code.AppendLine(
                 $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
-        }
     }
 
     /// <summary>
@@ -104,18 +103,19 @@ internal static class EndpointMetadataEmitter
             // Error responses
             foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                          .OrderBy(static x => x))
-            {
                 EmitProducesMetadataLine(code, indent, statusCode,
-                    statusCode == 400 ? WellKnownTypes.Fqn.HttpValidationProblemDetails : WellKnownTypes.Fqn.ProblemDetails,
+                    statusCode == 400
+                        ? WellKnownTypes.Fqn.HttpValidationProblemDetails
+                        : WellKnownTypes.Fqn.ProblemDetails,
                     WellKnownTypes.Constants.ContentTypeProblemJson);
-            }
         }
     }
 
     /// <summary>
     ///     Emits a single ProducesResponseTypeMetadata line.
     /// </summary>
-    private static void EmitProducesMetadataLine(StringBuilder code, string indent, int statusCode, string? typeFqn, string contentType)
+    private static void EmitProducesMetadataLine(StringBuilder code, string indent, int statusCode, string? typeFqn,
+        string contentType)
     {
         code.AppendLine(typeFqn is not null
             ? $"{indent}.WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}({statusCode}, typeof({typeFqn}), new[] {{ \"{contentType}\" }}))"
@@ -138,11 +138,13 @@ internal static class EndpointMetadataEmitter
                 ? $"{indent}.RequireAuthorization(\"{middleware.AuthorizationPolicy}\")"
                 : $"{indent}.RequireAuthorization()");
 
-        // Rate Limiting: [EnableRateLimiting("policy")] / [DisableRateLimiting]
+        // Rate Limiting: [EnableRateLimiting("policy")] / [EnableRateLimiting] / [DisableRateLimiting]
         if (middleware.DisableRateLimiting)
             code.AppendLine($"{indent}.DisableRateLimiting()");
-        else if (middleware is { EnableRateLimiting: true, RateLimitingPolicy: not null })
-            code.AppendLine($"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")");
+        else if (middleware.EnableRateLimiting)
+            code.AppendLine(middleware.RateLimitingPolicy is not null
+                ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
+                : $"{indent}.RequireRateLimiting()");
 
         // Output Caching: [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")]
         if (middleware.EnableOutputCache)
@@ -150,15 +152,40 @@ internal static class EndpointMetadataEmitter
             if (middleware.OutputCachePolicy is not null)
                 code.AppendLine($"{indent}.CacheOutput(\"{middleware.OutputCachePolicy}\")");
             else if (middleware.OutputCacheDuration is { } duration)
-                code.AppendLine($"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
+                code.AppendLine(
+                    $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
             else
                 code.AppendLine($"{indent}.CacheOutput()");
         }
 
-        // CORS: [EnableCors("policy")] / [DisableCors]
+        // CORS: [EnableCors("policy")] / [EnableCors] / [DisableCors]
         if (middleware.DisableCors)
             code.AppendLine($"{indent}.DisableCors()");
-        else if (middleware is { EnableCors: true, CorsPolicy: not null })
-            code.AppendLine($"{indent}.RequireCors(\"{middleware.CorsPolicy}\")");
+        else if (middleware.EnableCors)
+            code.AppendLine(middleware.CorsPolicy is not null
+                ? $"{indent}.RequireCors(\"{middleware.CorsPolicy}\")"
+                : $"{indent}.RequireCors()");
+    }
+
+    /// <summary>
+    ///     Emits deprecation metadata from [Obsolete] attribute.
+    ///     Adds ObsoleteAttribute metadata to the endpoint for OpenAPI documentation.
+    /// </summary>
+    private static void EmitDeprecationMetadata(StringBuilder code, in EndpointDescriptor ep, string indent)
+    {
+        if (!ep.HasMetadata(MetadataKeys.Deprecated))
+            return;
+
+        var message = ep.GetMetadata(MetadataKeys.DeprecatedMessage);
+        if (message is not null)
+        {
+            // Escape any quotes in the message
+            var escapedMessage = message.Replace("\"", "\\\"");
+            code.AppendLine($"{indent}.WithMetadata(new global::System.ObsoleteAttribute(\"{escapedMessage}\"))");
+        }
+        else
+        {
+            code.AppendLine($"{indent}.WithMetadata(new global::System.ObsoleteAttribute())");
+        }
     }
 }

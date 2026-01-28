@@ -216,12 +216,13 @@ namespace ErrorOr.Generated
             var result = global::MyNamespace.Endpoints1.Get1();
             if (result.IsError)
             {
-                var first = result.FirstError;
+                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Problem("An error occurred but no details were provided."));
+                var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {
                     Title = first.Code,
                     Detail = first.Description,
-                    Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => first.NumericType is >= 100 and <= 599 ? first.NumericType : 500 }
+                    Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => (int)first.Type is >= 100 and <= 599 ? (int)first.Type : 500 }
                 };
                 problem.Type = $"https://httpstatuses.io/{problem.Status}";
 
@@ -246,12 +247,13 @@ namespace ErrorOr.Generated
             var result = global::MyNamespace.Endpoints2.Get2();
             if (result.IsError)
             {
-                var first = result.FirstError;
+                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Problem("An error occurred but no details were provided."));
+                var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {
                     Title = first.Code,
                     Detail = first.Description,
-                    Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => first.NumericType is >= 100 and <= 599 ? first.NumericType : 500 }
+                    Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => (int)first.Type is >= 100 and <= 599 ? (int)first.Type : 500 }
                 };
                 problem.Type = $"https://httpstatuses.io/{problem.Status}";
 
@@ -305,7 +307,7 @@ namespace ErrorOr.Generated
             {
                 Title = first.Code,
                 Detail = first.Description,
-                Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => first.NumericType is >= 100 and <= 599 ? first.NumericType : 500 }
+                Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => (int)first.Type is >= 100 and <= 599 ? (int)first.Type : 500 }
             };
             problem.Type = $"https://httpstatuses.io/{problem.Status}";
             return problem.Status switch

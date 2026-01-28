@@ -5,7 +5,7 @@ namespace ErrorOrX.Generators.Tests;
 /// <summary>
 ///     Configures Verify serialization settings for source generator tests.
 /// </summary>
-public static class ModuleInitializer
+file static class ModuleInitializer
 {
     [ModuleInitializer]
     public static void Initialize()
@@ -28,12 +28,10 @@ public static class ModuleInitializer
 /// </summary>
 file sealed class EquatableArrayJsonConverter : WriteOnlyJsonConverter
 {
-    public override void Write(VerifyJsonWriter writer, object value)
-    {
+    public override void Write(VerifyJsonWriter writer, object value) =>
         // EquatableArray<T> implements IEnumerable<T>, so we can serialize it directly
         // Verify will handle the enumeration without needing reflection
         writer.Serialize(value);
-    }
 
     public override bool CanConvert(Type type) =>
         type.IsGenericType &&

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
@@ -130,9 +129,13 @@ internal static class ResultsUnionTypeBuilder
         var unionEntries = new List<(int Status, string TypeFqn)>(8);
         var includedStatuses = new HashSet<int>();
 
+        // Pre-detect if Validation errors are present (affects 400 response type choice)
+        var hasValidationError = !inferredErrorTypeNames.IsDefaultOrEmpty &&
+                                 inferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
+
         // 1 & 2. Success and Binding outcomes (always present)
         AddSuccessAndBindingOutcomes(successTypeFqn, successKind, isAcceptedResponse, hasBodyBinding,
-            unionEntries, includedStatuses);
+            hasValidationError, unionEntries, includedStatuses);
 
         // 3. Built-in ErrorTypes (mapped to static BCL types)
         var hasCustom = AddInferredErrorOutcomes(inferredErrorTypeNames, unionEntries, includedStatuses) ||
@@ -199,6 +202,7 @@ internal static class ResultsUnionTypeBuilder
         SuccessKind successKind,
         bool isAcceptedResponse,
         bool hasBodyBinding,
+        bool hasValidationError,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
@@ -206,8 +210,12 @@ internal static class ResultsUnionTypeBuilder
         unionEntries.Add((successInfo.StatusCode, successInfo.ResultTypeFqn));
         includedStatuses.Add(successInfo.StatusCode);
 
-        // BadRequest<ProblemDetails> for binding failures (always present)
-        unionEntries.Add((400, $"{WellKnownTypes.Fqn.HttpResults.BadRequest}<{WellKnownTypes.Fqn.ProblemDetails}>"));
+        // 400 response: use ValidationProblem if validation errors are possible, otherwise BadRequest<ProblemDetails>
+        // ValidationProblem is preferred when validation errors exist because it provides field-level error details
+        var badRequestType = hasValidationError
+            ? WellKnownTypes.Fqn.HttpResults.ValidationProblem
+            : $"{WellKnownTypes.Fqn.HttpResults.BadRequest}<{WellKnownTypes.Fqn.ProblemDetails}>";
+        unionEntries.Add((400, badRequestType));
         includedStatuses.Add(400);
 
         // UnsupportedMediaType for body binding failures (415) - parity with Minimal APIs
@@ -254,7 +262,9 @@ internal static class ResultsUnionTypeBuilder
                 return false;
         }
         else
+        {
             return false;
+        }
 
         var name = reader.GetString(typeDef.Name);
         return string.Equals(name, "Results", StringComparison.Ordinal);
@@ -268,12 +278,17 @@ internal static class ResultsUnionTypeBuilder
         if (inferredErrorTypeNames.IsDefaultOrEmpty)
             return false;
 
+        var hasUnknown = false;
         foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray()
                      .Distinct()
                      .OrderBy(static x => x, StringComparer.Ordinal))
+        {
+            if (!ErrorMapping.IsKnownErrorType(errorTypeName))
+                hasUnknown = true;
             AddInferredError(errorTypeName, unionEntries, includedStatuses);
+        }
 
-        return false;
+        return hasUnknown;
     }
 
     private static void AddInferredError(
@@ -283,14 +298,10 @@ internal static class ResultsUnionTypeBuilder
     {
         var entry = ErrorMapping.Get(errorTypeName);
 
-        if (errorTypeName ==
-            ErrorMapping.Validation) // Validation: uses ValidationProblem (also 400, but different type)
-        {
-            // ValidationProblem is a special case - it's 400 but different type than BadRequest
-            // Use status 400 for sorting but keep as separate entry
-            unionEntries.Add((400, entry.TypeFqn));
+        // Validation is now handled in AddSuccessAndBindingOutcomes (uses ValidationProblem for 400)
+        // Skip adding here to avoid duplicate 400 entries
+        if (errorTypeName == ErrorMapping.Validation)
             return;
-        }
 
         if (!includedStatuses.Contains(entry.StatusCode))
         {

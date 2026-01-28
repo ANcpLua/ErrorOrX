@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using Microsoft.CodeAnalysis;
 
@@ -53,7 +52,7 @@ internal static class RouteBindingHelper
         in EndpointParameter parameter,
         ImmutableArray<RouteMethodParameterInfo>.Builder builder)
     {
-        if (parameter.Source == EndpointParameterSource.Route)
+        if (parameter.Source == ParameterSource.Route)
             builder.Add(new RouteMethodParameterInfo(
                 parameter.Name,
                 parameter.KeyName ?? parameter.Name,

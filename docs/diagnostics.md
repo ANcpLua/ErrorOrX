@@ -101,7 +101,8 @@ public static ErrorOr<Result> Upload([FromForm] IFormFile file) => ...
 
 **Severity:** Error
 
-Type used in endpoint is not registered in any `JsonSerializerContext`. This is an **error** because Native AOT compilation will fail at runtime with cryptic errors.
+Type used in endpoint is not registered in any `JsonSerializerContext`. This is an **error** because Native AOT
+compilation will fail at runtime with cryptic errors.
 
 ```csharp
 // Error: CustomType not in context
@@ -300,7 +301,8 @@ public static ErrorOr<User> Get(int id)
 
 **Severity:** Error
 
-Complex type parameter on a bodyless/custom method requires explicit binding. This is an error because ambiguous binding can lead to runtime failures.
+Complex type parameter on a bodyless/custom method requires explicit binding. This is an error because ambiguous binding
+can lead to runtime failures.
 
 ```csharp
 // Warning: SearchFilter is complex type on GET
@@ -391,9 +393,12 @@ internal partial class AppJsonContext : JsonSerializerContext { }
 
 **Severity:** Error
 
-**This is a critical AOT safety error.** Endpoint uses a request body parameter but no `JsonSerializerContext` was found in the project.
+**This is a critical AOT safety error.** Endpoint uses a request body parameter but no `JsonSerializerContext` was found
+in the project.
 
-**Why this is an error:** Roslyn source generators cannot see output from other generators. If ErrorOrX generates a `JsonSerializerContext`, the System.Text.Json source generator will **not** process it, and Native AOT serialization will fail at runtime with cryptic errors like "JsonTypeInfo metadata not found".
+**Why this is an error:** Roslyn source generators cannot see output from other generators. If ErrorOrX generates a
+`JsonSerializerContext`, the System.Text.Json source generator will **not** process it, and Native AOT serialization
+will fail at runtime with cryptic errors like "JsonTypeInfo metadata not found".
 
 ```csharp
 // Error: no JsonSerializerContext exists
@@ -415,7 +420,8 @@ builder.Services.AddErrorOrEndpoints(options => options
     .UseJsonContext<AppJsonSerializerContext>());
 ```
 
-**See also:** [ASP.NET Core Request Delegate Generator](https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg)
+**See also:
+** [ASP.NET Core Request Delegate Generator](https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg)
 
 ---
 

@@ -1,30 +1,12 @@
 using System.Collections.Immutable;
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
 
 /// <summary>
-///     Specifies where an endpoint parameter value is bound from.
+///     Represents a metadata entry for an endpoint.
 /// </summary>
-internal enum EndpointParameterSource
-{
-    Route,
-    Body,
-    Query,
-    Header,
-    Service,
-    KeyedService,
-    AsParameters,
-    HttpContext,
-    CancellationToken,
-    Form,
-    FormFile,
-    FormFiles,
-    FormCollection,
-    Stream,
-    PipeReader
-}
+internal readonly record struct MetadataEntry(string Key, string Value) : IEquatable<MetadataEntry>;
 
 /// <summary>
 ///     Represents the custom binding method detected on a parameter type.
@@ -78,12 +60,61 @@ internal enum SuccessKind
 }
 
 /// <summary>
+///     Flags for parameter binding characteristics.
+/// </summary>
+[Flags]
+internal enum ParameterFlags
+{
+    None = 0,
+    FromServices = 1 << 0,
+    FromKeyedServices = 1 << 1,
+    FromBody = 1 << 2,
+    FromRoute = 1 << 3,
+    FromQuery = 1 << 4,
+    FromHeader = 1 << 5,
+    FromForm = 1 << 6,
+    AsParameters = 1 << 7,
+    Nullable = 1 << 8,
+    NonNullableValueType = 1 << 9,
+    Collection = 1 << 10,
+    RequiresValidation = 1 << 11,
+}
+
+/// <summary>
+///     Special parameter kinds that have dedicated binding.
+/// </summary>
+internal enum SpecialParameterKind
+{
+    None,
+    HttpContext,
+    CancellationToken,
+    FormFile,
+    FormFileCollection,
+    FormCollection,
+    Stream,
+    PipeReader
+}
+
+/// <summary>
+///     Specifies how empty request bodies should be handled.
+/// </summary>
+internal enum EmptyBodyBehavior
+{
+    /// <summary>Framework default: Nullable allows empty, non-nullable rejects.</summary>
+    Default,
+    /// <summary>Empty bodies are valid (null/default assigned).</summary>
+    Allow,
+    /// <summary>Empty bodies are invalid (400 Bad Request).</summary>
+    Disallow
+}
+
+/// <summary>
 ///     Represents a bound endpoint parameter with its source and type information.
 /// </summary>
 internal readonly record struct EndpointParameter(
     string Name,
     string TypeFqn,
-    EndpointParameterSource Source,
+    ParameterSource Source,
     string? KeyName,
     bool IsNullable,
     bool IsNonNullableValueType,
@@ -91,7 +122,8 @@ internal readonly record struct EndpointParameter(
     string? CollectionItemTypeFqn,
     EquatableArray<EndpointParameter> Children,
     CustomBindingMethod CustomBinding = CustomBindingMethod.None,
-    bool RequiresValidation = false);
+    bool RequiresValidation = false,
+    EmptyBodyBehavior EmptyBodyBehavior = EmptyBodyBehavior.Default);
 
 /// <summary>
 ///     Raw metadata extracted from a method parameter for binding classification.
@@ -101,33 +133,52 @@ internal readonly record struct ParameterMeta(
     string Name,
     string TypeFqn,
     RoutePrimitiveKind? RouteKind,
-    bool HasFromServices,
-    bool HasFromKeyedServices,
-    string? KeyedServiceKey,
-    bool HasFromBody,
-    bool HasFromRoute,
-    bool HasFromQuery,
-    bool HasFromHeader,
-    bool HasAsParameters,
-    string RouteName,
-    string QueryName,
-    string HeaderName,
-    bool IsCancellationToken,
-    bool IsHttpContext,
-    bool IsNullable,
-    bool IsNonNullableValueType,
-    bool IsCollection,
+    ParameterFlags Flags,
+    SpecialParameterKind SpecialKind,
+    string? ServiceKey,
+    string BoundName,
     string? CollectionItemTypeFqn,
     RoutePrimitiveKind? CollectionItemPrimitiveKind,
-    bool HasFromForm,
-    string FormName,
-    bool IsFormFile,
-    bool IsFormFileCollection,
-    bool IsFormCollection,
-    bool IsStream,
-    bool IsPipeReader,
-    CustomBindingMethod CustomBinding,
-    bool RequiresValidation = false);
+    CustomBindingMethod CustomBinding)
+{
+    public bool HasFromBody => Flags.HasFlag(ParameterFlags.FromBody);
+    public bool HasFromRoute => Flags.HasFlag(ParameterFlags.FromRoute);
+    public bool HasFromQuery => Flags.HasFlag(ParameterFlags.FromQuery);
+    public bool HasFromHeader => Flags.HasFlag(ParameterFlags.FromHeader);
+    public bool HasFromForm => Flags.HasFlag(ParameterFlags.FromForm);
+    public bool HasFromServices => Flags.HasFlag(ParameterFlags.FromServices);
+    public bool HasFromKeyedServices => Flags.HasFlag(ParameterFlags.FromKeyedServices);
+    public bool HasAsParameters => Flags.HasFlag(ParameterFlags.AsParameters);
+    public bool IsNullable => Flags.HasFlag(ParameterFlags.Nullable);
+    public bool IsNonNullableValueType => Flags.HasFlag(ParameterFlags.NonNullableValueType);
+    public bool IsCollection => Flags.HasFlag(ParameterFlags.Collection);
+    public bool RequiresValidation => Flags.HasFlag(ParameterFlags.RequiresValidation);
+
+    public bool IsHttpContext => SpecialKind == SpecialParameterKind.HttpContext;
+    public bool IsCancellationToken => SpecialKind == SpecialParameterKind.CancellationToken;
+    public bool IsFormFile => SpecialKind == SpecialParameterKind.FormFile;
+    public bool IsFormFileCollection => SpecialKind == SpecialParameterKind.FormFileCollection;
+    public bool IsFormCollection => SpecialKind == SpecialParameterKind.FormCollection;
+    public bool IsStream => SpecialKind == SpecialParameterKind.Stream;
+    public bool IsPipeReader => SpecialKind == SpecialParameterKind.PipeReader;
+
+    public bool HasExplicitBinding => (Flags & (
+        ParameterFlags.FromBody | ParameterFlags.FromRoute | ParameterFlags.FromQuery |
+        ParameterFlags.FromHeader | ParameterFlags.FromForm | ParameterFlags.FromServices |
+        ParameterFlags.FromKeyedServices | ParameterFlags.AsParameters)) != ParameterFlags.None;
+
+    /// <summary>Gets the keyed service key (legacy alias for ServiceKey).</summary>
+    public string? KeyedServiceKey => ServiceKey;
+
+    /// <summary>Gets bound name for route context.</summary>
+    public string RouteName => BoundName;
+    /// <summary>Gets bound name for query context.</summary>
+    public string QueryName => BoundName;
+    /// <summary>Gets bound name for header context.</summary>
+    public string HeaderName => BoundName;
+    /// <summary>Gets bound name for form context.</summary>
+    public string FormName => BoundName;
+}
 
 /// <summary>
 ///     Represents a custom error detected via Error.Custom() call.
@@ -191,19 +242,18 @@ internal readonly record struct EndpointDescriptor(
     string? LocationIdPropertyName = null,
     MiddlewareInfo Middleware = default,
     VersioningInfo Versioning = default,
-    RouteGroupInfo RouteGroup = default)
+    RouteGroupInfo RouteGroup = default,
+    EquatableArray<MetadataEntry> Metadata = default)
 {
     /// <summary>
     ///     Returns true if any parameter is bound from body.
     /// </summary>
-    private bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == EndpointParameterSource.Body);
+    private bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == ParameterSource.Body);
 
     /// <summary>
     ///     Returns true if any parameter is bound from form-related sources.
     /// </summary>
-    public bool HasFormParams => HandlerParameters.AsImmutableArray().Any(static p =>
-        p.Source is EndpointParameterSource.Form or EndpointParameterSource.FormFile
-            or EndpointParameterSource.FormFiles or EndpointParameterSource.FormCollection);
+    public bool HasFormParams => HandlerParameters.AsImmutableArray().Any(static p => p.Source.IsFormRelated);
 
     /// <summary>
     ///     Returns true if endpoint has body or form binding (for OpenAPI and validation).
@@ -215,6 +265,14 @@ internal readonly record struct EndpointDescriptor(
     /// </summary>
     public bool HasBindAsyncParam => HandlerParameters.AsImmutableArray().Any(static p =>
         p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam);
+
+    /// <summary>Gets metadata value by key, or null if not found.</summary>
+    public string? GetMetadata(string key) =>
+        Metadata.AsImmutableArray().FirstOrDefault(m => m.Key == key).Value;
+
+    /// <summary>Returns true if metadata with the given key exists.</summary>
+    public bool HasMetadata(string key) =>
+        Metadata.AsImmutableArray().Any(m => m.Key == key);
 }
 
 /// <summary>
@@ -309,7 +367,8 @@ internal readonly record struct OpenApiEndpointInfo(
 /// <summary>
 ///     Immutable type metadata for schema generation.
 /// </summary>
-internal readonly record struct TypeMetadataInfo(string TypeKey,
+internal readonly record struct TypeMetadataInfo(
+    string TypeKey,
     string Description);
 
 /// <summary>
@@ -361,4 +420,15 @@ internal readonly record struct RouteGroupInfo(
     ///     Returns true if route grouping is enabled for this endpoint.
     /// </summary>
     public bool HasRouteGroup => GroupPath is not null;
+}
+
+/// <summary>
+///     Well-known metadata key constants.
+/// </summary>
+internal static class MetadataKeys
+{
+    public const string Deprecated = "erroror:deprecated";
+    public const string DeprecatedMessage = "erroror:deprecated-message";
+    public const string OpenApiExtension = "openapi:x-";
+    public const string CustomTag = "openapi:tag";
 }

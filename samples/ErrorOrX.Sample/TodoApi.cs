@@ -11,7 +11,10 @@ public static class TodoApi
     ///     Get all todos.
     /// </summary>
     [Get("/api/todos")]
-    public static Task<ErrorOr<List<Todo>>> GetAll([FromServices] ITodoService svc, CancellationToken ct) => svc.GetAllAsync(ct);
+    public static Task<ErrorOr<List<Todo>>> GetAll([FromServices] ITodoService svc, CancellationToken ct)
+    {
+        return svc.GetAllAsync(ct);
+    }
 
     /// <summary>
     ///     Get todo by ID.
@@ -19,8 +22,10 @@ public static class TodoApi
     /// <param name="id">The unique identifier of the todo item.</param>
     [Get("/api/todos/{id:guid}")]
     public static Task<ErrorOr<Todo>> GetById([FromRoute] Guid id, [FromServices] ITodoService svc,
-        CancellationToken ct) =>
-        svc.GetByIdAsync(id, ct);
+        CancellationToken ct)
+    {
+        return svc.GetByIdAsync(id, ct);
+    }
 
     /// <summary>
     ///     Create a new todo.
@@ -30,8 +35,10 @@ public static class TodoApi
     public static Task<ErrorOr<Todo>> Create(
         [FromBody] CreateTodoRequest request,
         [FromServices] ITodoService svc,
-        CancellationToken ct) =>
-        svc.CreateAsync(request, ct);
+        CancellationToken ct)
+    {
+        return svc.CreateAsync(request, ct);
+    }
 
     /// <summary>
     ///     Update a todo.
@@ -41,14 +48,18 @@ public static class TodoApi
         [FromRoute] Guid id,
         [FromBody] UpdateTodoRequest request,
         [FromServices] ITodoService svc,
-        CancellationToken ct) =>
-        svc.UpdateAsync(id, request, ct);
+        CancellationToken ct)
+    {
+        return svc.UpdateAsync(id, request, ct);
+    }
 
     /// <summary>
     ///     Delete a todo.
     /// </summary>
     [Delete("/api/todos/{id:guid}")]
     public static Task<ErrorOr<Deleted>> Delete([FromRoute] Guid id, [FromServices] ITodoService svc,
-        CancellationToken ct) =>
-        svc.DeleteAsync(id, ct);
+        CancellationToken ct)
+    {
+        return svc.DeleteAsync(id, ct);
+    }
 }

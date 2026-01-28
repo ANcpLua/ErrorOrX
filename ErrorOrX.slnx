@@ -1,36 +1,36 @@
 <Solution>
     <!-- Solution Items -->
     <Folder Name="/Solution Items/">
-        <File Path=".editorconfig" />
-        <File Path="Directory.Build.props" />
-        <File Path="Directory.Packages.props" />
-        <File Path="global.json" />
-        <File Path="NuGet.config" />
-        <File Path="README.md" />
-        <File Path="CLAUDE.md" />
+        <File Path=".editorconfig"/>
+        <File Path="Directory.Build.props"/>
+        <File Path="Directory.Packages.props"/>
+        <File Path="global.json"/>
+        <File Path="NuGet.config"/>
+        <File Path="README.md"/>
+        <File Path="CLAUDE.md"/>
     </Folder>
 
     <!-- Source Projects -->
     <Folder Name="/src/">
-        <Project Path="src/ErrorOrX/ErrorOrX.csproj" />
-        <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" />
+        <Project Path="src/ErrorOrX/ErrorOrX.csproj"/>
+        <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj"/>
     </Folder>
 
     <!-- Samples -->
     <Folder Name="/samples/">
-        <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj" />
+        <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj"/>
     </Folder>
 
     <!-- Tests -->
     <Folder Name="/tests/">
-        <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj" />
-        <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj" />
+        <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj"/>
     </Folder>
 
     <!-- Tools -->
     <Folder Name="/tools/">
-        <Project Path="tools/DiagnosticsAlignment.Analyzers/DiagnosticsAlignment.Analyzers.csproj" />
-        <Project Path="tools/DiagnosticsAlignment.Host/DiagnosticsAlignment.Host.csproj" />
-        <Project Path="tools/DiagnosticsAlignment.Tool/DiagnosticsAlignment.Tool.csproj" />
+        <Project Path="tools/DiagnosticsAlignment.Analyzers/DiagnosticsAlignment.Analyzers.csproj"/>
+        <Project Path="tools/DiagnosticsAlignment.Host/DiagnosticsAlignment.Host.csproj"/>
+        <Project Path="tools/DiagnosticsAlignment.Tool/DiagnosticsAlignment.Tool.csproj"/>
     </Folder>
 </Solution>

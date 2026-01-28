@@ -9,14 +9,15 @@
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.18.3"/>
-        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.18.3"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="1.20.0"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="1.20.0"/>
         <!-- Code Quality Analyzers (Update to override SDK versions) -->
         <PackageVersion Update="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4"/>
         <PackageVersion Update="Microsoft.Sbom.Targets" Version="4.1.5"/>
-        <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>
         <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.8.2-beta.1"/>
         <PackageVersion Include="ErrorProne.NET.Structs" Version="0.6.1-beta.1"/>
+        <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
+        <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.15.0"/>
         <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="4.15.0"/>
         <!-- Polyfills -->
         <PackageVersion Include="PolySharp" Version="1.15.0"/>
@@ -30,12 +31,8 @@
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.3"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.3"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.1.3"/>
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
-        <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.3.2"/>
         <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2"/>
         <!-- xunit v2 for Stryker compatibility (no MTP support yet) -->
-        <PackageVersion Include="xunit" Version="2.9.3"/>
-        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5"/>
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0"/>
         <!-- ASP.NET Core -->
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>

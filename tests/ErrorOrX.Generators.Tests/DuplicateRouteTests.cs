@@ -8,7 +8,7 @@ public class DuplicateRouteTests : GeneratorTestBase
         const string Source = """
                               using System;
                               using ErrorOr;
-                              
+
 
                               namespace ErrorOr.Endpoints
                               {
@@ -40,7 +40,7 @@ public class DuplicateRouteTests : GeneratorTestBase
         const string Source = """
                               using System;
                               using ErrorOr;
-                              
+
 
                               namespace ErrorOr.Endpoints
                               {

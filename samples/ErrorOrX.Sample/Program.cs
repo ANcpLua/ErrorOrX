@@ -5,7 +5,7 @@ builder.Services
     .AddSingleton(TimeProvider.System)
     .AddScoped<ITodoService, TodoService>();
 
-// New builder pattern (like ASP.NET Core's AddRazorComponents)
+// builder pattern (like ASP.NET Core's AddRazorComponents)
 builder.Services.AddErrorOrEndpoints()
     .UseJsonContext<AppJsonSerializerContext>()
     .WithCamelCase()
@@ -15,7 +15,7 @@ var app = builder.Build();
 
 app.MapOpenApi();
 
-// New convention builder return (like ASP.NET Core's MapRazorComponents)
+// convention builder return (like ASP.NET Core's MapRazorComponents)
 app.MapErrorOrEndpoints();
 
 app.Run();

@@ -109,22 +109,34 @@ internal static class ErrorMapping
     /// <summary>
     ///     Returns true if the name is a known ErrorType member.
     /// </summary>
-    public static bool IsKnownErrorType(string name) => ErrorTypeSet.Contains(name);
+    public static bool IsKnownErrorType(string name)
+    {
+        return ErrorTypeSet.Contains(name);
+    }
 
     /// <summary>
     ///     Gets the mapping entry for an ErrorType name.
     /// </summary>
-    public static Entry Get(string errorTypeName) => Mappings.TryGetValue(errorTypeName, out var entry) ? entry : DefaultEntry;
+    public static Entry Get(string errorTypeName)
+    {
+        return Mappings.TryGetValue(errorTypeName, out var entry) ? entry : DefaultEntry;
+    }
 
     /// <summary>
     ///     Gets the HTTP status code for an ErrorType name.
     /// </summary>
-    public static int GetStatusCode(string errorTypeName) => Get(errorTypeName).StatusCode;
+    public static int GetStatusCode(string errorTypeName)
+    {
+        return Get(errorTypeName).StatusCode;
+    }
 
     /// <summary>
     ///     Gets the TypedResults factory call for an ErrorType name.
     /// </summary>
-    public static string GetFactory(string errorTypeName) => Get(errorTypeName).Factory;
+    public static string GetFactory(string errorTypeName)
+    {
+        return Get(errorTypeName).Factory;
+    }
 
     /// <summary>
     ///     Generates the switch expression body for ErrorType → Status mapping.
@@ -134,7 +146,8 @@ internal static class ErrorMapping
     {
         var cases = Mappings
             .Select(kvp => $"{errorTypeFqn}.{kvp.Key} => {kvp.Value.StatusCode}");
-        return string.Join(", ", cases) + $", _ => {variableName}.NumericType is >= 100 and <= 599 ? {variableName}.NumericType : 500";
+        return string.Join(", ", cases) +
+               $", _ => (int){variableName}.Type is >= 100 and <= 599 ? (int){variableName}.Type : 500";
     }
 
     /// <summary>
@@ -150,7 +163,11 @@ internal static class ErrorMapping
     /// <summary>
     ///     Gets the default Problem() factory expression for unknown status codes.
     /// </summary>
-    public static string GetDefaultProblemFactory() => $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
+    public static string GetDefaultProblemFactory()
+    {
+        return
+            $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
+    }
 
     /// <summary>
     ///     Entry representing an ErrorType mapping.
@@ -163,6 +180,6 @@ internal static class ErrorMapping
     /// <summary>
     ///     Custom error mapping for Error.Custom() status codes.
     /// </summary>
-    internal readonly record struct CustomEntry(
+    private readonly record struct CustomEntry(
         string Factory);
 }

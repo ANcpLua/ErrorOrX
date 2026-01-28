@@ -1,30 +1,33 @@
 using System.Text;
-using ANcpLua.Roslyn.Utilities;
 
 namespace ErrorOr.Generators.Emitters;
 
 internal static class BindingCodeEmitter
 {
-    internal static bool EmitParameterBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn) =>
-        param.Source switch
+    private static bool EmitParameterBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
+    {
+        return param.Source switch
         {
-            EndpointParameterSource.Route => EmitRouteBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Query => EmitQueryBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Header => EmitHeaderBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Body => EmitBodyBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.Service => EmitServiceBinding(code, in param, paramName),
-            EndpointParameterSource.KeyedService => EmitKeyedServiceBinding(code, in param, paramName),
-            EndpointParameterSource.HttpContext => EmitHttpContextBinding(code, paramName),
-            EndpointParameterSource.CancellationToken => EmitCancellationTokenBinding(code, paramName),
-            EndpointParameterSource.Stream => EmitStreamBinding(code, paramName),
-            EndpointParameterSource.PipeReader => EmitPipeReaderBinding(code, paramName),
-            EndpointParameterSource.FormFile => EmitFormFileBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.FormFiles => EmitFormFilesBinding(code, paramName),
-            EndpointParameterSource.FormCollection => EmitFormCollectionBinding(code, paramName),
-            EndpointParameterSource.Form => EmitFormBinding(code, in param, paramName, bindFailFn),
-            EndpointParameterSource.AsParameters => EmitAsParametersBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Route => EmitRouteBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Query => EmitQueryBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Header => EmitHeaderBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Body => EmitBodyBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.Service => EmitServiceBinding(code, in param, paramName),
+            var s when s == ParameterSource.KeyedService => EmitKeyedServiceBinding(code, in param, paramName),
+            var s when s == ParameterSource.HttpContext => EmitHttpContextBinding(code, paramName),
+            var s when s == ParameterSource.CancellationToken => EmitCancellationTokenBinding(code, paramName),
+            var s when s == ParameterSource.Stream => EmitStreamBinding(code, paramName),
+            var s when s == ParameterSource.PipeReader => EmitPipeReaderBinding(code, paramName),
+            var s when s == ParameterSource.FormFile => EmitFormFileBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.FormFiles => EmitFormFilesBinding(code, paramName),
+            var s when s == ParameterSource.FormCollection => EmitFormCollectionBinding(code, paramName),
+            var s when s == ParameterSource.Form => EmitFormBinding(code, in param, paramName, bindFailFn),
+            var s when s == ParameterSource.AsParameters => EmitAsParametersBinding(code, in param, paramName,
+                bindFailFn),
             _ => false
         };
+    }
 
     private static bool EmitServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
     {
@@ -34,7 +37,8 @@ internal static class BindingCodeEmitter
 
     private static bool EmitKeyedServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
     {
-        code.AppendLine($"            var {paramName} = ctx.RequestServices.GetRequiredKeyedService<{param.TypeFqn}>({param.KeyName});");
+        code.AppendLine(
+            $"            var {paramName} = ctx.RequestServices.GetRequiredKeyedService<{param.TypeFqn}>({param.KeyName});");
         return false;
     }
 
@@ -74,15 +78,18 @@ internal static class BindingCodeEmitter
         return false;
     }
 
-    private static bool EmitFormFileBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitFormFileBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         code.AppendLine($"            var {paramName} = form.Files.GetFile(\"{param.KeyName ?? param.Name}\");");
         if (param.IsNullable) return false;
-        code.AppendLine($"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"is required\");");
+        code.AppendLine(
+            $"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"is required\");");
         return true;
     }
 
-    private static bool EmitRouteBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitRouteBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         var routeName = param.KeyName ?? param.Name;
         code.AppendLine(
@@ -92,7 +99,8 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitQueryBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         if (param.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
             return EmitBindAsyncBinding(code, in param, paramName, bindFailFn);
@@ -103,12 +111,14 @@ internal static class BindingCodeEmitter
             : EmitScalarQueryBinding(code, in param, paramName, queryKey, bindFailFn);
     }
 
-    private static bool EmitBindAsyncBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitBindAsyncBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         var baseType = param.TypeFqn.TrimEnd('?');
         code.AppendLine($"            var {paramName} = await {baseType}.BindAsync(ctx);");
         if (param.IsNullable) return false;
-        code.AppendLine($"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"binding failed\");");
+        code.AppendLine(
+            $"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"binding failed\");");
         return true;
     }
 
@@ -122,16 +132,21 @@ internal static class BindingCodeEmitter
 
         var usesBindFail = false;
         if (itemType.IsStringType())
-            code.AppendLine($"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+        {
+            code.AppendLine(
+                $"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+        }
         else
         {
             usesBindFail = true;
-            code.AppendLine($"                if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
-            code.AppendLine($"                else if (!string.IsNullOrEmpty(item)) return {bindFailFn}(\"{param.Name}\", \"has invalid item format\");");
+            code.AppendLine(
+                $"                if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
+            code.AppendLine(
+                $"                else if (!string.IsNullOrEmpty(item)) return {bindFailFn}(\"{param.Name}\", \"has invalid item format\");");
         }
 
         code.AppendLine("            }");
-        var isArray = param.TypeFqn.EndsWith("[]");
+        var isArray = param.TypeFqn.EndsWithOrdinal("[]");
         var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
         code.AppendLine($"            var {paramName} = {assignment};");
         return usesBindFail;
@@ -141,12 +156,14 @@ internal static class BindingCodeEmitter
         string queryKey, string bindFailFn)
     {
         var usesBindFail = false;
-        var declType = param.TypeFqn.EndsWith("?") ? param.TypeFqn : param.TypeFqn + "?";
+        var declType = param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn : param.TypeFqn + "?";
         code.AppendLine($"            {declType} {paramName};");
         code.AppendLine($"            if (!TryGetQueryValue(ctx, \"{queryKey}\", out var {paramName}Raw))");
         code.AppendLine("            {");
         if (param.IsNullable)
+        {
             code.AppendLine($"                {paramName} = default;");
+        }
         else
         {
             usesBindFail = true;
@@ -157,11 +174,14 @@ internal static class BindingCodeEmitter
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (param.TypeFqn.IsStringType())
+        {
             code.AppendLine($"                {paramName} = {paramName}Raw;");
+        }
         else
         {
             usesBindFail = true;
-            code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw", paramName + "Temp", param.CustomBinding)}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
+            code.AppendLine(
+                $"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw", paramName + "Temp", param.CustomBinding)}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
             code.AppendLine($"                {paramName} = {paramName}Temp;");
         }
 
@@ -169,7 +189,8 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static bool EmitHeaderBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitHeaderBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         var key = param.KeyName ?? param.Name;
         var usesBindFail = false;
@@ -177,10 +198,13 @@ internal static class BindingCodeEmitter
         if (param is { IsCollection: true, CollectionItemTypeFqn: { } itemType })
         {
             code.AppendLine($"            {param.TypeFqn} {paramName};");
-            code.AppendLine($"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
+            code.AppendLine(
+                $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
+            {
                 code.AppendLine($"                {paramName} = default!;");
+            }
             else
             {
                 usesBindFail = true;
@@ -198,18 +222,21 @@ internal static class BindingCodeEmitter
                     ? $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);"
                     : $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
             code.AppendLine("                }");
-            var isArray = param.TypeFqn.EndsWith("[]");
+            var isArray = param.TypeFqn.EndsWithOrdinal("[]");
             var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";
             code.AppendLine($"                {paramName} = {assignment};");
         }
         else
         {
-            var declType = param.TypeFqn.EndsWith("?") ? param.TypeFqn : param.TypeFqn + "?";
+            var declType = param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn : param.TypeFqn + "?";
             code.AppendLine($"            {declType} {paramName};");
-            code.AppendLine($"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
+            code.AppendLine(
+                $"            if (!ctx.Request.Headers.TryGetValue(\"{key}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
             code.AppendLine("            {");
             if (param.IsNullable)
+            {
                 code.AppendLine($"                {paramName} = default;");
+            }
             else
             {
                 usesBindFail = true;
@@ -220,11 +247,14 @@ internal static class BindingCodeEmitter
             code.AppendLine("            else");
             code.AppendLine("            {");
             if (param.TypeFqn.IsStringType())
+            {
                 code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
+            }
             else
             {
                 usesBindFail = true;
-                code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\"); {paramName} = {paramName}Temp;");
+                code.AppendLine(
+                    $"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\"); {paramName} = {paramName}Temp;");
             }
         }
 
@@ -232,23 +262,70 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
+        // Determine effective behavior: explicit > nullability-based default
+        var effectiveBehavior = param.EmptyBodyBehavior;
+        if (effectiveBehavior == EmptyBodyBehavior.Default)
+            effectiveBehavior = param.IsNullable ? EmptyBodyBehavior.Allow : EmptyBodyBehavior.Disallow;
+
+        return effectiveBehavior switch
+        {
+            EmptyBodyBehavior.Allow => EmitBodyBindingAllow(code, in param, paramName, bindFailFn),
+            _ => EmitBodyBindingDisallow(code, in param, paramName, bindFailFn)
+        };
+    }
+
+    private static bool EmitBodyBindingAllow(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
+    {
+        // Allow empty bodies - check ContentLength before reading
+        code.AppendLine($"            {param.TypeFqn}? {paramName};");
+        code.AppendLine("            if (ctx.Request.ContentLength is null or 0)");
+        code.AppendLine("            {");
+        code.AppendLine($"                {paramName} = default;");
+        code.AppendLine("            }");
+        code.AppendLine("            else");
+        code.AppendLine("            {");
+        code.AppendLine("                if (!ctx.Request.HasJsonContentType()) return BindFail415();");
+        code.AppendLine("                try");
+        code.AppendLine("                {");
+        code.AppendLine(
+            $"                    {paramName} = await ctx.Request.ReadFromJsonAsync<{param.TypeFqn}>(cancellationToken: ctx.RequestAborted);");
+        code.AppendLine("                }");
+        code.AppendLine($"                catch ({WellKnownTypes.Fqn.JsonException})");
+        code.AppendLine("                {");
+        code.AppendLine($"                    return {bindFailFn}(\"{param.Name}\", \"has invalid JSON format\");");
+        code.AppendLine("                }");
+        code.AppendLine("            }");
+        return true;
+    }
+
+    private static bool EmitBodyBindingDisallow(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
+    {
+        // Disallow empty bodies - reject with 400 if empty
+        code.AppendLine("            if (ctx.Request.ContentLength is null or 0)");
+        code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"is required\");");
         code.AppendLine("            if (!ctx.Request.HasJsonContentType()) return BindFail415();");
         code.AppendLine($"            {param.TypeFqn}? {paramName};");
         code.AppendLine("            try");
         code.AppendLine("            {");
-        code.AppendLine($"                {paramName} = await ctx.Request.ReadFromJsonAsync<{param.TypeFqn}>(cancellationToken: ctx.RequestAborted);");
+        code.AppendLine(
+            $"                {paramName} = await ctx.Request.ReadFromJsonAsync<{param.TypeFqn}>(cancellationToken: ctx.RequestAborted);");
         code.AppendLine("            }");
         code.AppendLine($"            catch ({WellKnownTypes.Fqn.JsonException})");
         code.AppendLine("            {");
         code.AppendLine($"                return {bindFailFn}(\"{param.Name}\", \"has invalid JSON format\");");
         code.AppendLine("            }");
-        code.AppendLine($"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"is required\");");
+        code.AppendLine(
+            $"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"is required\");");
         return true;
     }
 
-    private static bool EmitFormBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitFormBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         if (!param.Children.IsDefaultOrEmpty)
         {
@@ -266,12 +343,15 @@ internal static class BindingCodeEmitter
 
         var usesBindFailScalar = false;
         var fieldName = param.KeyName ?? param.Name;
-        var declType = param.IsNullable && !param.TypeFqn.EndsWith("?") ? param.TypeFqn + "?" : param.TypeFqn;
+        var declType = param.IsNullable && !param.TypeFqn.EndsWithOrdinal("?") ? param.TypeFqn + "?" : param.TypeFqn;
         code.AppendLine($"            {declType} {paramName};");
-        code.AppendLine($"            if (!form.TryGetValue(\"{fieldName}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
+        code.AppendLine(
+            $"            if (!form.TryGetValue(\"{fieldName}\", out var {paramName}Raw) || {paramName}Raw.Count is 0)");
         code.AppendLine("            {");
         if (param.IsNullable)
+        {
             code.AppendLine($"                {paramName} = default;");
+        }
         else
         {
             usesBindFailScalar = true;
@@ -282,11 +362,14 @@ internal static class BindingCodeEmitter
         code.AppendLine("            else");
         code.AppendLine("            {");
         if (param.TypeFqn.IsStringType())
+        {
             code.AppendLine($"                {paramName} = {paramName}Raw.ToString();");
+        }
         else
         {
             usesBindFailScalar = true;
-            code.AppendLine($"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
+            code.AppendLine(
+                $"                if (!{GetTryParseExpression(param.TypeFqn, paramName + "Raw.ToString()", paramName + "Temp")}) return {bindFailFn}(\"{param.Name}\", \"has invalid format\");");
             code.AppendLine($"                {paramName} = {paramName}Temp;");
         }
 
@@ -294,7 +377,8 @@ internal static class BindingCodeEmitter
         return usesBindFailScalar;
     }
 
-    private static bool EmitAsParametersBinding(StringBuilder code, in EndpointParameter param, string paramName, string bindFailFn)
+    private static bool EmitAsParametersBinding(StringBuilder code, in EndpointParameter param, string paramName,
+        string bindFailFn)
     {
         var usesBindFail = false;
         var childVars = new List<string>();
@@ -310,26 +394,27 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    internal static void EmitFormContentTypeGuard(StringBuilder code)
+    private static string BuildArgumentExpression(in EndpointParameter param, string paramName)
     {
-        code.AppendLine("            if (!ctx.Request.HasFormContentType) return BindFail415();");
-        code.AppendLine("            var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);");
-        code.AppendLine();
-    }
-
-    internal static string BuildArgumentExpression(in EndpointParameter param, string paramName) =>
-        param.Source switch
+        return param.Source switch
         {
-            EndpointParameterSource.Body when !param.IsNullable => paramName + "!",
-            EndpointParameterSource.Route when param is { IsNullable: false, IsNonNullableValueType: false } => paramName + "!",
-            EndpointParameterSource.Query when param is { IsNullable: false, IsNonNullableValueType: true } => paramName + ".Value",
-            EndpointParameterSource.Header when param is { IsNullable: false, IsNonNullableValueType: true } => paramName + ".Value",
-            EndpointParameterSource.Query when param is { IsNullable: false, IsNonNullableValueType: false } => paramName + "!",
-            EndpointParameterSource.Header when param is { IsNullable: false, IsNonNullableValueType: false } => paramName + "!",
+            var s when s == ParameterSource.Body && !param.IsNullable => paramName + "!",
+            var s when s == ParameterSource.Route && param is { IsNullable: false, IsNonNullableValueType: false } =>
+                paramName + "!",
+            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: true } =>
+                paramName + ".Value",
+            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: true } =>
+                paramName + ".Value",
+            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: false } =>
+                paramName + "!",
+            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: false } =>
+                paramName + "!",
             _ => paramName
         };
+    }
 
-    internal static string GetTryParseExpression(string typeFqn, string rawName, string outputName, CustomBindingMethod customBinding = CustomBindingMethod.None)
+    internal static string GetTryParseExpression(string typeFqn, string rawName, string outputName,
+        CustomBindingMethod customBinding = CustomBindingMethod.None)
     {
         if (customBinding is CustomBindingMethod.TryParse)
         {
@@ -340,7 +425,8 @@ internal static class BindingCodeEmitter
         if (customBinding is CustomBindingMethod.TryParseWithFormat)
         {
             var baseType = typeFqn.TrimEnd('?');
-            return $"{baseType}.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})";
+            return
+                $"{baseType}.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})";
         }
 
         var normalized = typeFqn.Replace("global::", "").TrimEnd('?');
@@ -361,20 +447,30 @@ internal static class BindingCodeEmitter
             // Other types without IFormatProvider overload
             "System.Boolean" or "bool" => $"bool.TryParse({rawName}, out var {outputName})",
             "System.Guid" => $"global::System.Guid.TryParse({rawName}, out var {outputName})",
-            "System.Uri" => $"global::System.Uri.TryCreate({rawName}, global::System.UriKind.RelativeOrAbsolute, out var {outputName})",
+            "System.Uri" =>
+                $"global::System.Uri.TryCreate({rawName}, global::System.UriKind.RelativeOrAbsolute, out var {outputName})",
 
             // Culture-sensitive floating point types - use InvariantCulture
-            "System.Decimal" or "decimal" => $"decimal.TryParse({rawName}, global::System.Globalization.NumberStyles.Number, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
-            "System.Double" or "double" => $"double.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
-            "System.Single" or "float" => $"float.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
-            "System.Half" => $"global::System.Half.TryParse({rawName}, global::System.Globalization.NumberStyles.Float, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Decimal" or "decimal" =>
+                $"decimal.TryParse({rawName}, global::System.Globalization.NumberStyles.Number, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Double" or "double" =>
+                $"double.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Single" or "float" =>
+                $"float.TryParse({rawName}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.Half" =>
+                $"global::System.Half.TryParse({rawName}, global::System.Globalization.NumberStyles.Float, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
 
             // Culture-sensitive date/time types - use InvariantCulture
-            "System.DateTime" => $"global::System.DateTime.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
-            "System.DateTimeOffset" => $"global::System.DateTimeOffset.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
-            "System.DateOnly" => $"global::System.DateOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
-            "System.TimeOnly" => $"global::System.TimeOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
-            "System.TimeSpan" => $"global::System.TimeSpan.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
+            "System.DateTime" =>
+                $"global::System.DateTime.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
+            "System.DateTimeOffset" =>
+                $"global::System.DateTimeOffset.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.RoundtripKind, out var {outputName})",
+            "System.DateOnly" =>
+                $"global::System.DateOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
+            "System.TimeOnly" =>
+                $"global::System.TimeOnly.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var {outputName})",
+            "System.TimeSpan" =>
+                $"global::System.TimeSpan.TryParse({rawName}, global::System.Globalization.CultureInfo.InvariantCulture, out var {outputName})",
 
             _ => "false"
         };

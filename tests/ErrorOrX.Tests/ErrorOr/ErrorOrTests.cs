@@ -11,15 +11,7 @@ public class ErrorOrTests
     public void Error_WithMetadata_ShouldContainMetadata()
     {
         // Arrange
-        var metadata = new Dictionary<string, object>
-        {
-            {
-                "Field", "Email"
-            },
-            {
-                "AttemptedValue", "invalid-email"
-            }
-        };
+        var metadata = new Dictionary<string, object> { { "Field", "Email" }, { "AttemptedValue", "invalid-email" } };
 
         // Act
         var error = Error.Validation("User.InvalidEmail", "Invalid email format", metadata);

@@ -5,60 +5,23 @@ public sealed class ErrorEqualityTests
     public static readonly TheoryData<string, string, int, Dictionary<string, object>?> ValidData =
         new()
         {
-            {
-                "CodeA", "DescriptionA", 1, null
-            },
-            {
-                "CodeB", "DescriptionB", 3215, new Dictionary<string, object>
-                {
-                    {
-                        "foo", "bar"
-                    },
-                    {
-                        "baz", "qux"
-                    }
-                }
-            }
+            { "CodeA", "DescriptionA", 1, null },
+            { "CodeB", "DescriptionB", 3215, new Dictionary<string, object> { { "foo", "bar" }, { "baz", "qux" } } }
         };
 
     public static readonly TheoryData<SerializableError, SerializableError> DifferentInstances =
         new()
         {
+            { Error.Failure(), Error.Forbidden() },
+            { Error.NotFound(), Error.NotFound(metadata: new Dictionary<string, object> { ["Foo"] = "Bar" }) },
+            { Error.Unexpected(metadata: new Dictionary<string, object> { ["baz"] = "qux" }), Error.Unexpected() },
             {
-                Error.Failure(), Error.Forbidden()
+                Error.Failure(metadata: new Dictionary<string, object> { ["baz"] = "qux" }),
+                Error.Failure(metadata: new Dictionary<string, object> { ["Foo"] = "Bar", ["baz"] = "qux" })
             },
             {
-                Error.NotFound(), Error.NotFound(metadata: new Dictionary<string, object>
-                {
-                    ["Foo"] = "Bar"
-                })
-            },
-            {
-                Error.Unexpected(metadata: new Dictionary<string, object>
-                {
-                    ["baz"] = "qux"
-                }),
-                Error.Unexpected()
-            },
-            {
-                Error.Failure(metadata: new Dictionary<string, object>
-                {
-                    ["baz"] = "qux"
-                }),
-                Error.Failure(metadata: new Dictionary<string, object>
-                {
-                    ["Foo"] = "Bar", ["baz"] = "qux"
-                })
-            },
-            {
-                Error.Failure(metadata: new Dictionary<string, object>
-                {
-                    ["baz"] = "qux"
-                }),
-                Error.Failure(metadata: new Dictionary<string, object>
-                {
-                    ["baz"] = "gorge"
-                })
+                Error.Failure(metadata: new Dictionary<string, object> { ["baz"] = "qux" }),
+                Error.Failure(metadata: new Dictionary<string, object> { ["baz"] = "gorge" })
             }
         };
 
@@ -82,12 +45,7 @@ public sealed class ErrorEqualityTests
     [Fact]
     public void Equals_WhenTwoInstancesHaveTheSameMetadataInstanceAndPropertyValues_ShouldReturnTrue()
     {
-        var metadata = new Dictionary<string, object>
-        {
-            {
-                "foo", "bar"
-            }
-        };
+        var metadata = new Dictionary<string, object> { { "foo", "bar" } };
         var error1 = Error.Custom(1, "Code", "Description", metadata);
         var error2 = Error.Custom(1, "Code", "Description", metadata);
 
@@ -98,7 +56,8 @@ public sealed class ErrorEqualityTests
 
     [Theory]
     [MemberData(nameof(DifferentInstances))]
-    public void Equals_WhenTwoInstancesHaveDifferentValues_ShouldReturnFalse(SerializableError error1, SerializableError error2)
+    public void Equals_WhenTwoInstancesHaveDifferentValues_ShouldReturnFalse(SerializableError error1,
+        SerializableError error2)
     {
         var result = ((Error)error1).Equals(error2);
 

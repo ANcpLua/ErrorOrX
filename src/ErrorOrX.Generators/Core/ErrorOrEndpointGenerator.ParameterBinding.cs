@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
@@ -55,72 +54,97 @@ public sealed partial class ErrorOrEndpointGenerator
         return metas;
     }
 
-    // ReSharper disable once UnusedParameter.Local - reserved for future diagnostics
     private static ParameterMeta CreateParameterMeta(
         IParameterSymbol parameter,
         ErrorOrContext context,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
+        _ = diagnostics; // Reserved for future diagnostics
         var type = parameter.Type;
         var typeFqn = type.GetFullyQualifiedName();
 
-        var hasFromRoute = HasParameterAttribute(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute);
-        var hasFromQuery = HasParameterAttribute(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute);
-        var hasFromHeader =
-            HasParameterAttribute(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute);
-        var hasFromKeyedServices = HasParameterAttribute(parameter, context.FromKeyedServices,
-            WellKnownTypes.FromKeyedServicesAttribute);
-        var hasAsParameters =
-            HasParameterAttribute(parameter, context.AsParameters, WellKnownTypes.AsParametersAttribute);
-        var hasFromForm = HasParameterAttribute(parameter, context.FromForm, WellKnownTypes.FromFormAttribute);
+        var flags = BuildFlags(parameter, type, context);
+        var specialKind = DetectSpecialKind(type, context);
 
-        var routeName = hasFromRoute
-            ? TryGetAttributeName(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute) ??
-              parameter.Name
-            : parameter.Name;
-        var queryName = hasFromQuery
-            ? TryGetAttributeName(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute) ??
-              parameter.Name
-            : parameter.Name;
-        var headerName = hasFromHeader
-            ? TryGetAttributeName(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute) ??
-              parameter.Name
-            : parameter.Name;
-        var formName = hasFromForm
-            ? TryGetAttributeName(parameter, context.FromForm, WellKnownTypes.FromFormAttribute) ?? parameter.Name
-            : parameter.Name;
-        var keyedServiceKey =
-            hasFromKeyedServices ? ExtractKeyFromKeyedServiceAttribute(parameter, context) : null;
-
-        var (isNullable, isNonNullableValueType) = GetParameterNullability(type, parameter.NullableAnnotation);
         var (isCollection, itemType, itemPrimitiveKind) = AnalyzeCollectionType(type, context);
+        if (isCollection) flags |= ParameterFlags.Collection;
 
-        var isFormFile = context.IsFormFile(type);
-        var isFormFileCollection = context.IsFormFileCollection(type);
-        var isFormCollection = context.IsFormCollection(type);
-        var isStream = context.IsStream(type);
-        var isPipeReader = context.IsPipeReader(type);
-        var isCancellationToken = context.IsCancellationToken(type);
-        var isHttpContext = context.IsHttpContext(type);
+        // Determine bound name based on explicit attribute or default to parameter name
+        var boundName = DetermineBoundName(parameter, flags, context);
 
-        // Check if type requires BCL validation (has ValidationAttribute descendants or implements IValidatableObject)
-        var requiresValidation = context.RequiresValidation(type);
+        var serviceKey = flags.HasFlag(ParameterFlags.FromKeyedServices)
+            ? ExtractKeyFromKeyedServiceAttribute(parameter)
+            : null;
 
         return new ParameterMeta(
-            parameter, parameter.Name, typeFqn, TryGetRoutePrimitiveKind(type, context),
-            HasParameterAttribute(parameter, context.FromServices, WellKnownTypes.FromServicesAttribute),
-            hasFromKeyedServices, keyedServiceKey,
-            HasParameterAttribute(parameter, context.FromBody, WellKnownTypes.FromBodyAttribute),
-            hasFromRoute, hasFromQuery, hasFromHeader, hasAsParameters,
-            routeName, queryName, headerName,
-            isCancellationToken,
-            isHttpContext,
-            isNullable, isNonNullableValueType,
-            isCollection, itemType?.GetFullyQualifiedName(), itemPrimitiveKind,
-            hasFromForm, formName, isFormFile, isFormFileCollection, isFormCollection,
-            isStream, isPipeReader,
-            DetectCustomBinding(type, context),
-            requiresValidation);
+            parameter,
+            parameter.Name,
+            typeFqn,
+            TryGetRoutePrimitiveKind(type, context),
+            flags,
+            specialKind,
+            serviceKey,
+            boundName,
+            itemType?.GetFullyQualifiedName(),
+            itemPrimitiveKind,
+            DetectCustomBinding(type, context));
+    }
+
+    private static ParameterFlags BuildFlags(IParameterSymbol parameter, ITypeSymbol type, ErrorOrContext context)
+    {
+        var flags = ParameterFlags.None;
+
+        if (HasParameterAttribute(parameter, context.FromBody, WellKnownTypes.FromBodyAttribute))
+            flags |= ParameterFlags.FromBody;
+        if (HasParameterAttribute(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute))
+            flags |= ParameterFlags.FromRoute;
+        if (HasParameterAttribute(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute))
+            flags |= ParameterFlags.FromQuery;
+        if (HasParameterAttribute(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute))
+            flags |= ParameterFlags.FromHeader;
+        if (HasParameterAttribute(parameter, context.FromForm, WellKnownTypes.FromFormAttribute))
+            flags |= ParameterFlags.FromForm;
+        if (HasParameterAttribute(parameter, context.FromServices, WellKnownTypes.FromServicesAttribute))
+            flags |= ParameterFlags.FromServices;
+        if (HasParameterAttribute(parameter, context.FromKeyedServices, WellKnownTypes.FromKeyedServicesAttribute))
+            flags |= ParameterFlags.FromKeyedServices;
+        if (HasParameterAttribute(parameter, context.AsParameters, WellKnownTypes.AsParametersAttribute))
+            flags |= ParameterFlags.AsParameters;
+
+        var (isNullable, isNonNullableValueType) = GetParameterNullability(type, parameter.NullableAnnotation);
+        if (isNullable) flags |= ParameterFlags.Nullable;
+        if (isNonNullableValueType) flags |= ParameterFlags.NonNullableValueType;
+
+        if (context.RequiresValidation(type)) flags |= ParameterFlags.RequiresValidation;
+
+        return flags;
+    }
+
+    private static SpecialParameterKind DetectSpecialKind(ITypeSymbol type, ErrorOrContext context)
+    {
+        if (context.IsHttpContext(type)) return SpecialParameterKind.HttpContext;
+        if (context.IsCancellationToken(type)) return SpecialParameterKind.CancellationToken;
+        if (context.IsFormFile(type)) return SpecialParameterKind.FormFile;
+        if (context.IsFormFileCollection(type)) return SpecialParameterKind.FormFileCollection;
+        if (context.IsFormCollection(type)) return SpecialParameterKind.FormCollection;
+        if (context.IsStream(type)) return SpecialParameterKind.Stream;
+        if (context.IsPipeReader(type)) return SpecialParameterKind.PipeReader;
+        return SpecialParameterKind.None;
+    }
+
+    private static string DetermineBoundName(IParameterSymbol parameter, ParameterFlags flags, ErrorOrContext context)
+    {
+        // Try to get explicit name from binding attribute
+        if (flags.HasFlag(ParameterFlags.FromRoute))
+            return TryGetAttributeName(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute) ?? parameter.Name;
+        if (flags.HasFlag(ParameterFlags.FromQuery))
+            return TryGetAttributeName(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute) ?? parameter.Name;
+        if (flags.HasFlag(ParameterFlags.FromHeader))
+            return TryGetAttributeName(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute) ?? parameter.Name;
+        if (flags.HasFlag(ParameterFlags.FromForm))
+            return TryGetAttributeName(parameter, context.FromForm, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
+
+        return parameter.Name;
     }
 
     private static ParameterBindingResult BuildEndpointParameters(
@@ -163,13 +187,16 @@ public sealed partial class ErrorOrEndpointGenerator
         if (meta.HasAsParameters)
             return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod);
         if (meta.HasFromBody)
-            return ParameterSuccess(in meta, EndpointParameterSource.Body);
+        {
+            var behavior = DetectEmptyBodyBehavior(meta.Symbol);
+            return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior);
+        }
         if (meta.HasFromForm)
             return ClassifyFromFormParameter(in meta, method, diagnostics, context);
         if (meta.HasFromServices)
-            return ParameterSuccess(in meta, EndpointParameterSource.Service);
+            return ParameterSuccess(in meta, ParameterSource.Service);
         if (meta.HasFromKeyedServices)
-            return ParameterSuccess(in meta, EndpointParameterSource.KeyedService,
+            return ParameterSuccess(in meta, ParameterSource.KeyedService,
                 keyedServiceKey: meta.KeyedServiceKey);
 
         if (meta.HasFromHeader)
@@ -181,23 +208,23 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Special types
         if (meta.IsHttpContext)
-            return ParameterSuccess(in meta, EndpointParameterSource.HttpContext);
+            return ParameterSuccess(in meta, ParameterSource.HttpContext);
         if (meta.IsCancellationToken)
-            return ParameterSuccess(in meta, EndpointParameterSource.CancellationToken);
+            return ParameterSuccess(in meta, ParameterSource.CancellationToken);
 
         // Form file types (implicit binding)
         if (meta.IsFormFile)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormFile, formName: meta.Name);
+            return ParameterSuccess(in meta, ParameterSource.FormFile, formName: meta.Name);
         if (meta.IsFormFileCollection)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormFiles, formName: meta.Name);
+            return ParameterSuccess(in meta, ParameterSource.FormFiles, formName: meta.Name);
         if (meta.IsFormCollection)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormCollection, formName: meta.Name);
+            return ParameterSuccess(in meta, ParameterSource.FormCollection, formName: meta.Name);
 
         // Stream types
         if (meta.IsStream)
-            return ParameterSuccess(in meta, EndpointParameterSource.Stream);
+            return ParameterSuccess(in meta, ParameterSource.Stream);
         if (meta.IsPipeReader)
-            return ParameterSuccess(in meta, EndpointParameterSource.PipeReader);
+            return ParameterSuccess(in meta, ParameterSource.PipeReader);
 
         // Implicit route binding (parameter name matches route parameter)
         if (routeParameters.Contains(meta.Name))
@@ -205,7 +232,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Implicit query binding (primitives and collections of primitives)
         if (meta.RouteKind is not null || meta is { IsCollection: true, CollectionItemPrimitiveKind: not null })
-            return ParameterSuccess(in meta, EndpointParameterSource.Query, queryName: meta.Name);
+            return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.Name);
 
         // Custom binding (TryParse, BindAsync)
         if (meta.CustomBinding != CustomBindingMethod.None)
@@ -213,15 +240,15 @@ public sealed partial class ErrorOrEndpointGenerator
             if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
             {
                 var source = routeParameters.Contains(meta.Name)
-                    ? EndpointParameterSource.Route
-                    : EndpointParameterSource.Query;
+                    ? ParameterSource.Route
+                    : ParameterSource.Query;
                 return ParameterSuccess(in meta, source,
-                    source == EndpointParameterSource.Route ? meta.Name : null,
-                    queryName: source == EndpointParameterSource.Query ? meta.Name : null,
+                    source == ParameterSource.Route ? meta.Name : null,
+                    queryName: source == ParameterSource.Query ? meta.Name : null,
                     customBinding: meta.CustomBinding);
             }
 
-            return ParameterSuccess(in meta, EndpointParameterSource.Query,
+            return ParameterSuccess(in meta, ParameterSource.Query,
                 queryName: meta.Name, customBinding: meta.CustomBinding);
         }
 
@@ -249,29 +276,31 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Service types: interfaces, abstract classes, and DI naming patterns
         if (isLikelyService)
-            return ParameterSuccess(in meta, EndpointParameterSource.Service);
+            return ParameterSuccess(in meta, ParameterSource.Service);
 
         // Check if type is complex (DTO)
         if (IsComplexType(type, context))
         {
             // POST, PUT, PATCH with complex type → Body
             if (httpMethod is "POST" or "PUT" or "PATCH")
-                return ParameterSuccess(in meta, EndpointParameterSource.Body);
+            {
+                var behavior = DetectEmptyBodyBehavior(meta.Symbol);
+                return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior);
+            }
 
-            // Bodyless/custom methods: do not infer body; prefer DI but warn for DTO-like types.
-            if (!isLikelyService)
-                diagnostics.Add(DiagnosticInfo.Create(
-                    Descriptors.AmbiguousParameterBinding,
-                    method.Locations.FirstOrDefault() ?? Location.None,
-                    meta.Name,
-                    meta.TypeFqn,
-                    httpMethod));
+            // Bodyless/custom methods: do not infer body; warn for DTO-like types.
+            diagnostics.Add(DiagnosticInfo.Create(
+                Descriptors.AmbiguousParameterBinding,
+                method.Locations.FirstOrDefault() ?? Location.None,
+                meta.Name,
+                meta.TypeFqn,
+                httpMethod));
 
-            return ParameterSuccess(in meta, EndpointParameterSource.Service);
+            return ParameterSuccess(in meta, ParameterSource.Service);
         }
 
         // Fallback: treat as service injection (BCL handles resolution at runtime)
-        return ParameterSuccess(in meta, EndpointParameterSource.Service);
+        return ParameterSuccess(in meta, ParameterSource.Service);
     }
 
     /// <summary>
@@ -297,7 +326,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterClassificationResult.Error;
         }
 
-        return ParameterSuccess(in meta, EndpointParameterSource.Route, meta.RouteName,
+        return ParameterSuccess(in meta, ParameterSource.Route, meta.RouteName,
             customBinding: meta.CustomBinding);
     }
 
@@ -322,7 +351,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterClassificationResult.Error;
         }
 
-        return ParameterSuccess(in meta, EndpointParameterSource.Route, meta.Name, customBinding: meta.CustomBinding);
+        return ParameterSuccess(in meta, ParameterSource.Route, meta.Name, customBinding: meta.CustomBinding);
     }
 
     /// <summary>
@@ -335,15 +364,15 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Valid: primitive type
         if (meta.RouteKind is not null)
-            return ParameterSuccess(in meta, EndpointParameterSource.Query, queryName: meta.QueryName);
+            return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.QueryName);
 
         // Valid: collection of primitives
         if (meta is { IsCollection: true, CollectionItemPrimitiveKind: not null })
-            return ParameterSuccess(in meta, EndpointParameterSource.Query, queryName: meta.QueryName);
+            return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.QueryName);
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
-            return ParameterSuccess(in meta, EndpointParameterSource.Query, queryName: meta.QueryName,
+            return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.QueryName,
                 customBinding: meta.CustomBinding);
 
         // EOE012: [FromQuery] only supports primitives or collections of primitives
@@ -365,19 +394,19 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Valid: string type
         if (meta.RouteKind == RoutePrimitiveKind.String)
-            return ParameterSuccess(in meta, EndpointParameterSource.Header, headerName: meta.HeaderName);
+            return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.HeaderName);
 
         // Valid: primitive type (has implicit TryParse)
         if (meta.RouteKind is not null)
-            return ParameterSuccess(in meta, EndpointParameterSource.Header, headerName: meta.HeaderName);
+            return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.HeaderName);
 
         // Valid: collection of strings or primitives
         if (meta is { IsCollection: true, CollectionItemPrimitiveKind: not null })
-            return ParameterSuccess(in meta, EndpointParameterSource.Header, headerName: meta.HeaderName);
+            return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.HeaderName);
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
-            return ParameterSuccess(in meta, EndpointParameterSource.Header, headerName: meta.HeaderName,
+            return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.HeaderName,
                 customBinding: meta.CustomBinding);
 
         // EOE016: [FromHeader] requires string, primitive with TryParse, or collection thereof
@@ -398,13 +427,13 @@ public sealed partial class ErrorOrEndpointGenerator
         // ReSharper restore UnusedParameter.Local
     {
         if (meta.IsFormFile)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormFile, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.FormFile, formName: meta.FormName);
         if (meta.IsFormFileCollection)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormFiles, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.FormFiles, formName: meta.FormName);
         if (meta.IsFormCollection)
-            return ParameterSuccess(in meta, EndpointParameterSource.FormCollection, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.FormCollection, formName: meta.FormName);
         if (meta.RouteKind is not null || meta is { IsCollection: true, CollectionItemPrimitiveKind: not null })
-            return ParameterSuccess(in meta, EndpointParameterSource.Form, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.FormName);
 
         // Complex DTO - let BCL handle form binding
         return ClassifyFormDtoParameter(in meta, context);
@@ -418,7 +447,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // BCL handles actual binding - we just need structure for code generation
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
             // Non-named types get simple form binding - BCL will handle/fail at runtime
-            return ParameterSuccess(in meta, EndpointParameterSource.Form, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.FormName);
 
         var constructor = typeSymbol.Constructors
             .Where(static c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -427,7 +456,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (constructor is null || constructor.Parameters.Length is 0)
             // No suitable constructor - simple form binding
-            return ParameterSuccess(in meta, EndpointParameterSource.Form, formName: meta.FormName);
+            return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.FormName);
 
         // Build child parameters for DTO constructor
         var children = ImmutableArray.CreateBuilder<EndpointParameter>(constructor.Parameters.Length);
@@ -437,13 +466,13 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, dummyDiagnostics);
 
-            EndpointParameterSource childSource;
+            ParameterSource childSource;
             if (childMeta.IsFormFile)
-                childSource = EndpointParameterSource.FormFile;
+                childSource = ParameterSource.FormFile;
             else if (childMeta.IsFormFileCollection)
-                childSource = EndpointParameterSource.FormFiles;
+                childSource = ParameterSource.FormFiles;
             else
-                childSource = EndpointParameterSource.Form;
+                childSource = ParameterSource.Form;
 
             children.Add(new EndpointParameter(
                 childMeta.Name,
@@ -460,7 +489,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
-            EndpointParameterSource.Form,
+            ParameterSource.Form,
             meta.FormName,
             meta.IsNullable,
             meta.IsNonNullableValueType,
@@ -537,7 +566,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
-            EndpointParameterSource.AsParameters,
+            ParameterSource.AsParameters,
             null,
             meta.IsNullable,
             meta.IsNonNullableValueType,
@@ -550,14 +579,16 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static ParameterClassificationResult ParameterSuccess(
         in ParameterMeta meta,
-        EndpointParameterSource source,
+        ParameterSource source,
         string? routeName = null,
         string? headerName = null,
         string? queryName = null,
         string? keyedServiceKey = null,
         string? formName = null,
-        CustomBindingMethod customBinding = CustomBindingMethod.None) =>
-        new(false, new EndpointParameter(
+        CustomBindingMethod customBinding = CustomBindingMethod.None,
+        EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default)
+    {
+        return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             source,
@@ -568,14 +599,26 @@ public sealed partial class ErrorOrEndpointGenerator
             meta.CollectionItemTypeFqn,
             default,
             customBinding,
-            meta.RequiresValidation));
+            meta.RequiresValidation,
+            emptyBodyBehavior));
+    }
+
+    private static EmptyBodyBehavior DetectEmptyBodyBehavior(IParameterSymbol parameter)
+    {
+        foreach (var attr in parameter.GetAttributes())
+        {
+            var name = attr.AttributeClass?.Name;
+            if (name is "AllowEmptyBodyAttribute" or "AllowEmptyBody")
+                return EmptyBodyBehavior.Allow;
+        }
+
+        return EmptyBodyBehavior.Default;
+    }
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
     {
         public static readonly ParameterClassificationResult Error = new(true, default);
     }
-
-    #region Type Detection Helpers
 
     private static RoutePrimitiveKind? TryGetRoutePrimitiveKind(ITypeSymbol type, ErrorOrContext context)
     {
@@ -644,23 +687,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool ImplementsBindableInterface(ITypeSymbol type, ErrorOrContext context)
     {
-        foreach (var iface in type.AllInterfaces)
-        {
-            if (iface is not { IsGenericType: true }) continue;
-
-            var constructed = iface.ConstructedFrom;
-
-            if (context.BindableFromHttpContext is not null)
-            {
-                if (constructed.IsEqualTo(context.BindableFromHttpContext))
-                    return true;
-            }
-            else if (constructed.MetadataName == "IBindableFromHttpContext`1" &&
-                     constructed.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http")
-                return true;
-        }
-
-        return false;
+        return context.BindableFromHttpContext is not null && type.IsOrImplements(context.BindableFromHttpContext);
     }
 
     private static CustomBindingMethod DetectBindAsyncMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -677,7 +704,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member, ErrorOrContext context)
     {
-        if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method || !IsTaskLike(method.ReturnType, context) || method.Parameters.Length < 1 || !context.IsHttpContext(method.Parameters[0].Type))
+        if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
+            !IsTaskLike(method.ReturnType, context) || method.Parameters.Length < 1 ||
+            !context.IsHttpContext(method.Parameters[0].Type))
             return CustomBindingMethod.None;
 
         if (method.Parameters.Length >= 2 && context.IsParameterInfo(method.Parameters[1].Type))
@@ -691,9 +720,9 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type is not INamedTypeSymbol named) return false;
         var constructed = named.ConstructedFrom;
 
-        return context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT) ||
-               context.ValueTaskOfT is not null &&
-               constructed.IsEqualTo(context.ValueTaskOfT);
+        return (context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT)) ||
+               (context.ValueTaskOfT is not null &&
+                constructed.IsEqualTo(context.ValueTaskOfT));
     }
 
     private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -710,7 +739,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static CustomBindingMethod ClassifyTryParseMember(ISymbol member, ErrorOrContext context)
     {
-        if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method || method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) || method.Parameters[^1].RefKind != RefKind.Out)
+        if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method ||
+            method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) ||
+            method.Parameters[^1].RefKind != RefKind.Out)
             return CustomBindingMethod.None;
 
         if (method.Parameters.Length >= 3)
@@ -751,7 +782,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
         ITypeSymbol? itemType = null;
         if (type is IArrayTypeSymbol arrayType)
+        {
             itemType = arrayType.ElementType;
+        }
         else if (type is INamedTypeSymbol { IsGenericType: true } named)
         {
             var origin = named.ConstructedFrom;
@@ -764,16 +797,18 @@ public sealed partial class ErrorOrEndpointGenerator
             : (false, null, null);
     }
 
-    private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context) =>
-        context.ListOfT is not null && origin.IsEqualTo(context.ListOfT) ||
-        context.IListOfT is not null && origin.IsEqualTo(context.IListOfT) ||
-        context.IEnumerableOfT is not null &&
-        origin.IsEqualTo(context.IEnumerableOfT) ||
-        context.IReadOnlyListOfT is not null &&
-        origin.IsEqualTo(context.IReadOnlyListOfT) ||
-        context.ICollectionOfT is not null &&
-        origin.IsEqualTo(context.ICollectionOfT) ||
-        context.HashSetOfT is not null && origin.IsEqualTo(context.HashSetOfT);
+    private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context)
+    {
+        return (context.ListOfT is not null && origin.IsEqualTo(context.ListOfT)) ||
+               (context.IListOfT is not null && origin.IsEqualTo(context.IListOfT)) ||
+               (context.IEnumerableOfT is not null &&
+                origin.IsEqualTo(context.IEnumerableOfT)) ||
+               (context.IReadOnlyListOfT is not null &&
+                origin.IsEqualTo(context.IReadOnlyListOfT)) ||
+               (context.ICollectionOfT is not null &&
+                origin.IsEqualTo(context.ICollectionOfT)) ||
+               (context.HashSetOfT is not null && origin.IsEqualTo(context.HashSetOfT));
+    }
 
     private static (bool IsNullable, bool IsNonNullableValueType) GetParameterNullability(
         ITypeSymbol type,
@@ -791,15 +826,10 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     // ReSharper disable once SuggestBaseTypeForParameter - IParameterSymbol is semantically correct
-    private static string? ExtractKeyFromKeyedServiceAttribute(IParameterSymbol parameter, ErrorOrContext context)
+    private static string? ExtractKeyFromKeyedServiceAttribute(IParameterSymbol parameter)
     {
-        AttributeData? attr = null;
-        foreach (var a in parameter.GetAttributes())
-            if (a.AttributeClass.IsEqualTo(context.FromKeyedServices))
-            {
-                attr = a;
-                break;
-            }
+        var matcher = new AttributeNameMatcher(WellKnownTypes.FromKeyedServicesAttribute);
+        var attr = parameter.GetAttributes().FirstOrDefault(a => matcher.IsMatch(a.AttributeClass));
 
         if (attr is null || attr.ConstructorArguments.Length is 0)
             return null;
@@ -851,7 +881,8 @@ public sealed partial class ErrorOrEndpointGenerator
             _fullName = fullName;
             var lastDot = fullName.LastIndexOf('.');
             _shortName = lastDot >= 0 ? fullName[(lastDot + 1)..] : fullName;
-            _shortNameWithoutAttr = _shortName.EndsWith("Attribute") ? _shortName[..^"Attribute".Length] : _shortName;
+            _shortNameWithoutAttr =
+                _shortName.EndsWithOrdinal("Attribute") ? _shortName[..^"Attribute".Length] : _shortName;
         }
 
         public bool IsMatch(ISymbol? attributeClass)
@@ -859,7 +890,7 @@ public sealed partial class ErrorOrEndpointGenerator
             if (attributeClass is not ITypeSymbol typeSymbol) return false;
             var display = typeSymbol.GetFullyQualifiedName();
 
-            if (display.StartsWith("global::"))
+            if (display.StartsWithOrdinal("global::"))
                 display = display[8..];
 
             // Strict match: Must match FQN or ShortName (if FQN not available/provided)
@@ -903,17 +934,17 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     These patterns identify types that should be resolved from DI container.
     /// </summary>
     private static readonly TypeMatcher ServiceNameMatcher = SymbolMatch.Type()
-        .Where(static t => t.Name.EndsWith("Service", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Repository", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Handler", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Manager", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Provider", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Factory", StringComparison.Ordinal) ||
-                           t.Name.EndsWith("Client", StringComparison.Ordinal));
+        .Where(static t => t.Name.EndsWithOrdinal("Service") ||
+                           t.Name.EndsWithOrdinal("Repository") ||
+                           t.Name.EndsWithOrdinal("Handler") ||
+                           t.Name.EndsWithOrdinal("Manager") ||
+                           t.Name.EndsWithOrdinal("Provider") ||
+                           t.Name.EndsWithOrdinal("Factory") ||
+                           t.Name.EndsWithOrdinal("Client"));
 
     private static readonly TypeMatcher DbContextMatcher = SymbolMatch.Type()
-        .Where(static t => t.Name.EndsWith("Context", StringComparison.Ordinal) &&
-                           (t.Name.Contains("Db") || t.Name.StartsWith("Db", StringComparison.Ordinal)));
+        .Where(static t => t.Name.EndsWithOrdinal("Context") &&
+                           (t.Name.Contains("Db") || t.Name.StartsWithOrdinal("Db")));
 
     /// <summary>
     ///     Detects if a type is likely a DI service based on naming conventions.
@@ -987,5 +1018,4 @@ public sealed partial class ErrorOrEndpointGenerator
         // Everything else is complex (DTOs, records, classes)
     }
 
-    #endregion
 }

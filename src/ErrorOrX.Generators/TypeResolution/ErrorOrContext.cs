@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
 // ReSharper disable InconsistentNaming
@@ -8,7 +7,6 @@ namespace ErrorOr.Generators;
 /// <summary>
 ///     Compilation type resolution context for ErrorOr.Endpoints generator.
 ///     Resolves all well-known symbols from ASP.NET Core, System, and ErrorOr libraries.
-///
 ///     Symbols are organized by category:
 ///     - **Route Binding:** Primitives supported in route templates (int, Guid, DateTime, etc.)
 ///     - **Query/Header Binding:** Types bindable from query strings and headers
@@ -18,7 +16,6 @@ namespace ErrorOr.Generators;
 ///     - **Validation:** ValidationAttribute and IValidatableObject for automatic validation
 ///     - **Middleware:** Authorization, rate limiting, output caching, CORS attributes
 ///     - **Versioning:** API versioning attributes from Asp.Versioning.Http package
-///
 ///     Each symbol includes fallback namespace/name comparison for robustness when
 ///     symbol resolution fails due to missing assembly references or framework mismatches.
 /// </summary>
@@ -96,7 +93,6 @@ internal sealed class ErrorOrContext
         ApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionAttribute);
         ApiVersionNeutralAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionNeutralAttribute);
         MapToApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.MapToApiVersionAttribute);
-        ApiVersion = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersion);
 
         RouteGroupAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.RouteGroupAttribute);
     }
@@ -168,7 +164,6 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? ApiVersionAttribute { get; }
     public INamedTypeSymbol? ApiVersionNeutralAttribute { get; }
     public INamedTypeSymbol? MapToApiVersionAttribute { get; }
-    public INamedTypeSymbol? ApiVersion { get; }
 
     public INamedTypeSymbol? RouteGroupAttribute { get; }
 
@@ -191,49 +186,39 @@ internal sealed class ErrorOrContext
     ///     Returns true if the type:
     ///     1. Has any property (including inherited) with an attribute deriving from ValidationAttribute, OR
     ///     2. Implements IValidatableObject
-    ///
     ///     Used during parameter binding to mark parameters for validation metadata.
     ///     ASP.NET Core runtime automatically invokes validation if metadata is present.
     ///     This enables automatic validation detection without hardcoding specific attributes.
     /// </summary>
     public bool RequiresValidation(ITypeSymbol? type)
     {
-        try
+        if (type is null || ValidationAttribute is null)
+            return false;
+
+        if (type.SpecialType is not SpecialType.None ||
+            type.TypeKind is TypeKind.Enum or TypeKind.Interface)
+            return false;
+
+        if (IValidatableObject is not null &&
+            type.AllInterfaces.Any(i => i.IsEqualTo(IValidatableObject)))
+            return true;
+
+        var current = type;
+        while (current is INamedTypeSymbol namedType)
         {
-            if (type is null || ValidationAttribute is null)
-                return false;
-
-            if (type.SpecialType is not SpecialType.None ||
-                type.TypeKind is TypeKind.Enum or TypeKind.Interface)
-                return false;
-
-            if (IValidatableObject is not null &&
-                type.AllInterfaces.Any(i => i.IsEqualTo(IValidatableObject)))
-                return true;
-
-            var current = type;
-            while (current is INamedTypeSymbol namedType)
+            foreach (var member in namedType.GetMembers())
             {
-                foreach (var member in namedType.GetMembers())
-                {
-                    if (member is not IPropertySymbol property)
-                        continue;
+                if (member is not IPropertySymbol property)
+                    continue;
 
-                    foreach (var attribute in property.GetAttributes())
-                        if (attribute.AttributeClass is not null &&
-                            attribute.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
-                            return true;
-                }
-
-                current = namedType.BaseType;
+                if (property.HasAttribute(ValidationAttribute))
+                    return true;
             }
 
-            return false;
+            current = namedType.BaseType;
         }
-        catch
-        {
-            return false;
-        }
+
+        return false;
     }
 
     /// <summary>Checks if the type implements IFormFile.</summary>

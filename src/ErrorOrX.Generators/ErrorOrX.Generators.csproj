@@ -23,6 +23,13 @@
     </PropertyGroup>
 
     <!-- ═══════════════════════════════════════════════════════════════════════════
+         GLOBAL USINGS
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <ItemGroup>
+        <Using Include="ANcpLua.Roslyn.Utilities"/>
+    </ItemGroup>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
          ANALYZER RELEASE TRACKING (for RS2008)
          ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
@@ -35,12 +42,6 @@
          ReferenceOutputAssembly=false → No compile-time reference (TFM incompatible)
          PrivateAssets=none → Dependency appears in nupkg for consumers
          ═══════════════════════════════════════════════════════════════════════════ -->
-    <ItemGroup>
-        <ProjectReference Include="../ErrorOrX/ErrorOrX.csproj"
-                          ReferenceOutputAssembly="false"
-                          SkipGetTargetFrameworkProperties="true"
-                          PrivateAssets="none"/>
-    </ItemGroup>
 
     <!-- ═══════════════════════════════════════════════════════════════════════════
          GENERATOR DEPENDENCIES (bundled, not exposed to consumers)

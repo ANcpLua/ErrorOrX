@@ -312,10 +312,12 @@ internal static partial class Program
             }
 
             if (!string.Equals(descriptor.Category, release.Category, StringComparison.Ordinal))
-                errors.Add($"Release category mismatch for {descriptor.Id}: '{release.Category}' vs '{descriptor.Category}'.");
+                errors.Add(
+                    $"Release category mismatch for {descriptor.Id}: '{release.Category}' vs '{descriptor.Category}'.");
 
             if (!string.Equals(descriptor.Severity, release.Severity, StringComparison.Ordinal))
-                errors.Add($"Release severity mismatch for {descriptor.Id}: '{release.Severity}' vs '{descriptor.Severity}'.");
+                errors.Add(
+                    $"Release severity mismatch for {descriptor.Id}: '{release.Severity}' vs '{descriptor.Severity}'.");
 
             if (!string.Equals(descriptor.Title, release.Notes, StringComparison.Ordinal))
                 errors.Add($"Release notes mismatch for {descriptor.Id}: '{release.Notes}' vs '{descriptor.Title}'.");
@@ -412,8 +414,10 @@ internal static partial class Program
 
         return expression switch
         {
-            LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression) => literal.Token.ValueText,
-            IdentifierNameSyntax identifier when constants.TryGetValue(identifier.Identifier.Text, out var value) => value,
+            LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression) => literal.Token
+                .ValueText,
+            IdentifierNameSyntax identifier when constants.TryGetValue(identifier.Identifier.Text, out var value) =>
+                value,
             _ => null
         };
     }
@@ -433,7 +437,8 @@ internal static partial class Program
         };
     }
 
-    private static ExpressionSyntax? GetArgumentExpression(SeparatedSyntaxList<ArgumentSyntax> args, int index, string name)
+    private static ExpressionSyntax? GetArgumentExpression(SeparatedSyntaxList<ArgumentSyntax> args, int index,
+        string name)
     {
         foreach (var arg in args)
             if (arg.NameColon?.Name.Identifier.Text == name)

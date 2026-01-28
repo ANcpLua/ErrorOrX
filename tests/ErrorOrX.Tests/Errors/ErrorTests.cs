@@ -5,15 +5,7 @@ public class ErrorTests
     private const string ErrorCode = "ErrorCode";
     private const string ErrorDescription = "ErrorDescription";
 
-    private static readonly Dictionary<string, object> Dictionary = new()
-    {
-        {
-            "key1", "value1"
-        },
-        {
-            "key2", 21
-        }
-    };
+    private static readonly Dictionary<string, object> Dictionary = new() { { "key1", "value1" }, { "key2", 21 } };
 
     #region Factory Methods with Custom Parameters
 
@@ -102,7 +94,7 @@ public class ErrorTests
         error.Code.Should().Be(ErrorCode);
         error.Description.Should().Be(ErrorDescription);
         error.Type.Should().Be(expectedErrorType);
-        error.NumericType.Should().Be((int)expectedErrorType);
+        ((int)error.Type).Should().Be((int)expectedErrorType);
         error.Metadata.Should().BeEquivalentTo(Dictionary);
     }
 
@@ -120,7 +112,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Failure");
         error.Description.Should().Be("A failure has occurred.");
         error.Type.Should().Be(ErrorType.Failure);
-        error.NumericType.Should().Be((int)ErrorType.Failure);
+        ((int)error.Type).Should().Be((int)ErrorType.Failure);
         error.Metadata.Should().BeNull();
     }
 
@@ -134,7 +126,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Unexpected");
         error.Description.Should().Be("An unexpected error has occurred.");
         error.Type.Should().Be(ErrorType.Unexpected);
-        error.NumericType.Should().Be((int)ErrorType.Unexpected);
+        ((int)error.Type).Should().Be((int)ErrorType.Unexpected);
         error.Metadata.Should().BeNull();
     }
 
@@ -148,7 +140,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Validation");
         error.Description.Should().Be("A validation error has occurred.");
         error.Type.Should().Be(ErrorType.Validation);
-        error.NumericType.Should().Be((int)ErrorType.Validation);
+        ((int)error.Type).Should().Be((int)ErrorType.Validation);
         error.Metadata.Should().BeNull();
     }
 
@@ -162,7 +154,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Conflict");
         error.Description.Should().Be("A conflict error has occurred.");
         error.Type.Should().Be(ErrorType.Conflict);
-        error.NumericType.Should().Be((int)ErrorType.Conflict);
+        ((int)error.Type).Should().Be((int)ErrorType.Conflict);
         error.Metadata.Should().BeNull();
     }
 
@@ -176,7 +168,7 @@ public class ErrorTests
         error.Code.Should().Be("General.NotFound");
         error.Description.Should().Be("A 'Not Found' error has occurred.");
         error.Type.Should().Be(ErrorType.NotFound);
-        error.NumericType.Should().Be((int)ErrorType.NotFound);
+        ((int)error.Type).Should().Be((int)ErrorType.NotFound);
         error.Metadata.Should().BeNull();
     }
 
@@ -190,7 +182,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Unauthorized");
         error.Description.Should().Be("An 'Unauthorized' error has occurred.");
         error.Type.Should().Be(ErrorType.Unauthorized);
-        error.NumericType.Should().Be((int)ErrorType.Unauthorized);
+        ((int)error.Type).Should().Be((int)ErrorType.Unauthorized);
         error.Metadata.Should().BeNull();
     }
 
@@ -204,7 +196,7 @@ public class ErrorTests
         error.Code.Should().Be("General.Forbidden");
         error.Description.Should().Be("A 'Forbidden' error has occurred.");
         error.Type.Should().Be(ErrorType.Forbidden);
-        error.NumericType.Should().Be((int)ErrorType.Forbidden);
+        ((int)error.Type).Should().Be((int)ErrorType.Forbidden);
         error.Metadata.Should().BeNull();
     }
 
@@ -213,7 +205,7 @@ public class ErrorTests
     #region Custom Error Type Tests
 
     [Fact]
-    public void CreateError_WhenCustomWithNegativeType_ShouldHandleNegativeNumericType()
+    public void CreateError_WhenCustomWithNegativeType_ShouldHandleNegativeType()
     {
         // Arrange
         const int NegativeType = -1;
@@ -224,7 +216,7 @@ public class ErrorTests
         var error = Error.Custom(NegativeType, Code, Description);
 
         // Assert
-        error.NumericType.Should().Be(NegativeType);
+        ((int)error.Type).Should().Be(NegativeType);
         error.Type.Should().Be((ErrorType)NegativeType);
         error.Code.Should().Be(Code);
         error.Description.Should().Be(Description);
@@ -244,7 +236,7 @@ public class ErrorTests
 
         // Assert
         error.Type.Should().Be(ErrorType.Validation);
-        error.NumericType.Should().Be(ValidationTypeValue);
+        ((int)error.Type).Should().Be(ValidationTypeValue);
     }
 
     [Fact]
@@ -269,7 +261,7 @@ public class ErrorTests
     [InlineData(ErrorType.NotFound)]
     [InlineData(ErrorType.Unauthorized)]
     [InlineData(ErrorType.Forbidden)]
-    public void AllErrorTypes_ShouldHaveMatchingNumericTypeValue(ErrorType expectedType)
+    public void AllErrorTypes_ShouldHaveMatchingTypeValue(ErrorType expectedType)
     {
         // Arrange
         var error = expectedType switch
@@ -286,28 +278,24 @@ public class ErrorTests
 
         // Act & Assert
         error.Type.Should().Be(expectedType);
-        error.NumericType.Should().Be((int)expectedType);
+        ((int)error.Type).Should().Be((int)expectedType);
     }
 
     [Fact]
     public void Metadata_WhenAccessedMultipleTimes_ShouldReturnSameReference()
     {
         // Arrange
-        var metadata = new Dictionary<string, object>
-        {
-            {
-                "key", "value"
-            }
-        };
+        var metadata = new Dictionary<string, object> { { "key", "value" } };
         var error = Error.Failure(metadata: metadata);
 
         // Act
         var firstAccess = error.Metadata;
         var secondAccess = error.Metadata;
 
-        // Assert
+        // Assert - FrozenDictionary is immutable so same instance is returned
         firstAccess.Should().BeSameAs(secondAccess);
-        firstAccess.Should().BeSameAs(metadata);
+        // Note: Original dictionary is copied to FrozenDictionary, so content equals but not same reference
+        firstAccess.Should().BeEquivalentTo(metadata);
     }
 
     [Fact]
@@ -316,32 +304,12 @@ public class ErrorTests
         // Arrange
         var complexMetadata = new Dictionary<string, object>
         {
-            {
-                "stringValue", "test"
-            },
-            {
-                "intValue", 42
-            },
-            {
-                "boolValue", true
-            },
-            {
-                "doubleValue", 3.14
-            },
-            {
-                "arrayValue", new[]
-                {
-                    1, 2, 3
-                }
-            },
-            {
-                "nestedDict", new Dictionary<string, object>
-                {
-                    {
-                        "nested", "value"
-                    }
-                }
-            }
+            { "stringValue", "test" },
+            { "intValue", 42 },
+            { "boolValue", true },
+            { "doubleValue", 3.14 },
+            { "arrayValue", new[] { 1, 2, 3 } },
+            { "nestedDict", new Dictionary<string, object> { { "nested", "value" } } }
         };
 
         // Act
