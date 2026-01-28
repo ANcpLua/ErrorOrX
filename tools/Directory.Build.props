@@ -1,0 +1,9 @@
+<Project>
+    <!-- Inherit from parent -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <!-- Internal tools: suppress self-referential release notes check -->
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);EOE900</NoWarn>
+    </PropertyGroup>
+</Project>
