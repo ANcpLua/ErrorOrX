@@ -127,27 +127,33 @@ internal static class ResultsUnionTypeBuilder
         bool hasBodyBinding,
         int maxArity = DefaultMaxArity,
         bool isAcceptedResponse = false,
-        MiddlewareInfo middleware = default)
+        MiddlewareInfo middleware = default,
+        bool hasParameterValidation = false)
     {
         // Use list of (StatusCode, TypeFqn) tuples for proper ordering
         var unionEntries = new List<(int Status, string TypeFqn)>(8);
         var includedStatuses = new HashSet<int>();
 
+        // Cache the array once to avoid repeated AsImmutableArray() calls
+        var errorTypeNamesArray = inferredErrorTypeNames.IsDefaultOrEmpty
+            ? ImmutableArray<string>.Empty
+            : inferredErrorTypeNames.AsImmutableArray();
+
         // Pre-detect if Validation errors are present (affects 400 response type choice)
-        var hasValidationError = !inferredErrorTypeNames.IsDefaultOrEmpty &&
-                                 inferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
+        // Include both ErrorOr validation errors AND DataAnnotations validation on parameters
+        var hasValidationError = hasParameterValidation || errorTypeNamesArray.Contains(ErrorMapping.Validation);
 
         // 1 & 2. Success and Binding outcomes (always present)
         AddSuccessAndBindingOutcomes(successTypeFqn, successKind, isAcceptedResponse, hasBodyBinding,
             hasValidationError, unionEntries, includedStatuses);
 
         // 3. Built-in ErrorTypes (mapped to static BCL types)
-        var hasCustom = AddInferredErrorOutcomes(inferredErrorTypeNames, unionEntries, includedStatuses) ||
+        var hasCustom = AddInferredErrorOutcomes(errorTypeNamesArray, unionEntries, includedStatuses) ||
                         !inferredCustomErrors.IsDefaultOrEmpty ||
                         AddDeclaredErrorOutcomes(declaredProducesErrors, includedStatuses);
 
         // 4. Middleware-induced status codes (401/403 for auth, 429 for rate limiting)
-        AddMiddlewareOutcomes(middleware, unionEntries, includedStatuses);
+        AddMiddlewareOutcomes(in middleware, unionEntries, includedStatuses);
 
         // 5. Decision: use union only when outcomes ≤ maxArity AND no dynamic/unknown outcomes
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
@@ -277,15 +283,15 @@ internal static class ResultsUnionTypeBuilder
     }
 
     private static bool AddInferredErrorOutcomes(
-        EquatableArray<string> inferredErrorTypeNames,
+        ImmutableArray<string> errorTypeNamesArray,
         ICollection<(int Status, string TypeFqn)> unionEntries,
         ISet<int> includedStatuses)
     {
-        if (inferredErrorTypeNames.IsDefaultOrEmpty)
+        if (errorTypeNamesArray.IsDefaultOrEmpty)
             return false;
 
         var hasUnknown = false;
-        foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray()
+        foreach (var errorTypeName in errorTypeNamesArray
                      .Distinct()
                      .OrderBy(static x => x, StringComparer.Ordinal))
         {
@@ -344,7 +350,7 @@ internal static class ResultsUnionTypeBuilder
 
         CollectInferredErrorStatuses(inferredErrorTypeNames, allStatuses);
         CollectDeclaredErrorStatuses(declaredProducesErrors, allStatuses);
-        CollectMiddlewareStatuses(middleware, allStatuses);
+        CollectMiddlewareStatuses(in middleware, allStatuses);
 
         return new UnionTypeResult(
             false,
@@ -379,7 +385,8 @@ internal static class ResultsUnionTypeBuilder
         if (inferredErrorTypeNames.IsDefaultOrEmpty)
             return;
 
-        foreach (var errorTypeName in inferredErrorTypeNames.AsImmutableArray().Distinct())
+        var array = inferredErrorTypeNames.AsImmutableArray();
+        foreach (var errorTypeName in array.Distinct())
             allStatuses.Add(ErrorMapping.GetStatusCode(errorTypeName));
     }
 

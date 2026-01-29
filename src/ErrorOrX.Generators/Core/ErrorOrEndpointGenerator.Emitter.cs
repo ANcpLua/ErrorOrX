@@ -110,8 +110,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Emit grouped endpoint mappings
         foreach (var ctx in groupContexts)
-        foreach (var indexed in ctx.Group.Endpoints)
+        {
+            foreach (var indexed in ctx.Group.Endpoints)
             GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
+        }
 
         // Emit ungrouped endpoint mappings (legacy pattern)
         foreach (var indexed in grouping.UngroupedEndpoints)
@@ -228,6 +230,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // If endpoint has specific versions to map to, emit MapToApiVersion calls
         var effectiveVersions = versioning.EffectiveVersions;
         if (!effectiveVersions.IsDefaultOrEmpty)
+        {
             foreach (var v in effectiveVersions.AsImmutableArray())
             {
                 var versionExpr = v.MinorVersion.HasValue
@@ -235,6 +238,7 @@ public sealed partial class ErrorOrEndpointGenerator
                     : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
                 code.AppendLine($"                .MapToApiVersion({versionExpr})");
             }
+        }
     }
 
     private static InvokerContext ComputeInvokerContext(
@@ -252,7 +256,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.SuccessTypeFqn, ep.SuccessKind,
             ep.InferredErrorTypeNames, ep.InferredCustomErrors,
             ep.DeclaredProducesErrors, hasBodyBinding, maxArity,
-            ep.IsAcceptedResponse, ep.Middleware);
+            ep.IsAcceptedResponse, ep.Middleware, ep.HasParameterValidation);
 
         var needsAwait = ep.IsAsync || hasBodyBinding || ep.HasBindAsyncParam;
 
@@ -289,7 +293,7 @@ public sealed partial class ErrorOrEndpointGenerator
         bodyCode.AppendLine(
             $"            var result = {awaitKeyword}{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}({args});");
 
-        EmitErrorHandling(bodyCode, ep, ctx);
+        EmitErrorHandling(bodyCode, in ep, in ctx);
 
         return (bodyCode, usesBindFail);
     }
@@ -308,12 +312,12 @@ public sealed partial class ErrorOrEndpointGenerator
         }
         else if (ctx.UnionResult.CanUseUnion)
         {
-            EmitUnionTypeErrorHandling(bodyCode, ep, ctx.UnionResult.ReturnTypeFqn, ctx.SuccessInfo, ctx.NeedsAwait);
+            EmitUnionTypeErrorHandling(bodyCode, in ep, ctx.UnionResult.ReturnTypeFqn, ctx.SuccessInfo, ctx.NeedsAwait);
         }
         else
         {
             // Use minimal interface (IsError/Errors/Value) instead of convenience Match API
-            var successFactory = GetSuccessFactoryWithLocation(ep, ctx.SuccessInfo);
+            var successFactory = GetSuccessFactoryWithLocation(in ep, ctx.SuccessInfo);
             bodyCode.AppendLine(
                 $"            if (result.IsError) return {ctx.WrapReturn("ToProblem(result.Errors)")};");
             bodyCode.AppendLine($"            return {ctx.WrapReturn(successFactory)};");
@@ -357,11 +361,11 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitInvoker(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity)
     {
-        var ctx = ComputeInvokerContext(ep, index, maxArity);
-        var (bodyCode, usesBindFail) = EmitBodyCode(ep, ctx);
+        var ctx = ComputeInvokerContext(in ep, index, maxArity);
+        var (bodyCode, usesBindFail) = EmitBodyCode(in ep, in ctx);
 
-        EmitWrapperMethod(code, ctx);
-        EmitCoreMethod(code, bodyCode, ctx, usesBindFail);
+        EmitWrapperMethod(code, in ctx);
+        EmitCoreMethod(code, bodyCode, in ctx, usesBindFail);
     }
 
     /// <summary>
@@ -438,19 +442,20 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            if (result.IsError)");
         code.AppendLine("            {");
         // Guard against empty errors list (defensive - shouldn't happen but prevents IndexOutOfRange)
+        // Use InternalServerError<ProblemDetails> to match the Results<...> union type
         code.AppendLine(
-            $"                if (result.Errors.Count is 0) return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.Problem}(\"An error occurred but no details were provided.\")")};");
+            $"                if (result.Errors.Count is 0) return {WrapReturn($"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(new {WellKnownTypes.Fqn.ProblemDetails} {{ Title = \"Error\", Detail = \"An error occurred but no details were provided.\", Status = 500 }})")};");
         code.AppendLine("                var first = result.Errors[0];");
 
-        EmitValidationHandling(code, ep, WrapReturn);
+        EmitValidationHandling(code, in ep, WrapReturn);
         EmitProblemDetailsBuilding(code);
-        EmitErrorTypeSwitch(code, ep, WrapReturn);
+        EmitErrorTypeSwitch(code, in ep, WrapReturn);
 
         code.AppendLine("            }");
         code.AppendLine();
 
         // Generate Location header for POST endpoints with Created response and Id property
-        var successFactory = GetSuccessFactoryWithLocation(ep, successInfo);
+        var successFactory = GetSuccessFactoryWithLocation(in ep, successInfo);
         code.AppendLine($"            return {WrapReturn(successFactory)};");
         return;
 
@@ -523,6 +528,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                {");
 
         if (!ep.InferredErrorTypeNames.IsDefaultOrEmpty)
+        {
             foreach (var errorTypeName in ep.InferredErrorTypeNames.AsImmutableArray()
                          .Where(static e => e != ErrorMapping.Validation)
                          .Distinct()
@@ -533,6 +539,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{errorTypeName}:");
                 code.AppendLine($"                        return {wrapReturn(factory)};");
             }
+        }
 
         code.AppendLine("                    default:");
         code.AppendLine($"                        return {wrapReturn(ErrorMapping.GetFactory(ErrorMapping.Failure))};");
@@ -769,30 +776,38 @@ public sealed partial class ErrorOrEndpointGenerator
         // Collect registered types from user context
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        foreach (var typeFqn in ctx.SerializableTypes)
+        {
+            foreach (var typeFqn in ctx.SerializableTypes)
             registeredTypes.Add(typeFqn);
+        }
 
         // Find missing types
         var missingTypes = new List<string>();
 
         // Check endpoint types
         foreach (var type in jsonTypes)
+        {
             if (!registeredTypes.Any(rt => type.TypeNamesEqual(rt)))
                 missingTypes.Add(type);
+        }
 
         // Always check for ProblemDetails and HttpValidationProblemDetails
         if (!registeredTypes.Any(static rt => WellKnownTypes.Fqn.ProblemDetails.TypeNamesEqual(rt)))
             missingTypes.Add(WellKnownTypes.Fqn.ProblemDetails);
         if (!registeredTypes.Any(static rt =>
                 WellKnownTypes.Fqn.HttpValidationProblemDetails.TypeNamesEqual(rt)))
+        {
             missingTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
+        }
 
         // Report EOE040 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
+        {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MissingCamelCasePolicy,
                 Location.None,
                 fullClassName));
+        }
 
         // Emit helper file with missing types as comments using IndentedStringBuilder
         var sb = new IndentedStringBuilder();
@@ -917,8 +932,10 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var p in ep.HandlerParameters)
+            {
                 if (p.Source == ParameterSource.Body)
                     types.Add(p.TypeFqn);
+            }
 
             if (ep is { IsSse: true, SseItemTypeFqn: not null })
             {

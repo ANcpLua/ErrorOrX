@@ -6,7 +6,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromFactory_WhenAccessingValue_ShouldReturnValue()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
 
         // Act
         var errorOrPerson = ErrorOrFactory.From(value);
@@ -20,7 +20,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromFactory_WhenAccessingErrors_ShouldThrow()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act
@@ -34,7 +34,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromFactory_WhenAccessingErrorsOrEmpty_ShouldReturnEmptyList()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act
@@ -48,7 +48,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromFactory_WhenAccessingFirstError_ShouldThrow()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act
@@ -62,7 +62,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromValue_WhenAccessingValue_ShouldReturnValue()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
 
         // Act
         var errorOrPerson = ErrorOrFactory.From(value);
@@ -76,7 +76,7 @@ public class ErrorOrInstantiationTests
     public void CreateFromValue_WhenAccessingErrors_ShouldThrow()
     {
         // Arrange
-        IEnumerable<string> value = ["value"];
+        string[] value = ["value"];
         var errorOrPerson = ErrorOrFactory.From(value);
 
         // Act

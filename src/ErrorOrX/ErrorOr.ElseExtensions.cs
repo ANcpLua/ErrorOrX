@@ -119,7 +119,7 @@ public static partial class ErrorOrExtensions
     {
         var result = await errorOr.ConfigureAwait(false);
 
-        return result.Else(error);
+        return result.Else(in error);
     }
 
     /// <summary>

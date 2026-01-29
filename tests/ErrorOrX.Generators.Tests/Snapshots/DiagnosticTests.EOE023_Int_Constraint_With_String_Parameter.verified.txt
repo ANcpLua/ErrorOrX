@@ -221,7 +221,7 @@ namespace ErrorOr.Generated
             var result = global::DiagnosticTest.TodoApi.GetById(p0!);
             if (result.IsError)
             {
-                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Problem("An error occurred but no details were provided."));
+                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 }));
                 var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {

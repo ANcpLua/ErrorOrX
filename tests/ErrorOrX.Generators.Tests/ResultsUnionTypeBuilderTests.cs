@@ -103,7 +103,7 @@ public class ResultsUnionTypeBuilderTests : GeneratorTestBase
         resultsLine.Should().NotBeNull("should have a Results line with InternalServerError");
 
         // Count InternalServerError only in the Results type declaration line
-        var internalServerErrorCount = resultsLine!.Split("InternalServerError").Length - 1;
+        var internalServerErrorCount = resultsLine.Split("InternalServerError").Length - 1;
         internalServerErrorCount.Should().Be(1, "500 status code should only appear once in Results<> type");
     }
 

@@ -420,11 +420,15 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             // Check for body-related types using pattern matchers
             if (IsStream(param.Type) || IsPipeReader(param.Type))
+            {
                 hasStream = true;
+            }
             else if (IsFormFile(param.Type) ||
-                     IsFormFileCollection(param.Type) ||
-                     IsFormCollection(param.Type))
+                                 IsFormFileCollection(param.Type) ||
+                                 IsFormCollection(param.Type))
+            {
                 hasFromForm = true;
+            }
         }
 
         // Multiple [FromBody] is always an error

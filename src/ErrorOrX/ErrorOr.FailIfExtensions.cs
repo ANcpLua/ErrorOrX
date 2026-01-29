@@ -25,7 +25,7 @@ public static partial class ErrorOrExtensions
     {
         var result = await errorOr.ConfigureAwait(false);
 
-        return result.FailIf(onValue, error);
+        return result.FailIf(onValue, in error);
     }
 
     /// <summary>

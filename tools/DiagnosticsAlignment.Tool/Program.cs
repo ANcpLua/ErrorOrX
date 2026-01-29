@@ -39,12 +39,12 @@ internal static partial class Program
         return 0;
     }
 
-    private static string ResolveRepoRoot(string[] args)
+    private static string ResolveRepoRoot(IReadOnlyList<string> args)
     {
         string? rootArg = null;
-        for (var i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Count; i++)
         {
-            if (string.Equals(args[i], "--root", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            if (string.Equals(args[i], "--root", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Count)
             {
                 rootArg = args[i + 1];
                 break;

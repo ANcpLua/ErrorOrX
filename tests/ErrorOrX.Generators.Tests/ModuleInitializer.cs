@@ -12,7 +12,7 @@ file static class ModuleInitializer
     {
         // Initialize Verify.SourceGenerators - handles GeneratorDriverRunResult serialization
         // This properly handles ImmutableArray<T> and other Roslyn types
-        VerifySourceGenerators.Initialize();
+        global::VerifyTests.VerifySourceGenerators.Initialize();
 
         // Configure Verify to properly serialize EquatableArray<T> as arrays
         // This prevents the ImmutableArray<T> default instance error during serialization

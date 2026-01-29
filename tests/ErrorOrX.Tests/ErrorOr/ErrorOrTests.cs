@@ -523,7 +523,7 @@ public class ErrorOrTests
         var error = Error.Validation("Test.Validation", "Value is invalid");
 
         // Act
-        var output = result.FailIf(static value => value < 0, error);
+        var output = result.FailIf(static value => value < 0, in error);
 
         // Assert
         output.IsError.Should().BeFalse();
@@ -538,7 +538,7 @@ public class ErrorOrTests
         var error = Error.Validation("Test.Validation", "Value must be positive");
 
         // Act
-        var output = result.FailIf(static value => value < 0, error);
+        var output = result.FailIf(static value => value < 0, in error);
 
         // Assert
         output.IsError.Should().BeTrue();
@@ -554,7 +554,7 @@ public class ErrorOrTests
         var newError = Error.Validation("Test.Validation", "Value is invalid");
 
         // Act
-        var output = result.FailIf(static _ => true, newError);
+        var output = result.FailIf(static _ => true, in newError);
 
         // Assert
         output.IsError.Should().BeTrue();

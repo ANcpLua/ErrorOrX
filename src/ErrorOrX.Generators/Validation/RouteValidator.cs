@@ -266,6 +266,7 @@ internal static class RouteValidator
 
             // First parameter wins for deterministic behavior
             if (lookup.TryGetValue(routeName, out var existingParam))
+            {
                 // Report EOE055 for duplicate route parameter binding
                 diagnostics?.Add(DiagnosticInfo.Create(
                     Descriptors.DuplicateRouteParameterBinding,
@@ -273,8 +274,11 @@ internal static class RouteValidator
                     routeName,
                     existingParam.Name,
                     param.Name));
+            }
             else
+            {
                 lookup[routeName] = param;
+            }
         }
 
         return lookup;
@@ -400,15 +404,19 @@ internal static class RouteValidator
             var normalizedKey = CanonicalizeRoute(ep.HttpMethod, ep.Pattern);
 
             if (routeMap.TryGetValue(normalizedKey, out var existing))
+            {
                 diagnostics.Add(Diagnostic.Create(
-                    Descriptors.DuplicateRoute,
-                    Location.None,
-                    ep.HttpMethod.ToUpperInvariant(),
-                    ep.Pattern,
-                    existing.HandlerContainingTypeFqn.ExtractShortTypeName(),
-                    existing.HandlerMethodName));
+                                Descriptors.DuplicateRoute,
+                                Location.None,
+                                ep.HttpMethod.ToUpperInvariant(),
+                                ep.Pattern,
+                                existing.HandlerContainingTypeFqn.ExtractShortTypeName(),
+                                existing.HandlerMethodName));
+            }
             else
+            {
                 routeMap[normalizedKey] = ep;
+            }
         }
 
         return diagnostics.ToImmutable();

@@ -349,7 +349,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        private static string? ResolveCategory(ExpressionSyntax expression, Dictionary<string, string> constants)
+        private static string? ResolveCategory(ExpressionSyntax expression, IReadOnlyDictionary<string, string> constants)
         {
             if (expression is LiteralExpressionSyntax literal &&
                 literal.IsKind(SyntaxKind.StringLiteralExpression))

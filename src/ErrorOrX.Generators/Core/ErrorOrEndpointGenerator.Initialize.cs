@@ -325,7 +325,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         {
             if (attr is null) continue;
             var flow = methodAnalysisFlow.Then(analysis =>
-                ProcessAttributeFlow(analysis, attr, errorOrContext, ct));
+                ProcessAttributeFlow(in analysis, attr, errorOrContext, ct));
             flows.Add(flow);
         }
 

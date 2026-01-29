@@ -58,7 +58,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeDynamic, SyntaxKind.IdentifierName);
     }
 
-    private static void AnalyzeInvocation(in SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not InvocationExpressionSyntax invocation)
             return;
@@ -110,7 +110,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static void AnalyzeDynamic(in SyntaxNodeAnalysisContext context)
+    private static void AnalyzeDynamic(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not IdentifierNameSyntax identifier)
             return;
@@ -128,7 +128,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsActivatorCreateInstance(IMethodSymbol method)
+    private static bool IsActivatorCreateInstance(ISymbol method)
     {
         return method.ContainingType?.ToDisplayString() == "System.Activator" &&
                method.Name == "CreateInstance";
@@ -145,17 +145,17 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
                method.Parameters[0].Type.SpecialType == SpecialType.System_String;
     }
 
-    private static bool IsReflectionMethod(IMethodSymbol method)
+    private static bool IsReflectionMethod(ISymbol method)
     {
         return IsSystemType(method.ContainingType) && ReflectionMethods.Contains(method.Name);
     }
 
-    private static bool IsSystemType(INamedTypeSymbol? type)
+    private static bool IsSystemType(ISymbol? type)
     {
         return type?.ToDisplayString() == "System.Type";
     }
 
-    private static bool IsExpressionCompile(IMethodSymbol method)
+    private static bool IsExpressionCompile(ISymbol method)
     {
         if (method.Name != "Compile")
             return false;
@@ -182,7 +182,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         }
 
         // Runtime type argument: Activator.CreateInstance(typeof(T))
-        if (invocation.ArgumentList.Arguments.Count > 0)
+        if (invocation.ArgumentList.Arguments.Any())
         {
             var firstArg = invocation.ArgumentList.Arguments[0].Expression;
             if (firstArg is TypeOfExpressionSyntax typeOf)

@@ -11,7 +11,7 @@ public class ErrorOrHashCodeTests
         ErrorOr<string?> errorOrNull = default;
 
         // Act
-        Action act = () => errorOrNull.GetHashCode();
+        Action act = () => _ = errorOrNull.GetHashCode();
 
         // Assert
         // We expect this to fail (Throw NullReferenceException) before the fix

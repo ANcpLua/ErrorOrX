@@ -253,34 +253,111 @@ internal readonly record struct EndpointDescriptor(
     /// <summary>
     ///     Returns true if any parameter is bound from body.
     /// </summary>
-    private bool HasBodyParam => HandlerParameters.AsImmutableArray().Any(static p => p.Source == ParameterSource.Body);
+    public bool HasBodyParam
+    {
+        get
+        {
+            foreach (var p in HandlerParameters.AsImmutableArray())
+            {
+                if (p.Source == ParameterSource.Body)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     /// <summary>
     ///     Returns true if any parameter is bound from form-related sources.
     /// </summary>
-    public bool HasFormParams => HandlerParameters.AsImmutableArray().Any(static p => p.Source.IsFormRelated);
+    public bool HasFormParams
+    {
+        get
+        {
+            foreach (var p in HandlerParameters.AsImmutableArray())
+            {
+                if (p.Source.IsFormRelated)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     /// <summary>
     ///     Returns true if endpoint has body or form binding (for OpenAPI and validation).
+    ///     Uses single-pass enumeration to avoid multiple iterations.
     /// </summary>
-    public bool HasBodyOrFormBinding => HasBodyParam || HasFormParams;
+    public bool HasBodyOrFormBinding
+    {
+        get
+        {
+            foreach (var p in HandlerParameters.AsImmutableArray())
+            {
+                if (p.Source == ParameterSource.Body || p.Source.IsFormRelated)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     /// <summary>
     ///     Returns true if any parameter uses BindAsync custom binding.
     /// </summary>
-    public bool HasBindAsyncParam => HandlerParameters.AsImmutableArray().Any(static p =>
-        p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam);
+    public bool HasBindAsyncParam
+    {
+        get
+        {
+            foreach (var p in HandlerParameters.AsImmutableArray())
+            {
+                if (p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Returns true if any parameter requires DataAnnotations validation.
+    /// </summary>
+    public bool HasParameterValidation
+    {
+        get
+        {
+            foreach (var p in HandlerParameters.AsImmutableArray())
+            {
+                if (p.RequiresValidation)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     /// <summary>Gets metadata value by key, or null if not found.</summary>
     public string? GetMetadata(string key)
     {
-        return Metadata.AsImmutableArray().FirstOrDefault(m => m.Key == key).Value;
+        foreach (var entry in Metadata.AsImmutableArray())
+        {
+            if (entry.Key == key)
+                return entry.Value;
+        }
+
+        return null;
     }
 
     /// <summary>Returns true if metadata with the given key exists.</summary>
     public bool HasMetadata(string key)
     {
-        return Metadata.AsImmutableArray().Any(m => m.Key == key);
+        foreach (var entry in Metadata.AsImmutableArray())
+        {
+            if (entry.Key == key)
+                return true;
+        }
+
+        return false;
     }
 }
 

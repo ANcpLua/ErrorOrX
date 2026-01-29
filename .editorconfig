@@ -15,6 +15,26 @@ dotnet_diagnostic.AL0025.severity = warning # Prefer static lambda
 dotnet_diagnostic.AL0026.severity = warning # DateTime.Now/UtcNow
 dotnet_diagnostic.AL0027.severity = warning # Newtonsoft.Json
 
+# ============================================================================
+# IDE Suggestion-Level Rules Rationale
+# ============================================================================
+# Pattern matching rules (IDE0019, IDE0020, IDE0078, IDE0083, IDE0170) are
+# intentionally set to "suggestion" rather than "warning" because:
+#
+# 1. Source Generator Constraints: ErrorOrX.Generators targets netstandard2.0
+#    for Roslyn analyzer compatibility. Some pattern matching features have
+#    limited support or different behavior in older language versions.
+#
+# 2. Generated Code Stability: The generator emits code targeting multiple
+#    .NET versions. Using simpler constructs (explicit casts, null checks)
+#    ensures broader compatibility and predictable behavior.
+#
+# 3. Auto-fixable: These are style preferences, not correctness issues.
+#    Developers can apply fixes individually when appropriate.
+#
+# Do NOT escalate these to "warning" - the current severity is intentional.
+# ============================================================================
+
 # Pattern matching style rules (auto-fixable)
 dotnet_diagnostic.IDE0019.severity = suggestion # Use pattern matching to avoid 'as' followed by null check
 dotnet_diagnostic.IDE0020.severity = suggestion # Use pattern matching to avoid 'is' check followed by cast
@@ -24,3 +44,21 @@ dotnet_diagnostic.IDE0170.severity = suggestion # Simplify property pattern
 csharp_style_prefer_pattern_matching = true:suggestion
 csharp_style_prefer_not_pattern = true:suggestion
 csharp_style_prefer_extended_property_pattern = true:suggestion
+
+# ============================================================================
+# Test Project Suppressions
+# ============================================================================
+# Test code intentionally uses patterns that trigger warnings in production code.
+# These are suppressed for test files only.
+
+[**/tests/**/*.cs]
+# Nullable suppression (null!) is intentional for testing null argument validation
+resharper_nullable_warning_suppression_is_used_highlighting = none
+# Record properties in test data structures may not be directly accessed
+resharper_not_accessed_positional_property_local_highlighting = none
+# Multiple enumeration is sometimes acceptable in tests for clarity
+resharper_possible_multiple_enumeration_highlighting = none
+# Pure method return values may be intentionally discarded in tests
+resharper_return_value_of_pure_method_is_not_used_highlighting = none
+# Redundant nullable suppressions after assertions
+resharper_redundant_nullable_warning_suppression_highlighting = none

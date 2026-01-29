@@ -237,7 +237,7 @@ namespace ErrorOr.Generated
             var result = global::DiagnosticTest.TodoApi.Create(p0!);
             if (result.IsError)
             {
-                if (result.Errors.Count is 0) return global::Microsoft.AspNetCore.Http.TypedResults.Problem("An error occurred but no details were provided.");
+                if (result.Errors.Count is 0) return global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 });
                 var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {

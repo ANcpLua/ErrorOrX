@@ -43,7 +43,7 @@ internal static class RouteBindingHelper
 
         var builder = ImmutableArray.CreateBuilder<RouteMethodParameterInfo>();
         foreach (var parameter in parameters)
-            CollectRouteMethodParameters(parameter, builder);
+            CollectRouteMethodParameters(in parameter, builder);
 
         return new EquatableArray<RouteMethodParameterInfo>(builder.ToImmutable());
     }
@@ -65,6 +65,6 @@ internal static class RouteBindingHelper
             return;
 
         foreach (var child in parameter.Children.AsImmutableArray())
-            CollectRouteMethodParameters(child, builder);
+            CollectRouteMethodParameters(in child, builder);
     }
 }

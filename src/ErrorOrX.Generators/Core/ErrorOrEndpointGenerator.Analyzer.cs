@@ -29,8 +29,10 @@ public sealed partial class ErrorOrEndpointGenerator
             foreach (var param in ep.HandlerParameters)
             {
                 if (param.Source == ParameterSource.Body)
+                {
                     if (!bodyTypes.ContainsKey(param.TypeFqn))
                         bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
+                }
             }
 
             // Collect response types

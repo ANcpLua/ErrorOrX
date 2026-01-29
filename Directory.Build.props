@@ -5,7 +5,7 @@
 
     <!-- Package versions for embedding (must match Directory.Packages.props) -->
     <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.18.3</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.20.0</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
     <!-- Repo-wide build settings -->
