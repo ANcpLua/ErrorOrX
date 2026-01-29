@@ -142,8 +142,6 @@ internal static class GroupEmitter
             "PUT" => "MapPut",
             "DELETE" => "MapDelete",
             "PATCH" => "MapPatch",
-            "HEAD" => "MapMethods",
-            "OPTIONS" => "MapMethods",
             _ => "MapMethods"
         };
     }

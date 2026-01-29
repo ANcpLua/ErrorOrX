@@ -80,7 +80,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
     private static void CompareDocs(
         IReadOnlyDictionary<string, DescriptorInfo> descriptors,
         IReadOnlyDictionary<string, DocInfo> docs,
-        List<string> issues)
+        ICollection<string> issues)
     {
         foreach (var descriptor in descriptors.Values)
         {
@@ -113,7 +113,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
     private static void CompareReleaseNotes(
         IReadOnlyDictionary<string, DescriptorInfo> descriptors,
         ReleaseData releases,
-        List<string> issues)
+        ICollection<string> issues)
     {
         foreach (var descriptor in descriptors.Values)
         {
@@ -232,7 +232,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         public static IReadOnlyDictionary<string, DescriptorInfo> Parse(
             AdditionalText file,
             CancellationToken ct,
-            List<string> issues)
+            ICollection<string> issues)
         {
             var text = file.GetText(ct);
             if (text is null)
@@ -409,7 +409,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         public static IReadOnlyDictionary<string, DocInfo> Parse(
             AdditionalText file,
             CancellationToken ct,
-            List<string> issues)
+            ICollection<string> issues)
         {
             var text = file.GetText(ct);
             if (text is null)
@@ -465,7 +465,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             AdditionalText shipped,
             AdditionalText unshipped,
             CancellationToken ct,
-            List<string> issues)
+            ICollection<string> issues)
         {
             var shippedData = ParseFile(shipped, ct, issues);
             var unshippedData = ParseFile(unshipped, ct, issues);
@@ -474,7 +474,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             return shippedData;
         }
 
-        private static ReleaseData ParseFile(AdditionalText file, CancellationToken ct, List<string> issues)
+        private static ReleaseData ParseFile(AdditionalText file, CancellationToken ct, ICollection<string> issues)
         {
             var newRules = new Dictionary<string, ReleaseRule>(StringComparer.Ordinal);
             var changedRules = new Dictionary<string, ReleaseRule>(StringComparer.Ordinal);
@@ -598,7 +598,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             return new ReleaseData(newRules, changedRules, removedRuleIds);
         }
 
-        private static void Merge(ReleaseData target, ReleaseData source, List<string> issues)
+        private static void Merge(ReleaseData target, ReleaseData source, ICollection<string> issues)
         {
             foreach (var rule in source.NewRules)
                 AddUnique(target.NewRules, rule.Key, rule.Value, "merged release data", issues);
@@ -610,11 +610,11 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         }
 
         private static void AddUnique(
-            Dictionary<string, ReleaseRule> target,
+            IDictionary<string, ReleaseRule> target,
             string id,
             ReleaseRule rule,
             string source,
-            List<string> issues)
+            ICollection<string> issues)
         {
             if (target.ContainsKey(id))
             {
@@ -625,7 +625,7 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             target.Add(id, rule);
         }
 
-        private static string[] SplitRow(string line, int expectedColumns, string path, List<string> issues)
+        private static string[] SplitRow(string line, int expectedColumns, string path, ICollection<string> issues)
         {
             var cells = line.Split('|')
                 .Select(static cell => cell.Trim())

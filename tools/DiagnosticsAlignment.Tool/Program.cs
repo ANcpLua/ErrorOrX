@@ -66,7 +66,7 @@ internal static partial class Program
         throw new InvalidOperationException("Could not locate repo root. Run from repo or pass --root <path>.");
     }
 
-    private static Dictionary<string, DescriptorInfo> LoadDescriptors(string path, List<string> errors)
+    private static Dictionary<string, DescriptorInfo> LoadDescriptors(string path, ICollection<string> errors)
     {
         var descriptors = new Dictionary<string, DescriptorInfo>(StringComparer.Ordinal);
         if (!File.Exists(path))
@@ -105,7 +105,7 @@ internal static partial class Program
         return descriptors;
     }
 
-    private static Dictionary<string, DocInfo> LoadDocs(string path, List<string> errors)
+    private static Dictionary<string, DocInfo> LoadDocs(string path, ICollection<string> errors)
     {
         var docs = new Dictionary<string, DocInfo>(StringComparer.Ordinal);
         if (!File.Exists(path))
@@ -158,7 +158,7 @@ internal static partial class Program
         return docs;
     }
 
-    private static ReleaseData LoadReleaseData(string shippedPath, string unshippedPath, List<string> errors)
+    private static ReleaseData LoadReleaseData(string shippedPath, string unshippedPath, ICollection<string> errors)
     {
         var active = new Dictionary<string, ReleaseInfo>(StringComparer.Ordinal);
         var removed = new HashSet<string>(StringComparer.Ordinal);
@@ -172,9 +172,9 @@ internal static partial class Program
     private static void ParseReleaseFile(
         string path,
         string source,
-        Dictionary<string, ReleaseInfo> active,
-        HashSet<string> removed,
-        List<string> errors)
+        IDictionary<string, ReleaseInfo> active,
+        ISet<string> removed,
+        ICollection<string> errors)
     {
         if (!File.Exists(path))
         {
@@ -258,8 +258,8 @@ internal static partial class Program
     }
 
     private static void AddReleaseEntry(
-        Dictionary<string, ReleaseInfo> active,
-        List<string> errors,
+        IDictionary<string, ReleaseInfo> active,
+        ICollection<string> errors,
         string id,
         string category,
         string severity,
@@ -276,9 +276,9 @@ internal static partial class Program
     }
 
     private static void ValidateDocs(
-        Dictionary<string, DescriptorInfo> descriptors,
-        Dictionary<string, DocInfo> docs,
-        List<string> errors)
+        IReadOnlyDictionary<string, DescriptorInfo> descriptors,
+        IReadOnlyDictionary<string, DocInfo> docs,
+        ICollection<string> errors)
     {
         foreach (var descriptor in descriptors.Values)
         {
@@ -303,9 +303,9 @@ internal static partial class Program
     }
 
     private static void ValidateReleases(
-        Dictionary<string, DescriptorInfo> descriptors,
+        IReadOnlyDictionary<string, DescriptorInfo> descriptors,
         ReleaseData releases,
-        List<string> errors)
+        ICollection<string> errors)
     {
         foreach (var descriptor in descriptors.Values)
         {
@@ -371,7 +371,7 @@ internal static partial class Program
         return constants;
     }
 
-    private static bool IsDiagnosticDescriptorField(FieldDeclarationSyntax field)
+    private static bool IsDiagnosticDescriptorField(BaseFieldDeclarationSyntax field)
     {
         switch (field.Declaration.Type)
         {
@@ -387,7 +387,7 @@ internal static partial class Program
 
     private static bool TryParseDescriptor(
         ExpressionSyntax expression,
-        Dictionary<string, string> constants,
+        IReadOnlyDictionary<string, string> constants,
         [NotNullWhen(true)] out DescriptorInfo? info,
         out string? error)
     {
@@ -424,7 +424,7 @@ internal static partial class Program
         SeparatedSyntaxList<ArgumentSyntax> args,
         int index,
         string name,
-        Dictionary<string, string> constants)
+        IReadOnlyDictionary<string, string> constants)
     {
         var expression = GetArgumentExpression(args, index, name);
         if (expression is null)
