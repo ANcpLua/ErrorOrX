@@ -2,10 +2,9 @@
     <!-- Import versioning -->
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
-
-    <!-- Package versions for embedding (must match Directory.Packages.props) -->
+    <!-- Version for nuspec bundling (must match Directory.Packages.props) -->
     <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.20.0</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.21.0</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
     <!-- Repo-wide build settings -->
