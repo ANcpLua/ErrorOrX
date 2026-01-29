@@ -62,3 +62,7 @@ resharper_possible_multiple_enumeration_highlighting = none
 resharper_return_value_of_pure_method_is_not_used_highlighting = none
 # Redundant nullable suppressions after assertions
 resharper_redundant_nullable_warning_suppression_highlighting = none
+
+[**/src/**/*.cs]
+# CA1859 requires concrete types for performance; Rider's suggestion to widen conflicts
+resharper_parameter_type_can_be_enumerable_local_highlighting = none
