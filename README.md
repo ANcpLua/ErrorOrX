@@ -17,6 +17,7 @@ Native AOT support.
 - **OpenAPI Ready** - Typed `Results<...>` unions for complete API documentation
 - **Native AOT** - Reflection-free code generation with JSON serialization contexts
 - **Middleware Support** - Emits fluent calls for `[Authorize]`, `[EnableRateLimiting]`, `[OutputCache]`
+- **API Versioning** - Full support for `[ApiVersion]`, `[MapToApiVersion]`, `[ApiVersionNeutral]`
 
 ## Installation
 
@@ -233,5 +234,6 @@ Disable generator JSON context if providing your own:
 
 - [API Reference](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/api.md)
 - [Parameter Binding](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/parameter-binding.md)
+- [API Versioning](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/api-versioning.md)
 - [Diagnostics](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/diagnostics.md)
 - [Changelog](https://github.com/ANcpLua/ErrorOrX/blob/main/CHANGELOG.md)

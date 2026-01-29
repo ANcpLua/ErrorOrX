@@ -6,7 +6,7 @@ namespace ErrorOr.Generators;
 /// <summary>
 ///     Represents a metadata entry for an endpoint.
 /// </summary>
-internal readonly record struct MetadataEntry(string Key, string Value) : IEquatable<MetadataEntry>;
+internal readonly record struct MetadataEntry(string Key, string Value);
 
 /// <summary>
 ///     Represents the custom binding method detected on a parameter type.
@@ -77,7 +77,7 @@ internal enum ParameterFlags
     Nullable = 1 << 8,
     NonNullableValueType = 1 << 9,
     Collection = 1 << 10,
-    RequiresValidation = 1 << 11,
+    RequiresValidation = 1 << 11
 }
 
 /// <summary>
@@ -102,8 +102,10 @@ internal enum EmptyBodyBehavior
 {
     /// <summary>Framework default: Nullable allows empty, non-nullable rejects.</summary>
     Default,
+
     /// <summary>Empty bodies are valid (null/default assigned).</summary>
     Allow,
+
     /// <summary>Empty bodies are invalid (400 Bad Request).</summary>
     Disallow
 }
@@ -172,10 +174,13 @@ internal readonly record struct ParameterMeta(
 
     /// <summary>Gets bound name for route context.</summary>
     public string RouteName => BoundName;
+
     /// <summary>Gets bound name for query context.</summary>
     public string QueryName => BoundName;
+
     /// <summary>Gets bound name for header context.</summary>
     public string HeaderName => BoundName;
+
     /// <summary>Gets bound name for form context.</summary>
     public string FormName => BoundName;
 }
@@ -267,12 +272,16 @@ internal readonly record struct EndpointDescriptor(
         p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam);
 
     /// <summary>Gets metadata value by key, or null if not found.</summary>
-    public string? GetMetadata(string key) =>
-        Metadata.AsImmutableArray().FirstOrDefault(m => m.Key == key).Value;
+    public string? GetMetadata(string key)
+    {
+        return Metadata.AsImmutableArray().FirstOrDefault(m => m.Key == key).Value;
+    }
 
     /// <summary>Returns true if metadata with the given key exists.</summary>
-    public bool HasMetadata(string key) =>
-        Metadata.AsImmutableArray().Any(m => m.Key == key);
+    public bool HasMetadata(string key)
+    {
+        return Metadata.AsImmutableArray().Any(m => m.Key == key);
+    }
 }
 
 /// <summary>
@@ -297,7 +306,7 @@ internal readonly record struct UnionTypeResult(
 /// </summary>
 internal readonly record struct MiddlewareInfo(
     bool RequiresAuthorization,
-    string? AuthorizationPolicy,
+    EquatableArray<string> AuthorizationPolicies,
     bool AllowAnonymous,
     bool EnableRateLimiting,
     string? RateLimitingPolicy,
@@ -413,8 +422,7 @@ internal readonly record struct VersioningInfo(
 /// </summary>
 internal readonly record struct RouteGroupInfo(
     string? GroupPath,
-    string? ApiName,
-    bool UseVersionedApi)
+    string? ApiName)
 {
     /// <summary>
     ///     Returns true if route grouping is enabled for this endpoint.

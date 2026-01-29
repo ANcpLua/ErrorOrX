@@ -1,24 +1,7 @@
 using Microsoft.CodeAnalysis;
 
-// ReSharper disable InconsistentNaming
-
 namespace ErrorOr.Generators;
 
-/// <summary>
-///     Compilation type resolution context for ErrorOr.Endpoints generator.
-///     Resolves all well-known symbols from ASP.NET Core, System, and ErrorOr libraries.
-///     Symbols are organized by category:
-///     - **Route Binding:** Primitives supported in route templates (int, Guid, DateTime, etc.)
-///     - **Query/Header Binding:** Types bindable from query strings and headers
-///     - **Body Binding:** Complex types deserialized from JSON request bodies
-///     - **Form Binding:** File and form collection types from multipart/form-data
-///     - **Special Types:** HttpContext, CancellationToken, and stream types
-///     - **Validation:** ValidationAttribute and IValidatableObject for automatic validation
-///     - **Middleware:** Authorization, rate limiting, output caching, CORS attributes
-///     - **Versioning:** API versioning attributes from Asp.Versioning.Http package
-///     Each symbol includes fallback namespace/name comparison for robustness when
-///     symbol resolution fails due to missing assembly references or framework mismatches.
-/// </summary>
 internal sealed class ErrorOrContext
 {
     public ErrorOrContext(Compilation compilation)
@@ -97,12 +80,12 @@ internal sealed class ErrorOrContext
         RouteGroupAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.RouteGroupAttribute);
     }
 
-    public INamedTypeSymbol? FromBodyAttribute { get; }
-    public INamedTypeSymbol? FromServicesAttribute { get; }
-    public INamedTypeSymbol? FromRouteAttribute { get; }
-    public INamedTypeSymbol? FromQueryAttribute { get; }
-    public INamedTypeSymbol? FromHeaderAttribute { get; }
-    public INamedTypeSymbol? FromFormAttribute { get; }
+    private INamedTypeSymbol? FromBodyAttribute { get; }
+    private INamedTypeSymbol? FromServicesAttribute { get; }
+    private INamedTypeSymbol? FromRouteAttribute { get; }
+    private INamedTypeSymbol? FromQueryAttribute { get; }
+    private INamedTypeSymbol? FromHeaderAttribute { get; }
+    private INamedTypeSymbol? FromFormAttribute { get; }
 
     public INamedTypeSymbol? SuccessMarker { get; }
     public INamedTypeSymbol? CreatedMarker { get; }
@@ -132,23 +115,23 @@ internal sealed class ErrorOrContext
 
     public INamedTypeSymbol? ReadOnlySpanOfT { get; }
     public INamedTypeSymbol? IFormatProvider { get; }
-    public INamedTypeSymbol? Stream { get; }
-    public INamedTypeSymbol? PipeReader { get; }
+    private INamedTypeSymbol? Stream { get; }
+    private INamedTypeSymbol? PipeReader { get; }
 
     public INamedTypeSymbol? ProducesErrorAttribute { get; }
     public INamedTypeSymbol? AcceptedResponseAttribute { get; }
     public INamedTypeSymbol? ReturnsErrorAttribute { get; }
 
-    public INamedTypeSymbol? FromKeyedServicesAttribute { get; }
-    public INamedTypeSymbol? AsParametersAttribute { get; }
-    public INamedTypeSymbol? FormFileCollection { get; }
-    public INamedTypeSymbol? FormCollection { get; }
-    public INamedTypeSymbol? FormFile { get; }
-    public INamedTypeSymbol? HttpContext { get; }
+    private INamedTypeSymbol? FromKeyedServicesAttribute { get; }
+    private INamedTypeSymbol? AsParametersAttribute { get; }
+    private INamedTypeSymbol? FormFileCollection { get; }
+    private INamedTypeSymbol? FormCollection { get; }
+    private INamedTypeSymbol? FormFile { get; }
+    private INamedTypeSymbol? HttpContext { get; }
     public INamedTypeSymbol? BindableFromHttpContext { get; }
-    public INamedTypeSymbol? ParameterInfo { get; }
+    private INamedTypeSymbol? ParameterInfo { get; }
 
-    public INamedTypeSymbol? CancellationToken { get; }
+    private INamedTypeSymbol? CancellationToken { get; }
 
     public INamedTypeSymbol? AuthorizeAttribute { get; }
     public INamedTypeSymbol? AllowAnonymousAttribute { get; }
@@ -158,8 +141,8 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? EnableCorsAttribute { get; }
     public INamedTypeSymbol? DisableCorsAttribute { get; }
 
-    public INamedTypeSymbol? ValidationAttribute { get; }
-    public INamedTypeSymbol? IValidatableObject { get; }
+    private INamedTypeSymbol? ValidationAttribute { get; }
+    private INamedTypeSymbol? IValidatableObject { get; }
 
     public INamedTypeSymbol? ApiVersionAttribute { get; }
     public INamedTypeSymbol? ApiVersionNeutralAttribute { get; }
@@ -180,6 +163,18 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? FromForm => FromFormAttribute;
     public INamedTypeSymbol? FromKeyedServices => FromKeyedServicesAttribute;
     public INamedTypeSymbol? AsParameters => AsParametersAttribute;
+
+    /// <summary>
+    ///     Creates an incremental provider that resolves ErrorOrContext once per compilation.
+    ///     This avoids the N+1 performance issue where ErrorOrContext was created N times
+    ///     (once per endpoint), causing 90+ symbol lookups per endpoint.
+    /// </summary>
+    public static IncrementalValueProvider<ErrorOrContext> CreateProvider(
+        IncrementalGeneratorInitializationContext context)
+    {
+        return context.CompilationProvider
+            .Select(static (compilation, _) => new ErrorOrContext(compilation));
+    }
 
     /// <summary>
     ///     Determines if a type requires BCL validation.

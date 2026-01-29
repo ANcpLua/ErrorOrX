@@ -1,7 +1,10 @@
 using ANcpLua.Roslyn.Utilities.Testing;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,11 +22,18 @@ public abstract class GeneratorTestBase
         typeof(IServiceCollection),
         typeof(OpenApiServiceCollectionExtensions),
         typeof(Error),
-        // Middleware attributes for auth/rate-limiting tests
+        // Middleware attributes for auth/rate-limiting/cors/caching tests
         typeof(AuthorizeAttribute),
         typeof(AllowAnonymousAttribute),
         typeof(EnableRateLimitingAttribute),
-        typeof(DisableRateLimitingAttribute)
+        typeof(DisableRateLimitingAttribute),
+        typeof(OutputCacheAttribute),
+        typeof(EnableCorsAttribute),
+        typeof(DisableCorsAttribute),
+        // API versioning attributes
+        typeof(ApiVersionAttribute),
+        typeof(ApiVersionNeutralAttribute),
+        typeof(MapToApiVersionAttribute)
     ];
 
     /// <summary>

@@ -517,6 +517,30 @@ public static ErrorOr<Data> GetLegacy() => ...
 [ApiVersion("2")]
 ```
 
+### EOE055 - Duplicate route parameter binding
+
+**Severity:** Warning
+
+Multiple method parameters bind to the same route parameter name. Only the first parameter will be used.
+
+```csharp
+// Warning: duplicate binding
+[Get("/files/{id}")]
+public static ErrorOr<File> Get(
+    [FromRoute(Name = "id")] int fileId,      // Used
+    [FromRoute(Name = "id")] string category) // EOE055: Ignored
+{
+    return new File(fileId, category);
+}
+
+// Fixed: use unique route parameter names
+[Get("/files/{fileId}/{category}")]
+public static ErrorOr<File> Get(int fileId, string category)
+{
+    return new File(fileId, category);
+}
+```
+
 ---
 
 ## AOT Safety Diagnostics (AOT001-AOT009)

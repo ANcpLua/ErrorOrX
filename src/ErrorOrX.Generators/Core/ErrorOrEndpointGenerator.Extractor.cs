@@ -34,18 +34,20 @@ public sealed partial class ErrorOrEndpointGenerator
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
 
-        // EOE021: Type parameters (open generics) cannot be used
-        if (innerType is ITypeParameterSymbol typeParam)
-            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                null, null, true, typeParam.Name);
-
-        // Also check if the inner type contains type parameters (e.g., List<T>)
-        if (innerType is INamedTypeSymbol namedInner &&
-            namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol))
+        switch (innerType)
         {
-            var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
-            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                null, null, true, firstTypeParam.Name);
+            // EOE021: Type parameters (open generics) cannot be used
+            case ITypeParameterSymbol typeParam:
+                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                    null, null, true, typeParam.Name);
+            // Also check if the inner type contains type parameters (e.g., List<T>)
+            case INamedTypeSymbol namedInner when
+                namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol):
+            {
+                var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
+                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                    null, null, true, firstTypeParam.Name);
+            }
         }
 
         var kind = SuccessKind.Payload;
@@ -209,11 +211,14 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var results = new List<ProducesErrorInfo>();
 
+        // AL0029: Need to extract constructor arguments, not just check existence
+#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
             if (context.ProducesErrorAttribute is not null &&
-                attr.AttributeClass.IsEqualTo(context.ProducesErrorAttribute))
-                if (attr.ConstructorArguments is [{ Value: int statusCode }, ..])
-                    results.Add(new ProducesErrorInfo(statusCode));
+                attr.AttributeClass?.IsEqualTo(context.ProducesErrorAttribute) == true &&
+                attr.ConstructorArguments is [{ Value: int statusCode }, ..])
+                results.Add(new ProducesErrorInfo(statusCode));
+#pragma warning restore AL0029
 
         return results.Count > 0
             ? new EquatableArray<ProducesErrorInfo>([.. results])
@@ -232,10 +237,11 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static SyntaxNode? GetMethodBody(ISymbol method)
     {
-        if (method.DeclaringSyntaxReferences.IsDefaultOrEmpty)
+        var refs = method.DeclaringSyntaxReferences;
+        if (refs.IsDefaultOrEmpty || refs.Length is 0)
             return null;
 
-        var syntax = method.DeclaringSyntaxReferences[0].GetSyntax();
+        var syntax = refs[0].GetSyntax();
         return syntax switch
         {
             MethodDeclarationSyntax m => (SyntaxNode?)m.Body ?? m.ExpressionBody,
@@ -401,10 +407,11 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var foundAny = false;
 
+        // AL0029: Need to extract constructor arguments, not just check existence
+#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
-            if (!attr.AttributeClass.IsEqualTo(context.ReturnsErrorAttribute))
-                continue;
+            if (attr.AttributeClass?.IsEqualTo(context.ReturnsErrorAttribute) != true) continue;
 
             var args = attr.ConstructorArguments;
             if (args.Length < 2)
@@ -436,6 +443,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 }
             }
         }
+#pragma warning restore AL0029
 
         return foundAny;
     }
@@ -517,9 +525,11 @@ public sealed partial class ErrorOrEndpointGenerator
         // Chained guards with short-circuit evaluation:
         // 1. Type check (also handles null)
         // 2. Same-assembly check (avoid external symbols)
+        //    - ILocalSymbol has no ContainingAssembly but is always in scope (local to current method)
         // 3. Add to visited (side-effect only if we'll use it, returns false if duplicate)
         return symbol is IPropertySymbol or IFieldSymbol or ILocalSymbol or IMethodSymbol &&
-               symbol.ContainingAssembly.IsEqualTo(semanticModel.Compilation.Assembly) &&
+               (symbol is ILocalSymbol ||
+                symbol.ContainingAssembly?.IsEqualTo(semanticModel.Compilation.Assembly) == true) &&
                visitedSymbols.Add(symbol);
     }
 
@@ -630,24 +640,32 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         return new MiddlewareInfo(
-            auth.Required, auth.Policy, auth.AllowAnonymous,
+            auth.Required, new EquatableArray<string>(auth.Policies), auth.AllowAnonymous,
             rateLimit.Enabled, rateLimit.Policy, rateLimit.Disabled,
             cache.Enabled, cache.Policy, cache.Duration,
             cors.Enabled, cors.Policy, cors.Disabled);
     }
 
     private static AuthInfo TryExtractAuth(
-        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, AuthInfo current)
+        AttributeData attr, ISymbol attrClass, ErrorOrContext context, AuthInfo current)
     {
         if (context.AuthorizeAttribute is not null &&
             attrClass.IsEqualTo(context.AuthorizeAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             policy ??= attr.NamedArguments.FirstOrDefault(static a => a.Key == "Policy").Value.Value as string;
+
+            // Accumulate policies rather than overwriting
+            var policies = policy is not null
+                ? current.Policies.IsDefault
+                    ? [policy]
+                    : current.Policies.Add(policy)
+                : current.Policies;
+
             return current with
             {
                 Required = true,
-                Policy = policy ?? current.Policy
+                Policies = policies
             };
         }
 
@@ -662,7 +680,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static RateLimitInfo TryExtractRateLimit(
-        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, RateLimitInfo current)
+        AttributeData attr, ISymbol attrClass, ErrorOrContext context, RateLimitInfo current)
     {
         if (context.EnableRateLimitingAttribute is not null &&
             attrClass.IsEqualTo(context.EnableRateLimitingAttribute))
@@ -686,7 +704,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static OutputCacheInfo TryExtractOutputCache(
-        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
+        AttributeData attr, ISymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
     {
         if (context.OutputCacheAttribute is null ||
             !attrClass.IsEqualTo(context.OutputCacheAttribute))
@@ -703,6 +721,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 {
                     Policy = policy
                 };
+
             if (namedArg is { Key: "Duration", Value.Value: int duration })
                 result = result with
                 {
@@ -714,7 +733,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static CorsInfo TryExtractCors(
-        AttributeData attr, INamedTypeSymbol attrClass, ErrorOrContext context, CorsInfo current)
+        AttributeData attr, ISymbol attrClass, ErrorOrContext context, CorsInfo current)
     {
         if (context.EnableCorsAttribute is not null &&
             attrClass.IsEqualTo(context.EnableCorsAttribute))
@@ -777,6 +796,8 @@ public sealed partial class ErrorOrEndpointGenerator
         ICollection<ApiVersionInfo> supportedVersions,
         ref bool isVersionNeutral)
     {
+        // AL0029: Need to extract constructor arguments and check multiple attribute types
+#pragma warning disable AL0029
         foreach (var attr in symbol.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -799,6 +820,7 @@ public sealed partial class ErrorOrEndpointGenerator
                     supportedVersions.Add(versionInfo.Value);
             }
         }
+#pragma warning restore AL0029
     }
 
     private static void ExtractMappedVersions(
@@ -806,6 +828,8 @@ public sealed partial class ErrorOrEndpointGenerator
         ErrorOrContext context,
         ICollection<ApiVersionInfo> mappedVersions)
     {
+        // AL0029: Need to extract constructor arguments from attribute data
+#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -820,6 +844,7 @@ public sealed partial class ErrorOrEndpointGenerator
                     mappedVersions.Add(versionInfo.Value);
             }
         }
+#pragma warning restore AL0029
     }
 
     /// <summary>
@@ -908,6 +933,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (context.RouteGroupAttribute is null)
             return default;
 
+        // AL0029: Need to extract constructor arguments and named arguments
+#pragma warning disable AL0029
         var attrs = containingType.GetAttributes();
         foreach (var attr in attrs)
         {
@@ -933,12 +960,9 @@ public sealed partial class ErrorOrEndpointGenerator
                     })
                     apiName = name;
 
-            // UseVersionedApi is true if we have both RouteGroup and versioning attributes
-            var hasVersioning = containingType.HasAttribute(WellKnownTypes.ApiVersionAttribute) ||
-                                containingType.HasAttribute(WellKnownTypes.ApiVersionNeutralAttribute);
-
-            return new RouteGroupInfo(groupPath, apiName, hasVersioning);
+            return new RouteGroupInfo(groupPath, apiName);
         }
+#pragma warning restore AL0029
 
         return default;
     }
@@ -946,31 +970,35 @@ public sealed partial class ErrorOrEndpointGenerator
     /// <summary>
     ///     Extracts metadata from [EndpointMetadata] attributes and [Obsolete] attribute.
     /// </summary>
-    private static EquatableArray<MetadataEntry> ExtractMetadata(IMethodSymbol method)
+    private static EquatableArray<MetadataEntry> ExtractMetadata(ISymbol method)
     {
         var metadata = ImmutableArray.CreateBuilder<MetadataEntry>();
 
+        // AL0029: Need to extract constructor arguments and process multiple attribute types
+#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
                 continue;
 
-            // [Obsolete] → deprecated metadata
-            if (attrClass.Name == "ObsoleteAttribute")
+            switch (attrClass.Name)
             {
-                metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
-                if (attr.ConstructorArguments is [{ Value: string msg }, ..])
-                    metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
-                continue;
-            }
-
-            // [EndpointMetadata(key, value)]
-            if (attrClass.Name == "EndpointMetadataAttribute" &&
-                attr.ConstructorArguments is [{ Value: string key }, { Value: string value }])
-            {
-                metadata.Add(new MetadataEntry(key, value));
+                // [Obsolete] → deprecated metadata
+                case "ObsoleteAttribute":
+                {
+                    metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
+                    if (attr.ConstructorArguments is [{ Value: string msg }, ..])
+                        metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
+                    continue;
+                }
+                // [EndpointMetadata(key, value)]
+                case "EndpointMetadataAttribute" when
+                    attr.ConstructorArguments is [{ Value: string key }, { Value: string value }]:
+                    metadata.Add(new MetadataEntry(key, value));
+                    break;
             }
         }
+#pragma warning restore AL0029
 
         return metadata.Count > 0
             ? new EquatableArray<MetadataEntry>(metadata.ToImmutable())
@@ -978,7 +1006,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     // Helper records for middleware extraction
-    private readonly record struct AuthInfo(bool Required, string? Policy, bool AllowAnonymous);
+    private readonly record struct AuthInfo(bool Required, ImmutableArray<string> Policies, bool AllowAnonymous);
 
     private readonly record struct RateLimitInfo(bool Enabled, string? Policy, bool Disabled);
 

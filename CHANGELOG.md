@@ -4,6 +4,37 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **BUG-001: TryGetReferencedSymbol NRE for ILocalSymbol**: Fixed `NullReferenceException` when error type inference
+  encountered local variables referencing Error factories. `ILocalSymbol` has no `ContainingAssembly`, but is always
+  in scope for the current method.
+
+- **BUG-002: AttributeClass null checks**: Added null guards on `attr.AttributeClass` in `HasParameterAttribute` and
+  `TryGetAttributeName` methods. `AttributeClass` can be null for malformed attributes or missing references.
+
+- **BUG-004: BuildRouteParameterLookup determinism**: Changed from "last wins" to "first wins" semantics when multiple
+  parameters bind to the same route name. This provides deterministic behavior and prevents silent data loss.
+
+- **BUG-005: GroupAggregator empty endpoints**: Added defensive check before accessing first element of `endpoints`
+  array in `CreateAggregate`. Prevents undefined behavior if collection is empty.
+
+- **N+1 symbol lookup performance**: Fixed N+1 performance issue where `ErrorOrContext` was created once per endpoint,
+  causing 90+ symbol lookups per endpoint. Now creates `ErrorOrContext` once per compilation using
+  `CompilationProvider` with `.Combine()` pattern. Reduces symbol lookups from N×90 to 90 for N endpoints.
+
+### Added
+
+- **EOE055 Diagnostic**: Warning when multiple method parameters bind to the same route parameter name. Helps catch
+  configuration errors early instead of silent "first wins" behavior.
+
+- **BugRegressionTests**: New test class with regression tests for BUG-001 through BUG-005 to prevent future regressions.
+
+- **DiagnosticTests**: Comprehensive test class covering 26 diagnostic scenarios including EOE003 (route parameter not bound),
+  EOE005 (invalid route pattern), EOE006 (multiple body sources), EOE011-EOE016 (invalid binding types), EOE017-EOE021
+  (type restrictions), EOE023 (constraint mismatch), EOE025 (ambiguous binding), and EOE032 (unknown error factory).
+  Increases diagnostic test coverage from 6/32 to 32/32.
+
 ## [3.0.1] - 2026-01-25
 
 ### Fixed

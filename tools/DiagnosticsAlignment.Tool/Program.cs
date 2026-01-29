@@ -43,11 +43,13 @@ internal static partial class Program
     {
         string? rootArg = null;
         for (var i = 0; i < args.Length; i++)
+        {
             if (string.Equals(args[i], "--root", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
             {
                 rootArg = args[i + 1];
                 break;
             }
+        }
 
         if (!string.IsNullOrWhiteSpace(rootArg))
             return Path.GetFullPath(rootArg);
@@ -294,8 +296,10 @@ internal static partial class Program
         }
 
         foreach (var doc in docs.Values)
+        {
             if (!descriptors.ContainsKey(doc.Id))
                 errors.Add($"Docs include {doc.Id} but no descriptor exists.");
+        }
     }
 
     private static void ValidateReleases(
@@ -312,24 +316,32 @@ internal static partial class Program
             }
 
             if (!string.Equals(descriptor.Category, release.Category, StringComparison.Ordinal))
+            {
                 errors.Add(
                     $"Release category mismatch for {descriptor.Id}: '{release.Category}' vs '{descriptor.Category}'.");
+            }
 
             if (!string.Equals(descriptor.Severity, release.Severity, StringComparison.Ordinal))
+            {
                 errors.Add(
                     $"Release severity mismatch for {descriptor.Id}: '{release.Severity}' vs '{descriptor.Severity}'.");
+            }
 
             if (!string.Equals(descriptor.Title, release.Notes, StringComparison.Ordinal))
                 errors.Add($"Release notes mismatch for {descriptor.Id}: '{release.Notes}' vs '{descriptor.Title}'.");
         }
 
         foreach (var release in releases.Active.Values)
+        {
             if (!descriptors.ContainsKey(release.Id))
                 errors.Add($"Release tracking includes {release.Id} but no descriptor exists.");
+        }
 
         foreach (var removed in releases.Removed)
+        {
             if (descriptors.ContainsKey(removed))
                 errors.Add($"Release tracking lists {removed} as removed, but descriptor still exists.");
+        }
     }
 
     private static Dictionary<string, string> ReadStringConstants(SyntaxNode root)
@@ -342,12 +354,18 @@ internal static partial class Program
 
             if (field.Declaration.Type is not PredefinedTypeSyntax predefined ||
                 !predefined.Keyword.IsKind(SyntaxKind.StringKeyword))
+            {
                 continue;
+            }
 
             foreach (var variable in field.Declaration.Variables)
+            {
                 if (variable.Initializer?.Value is LiteralExpressionSyntax literal &&
                     literal.IsKind(SyntaxKind.StringLiteralExpression))
+                {
                     constants[variable.Identifier.Text] = literal.Token.ValueText;
+                }
+            }
         }
 
         return constants;
@@ -441,8 +459,10 @@ internal static partial class Program
         string name)
     {
         foreach (var arg in args)
+        {
             if (arg.NameColon?.Name.Identifier.Text == name)
                 return arg.Expression;
+        }
 
         return args.Count > index ? args[index].Expression : null;
     }

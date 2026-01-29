@@ -25,6 +25,7 @@ internal static class GroupAggregator
         var ungroupedList = new List<IndexedEndpoint>();
 
         foreach (var item in indexed)
+        {
             if (item.Endpoint.RouteGroup.GroupPath is { } path)
             {
                 if (!groupDict.TryGetValue(path, out var list))
@@ -39,6 +40,7 @@ internal static class GroupAggregator
             {
                 ungroupedList.Add(item);
             }
+        }
 
         var grouped = groupDict
             .OrderBy(static kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
@@ -58,7 +60,8 @@ internal static class GroupAggregator
     private static RouteGroupAggregate CreateAggregate(string groupPath, ImmutableArray<IndexedEndpoint> endpoints)
     {
         // Get API name from first endpoint (assumed consistent within group)
-        var apiName = endpoints.FirstOrDefault().Endpoint.RouteGroup.ApiName;
+        // Defensive: empty array would cause FirstOrDefault() to return default struct
+        var apiName = endpoints.Length > 0 ? endpoints[0].Endpoint.RouteGroup.ApiName : null;
 
         // Check for version-neutral endpoints
         var hasVersionNeutral = endpoints.Any(static x => x.Endpoint.Versioning.IsVersionNeutral);

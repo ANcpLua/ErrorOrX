@@ -4,7 +4,10 @@ namespace ErrorOr.Generators.Emitters;
 
 internal static class BindingCodeEmitter
 {
-    private static bool EmitParameterBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    /// <summary>
+    ///     Emits parameter binding code and returns whether BindFail helper is used.
+    /// </summary>
+    internal static bool EmitParameterBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         return param.Source switch
@@ -29,56 +32,56 @@ internal static class BindingCodeEmitter
         };
     }
 
-    private static bool EmitServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
+    internal static bool EmitServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
     {
         code.AppendLine($"            var {paramName} = ctx.RequestServices.GetRequiredService<{param.TypeFqn}>();");
         return false;
     }
 
-    private static bool EmitKeyedServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
+    internal static bool EmitKeyedServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
     {
         code.AppendLine(
             $"            var {paramName} = ctx.RequestServices.GetRequiredKeyedService<{param.TypeFqn}>({param.KeyName});");
         return false;
     }
 
-    private static bool EmitHttpContextBinding(StringBuilder code, string paramName)
+    internal static bool EmitHttpContextBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = ctx;");
         return false;
     }
 
-    private static bool EmitCancellationTokenBinding(StringBuilder code, string paramName)
+    internal static bool EmitCancellationTokenBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = ctx.RequestAborted;");
         return false;
     }
 
-    private static bool EmitStreamBinding(StringBuilder code, string paramName)
+    internal static bool EmitStreamBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = ctx.Request.Body;");
         return false;
     }
 
-    private static bool EmitPipeReaderBinding(StringBuilder code, string paramName)
+    internal static bool EmitPipeReaderBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = ctx.Request.BodyReader;");
         return false;
     }
 
-    private static bool EmitFormFilesBinding(StringBuilder code, string paramName)
+    internal static bool EmitFormFilesBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = form.Files;");
         return false;
     }
 
-    private static bool EmitFormCollectionBinding(StringBuilder code, string paramName)
+    internal static bool EmitFormCollectionBinding(StringBuilder code, string paramName)
     {
         code.AppendLine($"            var {paramName} = form;");
         return false;
     }
 
-    private static bool EmitFormFileBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitFormFileBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         code.AppendLine($"            var {paramName} = form.Files.GetFile(\"{param.KeyName ?? param.Name}\");");
@@ -88,7 +91,7 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitRouteBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitRouteBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         var routeName = param.KeyName ?? param.Name;
@@ -99,7 +102,7 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         if (param.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
@@ -111,7 +114,7 @@ internal static class BindingCodeEmitter
             : EmitScalarQueryBinding(code, in param, paramName, queryKey, bindFailFn);
     }
 
-    private static bool EmitBindAsyncBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitBindAsyncBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         var baseType = param.TypeFqn.TrimEnd('?');
@@ -122,7 +125,7 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitCollectionQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitCollectionQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string queryKey, string itemType, string bindFailFn)
     {
         code.AppendLine($"            var {paramName}Raw = ctx.Request.Query[\"{queryKey}\"];");
@@ -152,7 +155,7 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static bool EmitScalarQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitScalarQueryBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string queryKey, string bindFailFn)
     {
         var usesBindFail = false;
@@ -189,7 +192,7 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static bool EmitHeaderBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitHeaderBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         var key = param.KeyName ?? param.Name;
@@ -262,7 +265,7 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitBodyBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         // Determine effective behavior: explicit > nullability-based default
@@ -277,7 +280,7 @@ internal static class BindingCodeEmitter
         };
     }
 
-    private static bool EmitBodyBindingAllow(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitBodyBindingAllow(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         // Allow empty bodies - check ContentLength before reading
@@ -302,7 +305,7 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitBodyBindingDisallow(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitBodyBindingDisallow(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         // Disallow empty bodies - reject with 400 if empty
@@ -324,7 +327,7 @@ internal static class BindingCodeEmitter
         return true;
     }
 
-    private static bool EmitFormBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitFormBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         if (!param.Children.IsDefaultOrEmpty)
@@ -377,7 +380,7 @@ internal static class BindingCodeEmitter
         return usesBindFailScalar;
     }
 
-    private static bool EmitAsParametersBinding(StringBuilder code, in EndpointParameter param, string paramName,
+    internal static bool EmitAsParametersBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
         var usesBindFail = false;
@@ -394,7 +397,7 @@ internal static class BindingCodeEmitter
         return usesBindFail;
     }
 
-    private static string BuildArgumentExpression(in EndpointParameter param, string paramName)
+    internal static string BuildArgumentExpression(in EndpointParameter param, string paramName)
     {
         return param.Source switch
         {

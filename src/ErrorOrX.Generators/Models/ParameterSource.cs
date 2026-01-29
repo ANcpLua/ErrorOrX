@@ -70,7 +70,7 @@ internal sealed class ParameterSource : IEquatable<ParameterSource>
     }
 
     /// <summary>Gets the unique identifier for this source.</summary>
-    public string Id { get; }
+    private string Id { get; }
 
     /// <summary>Gets whether this source binds from HTTP request data (vs DI or special types).</summary>
     public bool IsFromRequest { get; }

@@ -38,6 +38,7 @@
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>
         <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.2"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2"/>
+        <PackageVersion Include="Asp.Versioning.Http" Version="8.1.1"/>
         <!-- NOTE: ErrorOrX packages use ProjectReference during development.
                  Do NOT add PackageVersion entries here - see samples/ for correct pattern. -->
     </ItemGroup>

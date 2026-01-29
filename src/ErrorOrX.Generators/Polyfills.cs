@@ -243,7 +243,7 @@ namespace System
         /// <summary>Calculates the offset from the start using the given collection length.</summary>
         public int GetOffset(int length)
         {
-            return IsFromEnd ? length - (~_value) : _value;
+            return IsFromEnd ? length - ~_value : _value;
         }
 
         /// <inheritdoc />
@@ -273,7 +273,7 @@ namespace System
         /// <inheritdoc />
         public override string ToString()
         {
-            return IsFromEnd ? "^" + ((uint)Value) : ((uint)Value).ToString();
+            return IsFromEnd ? "^" + (uint)Value : ((uint)Value).ToString();
         }
     }
 }

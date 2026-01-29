@@ -389,6 +389,18 @@ public static class Descriptors
         true);
 
     /// <summary>
+    ///     Multiple method parameters bind to the same route parameter name.
+    ///     Only the first parameter will be used for route binding.
+    /// </summary>
+    public static readonly DiagnosticDescriptor DuplicateRouteParameterBinding = new(
+        "EOE055",
+        "Duplicate route parameter binding",
+        "Multiple parameters bind to route parameter '{0}'. Only the first parameter ('{1}') will be bound; '{2}' will be ignored.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
     ///     Activator.CreateInstance is not AOT-compatible.
     ///     Use factory methods or explicit construction instead.
     /// </summary>

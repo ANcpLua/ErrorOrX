@@ -263,11 +263,18 @@ internal partial class AppJsonSerializerContext : JsonSerializerContext;
 
 ## Current Gaps
 
-| Gap                                          | Status          |
-|----------------------------------------------|-----------------|
-| `[ApiVersion]` extraction                    | Not implemented |
-| Middleware emission tests                    | None exist      |
-| Integration tests (middleware actually runs) | None exist      |
+| Gap                                          | Status                                                  |
+|----------------------------------------------|---------------------------------------------------------|
+| Diagnostic tests (EOE003-EOE054)             | Only 6/32 tested - see `docs/audit-findings-2026-01.md` |
+| Integration tests (middleware actually runs) | None exist                                              |
+
+## API Versioning
+
+Full API versioning support is available. See `docs/api-versioning.md` for:
+
+- `[ApiVersion]`, `[MapToApiVersion]`, `[ApiVersionNeutral]` attributes
+- EOE050-054 diagnostics for versioning issues
+- Integration with `Asp.Versioning.Http` package
 
 ## Source Files
 
@@ -333,7 +340,7 @@ src/
 | `ErrorMapping.cs`   | Error type names, HTTP status codes, TypedResult factories     |
 | `EndpointModels.cs` | All data structures (EndpointDescriptor, MiddlewareInfo, etc.) |
 | `WellKnownTypes.cs` | All FQN string constants                                       |
-| `Descriptors.cs`    | All diagnostics (EOE001-EOE040)                                |
+| `Descriptors.cs`    | All diagnostics (EOE001-EOE054)                                |
 | `TypeNameHelper.cs` | Type name manipulation (normalize, unwrap, compare, extract)   |
 | `RouteValidator.cs` | Route validation AND route parameter lookup building           |
 
@@ -391,6 +398,11 @@ Before adding route/binding helpers, check `RouteValidator.cs` for:
 | EOE033 | Error    | Undocumented interface call                              |
 | EOE040 | Warning  | Missing CamelCase JSON policy                            |
 | EOE041 | Error    | Missing JsonSerializerContext for AOT (no user context)  |
+| EOE050 | Warning  | Version-neutral with mappings                            |
+| EOE051 | Warning  | Mapped version not declared                              |
+| EOE052 | Warning  | Asp.Versioning package not referenced                    |
+| EOE053 | Info     | Endpoint missing versioning                              |
+| EOE054 | Error    | Invalid API version format                               |
 
 ## ErrorType → HTTP (RFC 9110)
 
@@ -426,13 +438,14 @@ Consumers reference `ErrorOrX.Generators` which declares a dependency on `ErrorO
 
 | Package                          | Version  | Purpose                                |
 |----------------------------------|----------|----------------------------------------|
-| ANcpLua.Roslyn.Utilities         | 1.16.0   | Roslyn incremental generator utilities |
-| ANcpLua.Roslyn.Utilities.Testing | 1.16.0   | Generator testing framework            |
+| ANcpLua.Roslyn.Utilities         | 1.20.0   | Roslyn incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | 1.20.0   | Generator testing framework            |
 | ANcpLua.Analyzers                | 1.9.0    | Code quality analyzers                 |
 | Microsoft.CodeAnalysis.CSharp    | 5.0.0    | Roslyn APIs                            |
 | xunit.v3                         | 3.2.2    | Testing framework with MTP             |
 | AwesomeAssertions                | 9.3.0    | Fluent assertions                      |
 | Microsoft.SourceLink.GitHub      | 10.0.102 | Source Link support                    |
+| Asp.Versioning.Http              | 8.1.0    | API versioning (test project)          |
 
 ## Maintenance Notes
 

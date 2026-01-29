@@ -6,11 +6,6 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace ErrorOr.Generators;
 
-/// <summary>
-///     Generates OpenAPI transformers following the strict 1:1 mapping rule:
-///     - 1 attribute → 1 transformer → 1 registration
-///     - Generator is a transcriber, not a composer
-/// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 {
@@ -102,12 +97,6 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         var containingTypeFqn = containingType.GetFullyQualifiedName();
         var (tagName, operationId) = EndpointNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
 
-        // Normalized pattern for matching (remove leading slash if present, handle duplicates logic)
-        // But for OpenAPI context.Description.RelativePath usually has NO leading slash for route groups?
-        // Actually context.Description.RelativePath usually matches the full route pattern.
-        // We will store it exactly as extracted from attribute.
-        // Note: HttpMethod needs to be UPPER CASE for matching.
-
         return new OpenApiEndpointInfo(
             operationId,
             tagName,
@@ -124,6 +113,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             attr.ConstructorArguments[0].Value is string p &&
             !string.IsNullOrWhiteSpace(p))
             return p;
+
         return "/";
     }
 
@@ -374,6 +364,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
                 code.AppendLine(
                     $"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
+
             code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }
 

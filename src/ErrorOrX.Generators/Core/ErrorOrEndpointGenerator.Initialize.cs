@@ -19,7 +19,11 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     {
         context.RegisterPostInitializationOutput(EmitAttributes);
 
-        var endpoints = CombineHttpMethodProviders(context);
+        // Create ErrorOrContext once per compilation (fixes N+1 symbol lookup performance issue)
+        var errorOrContextProvider = ErrorOrContext.CreateProvider(context)
+            .WithTrackingName(TrackingNames.ErrorOrContext);
+
+        var endpoints = CombineHttpMethodProviders(context, errorOrContextProvider);
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
             .Select(ParseGenerateJsonContextOption);
@@ -169,14 +173,16 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     }
 
     private static IncrementalValueProvider<EquatableArray<EndpointDescriptor>> CombineHttpMethodProviders(
-        IncrementalGeneratorInitializationContext context)
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<ErrorOrContext> errorOrContextProvider)
     {
-        var getProvider = CreateEndpointProvider(context, WellKnownTypes.GetAttribute);
-        var postProvider = CreateEndpointProvider(context, WellKnownTypes.PostAttribute);
-        var putProvider = CreateEndpointProvider(context, WellKnownTypes.PutAttribute);
-        var deleteProvider = CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute);
-        var patchProvider = CreateEndpointProvider(context, WellKnownTypes.PatchAttribute);
-        var baseProvider = CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute);
+        var getProvider = CreateEndpointProvider(context, WellKnownTypes.GetAttribute, errorOrContextProvider);
+        var postProvider = CreateEndpointProvider(context, WellKnownTypes.PostAttribute, errorOrContextProvider);
+        var putProvider = CreateEndpointProvider(context, WellKnownTypes.PutAttribute, errorOrContextProvider);
+        var deleteProvider = CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute, errorOrContextProvider);
+        var patchProvider = CreateEndpointProvider(context, WellKnownTypes.PatchAttribute, errorOrContextProvider);
+        var baseProvider =
+            CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute, errorOrContextProvider);
 
         return IncrementalProviderExtensions.CombineSix(
             getProvider, postProvider, putProvider,
@@ -212,17 +218,18 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
         IncrementalGeneratorInitializationContext context,
-        string attributeName)
+        string attributeName,
+        IncrementalValueProvider<ErrorOrContext> errorOrContextProvider)
     {
         return context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 attributeName,
                 static (node, _) => node is MethodDeclarationSyntax,
                 static (ctx, _) => ctx)
-            .SelectFlow(static (ctx, ct) =>
+            .Combine(errorOrContextProvider)
+            .SelectFlow(static (pair, ct) =>
             {
-                // Lazy creation avoids caching ITypeSymbol (breaks incremental)
-                var errorOrContext = new ErrorOrContext(ctx.SemanticModel.Compilation);
+                var (ctx, errorOrContext) = pair;
                 return AnalyzeEndpointFlow(ctx, errorOrContext, ct);
             })
             .WithTrackingName(TrackingNames.EndpointBindingFlow(attributeName))
@@ -250,23 +257,29 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
                 // EOE017: Anonymous return type
                 if (returnInfo.IsAnonymousType)
+                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
+                }
 
                 // EOE020: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
+                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
                             returnInfo.InaccessibleTypeName ?? "unknown",
                             m.Name,
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
+                }
 
                 // EOE021: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
+                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
                             m.Name,
                             returnInfo.TypeParameterName ?? "T"));
+                }
 
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))
@@ -324,7 +337,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     }
 
     private static DiagnosticFlow<EndpointDescriptor> ProcessAttributeFlow(
-        MethodAnalysis analysis,
+        in MethodAnalysis analysis,
         AttributeData attr,
         ErrorOrContext errorOrContext,
         CancellationToken ct)
@@ -434,6 +447,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     private static class TrackingNames
     {
         public const string ResultsUnionMaxArity = "ResultsUnionMaxArity";
+        public const string ErrorOrContext = "ErrorOrContext";
 
         public static string EndpointBindingFlow(string attributeName)
         {

@@ -58,7 +58,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeDynamic, SyntaxKind.IdentifierName);
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(in SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not InvocationExpressionSyntax invocation)
             return;
@@ -103,12 +103,14 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         // Check for Expression.Compile()
         if (IsExpressionCompile(method))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.ExpressionCompile,
                 invocation.GetLocation()));
+        }
     }
 
-    private static void AnalyzeDynamic(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeDynamic(in SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not IdentifierNameSyntax identifier)
             return;
@@ -119,9 +121,11 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         var typeInfo = context.SemanticModel.GetTypeInfo(identifier, context.CancellationToken);
         if (typeInfo.Type is IDynamicTypeSymbol)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.DynamicKeyword,
                 identifier.GetLocation()));
+        }
     }
 
     private static bool IsActivatorCreateInstance(IMethodSymbol method)
@@ -173,7 +177,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
                 IsGenericMethod: true,
                 TypeArguments.Length: > 0
             })
+        {
             return method.TypeArguments[0].ToDisplayString();
+        }
 
         // Runtime type argument: Activator.CreateInstance(typeof(T))
         if (invocation.ArgumentList.Arguments.Count > 0)

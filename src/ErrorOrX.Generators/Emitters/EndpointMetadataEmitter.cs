@@ -103,11 +103,13 @@ internal static class EndpointMetadataEmitter
             // Error responses
             foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                          .OrderBy(static x => x))
+            {
                 EmitProducesMetadataLine(code, indent, statusCode,
                     statusCode == 400
                         ? WellKnownTypes.Fqn.HttpValidationProblemDetails
                         : WellKnownTypes.Fqn.ProblemDetails,
                     WellKnownTypes.Constants.ContentTypeProblemJson);
+            }
         }
     }
 
@@ -132,11 +134,20 @@ internal static class EndpointMetadataEmitter
 
         // Authorization: [Authorize] / [Authorize("Policy")] / [AllowAnonymous]
         if (middleware.AllowAnonymous)
+        {
             code.AppendLine($"{indent}.AllowAnonymous()");
+        }
         else if (middleware.RequiresAuthorization)
-            code.AppendLine(middleware.AuthorizationPolicy is not null
-                ? $"{indent}.RequireAuthorization(\"{middleware.AuthorizationPolicy}\")"
-                : $"{indent}.RequireAuthorization()");
+        {
+            var policies = middleware.AuthorizationPolicies.AsImmutableArray();
+            if (policies.IsDefaultOrEmpty)
+                code.AppendLine($"{indent}.RequireAuthorization()");
+            else if (policies.Length == 1)
+                code.AppendLine($"{indent}.RequireAuthorization(\"{policies[0]}\")");
+            else
+                code.AppendLine(
+                    $"{indent}.RequireAuthorization({string.Join(", ", policies.Select(static p => $"\"{p}\""))})");
+        }
 
         // Rate Limiting: [EnableRateLimiting("policy")] / [EnableRateLimiting] / [DisableRateLimiting]
         if (middleware.DisableRateLimiting)

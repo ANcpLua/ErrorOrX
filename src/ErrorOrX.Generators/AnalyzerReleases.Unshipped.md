@@ -3,6 +3,7 @@
  Rule ID | Category          | Severity | Notes
 ---------|-------------------|----------|---------------------------------------
  EOE041  | ErrorOr.Endpoints | Error    | Missing JsonSerializerContext for AOT
+ EOE055  | ErrorOr.Endpoints | Warning  | Duplicate route parameter binding
 
 ### Removed Rules
 

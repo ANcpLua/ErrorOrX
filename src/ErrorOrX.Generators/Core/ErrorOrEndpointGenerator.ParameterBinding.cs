@@ -128,19 +128,21 @@ public sealed partial class ErrorOrEndpointGenerator
         if (context.IsFormFileCollection(type)) return SpecialParameterKind.FormFileCollection;
         if (context.IsFormCollection(type)) return SpecialParameterKind.FormCollection;
         if (context.IsStream(type)) return SpecialParameterKind.Stream;
-        if (context.IsPipeReader(type)) return SpecialParameterKind.PipeReader;
-        return SpecialParameterKind.None;
+        return context.IsPipeReader(type) ? SpecialParameterKind.PipeReader : SpecialParameterKind.None;
     }
 
-    private static string DetermineBoundName(IParameterSymbol parameter, ParameterFlags flags, ErrorOrContext context)
+    private static string DetermineBoundName(ISymbol parameter, ParameterFlags flags, ErrorOrContext context)
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
-            return TryGetAttributeName(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute) ?? parameter.Name;
+            return TryGetAttributeName(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute) ??
+                   parameter.Name;
         if (flags.HasFlag(ParameterFlags.FromQuery))
-            return TryGetAttributeName(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute) ?? parameter.Name;
+            return TryGetAttributeName(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute) ??
+                   parameter.Name;
         if (flags.HasFlag(ParameterFlags.FromHeader))
-            return TryGetAttributeName(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute) ?? parameter.Name;
+            return TryGetAttributeName(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute) ??
+                   parameter.Name;
         if (flags.HasFlag(ParameterFlags.FromForm))
             return TryGetAttributeName(parameter, context.FromForm, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
 
@@ -191,6 +193,7 @@ public sealed partial class ErrorOrEndpointGenerator
             var behavior = DetectEmptyBodyBehavior(meta.Symbol);
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior);
         }
+
         if (meta.HasFromForm)
             return ClassifyFromFormParameter(in meta, method, diagnostics, context);
         if (meta.HasFromServices)
@@ -439,6 +442,23 @@ public sealed partial class ErrorOrEndpointGenerator
         return ClassifyFormDtoParameter(in meta, context);
     }
 
+    /// <summary>
+    ///     Pattern matchers for DI service detection using ANcpLua.Roslyn.Utilities.
+    ///     These patterns identify types that should be resolved from DI container.
+    /// </summary>
+    private static readonly TypeMatcher ServiceNameMatcher = SymbolMatch.Type()
+        .Where(static t => t.Name.EndsWithOrdinal("Service") ||
+                           t.Name.EndsWithOrdinal("Repository") ||
+                           t.Name.EndsWithOrdinal("Handler") ||
+                           t.Name.EndsWithOrdinal("Manager") ||
+                           t.Name.EndsWithOrdinal("Provider") ||
+                           t.Name.EndsWithOrdinal("Factory") ||
+                           t.Name.EndsWithOrdinal("Client"));
+
+    private static readonly TypeMatcher DbContextMatcher = SymbolMatch.Type()
+        .Where(static t => t.Name.EndsWithOrdinal("Context") &&
+                           (t.Name.Contains("Db") || t.Name.StartsWithOrdinal("Db")));
+
     private static ParameterClassificationResult ClassifyFormDtoParameter(
         in ParameterMeta meta,
         ErrorOrContext context)
@@ -603,21 +623,11 @@ public sealed partial class ErrorOrEndpointGenerator
             emptyBodyBehavior));
     }
 
-    private static EmptyBodyBehavior DetectEmptyBodyBehavior(IParameterSymbol parameter)
+    private static EmptyBodyBehavior DetectEmptyBodyBehavior(ISymbol parameter)
     {
-        foreach (var attr in parameter.GetAttributes())
-        {
-            var name = attr.AttributeClass?.Name;
-            if (name is "AllowEmptyBodyAttribute" or "AllowEmptyBody")
-                return EmptyBodyBehavior.Allow;
-        }
-
-        return EmptyBodyBehavior.Default;
-    }
-
-    private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
-    {
-        public static readonly ParameterClassificationResult Error = new(true, default);
+        return parameter.HasAttributeByShortName("AllowEmptyBody")
+            ? EmptyBodyBehavior.Allow
+            : EmptyBodyBehavior.Default;
     }
 
     private static RoutePrimitiveKind? TryGetRoutePrimitiveKind(ITypeSymbol type, ErrorOrContext context)
@@ -844,8 +854,9 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var attributes = parameter.GetAttributes();
 
+        // Pattern: is { } attrClass - guards null before IsEqualTo call
         if (attributeSymbol is not null && attributes.Any(attr =>
-                attr.AttributeClass.IsEqualTo(attributeSymbol)))
+                attr.AttributeClass is { } attrClass && attrClass.IsEqualTo(attributeSymbol)))
             return true;
 
         var matcher = new AttributeNameMatcher(attributeName);
@@ -860,45 +871,15 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (attributeSymbol is not null)
         {
+            // Pattern: is { } attrClass - guards null before IsEqualTo call
             var attr = attributes.FirstOrDefault(a =>
-                a.AttributeClass.IsEqualTo(attributeSymbol));
+                a.AttributeClass is { } attrClass && attrClass.IsEqualTo(attributeSymbol));
             if (attr is not null) return ExtractNameFromAttribute(attr);
         }
 
         var matcher = new AttributeNameMatcher(attributeName);
         var matchingAttr = attributes.FirstOrDefault(attr => matcher.IsMatch(attr.AttributeClass));
         return matchingAttr is not null ? ExtractNameFromAttribute(matchingAttr) : null;
-    }
-
-    private readonly struct AttributeNameMatcher
-    {
-        private readonly string _fullName;
-        private readonly string _shortName;
-        private readonly string _shortNameWithoutAttr;
-
-        public AttributeNameMatcher(string fullName)
-        {
-            _fullName = fullName;
-            var lastDot = fullName.LastIndexOf('.');
-            _shortName = lastDot >= 0 ? fullName[(lastDot + 1)..] : fullName;
-            _shortNameWithoutAttr =
-                _shortName.EndsWithOrdinal("Attribute") ? _shortName[..^"Attribute".Length] : _shortName;
-        }
-
-        public bool IsMatch(ISymbol? attributeClass)
-        {
-            if (attributeClass is not ITypeSymbol typeSymbol) return false;
-            var display = typeSymbol.GetFullyQualifiedName();
-
-            if (display.StartsWithOrdinal("global::"))
-                display = display[8..];
-
-            // Strict match: Must match FQN or ShortName (if FQN not available/provided)
-            // We drop loose EndsWith matching to avoid collisions
-            return display == _fullName ||
-                   display == _shortName ||
-                   display == _shortNameWithoutAttr;
-        }
     }
 
     private static string? ExtractNameFromAttribute(AttributeData? attr)
@@ -928,23 +909,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         return null;
     }
-
-    /// <summary>
-    ///     Pattern matchers for DI service detection using ANcpLua.Roslyn.Utilities.
-    ///     These patterns identify types that should be resolved from DI container.
-    /// </summary>
-    private static readonly TypeMatcher ServiceNameMatcher = SymbolMatch.Type()
-        .Where(static t => t.Name.EndsWithOrdinal("Service") ||
-                           t.Name.EndsWithOrdinal("Repository") ||
-                           t.Name.EndsWithOrdinal("Handler") ||
-                           t.Name.EndsWithOrdinal("Manager") ||
-                           t.Name.EndsWithOrdinal("Provider") ||
-                           t.Name.EndsWithOrdinal("Factory") ||
-                           t.Name.EndsWithOrdinal("Client"));
-
-    private static readonly TypeMatcher DbContextMatcher = SymbolMatch.Type()
-        .Where(static t => t.Name.EndsWithOrdinal("Context") &&
-                           (t.Name.Contains("Db") || t.Name.StartsWithOrdinal("Db")));
 
     /// <summary>
     ///     Detects if a type is likely a DI service based on naming conventions.
@@ -1018,4 +982,39 @@ public sealed partial class ErrorOrEndpointGenerator
         // Everything else is complex (DTOs, records, classes)
     }
 
+    private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
+    {
+        public static readonly ParameterClassificationResult Error = new(true, default);
+    }
+
+    private readonly struct AttributeNameMatcher
+    {
+        private readonly string _fullName;
+        private readonly string _shortName;
+        private readonly string _shortNameWithoutAttr;
+
+        public AttributeNameMatcher(string fullName)
+        {
+            _fullName = fullName;
+            var lastDot = fullName.LastIndexOf('.');
+            _shortName = lastDot >= 0 ? fullName[(lastDot + 1)..] : fullName;
+            _shortNameWithoutAttr =
+                _shortName.EndsWithOrdinal("Attribute") ? _shortName[..^"Attribute".Length] : _shortName;
+        }
+
+        public bool IsMatch(ISymbol? attributeClass)
+        {
+            if (attributeClass is not ITypeSymbol typeSymbol) return false;
+            var display = typeSymbol.GetFullyQualifiedName();
+
+            if (display.StartsWithOrdinal("global::"))
+                display = display[8..];
+
+            // Strict match: Must match FQN or ShortName (if FQN not available/provided)
+            // We drop loose EndsWith matching to avoid collisions
+            return display == _fullName ||
+                   display == _shortName ||
+                   display == _shortNameWithoutAttr;
+        }
+    }
 }

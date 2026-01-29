@@ -58,17 +58,22 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             return;
 
         foreach (var issue in issues)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 DiagnosticsAlignmentMismatch,
                 Location.None,
                 issue));
+        }
     }
 
     private static AdditionalText? FindAdditionalFile(ImmutableArray<AdditionalText> files, string fileName)
     {
         foreach (var file in files)
+        {
             if (string.Equals(Path.GetFileName(file.Path), fileName, StringComparison.Ordinal))
                 return file;
+        }
+
         return null;
     }
 
@@ -86,17 +91,23 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             }
 
             if (!string.Equals(doc.Title, descriptor.Title, StringComparison.Ordinal))
+            {
                 issues.Add(
                     $"Docs title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Docs='{doc.Title}'.");
+            }
 
             if (doc.Severity != descriptor.Severity)
+            {
                 issues.Add(
                     $"Docs severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Docs='{doc.Severity}'.");
+            }
         }
 
         foreach (var docId in docs.Keys)
+        {
             if (!descriptors.ContainsKey(docId))
                 issues.Add($"Docs includes unknown diagnostic {docId}.");
+        }
     }
 
     private static void CompareReleaseNotes(
@@ -114,26 +125,36 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
             }
 
             if (!string.Equals(rule.Category, descriptor.Category, StringComparison.Ordinal))
+            {
                 issues.Add(
                     $"Release category mismatch for {descriptor.Id}. Descriptor='{descriptor.Category}' Release='{rule.Category}'.");
+            }
 
             if (rule.Severity != descriptor.Severity)
+            {
                 issues.Add(
                     $"Release severity mismatch for {descriptor.Id}. Descriptor='{descriptor.Severity}' Release='{rule.Severity}'.");
+            }
 
             if (rule.TitleIsAuthoritative &&
                 !string.Equals(rule.Title, descriptor.Title, StringComparison.Ordinal))
+            {
                 issues.Add(
                     $"Release title mismatch for {descriptor.Id}. Descriptor='{descriptor.Title}' Release='{rule.Title}'.");
+            }
         }
 
         foreach (var ruleId in releases.AllRuleIds)
+        {
             if (!descriptors.ContainsKey(ruleId))
                 issues.Add($"Release notes include unknown diagnostic {ruleId}.");
+        }
 
         foreach (var removed in releases.RemovedRuleIds)
+        {
             if (descriptors.ContainsKey(removed))
                 issues.Add($"Release notes mark {removed} as removed but it still exists in descriptors.");
+        }
     }
 
     private sealed class DescriptorInfo
@@ -279,10 +300,14 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
                     continue;
 
                 foreach (var variable in field.Declaration.Variables)
+                {
                     if (variable.Initializer?.Value is LiteralExpressionSyntax literal &&
                         literal.IsKind(SyntaxKind.StringLiteralExpression) &&
                         variable.Identifier.ValueText is { Length: > 0 } name)
+                    {
                         constants[name] = literal.Token.ValueText;
+                    }
+                }
             }
 
             return constants;
@@ -317,7 +342,9 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         {
             if (expression is LiteralExpressionSyntax literal &&
                 literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
                 return literal.Token.ValueText;
+            }
 
             return null;
         }
@@ -326,15 +353,21 @@ public sealed class DiagnosticsAlignmentAnalyzer : DiagnosticAnalyzer
         {
             if (expression is LiteralExpressionSyntax literal &&
                 literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
                 return literal.Token.ValueText;
+            }
 
             if (expression is IdentifierNameSyntax identifier &&
                 constants.TryGetValue(identifier.Identifier.ValueText, out var value))
+            {
                 return value;
+            }
 
             if (expression is MemberAccessExpressionSyntax member &&
                 constants.TryGetValue(member.Name.Identifier.ValueText, out var memberValue))
+            {
                 return memberValue;
+            }
 
             return null;
         }

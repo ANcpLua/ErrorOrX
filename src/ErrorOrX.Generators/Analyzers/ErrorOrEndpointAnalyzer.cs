@@ -19,6 +19,16 @@ namespace ErrorOr.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 {
+    /// <summary>
+    ///     Type matchers for body source detection using ANcpLua.Roslyn.Utilities.
+    /// </summary>
+    private static readonly TypeMatcher StreamMatcher = SymbolMatch.Type().NameContains("Stream");
+
+    private static readonly TypeMatcher PipeReaderMatcher = SymbolMatch.Type().Named("PipeReader");
+    private static readonly TypeMatcher FormFileMatcher = SymbolMatch.Type().Named("IFormFile");
+    private static readonly TypeMatcher FormFileCollectionMatcher = SymbolMatch.Type().Named("IFormFileCollection");
+    private static readonly TypeMatcher FormCollectionMatcher = SymbolMatch.Type().Named("IFormCollection");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [
@@ -265,19 +275,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         foreach (var expected in expectedTypes)
             if (TypeNamesMatch(actualTypeFqn, expected))
                 return true;
+
         return false;
     }
-
-
-    /// <summary>
-    ///     Type matchers for body source detection using ANcpLua.Roslyn.Utilities.
-    /// </summary>
-    private static readonly TypeMatcher StreamMatcher = SymbolMatch.Type().NameContains("Stream");
-
-    private static readonly TypeMatcher PipeReaderMatcher = SymbolMatch.Type().Named("PipeReader");
-    private static readonly TypeMatcher FormFileMatcher = SymbolMatch.Type().Named("IFormFile");
-    private static readonly TypeMatcher FormFileCollectionMatcher = SymbolMatch.Type().Named("IFormFileCollection");
-    private static readonly TypeMatcher FormCollectionMatcher = SymbolMatch.Type().Named("IFormCollection");
 
     private static bool IsErrorOr(ITypeSymbol type)
     {
@@ -288,27 +288,27 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     /// <summary>
     ///     Type detection using fluent matchers from ANcpLua.Roslyn.Utilities.
     /// </summary>
-    private static bool IsStream(ITypeSymbol type)
+    private static bool IsStream(ISymbol type)
     {
         return StreamMatcher.Matches(type);
     }
 
-    private static bool IsPipeReader(ITypeSymbol type)
+    private static bool IsPipeReader(ISymbol type)
     {
         return PipeReaderMatcher.Matches(type);
     }
 
-    private static bool IsFormFile(ITypeSymbol type)
+    private static bool IsFormFile(ISymbol type)
     {
         return FormFileMatcher.Matches(type);
     }
 
-    private static bool IsFormFileCollection(ITypeSymbol type)
+    private static bool IsFormFileCollection(ISymbol type)
     {
         return FormFileCollectionMatcher.Matches(type);
     }
 
-    private static bool IsFormCollection(ITypeSymbol type)
+    private static bool IsFormCollection(ISymbol type)
     {
         return FormCollectionMatcher.Matches(type);
     }
@@ -347,7 +347,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 // Generic endpoint attribute - extract HTTP method from first constructor arg
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
                 {
-                    if (attr.ConstructorArguments is [{ Value: string m } _, ..])
+                    if (attr.ConstructorArguments is [{ Value: string m }, ..])
                         httpMethod = m.ToUpperInvariant();
                     break;
                 }
@@ -487,5 +487,4 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     {
         return typeFqn.NormalizeTypeName();
     }
-
 }
