@@ -25,11 +25,11 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var innerType = errorOrType.TypeArguments[0];
 
-        // EOE017: Anonymous types cannot be serialized
+        // EOE015: Anonymous types cannot be serialized
         if (innerType.IsAnonymousType)
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, true);
 
-        // EOE020: Private/protected types cannot be accessed by generated code
+        // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
         {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
@@ -38,7 +38,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         switch (innerType)
         {
-            // EOE021: Type parameters (open generics) cannot be used
+            // EOE019: Type parameters (open generics) cannot be used
             case ITypeParameterSymbol typeParam:
                 return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
                     null, null, true, typeParam.Name);
@@ -959,6 +959,66 @@ public sealed partial class ErrorOrEndpointGenerator
             minor = minorValue;
 
         return new ApiVersionInfo(major, minor, status, isDeprecated);
+    }
+
+    /// <summary>
+    ///     Extracts raw version strings from [ApiVersion] attributes on the containing type.
+    ///     Used for format validation (EOE031).
+    /// </summary>
+    private static ImmutableArray<string> ExtractRawClassVersionStrings(ISymbol method, ErrorOrContext context)
+    {
+        if (!context.HasApiVersioningSupport || method.ContainingType is not { } containingType)
+            return ImmutableArray<string>.Empty;
+
+        var versions = ImmutableArray.CreateBuilder<string>();
+
+        // AL0029: Need to extract constructor arguments
+#pragma warning disable AL0029
+        foreach (var attr in containingType.GetAttributes())
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            if (context.ApiVersionAttribute is not null &&
+                attrClass.IsEqualTo(context.ApiVersionAttribute) &&
+                attr.ConstructorArguments is [{ Value: string versionString }])
+            {
+                versions.Add(versionString);
+            }
+        }
+#pragma warning restore AL0029
+
+        return versions.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Extracts raw version strings from [MapToApiVersion] attributes on the method.
+    ///     Used for format validation (EOE031).
+    /// </summary>
+    private static ImmutableArray<string> ExtractRawMethodVersionStrings(ISymbol method, ErrorOrContext context)
+    {
+        if (!context.HasApiVersioningSupport)
+            return ImmutableArray<string>.Empty;
+
+        var versions = ImmutableArray.CreateBuilder<string>();
+
+        // AL0029: Need to extract constructor arguments
+#pragma warning disable AL0029
+        foreach (var attr in method.GetAttributes())
+        {
+            if (attr.AttributeClass is not { } attrClass)
+                continue;
+
+            if (context.MapToApiVersionAttribute is not null &&
+                attrClass.IsEqualTo(context.MapToApiVersionAttribute) &&
+                attr.ConstructorArguments is [{ Value: string versionString }])
+            {
+                versions.Add(versionString);
+            }
+        }
+#pragma warning restore AL0029
+
+        return versions.ToImmutable();
     }
 
     /// <summary>

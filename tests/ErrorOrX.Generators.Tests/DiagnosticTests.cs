@@ -1,15 +1,15 @@
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
-///     Tests for generator diagnostics (EOE003-EOE041).
+///     Tests for generator diagnostics (EOE003-EOE038).
 ///     Verifies that invalid endpoint configurations are detected and reported.
 /// </summary>
 public class DiagnosticTests : GeneratorTestBase
 {
-    #region EOE011 - Invalid [FromRoute] type
+    #region EOE010 - Invalid [FromRoute] type
 
     [Fact]
-    public Task EOE011_Invalid_FromRoute_Type_Complex()
+    public Task EOE010_Invalid_FromRoute_Type_Complex()
     {
         const string Source = """
                               using ErrorOr;
@@ -31,10 +31,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE012 - Invalid [FromQuery] type
+    #region EOE011 - Invalid [FromQuery] type
 
     [Fact]
-    public Task EOE012_Invalid_FromQuery_Type_Complex()
+    public Task EOE011_Invalid_FromQuery_Type_Complex()
     {
         const string Source = """
                               using ErrorOr;
@@ -56,10 +56,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE013 - Invalid [AsParameters] type
+    #region EOE012 - Invalid [AsParameters] type
 
     [Fact]
-    public Task EOE013_Invalid_AsParameters_Type_Primitive()
+    public Task EOE012_Invalid_AsParameters_Type_Primitive()
     {
         const string Source = """
                               using ErrorOr;
@@ -79,10 +79,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE014 - [AsParameters] type has no constructor
+    #region EOE013 - [AsParameters] type has no constructor
 
     [Fact]
-    public Task EOE014_AsParameters_No_Constructor()
+    public Task EOE013_AsParameters_No_Constructor()
     {
         const string Source = """
                               using ErrorOr;
@@ -108,10 +108,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE016 - Invalid [FromHeader] type
+    #region EOE014 - Invalid [FromHeader] type
 
     [Fact]
-    public Task EOE016_Invalid_FromHeader_Type_Complex()
+    public Task EOE014_Invalid_FromHeader_Type_Complex()
     {
         const string Source = """
                               using ErrorOr;
@@ -133,10 +133,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE017 - Anonymous return type not supported
+    #region EOE015 - Anonymous return type not supported
 
     [Fact]
-    public Task EOE017_Anonymous_Return_Type()
+    public Task EOE015_Anonymous_Return_Type()
     {
         const string Source = """
                               using ErrorOr;
@@ -155,10 +155,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE018 - Nested [AsParameters] not supported
+    #region EOE016 - Nested [AsParameters] not supported
 
     [Fact]
-    public Task EOE018_Nested_AsParameters()
+    public Task EOE016_Nested_AsParameters()
     {
         const string Source = """
                               using ErrorOr;
@@ -189,10 +189,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE019 - Nullable [AsParameters] not supported
+    #region EOE017 - Nullable [AsParameters] not supported
 
     [Fact]
-    public Task EOE019_Nullable_AsParameters()
+    public Task EOE017_Nullable_AsParameters()
     {
         const string Source = """
                               using ErrorOr;
@@ -217,10 +217,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE020 - Inaccessible type in endpoint
+    #region EOE018 - Inaccessible type in endpoint
 
     [Fact]
-    public Task EOE020_Private_Return_Type()
+    public Task EOE018_Private_Return_Type()
     {
         const string Source = """
                               using ErrorOr;
@@ -241,10 +241,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE021 - Type parameter not supported
+    #region EOE019 - Type parameter not supported
 
     [Fact]
-    public Task EOE021_Generic_Type_Parameter()
+    public Task EOE019_Generic_Type_Parameter()
     {
         const string Source = """
                               using ErrorOr;
@@ -263,10 +263,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE032 - Unknown error factory
+    #region EOE023 - Unknown error factory
 
     [Fact]
-    public Task EOE032_Unknown_Error_Factory()
+    public Task EOE023_Unknown_Error_Factory()
     {
         const string Source = """
                               using ErrorOr;
@@ -290,10 +290,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE030 - Too many result types
+    #region EOE022 - Too many result types
 
     [Fact]
-    public Task EOE030_Too_Many_Result_Types()
+    public Task EOE022_Too_Many_Result_Types()
     {
         const string Source = """
                               using ErrorOr;
@@ -503,10 +503,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE023 - Route constraint type mismatch
+    #region EOE020 - Route constraint type mismatch
 
     [Fact]
-    public Task EOE023_Int_Constraint_With_String_Parameter()
+    public Task EOE020_Int_Constraint_With_String_Parameter()
     {
         const string Source = """
                               using ErrorOr;
@@ -524,7 +524,7 @@ public class DiagnosticTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE023_Guid_Constraint_With_Int_Parameter()
+    public Task EOE020_Guid_Constraint_With_Int_Parameter()
     {
         const string Source = """
                               using ErrorOr;
@@ -543,10 +543,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE025 - Ambiguous parameter binding
+    #region EOE021 - Ambiguous parameter binding
 
     [Fact]
-    public Task EOE025_Complex_Type_On_Get_Without_Binding()
+    public Task EOE021_Complex_Type_On_Get_Without_Binding()
     {
         const string Source = """
                               using ErrorOr;
@@ -570,7 +570,7 @@ public class DiagnosticTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE025_Complex_Type_On_Delete_Without_Binding()
+    public Task EOE021_Complex_Type_On_Delete_Without_Binding()
     {
         const string Source = """
                               using ErrorOr;
@@ -594,10 +594,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE033 - Undocumented interface call
+    #region EOE024 - Undocumented interface call
 
     [Fact]
-    public Task EOE033_Undocumented_Interface_Call()
+    public Task EOE024_Undocumented_Interface_Call()
     {
         const string Source = """
                               using ErrorOr;
@@ -621,7 +621,7 @@ public class DiagnosticTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE033_Interface_Call_With_ProducesError_No_Diagnostic()
+    public Task EOE024_Interface_Call_With_ProducesError_No_Diagnostic()
     {
         const string Source = """
                               using ErrorOr;
@@ -647,10 +647,10 @@ public class DiagnosticTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE040 - Missing CamelCase policy
+    #region EOE025 - Missing CamelCase policy
 
     [Fact]
-    public Task EOE040_Missing_CamelCase_Policy()
+    public Task EOE025_Missing_CamelCase_Policy()
     {
         const string Source = """
                               using ErrorOr;
@@ -675,7 +675,7 @@ public class DiagnosticTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE040_With_CamelCase_Policy_No_Diagnostic()
+    public Task EOE025_With_CamelCase_Policy_No_Diagnostic()
     {
         const string Source = """
                               using ErrorOr;
@@ -694,6 +694,64 @@ public class DiagnosticTests : GeneratorTestBase
                               {
                                   [Get("/todos/{id}")]
                                   public static ErrorOr<Todo> GetById(int id) => new Todo(id, "Title");
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
+    #region EOE033 - Handler method name not PascalCase
+
+    [Fact]
+    public Task EOE033_Method_Name_Lowercase_Start()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class TodoApi
+                              {
+                                  [Get("/todos/{id}")]
+                                  public static ErrorOr<string> getById(int id) => $"todo {id}";
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    [Fact]
+    public Task EOE033_Method_Name_With_Underscore()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class TodoApi
+                              {
+                                  [Get("/todos/{id}")]
+                                  public static ErrorOr<string> Get_By_Id(int id) => $"todo {id}";
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    [Fact]
+    public Task EOE033_Method_Name_Snake_Case()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class TodoApi
+                              {
+                                  [Get("/todos/{id}")]
+                                  public static ErrorOr<string> get_by_id(int id) => $"todo {id}";
                               }
                               """;
 

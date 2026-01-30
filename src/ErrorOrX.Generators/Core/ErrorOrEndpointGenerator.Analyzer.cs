@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace ErrorOr.Generators;
 
 /// <summary>
-///     Analyzer partial for OpenAPI and AOT validation (EOE021-EOE022).
+///     Analyzer partial for OpenAPI and AOT validation (EOE022-EOE026).
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
@@ -58,10 +58,10 @@ public sealed partial class ErrorOrEndpointGenerator
         // this is an ERROR in AOT mode. The generated ErrorOrJsonContext cannot be used by
         // System.Text.Json source generator because Roslyn generators cannot see output from
         // other generators.
-        // Only emit EOE041 when PublishAot=true to avoid false positives in non-AOT builds.
+        // Only emit EOE026 when PublishAot=true to avoid false positives in non-AOT builds.
         if (userContexts.IsDefaultOrEmpty)
         {
-            // Report EOE041 for each body type - but only if PublishAot is enabled
+            // Report EOE026 for each body type - but only if PublishAot is enabled
             if (publishAot)
             {
                 foreach (var kvp in bodyTypes)
@@ -124,7 +124,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Analyzes endpoints for union type arity violations (EOE030).
+    ///     Analyzes endpoints for union type arity violations (EOE022).
     ///     Reports Info diagnostic when endpoint exceeds Results&lt;...&gt; max arity.
     /// </summary>
     private static void AnalyzeUnionTypeArity(

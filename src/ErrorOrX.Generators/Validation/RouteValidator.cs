@@ -218,7 +218,7 @@ internal static class RouteValidator
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
-        // Pass diagnostics to detect duplicate route parameter bindings (EOE055)
+        // Pass diagnostics to detect duplicate route parameter bindings (EOE032)
         var methodParamsByRouteName = BuildRouteParameterLookup(methodParams, diagnostics, location, true);
 
         foreach (var rp in routeParams)
@@ -242,7 +242,7 @@ internal static class RouteValidator
 
     /// <summary>
     ///     Builds a lookup dictionary of method parameters keyed by their bound route name.
-    ///     Reports EOE055 diagnostic when duplicate route parameter names are detected.
+    ///     Reports EOE032 diagnostic when duplicate route parameter names are detected.
     /// </summary>
     /// <param name="methodParams">The method parameters to index.</param>
     /// <param name="diagnostics">Optional builder to collect diagnostics for duplicates.</param>
@@ -267,7 +267,7 @@ internal static class RouteValidator
             // First parameter wins for deterministic behavior
             if (lookup.TryGetValue(routeName, out var existingParam))
             {
-                // Report EOE055 for duplicate route parameter binding
+                // Report EOE032 for duplicate route parameter binding
                 diagnostics?.Add(DiagnosticInfo.Create(
                     Descriptors.DuplicateRouteParameterBinding,
                     location,

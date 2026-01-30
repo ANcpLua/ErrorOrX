@@ -201,6 +201,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var jsonContextArray = Helpers.AsArrayOrEmpty(jsonContexts);
 
         ReportDuplicateRoutes(spc, endpointArray);
+        ReportVersioningInconsistencies(spc, endpointArray);
 
         if (!endpointArray.IsDefaultOrEmpty)
         {
@@ -213,6 +214,12 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     private static void ReportDuplicateRoutes(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints)
     {
         foreach (var diagnostic in RouteValidator.DetectDuplicateRoutes(endpoints))
+            spc.ReportDiagnostic(diagnostic);
+    }
+
+    private static void ReportVersioningInconsistencies(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints)
+    {
+        foreach (var diagnostic in ApiVersioningValidator.DetectMissingVersioning(endpoints))
             spc.ReportDiagnostic(diagnostic);
     }
 
@@ -255,14 +262,14 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             {
                 var returnInfo = ExtractErrorOrReturnType(m.ReturnType, errorOrContext);
 
-                // EOE017: Anonymous return type
+                // EOE015: Anonymous return type
                 if (returnInfo.IsAnonymousType)
                 {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
                 }
 
-                // EOE020: Inaccessible return type
+                // EOE018: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
                 {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
@@ -272,7 +279,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
                 }
 
-                // EOE021: Type parameter in return type
+                // EOE019: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
                 {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
@@ -290,6 +297,10 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             {
                 var (m, returnInfo) = pair;
                 var builder = ImmutableArray.CreateBuilder<DiagnosticInfo>();
+
+                // EOE033: Validate PascalCase naming convention
+                if (NamingValidator.ValidatePascalCase(m.Name, location) is { } namingDiagnostic)
+                    builder.Add(namingDiagnostic);
 
                 // Extract method-level attributes first (needed for interface call detection)
                 var producesErrors = ExtractProducesErrorAttributes(m, errorOrContext);
@@ -389,6 +400,19 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         // Extract API versioning attributes
         var versioning = ExtractVersioningAttributes(analysis.Method, errorOrContext);
+
+        // Validate API versioning configuration (EOE027-EOE031)
+        var rawClassVersions = ExtractRawClassVersionStrings(analysis.Method, errorOrContext);
+        var rawMethodVersions = ExtractRawMethodVersionStrings(analysis.Method, errorOrContext);
+        var location = analysis.Method.Locations.FirstOrDefault() ?? Location.None;
+        builder.AddRange(ApiVersioningValidator.Validate(
+            analysis.Method.Name,
+            versioning,
+            rawClassVersions,
+            rawMethodVersions,
+            location,
+            errorOrContext.HasApiVersioningSupport,
+            analysis.Method));
 
         // Extract route group configuration for eShop-style grouping
         var routeGroup = ExtractRouteGroupInfo(analysis.Method, errorOrContext);

@@ -376,7 +376,8 @@ internal readonly record struct SuccessResponseInfo(
 internal readonly record struct UnionTypeResult(
     bool CanUseUnion,
     string ReturnTypeFqn,
-    EquatableArray<int> ExplicitProduceCodes);
+    EquatableArray<int> ExplicitProduceCodes,
+    bool UsesValidationProblemFor400 = false);
 
 /// <summary>
 ///     Middleware configuration extracted from BCL attributes.

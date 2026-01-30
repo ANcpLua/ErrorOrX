@@ -14,7 +14,10 @@ namespace ErrorOr.Analyzers;
 public static class Descriptors
 {
     private const string Category = "ErrorOr.Endpoints";
-    private const string AotSafetyCategory = "ErrorOr.AotSafety";
+
+    // ============================================================================
+    // EOE001-007: Core validation
+    // ============================================================================
 
     /// <summary>
     ///     Handler method must return ErrorOr&lt;T&gt;, Task&lt;ErrorOr&lt;T&gt;&gt;, or ValueTask&lt;ErrorOr&lt;T&gt;&gt;.
@@ -98,25 +101,15 @@ public static class Descriptors
         true,
         helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
 
-    /// <summary>
-    ///     No JsonSerializerContext found but endpoint uses request body.
-    ///     Without a user-defined context, AOT serialization will fail.
-    ///     This is an ERROR because the generated JsonContext cannot be used by System.Text.Json source generator.
-    /// </summary>
-    public static readonly DiagnosticDescriptor MissingJsonContextForBody = new(
-        "EOE041",
-        "Missing JsonSerializerContext for AOT",
-        "Endpoint '{0}' uses '{1}' as request body but no JsonSerializerContext was found. Create one with [JsonSerializable(typeof({1}))].",
-        Category,
-        DiagnosticSeverity.Error,
-        true,
-        helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
+    // ============================================================================
+    // EOE008-014: Parameter binding validation
+    // ============================================================================
 
     /// <summary>
     ///     GET, HEAD, DELETE, OPTIONS should not have request bodies per HTTP semantics.
     /// </summary>
     public static readonly DiagnosticDescriptor BodyOnReadOnlyMethod = new(
-        "EOE009",
+        "EOE008",
         "Body on read-only HTTP method",
         "Endpoint '{0}' uses {1} with a request body. Consider using POST/PUT/PATCH instead.",
         Category,
@@ -128,7 +121,7 @@ public static class Descriptors
     ///     202 Accepted is for async operations that will be processed later.
     /// </summary>
     public static readonly DiagnosticDescriptor AcceptedOnReadOnlyMethod = new(
-        "EOE010",
+        "EOE009",
         "[AcceptedResponse] on read-only method",
         "Endpoint '{0}' uses [AcceptedResponse] with {1}. 202 Accepted is typically for async POST/PUT operations.",
         Category,
@@ -139,7 +132,7 @@ public static class Descriptors
     ///     [FromRoute] parameter type is not a supported primitive and has no TryParse.
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidFromRouteType = new(
-        "EOE011",
+        "EOE010",
         "Invalid [FromRoute] type",
         "Parameter '{0}' with [FromRoute] must be a primitive type or implement TryParse. Type '{1}' is not supported.",
         Category,
@@ -150,7 +143,7 @@ public static class Descriptors
     ///     [FromQuery] parameter type is not a supported primitive or collection of primitives.
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidFromQueryType = new(
-        "EOE012",
+        "EOE011",
         "Invalid [FromQuery] type",
         "Parameter '{0}' with [FromQuery] must be a primitive or collection of primitives. Type '{1}' is not supported.",
         Category,
@@ -161,7 +154,7 @@ public static class Descriptors
     ///     [AsParameters] used on non-class/struct type.
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidAsParametersType = new(
-        "EOE013",
+        "EOE012",
         "Invalid [AsParameters] type",
         "Parameter '{0}' with [AsParameters] must be a class or struct type, not '{1}'",
         Category,
@@ -172,7 +165,7 @@ public static class Descriptors
     ///     [AsParameters] type has no accessible constructor.
     /// </summary>
     public static readonly DiagnosticDescriptor AsParametersNoConstructor = new(
-        "EOE014",
+        "EOE013",
         "[AsParameters] type has no constructor",
         "Type '{0}' used with [AsParameters] must have an accessible constructor",
         Category,
@@ -183,19 +176,23 @@ public static class Descriptors
     ///     [FromHeader] with non-string type requires TryParse.
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidFromHeaderType = new(
-        "EOE016",
+        "EOE014",
         "Invalid [FromHeader] type",
         "Parameter '{0}' with [FromHeader] must be string, a primitive with TryParse, or a collection thereof. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
         true);
 
+    // ============================================================================
+    // EOE015-019: Return type and parameter type validation
+    // ============================================================================
+
     /// <summary>
     ///     Anonymous types cannot be used as ErrorOr value types.
     ///     They have no stable identity for JSON serialization.
     /// </summary>
     public static readonly DiagnosticDescriptor AnonymousReturnTypeNotSupported = new(
-        "EOE017",
+        "EOE015",
         "Anonymous return type not supported",
         "Method '{0}' returns ErrorOr with anonymous type. Anonymous types cannot be serialized. Use a named type instead.",
         Category,
@@ -207,7 +204,7 @@ public static class Descriptors
     ///     Recursive parameter expansion is not supported.
     /// </summary>
     public static readonly DiagnosticDescriptor NestedAsParametersNotSupported = new(
-        "EOE018",
+        "EOE016",
         "Nested [AsParameters] not supported",
         "Type '{0}' used with [AsParameters] has property '{1}' also marked [AsParameters]. Nested parameter expansion is not supported.",
         Category,
@@ -219,7 +216,7 @@ public static class Descriptors
     ///     Parameter expansion requires a concrete instance.
     /// </summary>
     public static readonly DiagnosticDescriptor NullableAsParametersNotSupported = new(
-        "EOE019",
+        "EOE017",
         "Nullable [AsParameters] not supported",
         "Parameter '{0}' with [AsParameters] cannot be nullable. Remove the '?' or use a non-nullable type.",
         Category,
@@ -231,7 +228,7 @@ public static class Descriptors
     ///     Generated code cannot access them.
     /// </summary>
     public static readonly DiagnosticDescriptor InaccessibleTypeNotSupported = new(
-        "EOE020",
+        "EOE018",
         "Inaccessible type in endpoint",
         "Type '{0}' used by endpoint '{1}' is {2} and cannot be accessed by generated code. Make it internal or public.",
         Category,
@@ -243,19 +240,23 @@ public static class Descriptors
     ///     The generator cannot emit code for unbound generic types.
     /// </summary>
     public static readonly DiagnosticDescriptor TypeParameterNotSupported = new(
-        "EOE021",
+        "EOE019",
         "Type parameter not supported",
         "Method '{0}' uses type parameter '{1}' in return type. Generic type parameters cannot be used with ErrorOr endpoints.",
         Category,
         DiagnosticSeverity.Error,
         true);
 
+    // ============================================================================
+    // EOE020-021: Route constraint validation
+    // ============================================================================
+
     /// <summary>
     ///     Route constraint type does not match parameter type.
     ///     For example, {id:int} requires int parameter, not string.
     /// </summary>
     public static readonly DiagnosticDescriptor RouteConstraintTypeMismatch = new(
-        "EOE023",
+        "EOE020",
         "Route constraint type mismatch",
         "Route parameter '{{{0}:{1}}}' expects {2}, but method parameter '{3}' is {4}",
         Category,
@@ -268,7 +269,7 @@ public static class Descriptors
     ///     [AsParameters], [FromBody], or [FromServices].
     /// </summary>
     public static readonly DiagnosticDescriptor AmbiguousParameterBinding = new(
-        "EOE025",
+        "EOE021",
         "Ambiguous parameter binding",
         "Parameter '{0}' of type '{1}' on {2} endpoint requires explicit binding attribute. " +
         "Use [AsParameters] for query/route expansion, [FromBody] to force body binding, " +
@@ -277,16 +278,31 @@ public static class Descriptors
         DiagnosticSeverity.Error,
         true);
 
+    // ============================================================================
+    // EOE022-024: Result types and error factories
+    // ============================================================================
+
     /// <summary>
     ///     Endpoint has too many result types for Results&lt;...&gt; union.
     ///     (Generator-only: requires computing all possible outcomes)
     /// </summary>
     public static readonly DiagnosticDescriptor TooManyResultTypes = new(
-        "EOE030",
+        "EOE022",
         "Too many result types",
         "Endpoint '{0}' has {1} possible response types, exceeding Results<...> max arity of {2}. OpenAPI documentation may be incomplete.",
         Category,
         DiagnosticSeverity.Info,
+        true);
+
+    /// <summary>
+    ///     Error factory method is not a known ErrorType.
+    /// </summary>
+    public static readonly DiagnosticDescriptor UnknownErrorFactory = new(
+        "EOE023",
+        "Unknown error factory",
+        "Error.Or factory method '{0}' is not a known ErrorType. Supported types: Failure, Unexpected, Validation, Conflict, NotFound, Unauthorized, Forbidden.",
+        Category,
+        DiagnosticSeverity.Warning,
         true);
 
     /// <summary>
@@ -295,32 +311,25 @@ public static class Descriptors
     ///     (Generator-only: requires call graph analysis)
     /// </summary>
     public static readonly DiagnosticDescriptor UndocumentedInterfaceCall = new(
-        "EOE033",
+        "EOE024",
         "Undocumented interface call",
         "Endpoint '{0}' calls '{1}' which returns ErrorOr<T> but has no error documentation. " +
         "Add [ProducesError(...)] to the endpoint or [ReturnsError(...)] to the interface method. " +
         "OpenAPI cannot infer errors through interfaces.",
         Category,
-        DiagnosticSeverity.Error, // ERROR, not Warning - keine Lüge!
+        DiagnosticSeverity.Error,
         true);
 
-    /// <summary>
-    ///     Error factory method is not a known ErrorType.
-    /// </summary>
-    public static readonly DiagnosticDescriptor UnknownErrorFactory = new(
-        "EOE032",
-        "Unknown error factory",
-        "Error.Or factory method '{0}' is not a known ErrorType. Supported types: Failure, Unexpected, Validation, Conflict, NotFound, Unauthorized, Forbidden.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true);
+    // ============================================================================
+    // EOE025-026: JSON/AOT validation
+    // ============================================================================
 
     /// <summary>
     ///     User's JsonSerializerContext is missing CamelCase property naming policy.
     ///     Web APIs typically use camelCase for JSON properties.
     /// </summary>
     public static readonly DiagnosticDescriptor MissingCamelCasePolicy = new(
-        "EOE040",
+        "EOE025",
         "Missing CamelCase policy",
         "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility. " +
         "Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.",
@@ -329,11 +338,29 @@ public static class Descriptors
         true);
 
     /// <summary>
+    ///     No JsonSerializerContext found but endpoint uses request body.
+    ///     Without a user-defined context, AOT serialization will fail.
+    ///     This is an ERROR because the generated JsonContext cannot be used by System.Text.Json source generator.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MissingJsonContextForBody = new(
+        "EOE026",
+        "Missing JsonSerializerContext for AOT",
+        "Endpoint '{0}' uses '{1}' as request body but no JsonSerializerContext was found. Create one with [JsonSerializable(typeof({1}))].",
+        Category,
+        DiagnosticSeverity.Error,
+        true,
+        helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
+
+    // ============================================================================
+    // EOE027-031: API versioning
+    // ============================================================================
+
+    /// <summary>
     ///     Endpoint is version-neutral but has explicit version mappings.
     ///     [ApiVersionNeutral] and [MapToApiVersion] are mutually exclusive.
     /// </summary>
     public static readonly DiagnosticDescriptor VersionNeutralWithMappings = new(
-        "EOE050",
+        "EOE027",
         "Version-neutral with mappings",
         "Endpoint '{0}' is marked [ApiVersionNeutral] but also has [MapToApiVersion]. Remove one or the other.",
         Category,
@@ -345,7 +372,7 @@ public static class Descriptors
     ///     The mapped version should be one of the supported versions.
     /// </summary>
     public static readonly DiagnosticDescriptor MappedVersionNotDeclared = new(
-        "EOE051",
+        "EOE028",
         "Mapped version not declared",
         "Endpoint '{0}' maps to version '{1}' which is not declared in [ApiVersion]. Add [ApiVersion(\"{1}\")] to the class.",
         Category,
@@ -357,7 +384,7 @@ public static class Descriptors
     ///     Install the package: dotnet add package Asp.Versioning.Http
     /// </summary>
     public static readonly DiagnosticDescriptor ApiVersioningPackageNotReferenced = new(
-        "EOE052",
+        "EOE029",
         "Asp.Versioning package not referenced",
         "Endpoint '{0}' uses API versioning but Asp.Versioning.Http package is not referenced",
         Category,
@@ -369,7 +396,7 @@ public static class Descriptors
     ///     Consider adding version information or marking as [ApiVersionNeutral].
     /// </summary>
     public static readonly DiagnosticDescriptor EndpointMissingVersioning = new(
-        "EOE053",
+        "EOE030",
         "Endpoint missing versioning",
         "Endpoint '{0}' has no version information but other endpoints use API versioning. " +
         "Add [ApiVersion(\"X.Y\")] or [ApiVersionNeutral] to declare its version scope.",
@@ -381,19 +408,23 @@ public static class Descriptors
     ///     [ApiVersion] has invalid format. Use "major.minor" or just "major".
     /// </summary>
     public static readonly DiagnosticDescriptor InvalidApiVersionFormat = new(
-        "EOE054",
+        "EOE031",
         "Invalid API version format",
         "[ApiVersion(\"{0}\")] has invalid format. Use \"major.minor\" (e.g., \"1.0\") or \"major\" (e.g., \"2\").",
         Category,
         DiagnosticSeverity.Error,
         true);
 
+    // ============================================================================
+    // EOE032-033: Route parameter and naming validation
+    // ============================================================================
+
     /// <summary>
     ///     Multiple method parameters bind to the same route parameter name.
     ///     Only the first parameter will be used for route binding.
     /// </summary>
     public static readonly DiagnosticDescriptor DuplicateRouteParameterBinding = new(
-        "EOE055",
+        "EOE032",
         "Duplicate route parameter binding",
         "Multiple parameters bind to route parameter '{0}'. Only the first parameter ('{1}') will be bound; '{2}' will be ignored.",
         Category,
@@ -401,14 +432,30 @@ public static class Descriptors
         true);
 
     /// <summary>
+    ///     Handler method name should follow PascalCase convention.
+    ///     The first character should be uppercase, and no underscores should be used.
+    /// </summary>
+    public static readonly DiagnosticDescriptor MethodNameNotPascalCase = new(
+        "EOE033",
+        "Handler method name not PascalCase",
+        "Method '{0}' should follow PascalCase naming convention. Consider renaming to '{1}'.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    // ============================================================================
+    // EOE034-038: AOT safety (formerly AOT001-AOT005)
+    // ============================================================================
+
+    /// <summary>
     ///     Activator.CreateInstance is not AOT-compatible.
     ///     Use factory methods or explicit construction instead.
     /// </summary>
     public static readonly DiagnosticDescriptor ActivatorCreateInstance = new(
-        "AOT001",
+        "EOE034",
         "Activator.CreateInstance is not AOT-safe",
         "Activator.CreateInstance<{0}>() uses reflection and is not compatible with NativeAOT. Use explicit construction or factory methods.",
-        AotSafetyCategory,
+        Category,
         DiagnosticSeverity.Warning,
         true);
 
@@ -417,10 +464,10 @@ public static class Descriptors
     ///     Types may be trimmed and unavailable at runtime.
     /// </summary>
     public static readonly DiagnosticDescriptor TypeGetType = new(
-        "AOT002",
+        "EOE035",
         "Type.GetType is not AOT-safe",
         "Type.GetType(\"{0}\") uses runtime type lookup and is not compatible with NativeAOT. Types may be trimmed.",
-        AotSafetyCategory,
+        Category,
         DiagnosticSeverity.Warning,
         true);
 
@@ -429,10 +476,10 @@ public static class Descriptors
     ///     Members may be trimmed and unavailable at runtime.
     /// </summary>
     public static readonly DiagnosticDescriptor ReflectionOverMembers = new(
-        "AOT003",
+        "EOE036",
         "Reflection over members is not AOT-safe",
         "typeof({0}).{1}() uses reflection and is not compatible with NativeAOT. Members may be trimmed. Consider source generators.",
-        AotSafetyCategory,
+        Category,
         DiagnosticSeverity.Warning,
         true);
 
@@ -441,10 +488,10 @@ public static class Descriptors
     ///     This is not supported in NativeAOT.
     /// </summary>
     public static readonly DiagnosticDescriptor ExpressionCompile = new(
-        "AOT004",
+        "EOE037",
         "Expression.Compile is not AOT-safe",
         "Expression.Compile() generates code at runtime and is not compatible with NativeAOT. Use compiled delegates or source generators.",
-        AotSafetyCategory,
+        Category,
         DiagnosticSeverity.Warning,
         true);
 
@@ -453,10 +500,10 @@ public static class Descriptors
     ///     This is not supported in NativeAOT.
     /// </summary>
     public static readonly DiagnosticDescriptor DynamicKeyword = new(
-        "AOT005",
+        "EOE038",
         "'dynamic' is not AOT-safe",
         "The 'dynamic' keyword uses runtime binding and is not compatible with NativeAOT. Use strongly-typed code instead.",
-        AotSafetyCategory,
+        Category,
         DiagnosticSeverity.Warning,
         true);
 }

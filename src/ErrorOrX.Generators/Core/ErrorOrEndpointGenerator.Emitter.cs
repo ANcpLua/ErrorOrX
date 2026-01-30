@@ -349,7 +349,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        {");
 
         if (usesBindFail)
-            EmitBindFailHelper(code, returnType, ctx.NeedsAwait);
+            EmitBindFailHelper(code, returnType, ctx.NeedsAwait, ctx.UnionResult.UsesValidationProblemFor400);
 
         if (ctx.HasBodyBinding)
             EmitBindFail415Helper(code, returnType, ctx.NeedsAwait);
@@ -400,25 +400,41 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine();
     }
 
-    private static void EmitBindFailHelper(StringBuilder code, string returnTypeFqn, bool isAsync)
+    private static void EmitBindFailHelper(StringBuilder code, string returnTypeFqn, bool isAsync, bool useValidationProblem)
     {
-        code.AppendLine(
-            $"            static {WellKnownTypes.Fqn.ProblemDetails} CreateBindProblem(string param, string reason) => new()");
-        code.AppendLine("            {");
-        code.AppendLine("                Title = \"Bad Request\",");
-        code.AppendLine("                Detail = $\"Parameter '{param}' {reason}.\",");
-        code.AppendLine("                Status = 400,");
-        code.AppendLine($"                Type = \"{WellKnownTypes.Constants.HttpStatusesBaseUrl}400\",");
-        code.AppendLine("            };");
-        code.AppendLine();
-
-        const string badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
-        var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
-        code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
-        code.AppendLine($"                => {returnExpr};");
-        code.AppendLine();
+        if (useValidationProblem)
+        {
+            // Use ValidationProblem to match the Results<..., ValidationProblem, ...> union type
+            const string validationProblemExpr =
+                $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(new {WellKnownTypes.Fqn.Dictionary}<string, string[]> {{ [param] = [reason] }})";
+            var returnExpr = isAsync ? validationProblemExpr : $"Task.FromResult<{returnTypeFqn}>({validationProblemExpr})";
+
+            code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
+            code.AppendLine($"                => {returnExpr};");
+            code.AppendLine();
+        }
+        else
+        {
+            // Use BadRequest<ProblemDetails> to match the Results<..., BadRequest<ProblemDetails>, ...> union type
+            code.AppendLine(
+                $"            static {WellKnownTypes.Fqn.ProblemDetails} CreateBindProblem(string param, string reason) => new()");
+            code.AppendLine("            {");
+            code.AppendLine("                Title = \"Bad Request\",");
+            code.AppendLine("                Detail = $\"Parameter '{param}' {reason}.\",");
+            code.AppendLine("                Status = 400,");
+            code.AppendLine($"                Type = \"{WellKnownTypes.Constants.HttpStatusesBaseUrl}400\",");
+            code.AppendLine("            };");
+            code.AppendLine();
+
+            const string badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
+            var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
+
+            code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
+            code.AppendLine($"                => {returnExpr};");
+            code.AppendLine();
+        }
     }
 
     private static void EmitBindFail415Helper(StringBuilder code, string returnTypeFqn, bool isAsync)
@@ -800,7 +816,7 @@ public sealed partial class ErrorOrEndpointGenerator
             missingTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
         }
 
-        // Report EOE040 if user context lacks CamelCase policy
+        // Report EOE025 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
         {
             spc.ReportDiagnostic(Diagnostic.Create(

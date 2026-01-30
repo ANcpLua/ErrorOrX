@@ -159,7 +159,7 @@ internal static class ResultsUnionTypeBuilder
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
-            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware);
+            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware, hasValidationError);
 
         // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
@@ -170,7 +170,8 @@ internal static class ResultsUnionTypeBuilder
         return new UnionTypeResult(
             true,
             $"{WellKnownTypes.Fqn.HttpResults.Results}<{string.Join(", ", sortedTypes)}>",
-            default);
+            default,
+            hasValidationError);
     }
 
     /// <summary>
@@ -341,7 +342,8 @@ internal static class ResultsUnionTypeBuilder
     private static UnionTypeResult BuildFallbackResult(
         EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
-        MiddlewareInfo middleware = default)
+        MiddlewareInfo middleware = default,
+        bool hasValidationError = false)
     {
         var allStatuses = new HashSet<int>
         {
@@ -355,7 +357,8 @@ internal static class ResultsUnionTypeBuilder
         return new UnionTypeResult(
             false,
             WellKnownTypes.Fqn.Result,
-            new EquatableArray<int>([.. allStatuses.OrderBy(static x => x)]));
+            new EquatableArray<int>([.. allStatuses.OrderBy(static x => x)]),
+            hasValidationError);
     }
 
     /// <summary>

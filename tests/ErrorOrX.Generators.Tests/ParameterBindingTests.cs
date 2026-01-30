@@ -258,12 +258,12 @@ public class ParameterBindingTests : GeneratorTestBase
 
     #endregion
 
-    #region GET/DELETE + Complex Type → EOE025 Warning
+    #region GET/DELETE + Complex Type → EOE021 Warning
 
     [Theory]
     [InlineData("Get")]
     [InlineData("Delete")]
-    public async Task Complex_Type_On_BodylessMethod_Emits_EOE025(string httpMethod)
+    public async Task Complex_Type_On_BodylessMethod_Emits_EOE021(string httpMethod)
     {
         var source = $$"""
                        using ErrorOr;
@@ -279,8 +279,8 @@ public class ParameterBindingTests : GeneratorTestBase
 
         using var result = await RunAsync(source);
 
-        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE025");
-        var diagnostic = result.Diagnostics.First(static d => d.Id == "EOE025");
+        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE021");
+        var diagnostic = result.Diagnostics.First(static d => d.Id == "EOE021");
         diagnostic.GetMessage().Should().Contain("filter");
         diagnostic.GetMessage().Should().Contain(httpMethod.ToUpperInvariant());
     }
@@ -303,9 +303,9 @@ public class ParameterBindingTests : GeneratorTestBase
 
         using var result = await RunAsync(Source);
 
-        // EOE012: [FromQuery] only supports primitives or collections of primitives
+        // EOE011: [FromQuery] only supports primitives or collections of primitives
         // This is expected behavior - complex types can't be query bound without [AsParameters]
-        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE012");
+        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE011");
     }
 
     [Fact]
@@ -693,7 +693,7 @@ public class ParameterBindingTests : GeneratorTestBase
     }
 
     [Fact]
-    public async Task Invalid_FromRoute_Type_Emits_EOE011()
+    public async Task Invalid_FromRoute_Type_Emits_EOE010()
     {
         const string Source = """
                               using ErrorOr;
@@ -710,11 +710,11 @@ public class ParameterBindingTests : GeneratorTestBase
 
         using var result = await RunAsync(Source);
 
-        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE011");
+        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE010");
     }
 
     [Fact]
-    public async Task Invalid_FromHeader_Type_Emits_EOE016()
+    public async Task Invalid_FromHeader_Type_Emits_EOE014()
     {
         const string Source = """
                               using ErrorOr;
@@ -731,7 +731,7 @@ public class ParameterBindingTests : GeneratorTestBase
 
         using var result = await RunAsync(Source);
 
-        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE016");
+        result.Diagnostics.Should().ContainSingle(static d => d.Id == "EOE014");
     }
 
     #endregion

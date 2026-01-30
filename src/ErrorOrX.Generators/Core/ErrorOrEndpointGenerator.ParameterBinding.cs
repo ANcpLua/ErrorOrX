@@ -10,7 +10,7 @@ namespace ErrorOr.Generators;
 
 /// <summary>
 ///     Partial class containing parameter binding logic.
-///     Now with proper diagnostic wiring for EOE011-EOE016, EOE024.
+///     Now with proper diagnostic wiring for EOE010-EOE014, EOE024.
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
@@ -273,7 +273,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// <summary>
     ///     Infers the parameter source based on HTTP method and type analysis.
     ///     POST/PUT/PATCH with complex types → Body
-    ///     Other methods with complex types → Service + EOE025 warning (explicit binding recommended)
+    ///     Other methods with complex types → Service + EOE021 warning (explicit binding recommended)
     ///     Service types (interfaces, abstract, DI patterns) → Service
     ///     Fallback → Service
     /// </summary>
@@ -318,7 +318,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies [FromRoute] parameter with proper EOE011 diagnostic.
+    ///     Classifies [FromRoute] parameter with proper EOE010 diagnostic.
     /// </summary>
     private static ParameterClassificationResult ClassifyFromRouteParameter(
         in ParameterMeta meta,
@@ -329,7 +329,7 @@ public sealed partial class ErrorOrEndpointGenerator
         _ = routeParameters; // Reserved for future validation of route parameter existence
         var hasTryParse = meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat;
 
-        // EOE011: [FromRoute] requires primitive or TryParse
+        // EOE010: [FromRoute] requires primitive or TryParse
         if (meta.RouteKind is null && !hasTryParse)
         {
             diagnostics.Add(DiagnosticInfo.Create(
@@ -345,7 +345,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies implicit route parameter with proper EOE011 diagnostic.
+    ///     Classifies implicit route parameter with proper EOE010 diagnostic.
     /// </summary>
     private static ParameterClassificationResult ClassifyImplicitRouteParameter(
         in ParameterMeta meta,
@@ -354,7 +354,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var hasTryParse = meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat;
 
-        // EOE011: Route parameters must use supported primitive types or TryParse
+        // EOE010: Route parameters must use supported primitive types or TryParse
         if (meta.RouteKind is null && !hasTryParse)
         {
             diagnostics.Add(DiagnosticInfo.Create(
@@ -369,7 +369,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies [FromQuery] parameter with proper EOE012 diagnostic.
+    ///     Classifies [FromQuery] parameter with proper EOE011 diagnostic.
     /// </summary>
     private static ParameterClassificationResult ClassifyFromQueryParameter(
         in ParameterMeta meta,
@@ -391,7 +391,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 customBinding: meta.CustomBinding);
         }
 
-        // EOE012: [FromQuery] only supports primitives or collections of primitives
+        // EOE011: [FromQuery] only supports primitives or collections of primitives
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.InvalidFromQueryType,
             method.Locations.FirstOrDefault() ?? Location.None,
@@ -401,7 +401,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies [FromHeader] parameter with proper EOE016 diagnostic.
+    ///     Classifies [FromHeader] parameter with proper EOE014 diagnostic.
     /// </summary>
     private static ParameterClassificationResult ClassifyFromHeaderParameter(
         in ParameterMeta meta,
@@ -427,7 +427,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 customBinding: meta.CustomBinding);
         }
 
-        // EOE016: [FromHeader] requires string, primitive with TryParse, or collection thereof
+        // EOE014: [FromHeader] requires string, primitive with TryParse, or collection thereof
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.InvalidFromHeaderType,
             method.Locations.FirstOrDefault() ?? Location.None,
@@ -540,7 +540,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Classifies [AsParameters] with proper EOE013/EOE014/EOE018/EOE019 diagnostics.
+    ///     Classifies [AsParameters] with proper EOE012/EOE013/EOE016/EOE017 diagnostics.
     /// </summary>
     private static ParameterClassificationResult ClassifyAsParameters(
         in ParameterMeta meta,
@@ -550,7 +550,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ErrorOrContext context,
         string httpMethod)
     {
-        // EOE019: [AsParameters] cannot be nullable
+        // EOE017: [AsParameters] cannot be nullable
         if (meta.IsNullable)
         {
             diagnostics.Add(DiagnosticInfo.Create(Descriptors.NullableAsParametersNotSupported,
@@ -558,7 +558,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterClassificationResult.Error;
         }
 
-        // EOE013: [AsParameters] can only be used on class or struct types
+        // EOE012: [AsParameters] can only be used on class or struct types
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
         {
             diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidAsParametersType, method, meta.Name,
@@ -571,7 +571,7 @@ public sealed partial class ErrorOrEndpointGenerator
             .OrderByDescending(static c => c.Parameters.Length)
             .FirstOrDefault();
 
-        // EOE014: [AsParameters] type must have an accessible constructor
+        // EOE013: [AsParameters] type must have an accessible constructor
         if (constructor is null)
         {
             diagnostics.Add(DiagnosticInfo.Create(Descriptors.AsParametersNoConstructor, method,
@@ -584,7 +584,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
 
-            // EOE018: Nested [AsParameters] not supported
+            // EOE016: Nested [AsParameters] not supported
             if (childMeta.HasAsParameters)
             {
                 diagnostics.Add(DiagnosticInfo.Create(Descriptors.NestedAsParametersNotSupported,

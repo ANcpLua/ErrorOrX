@@ -467,7 +467,7 @@ internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonS
   ],
   Diagnostics: [
     {
-      Id: EOE055,
+      Id: EOE032,
       Severity: Warning,
       Message: Multiple parameters bind to route parameter 'id'. Only the first parameter ('fileId') will be bound; 'category' will be ignored.
     }

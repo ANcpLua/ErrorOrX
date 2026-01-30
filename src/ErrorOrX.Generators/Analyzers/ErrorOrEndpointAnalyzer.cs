@@ -13,7 +13,7 @@ namespace ErrorOr.Analyzers;
 /// </summary>
 /// <remarks>
 ///     This analyzer handles single-method diagnostics that can run fast.
-///     Cross-file diagnostics (EOE004, EOE007, EOE008) remain in the generator.
+///     Cross-file diagnostics (EOE004, EOE007) remain in the generator.
 ///     Route constraint mappings are shared via RouteValidator to avoid duplication.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -133,7 +133,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                             pattern,
                             routeParam.Name));
 
-                // EOE023: Route constraint type mismatch
+                // EOE020: Route constraint type mismatch
                 ValidateConstraintTypes(context, routeParams, methodParamsByRouteName, attributeLocation);
             }
         }
@@ -146,7 +146,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 method.Locations.FirstOrDefault(),
                 method.Name));
 
-        // EOE009: Body on read-only HTTP method
+        // EOE008: Body on read-only HTTP method
         var hasBody = bodyCount > 0;
         if (hasBody && WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
             context.ReportDiagnostic(Diagnostic.Create(
@@ -155,7 +155,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 method.Name,
                 httpMethod.ToUpperInvariant()));
 
-        // EOE010: [AcceptedResponse] on read-only method
+        // EOE009: [AcceptedResponse] on read-only method
         if (HasAcceptedResponseAttribute(method, null) &&
             WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
             context.ReportDiagnostic(Diagnostic.Create(
@@ -166,7 +166,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Validates route constraint types match method parameter types (EOE023).
+    ///     Validates route constraint types match method parameter types (EOE020).
     /// </summary>
     private static void ValidateConstraintTypes(
         SymbolAnalysisContext context,
