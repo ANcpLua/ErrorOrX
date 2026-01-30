@@ -68,6 +68,6 @@ namespace DiagnosticsDemos;
 [JsonSerializable(typeof(TypedData))]
 [JsonSerializable(typeof(FlexibleData))]
 // Error response types
-[JsonSerializable(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails))]
+[JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class AppJsonContext : JsonSerializerContext { }

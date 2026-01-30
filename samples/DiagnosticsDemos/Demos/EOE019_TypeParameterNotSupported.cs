@@ -66,7 +66,7 @@ public static class EOE019_TypeParameterNotSupported
     [Get("/api/eoe019/paged")]
     public static ErrorOr<PagedResult019<Item019>> GetPagedItems()
         => new PagedResult019<Item019>(
-            new List<Item019> { new(1, "First") },
+            [new(1, "First")],
             TotalCount: 100,
             Page: 1,
             PageSize: 10);

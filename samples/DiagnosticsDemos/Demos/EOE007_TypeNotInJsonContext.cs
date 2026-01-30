@@ -31,8 +31,8 @@ public record CategoryResponse(int Id, string Name);
 [JsonSerializable(typeof(ProductResponse))]
 [JsonSerializable(typeof(CategoryResponse))]
 [JsonSerializable(typeof(List<ProductResponse>))]
-[JsonSerializable(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails))]
-[JsonSerializable(typeof(Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]
+[JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class EOE007JsonContext : JsonSerializerContext { }
 
 public static class EOE007_TypeNotInJsonContext

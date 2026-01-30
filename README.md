@@ -16,8 +16,107 @@ Native AOT support.
 - **Smart Binding** - Automatic parameter inference based on HTTP method and type
 - **OpenAPI Ready** - Typed `Results<...>` unions for complete API documentation
 - **Native AOT** - Reflection-free code generation with JSON serialization contexts
-- **Middleware Support** - Emits fluent calls for `[Authorize]`, `[EnableRateLimiting]`, `[OutputCache]`
-- **API Versioning** - Full support for `[ApiVersion]`, `[MapToApiVersion]`, `[ApiVersionNeutral]`
+- **Middleware Support** - Translates ASP.NET Core attributes to Minimal API fluent calls (authorization, rate limiting, caching)
+- **API Versioning** - Integrates with Asp.Versioning.Http for versioned endpoint groups
+- **38 Analyzers** - Real-time IDE feedback for route conflicts, binding errors, AOT compatibility
+
+## What the Generator Produces
+
+The source generator transforms your handler methods into complete ASP.NET Core Minimal API endpoints.
+You write the business logic, the generator handles everything else.
+
+### Endpoint Wiring
+
+For each `[Get]`, `[Post]`, `[Put]`, `[Delete]`, `[Patch]` method:
+
+- Registers endpoint with `app.MapGet()`, `app.MapPost()`, etc.
+- Applies route constraints (`{id:guid}`, `{count:int}`)
+- Sets operation name (`.WithName()`) and tags (`.WithTags()`)
+
+[See EndpointMetadataEmitter.cs](src/ErrorOrX.Generators/Emitters/EndpointMetadataEmitter.cs)
+
+### Parameter Binding
+
+Automatic inference based on type and HTTP method:
+
+| Source | Inference Rule |
+|--------|----------------|
+| Route | Parameter name matches `{param}` in route |
+| Query | Primitive type not in route |
+| Body | POST/PUT/PATCH with complex type |
+| Service | Interface, abstract, or DI naming pattern (`*Service`, `*Repository`) |
+| Special | `HttpContext`, `CancellationToken`, `IFormFile` |
+
+[See BindingCodeEmitter.cs](src/ErrorOrX.Generators/Emitters/BindingCodeEmitter.cs)
+
+### Error-to-HTTP Mapping
+
+Converts `ErrorOr` errors to proper HTTP responses with [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) ProblemDetails:
+
+| ErrorType | HTTP Status | Response |
+|-----------|-------------|----------|
+| Validation | 400 | `ValidationProblem` with field errors |
+| Unauthorized | 401 | `Unauthorized()` |
+| Forbidden | 403 | `Forbid()` |
+| NotFound | 404 | `NotFound<ProblemDetails>` |
+| Conflict | 409 | `Conflict<ProblemDetails>` |
+| Failure | 500 | `InternalServerError<ProblemDetails>` |
+| Unexpected | 500 | `InternalServerError<ProblemDetails>` |
+| Custom(422) | 422 | `UnprocessableEntity<ProblemDetails>` |
+
+[See ErrorMapping.cs](src/ErrorOrX.Generators/Models/ErrorMapping.cs)
+
+### Request Validation
+
+Generated code validates before calling your handler:
+
+- Required parameters (returns 400 if missing)
+- Type parsing (Guid, int, etc. with format errors)
+- JSON deserialization (catches `JsonException`)
+- Content-Type checking (returns 415 for wrong type)
+
+### OpenAPI Metadata
+
+Full OpenAPI documentation without manual attributes:
+
+- Response types via `ProducesResponseTypeMetadata`
+- Accept types via `AcceptsMetadata`
+- Tags from class name
+- Operation IDs from method name
+- XML doc comments extracted to summaries
+
+[See OpenApiTransformerGenerator.cs](src/ErrorOrX.Generators/OpenApiTransformerGenerator.cs)
+
+### Builder API
+
+Fluent configuration following ASP.NET Core patterns:
+
+```csharp
+builder.Services.AddErrorOrEndpoints()
+    .UseJsonContext<AppJsonSerializerContext>()  // AOT JSON
+    .WithCamelCase()                              // Property naming
+    .WithIgnoreNulls();                           // Skip null values
+
+app.MapErrorOrEndpoints()
+    .RequireAuthorization()                       // Global auth
+    .RequireRateLimiting("api");                  // Global rate limit
+```
+
+### Analyzers (38 Diagnostics)
+
+Real-time IDE feedback covering:
+
+| Category | Diagnostics | Examples |
+|----------|-------------|----------|
+| Core | EOE001-007 | Invalid return type, non-static handler, unbound route param |
+| Binding | EOE008-021 | Multiple body sources, invalid `[FromRoute]` type, ambiguous binding |
+| Results | EOE022-024 | Too many result types, unknown error factory, undocumented interface |
+| AOT/JSON | EOE025-026 | Missing camelCase, missing JsonSerializerContext |
+| Versioning | EOE027-031 | Version-neutral conflict, undeclared version, invalid format |
+| Naming | EOE032-033 | Duplicate route binding, non-PascalCase handler |
+| AOT Safety | EOE034-038 | `Activator.CreateInstance`, `dynamic`, `Expression.Compile()` |
+
+[See Descriptors.cs](src/ErrorOrX.Generators/Analyzers/Descriptors.cs)
 
 ## Installation
 
@@ -175,35 +274,25 @@ public static ErrorOr<Todo> GetById(
 
 ## Middleware Attributes
 
-Middleware attributes are automatically translated to fluent calls:
+Standard ASP.NET Core attributes on your handler methods are translated to Minimal API fluent calls:
 
 ```csharp
 [Post("/admin")]
-[Authorize("Admin")]
-[EnableRateLimiting("fixed")]
-[OutputCache(Duration = 60)]
+[Authorize("Admin")]                    // ASP.NET Core authorization
+[EnableRateLimiting("fixed")]           // Microsoft.AspNetCore.RateLimiting
+[OutputCache(Duration = 60)]            // ASP.NET Core output caching
 public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { }
-// Generates: .RequireAuthorization("Admin").RequireRateLimiting("fixed").CacheOutput(...)
+
+// Generator emits:
+// app.MapPost("/admin", handler)
+//    .RequireAuthorization("Admin")
+//    .RequireRateLimiting("fixed")
+//    .CacheOutput(policy => policy.Expire(TimeSpan.FromSeconds(60)));
 ```
 
 ## Native AOT
 
-Fully compatible with `PublishAot=true`. For custom JSON configuration:
-
-```csharp
-var builder = WebApplication.CreateSlimBuilder(args);
-
-builder.Services.AddErrorOrEndpoints(options => options
-    .UseJsonContext<AppJsonSerializerContext>()  // Register JSON context
-    .WithCamelCase()                              // Use camelCase (default: true)
-    .WithIgnoreNulls());                          // Ignore nulls (default: true)
-
-var app = builder.Build();
-app.MapErrorOrEndpoints();
-app.Run();
-```
-
-Create a `JsonSerializerContext` with your endpoint types:
+Fully compatible with `PublishAot=true`. Create a `JsonSerializerContext` with your endpoint types:
 
 ```csharp
 [JsonSourceGenerationOptions(
@@ -215,13 +304,21 @@ Create a `JsonSerializerContext` with your endpoint types:
 internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
-Disable generator JSON context if providing your own:
+Register it with ErrorOrEndpoints:
 
-```xml
-<PropertyGroup>
-    <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
-</PropertyGroup>
+```csharp
+var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Services.AddErrorOrEndpoints()
+    .UseJsonContext<AppJsonSerializerContext>();  // Uses options from [JsonSourceGenerationOptions]
+
+var app = builder.Build();
+app.MapErrorOrEndpoints();
+app.Run();
 ```
+
+The `[JsonSourceGenerationOptions]` on your context controls serialization behavior (camelCase, null handling).
+The builder methods `WithCamelCase()` and `WithIgnoreNulls()` are only needed if you want to override at runtime.
 
 ## Packages
 
@@ -230,10 +327,6 @@ Disable generator JSON context if providing your own:
 | `ErrorOrX.Generators` | `netstandard2.0` | Source generator (includes ErrorOrX) |
 | `ErrorOrX`            | `net10.0`        | Runtime library (auto-referenced)    |
 
-## Documentation
+## Changelog
 
-- [API Reference](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/api.md)
-- [Parameter Binding](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/parameter-binding.md)
-- [API Versioning](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/api-versioning.md)
-- [Diagnostics](https://github.com/ANcpLua/ErrorOrX/blob/main/docs/diagnostics.md)
-- [Changelog](https://github.com/ANcpLua/ErrorOrX/blob/main/CHANGELOG.md)
+See [CHANGELOG.md](CHANGELOG.md) for version history.

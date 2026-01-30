@@ -29,7 +29,7 @@ public record OrderResponse(string OrderId, string Status);
 [JsonSerializable(typeof(OrderResponse))]
 [JsonSerializable(typeof(List<OrderResponse>))]
 // Don't forget ProblemDetails for error responses
-[JsonSerializable(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails))]
+[JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class EOE026JsonContext : JsonSerializerContext { }
 
