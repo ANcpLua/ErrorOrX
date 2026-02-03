@@ -491,6 +491,11 @@ global using ErrorOr.Generated;
       Id: EOE025,
       Severity: Warning,
       Message: JsonSerializerContext 'DiagnosticTest.AppJsonContext' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for web API compatibility. Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.
+    },
+    {
+      Id: EOE041,
+      Severity: Warning,
+      Message: JsonSerializerContext 'DiagnosticTest.AppJsonContext' should include [JsonSerializable(typeof(ProblemDetails))] and [JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses
     }
   ]
 }

@@ -67,6 +67,13 @@ namespace DiagnosticsDemos;
 // EOE038 types
 [JsonSerializable(typeof(TypedData))]
 [JsonSerializable(typeof(FlexibleData))]
+// EOE039 types
+[JsonSerializable(typeof(SimpleTodoRequest))]
+[JsonSerializable(typeof(TodoItem))]
+// EOE040 types
+[JsonSerializable(typeof(Eoe040Response))]
+// EOE041 types
+[JsonSerializable(typeof(Eoe041Response))]
 // Error response types
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]

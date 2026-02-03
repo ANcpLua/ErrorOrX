@@ -483,6 +483,11 @@ global using ErrorOr.Generated;
       Id: EOE007,
       Severity: Error,
       Message: Type 'Microsoft.AspNetCore.Http.HttpValidationProblemDetails' used by 'ErrorOr endpoints' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof(Microsoft.AspNetCore.Http.HttpValidationProblemDetails))] to your JsonSerializerContext.
+    },
+    {
+      Id: EOE041,
+      Severity: Warning,
+      Message: JsonSerializerContext 'DiagnosticTest.AppJsonContext' should include [JsonSerializable(typeof(ProblemDetails))] and [JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses
     }
   ]
 }

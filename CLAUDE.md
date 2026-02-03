@@ -110,7 +110,7 @@ Wrapper delegates lose original method attributes. Generator MUST emit:
 | 6 | Abstract type | Service |
 | 7 | Service naming (`I*Service`, `*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`) | Service |
 | 8 | POST/PUT/PATCH + complex type | **Body** |
-| 9 | GET/DELETE + complex type | **Error EOE025** |
+| 9 | GET/DELETE + complex type | **Error EOE021** |
 | 10 | Final fallback | Service |
 
 ```csharp
@@ -121,7 +121,7 @@ Wrapper delegates lose original method attributes. Generator MUST emit:
 [Post("/todos")]
 public static ErrorOr<Todo> Create(CreateTodoRequest req, ITodoService svc) => ...
 
-// EOE025 error - GET with complex type requires explicit binding
+// EOE021 error - GET with complex type requires explicit binding
 [Get("/todos")]
 public static ErrorOr<List<Todo>> Search(SearchFilter filter) => ...  // Error
 public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...  // OK
@@ -145,10 +145,12 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 |----------|-----|-------------|
 | Handler validation | EOE001-002 | Invalid return type, must be static |
 | Route validation | EOE003-005 | Unbound parameter, duplicate route, invalid pattern |
-| Binding validation | EOE006, EOE009-016, EOE023, EOE025 | Multiple body, invalid binding types, constraint mismatch |
-| AOT/JSON | EOE007, EOE040-041 | Not serializable, missing CamelCase, missing context |
-| Union types | EOE030, EOE032-033 | Too many types, unknown factory, undocumented interface |
-| API versioning | EOE050-054 | Version-neutral conflicts, undeclared versions |
+| Binding validation | EOE006, EOE008-021 | Multiple body, invalid binding types, ambiguous binding |
+| Union types | EOE022-024 | Too many types, unknown factory, undocumented interface |
+| JSON/AOT | EOE007, EOE025-026, EOE039-041 | Not serializable, missing CamelCase, missing context, validation reflection |
+| API versioning | EOE027-031 | Version-neutral conflicts, undeclared versions |
+| Route/naming | EOE032-033 | Duplicate route params, non-PascalCase method names |
+| AOT safety | EOE034-038 | Activator, Type.GetType, reflection, Expression.Compile, dynamic |
 
 ## Consumer Setup
 
@@ -190,7 +192,7 @@ app.MapErrorOrEndpoints();
 
 | File | Owns |
 |------|------|
-| `Descriptors.cs` | All diagnostics (EOE001-EOE054) |
+| `Descriptors.cs` | All diagnostics (EOE001-EOE041) |
 | `ErrorMapping.cs` | ErrorType names, HTTP codes, TypedResult factories |
 | `EndpointModels.cs` | All data structures |
 | `WellKnownTypes.cs` | All FQN string constants |

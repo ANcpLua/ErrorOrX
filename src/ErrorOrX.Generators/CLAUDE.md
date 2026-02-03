@@ -107,7 +107,7 @@ public static ErrorOr<List<Todo>> Search([AsParameters] SearchFilter filter) => 
 | `Emitter.cs` | Code generation (mappings, JSON context, AOT wrapper) |
 | `Extractor.cs` | Method/attribute extraction |
 | `Analyzer.cs` | JSON context detection, AOT validation |
-| `Descriptors.cs` | All diagnostic definitions (EOE001-EOE038) |
+| `Descriptors.cs` | All diagnostic definitions (EOE001-EOE041) |
 | `ErrorMapping.cs` | ErrorType -> HTTP status mapping |
 | `WellKnownTypes.cs` | FQN string constants |
 | `RouteValidator.cs` | Route validation and parameter lookup |

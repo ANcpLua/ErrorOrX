@@ -42,6 +42,9 @@
  EOE036  | ErrorOr.Endpoints | Warning  | Reflection over members is not AOT-safe
  EOE037  | ErrorOr.Endpoints | Warning  | Expression.Compile is not AOT-safe
  EOE038  | ErrorOr.Endpoints | Warning  | 'dynamic' is not AOT-safe
+ EOE039  | ErrorOr.Endpoints | Info     | DataAnnotations validation uses reflection
+ EOE040  | ErrorOr.Endpoints | Warning  | JsonSerializerContext missing CamelCase
+ EOE041  | ErrorOr.Endpoints | Warning  | JsonSerializerContext missing error types
 
 ### Removed Rules
 

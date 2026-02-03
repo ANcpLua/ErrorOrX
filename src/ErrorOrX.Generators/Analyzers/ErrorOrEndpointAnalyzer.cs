@@ -39,7 +39,8 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         Descriptors.MultipleBodySources,
         Descriptors.BodyOnReadOnlyMethod,
         Descriptors.AcceptedOnReadOnlyMethod,
-        Descriptors.RouteConstraintTypeMismatch
+        Descriptors.RouteConstraintTypeMismatch,
+        Descriptors.ValidationUsesReflection
     ];
 
     /// <inheritdoc />
@@ -163,6 +164,58 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
+
+        // EOE039: DataAnnotations validation uses reflection
+        CheckForValidationAttributes(context, method);
+    }
+
+    /// <summary>
+    ///     Checks if any parameter has validation attributes from System.ComponentModel.DataAnnotations.
+    ///     Validator.TryValidateObject uses reflection internally.
+    /// </summary>
+    private static void CheckForValidationAttributes(
+        SymbolAnalysisContext context,
+        IMethodSymbol method)
+    {
+        var validationAttributeType = context.Compilation.GetTypeByMetadataName(WellKnownTypes.ValidationAttribute);
+        if (validationAttributeType is null)
+            return;
+
+        foreach (var param in method.Parameters)
+        {
+            foreach (var attr in param.GetAttributes())
+            {
+                if (attr.AttributeClass is null)
+                    continue;
+
+                // Check if the attribute inherits from ValidationAttribute
+                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        Descriptors.ValidationUsesReflection,
+                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                        param.Name,
+                        method.Name));
+                    break; // Only report once per parameter
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Checks if a type inherits from a base type.
+    /// </summary>
+    private static bool InheritsFrom(ITypeSymbol type, ITypeSymbol baseType)
+    {
+        var current = type.BaseType;
+        while (current is not null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+                return true;
+            current = current.BaseType;
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -15,6 +15,10 @@ public static class Descriptors
 {
     private const string Category = "ErrorOr.Endpoints";
 
+    // Help link URLs for AOT diagnostics
+    private const string TrimWarningsUrl = "https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings";
+    private const string IntrinsicApisUrl = "https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic";
+
     // ============================================================================
     // EOE001-007: Core validation
     // ============================================================================
@@ -449,39 +453,49 @@ public static class Descriptors
 
     /// <summary>
     ///     Activator.CreateInstance is not AOT-compatible.
-    ///     Use factory methods or explicit construction instead.
+    ///     Use factory methods, explicit construction, or annotate with DynamicallyAccessedMembers.
     /// </summary>
     public static readonly DiagnosticDescriptor ActivatorCreateInstance = new(
         "EOE034",
         "Activator.CreateInstance is not AOT-safe",
-        "Activator.CreateInstance<{0}>() uses reflection and is not compatible with NativeAOT. Use explicit construction or factory methods.",
+        "Activator.CreateInstance<{0}>() uses reflection and is not compatible with NativeAOT. " +
+        "Use explicit construction, factory methods, or if the Type is a parameter, annotate it with " +
+        "[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructors)].",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        true,
+        helpLinkUri: TrimWarningsUrl);
 
     /// <summary>
-    ///     Type.GetType(string) is not AOT-compatible.
-    ///     Types may be trimmed and unavailable at runtime.
+    ///     Type.GetType(string) with dynamic or case-insensitive lookup is not AOT-compatible.
+    ///     String literals are safe because the trimmer can analyze them at compile-time.
+    ///     Dynamic lookups or case-insensitive searches prevent the trimmer from knowing which types to preserve.
     /// </summary>
     public static readonly DiagnosticDescriptor TypeGetType = new(
         "EOE035",
         "Type.GetType is not AOT-safe",
-        "Type.GetType(\"{0}\") uses runtime type lookup and is not compatible with NativeAOT. Types may be trimmed.",
+        "Type.GetType with {0} prevents the trimmer from statically analyzing which types to preserve. " +
+        "Use typeof() for compile-time type references, or use a string literal without case-insensitive search. " +
+        "For unavoidable dynamic patterns, annotate with [RequiresUnreferencedCode].",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        true,
+        helpLinkUri: IntrinsicApisUrl);
 
     /// <summary>
     ///     Reflection over type members is not AOT-compatible.
     ///     Members may be trimmed and unavailable at runtime.
+    ///     Annotate the type parameter with [DynamicallyAccessedMembers] using the appropriate members flag.
     /// </summary>
     public static readonly DiagnosticDescriptor ReflectionOverMembers = new(
         "EOE036",
         "Reflection over members is not AOT-safe",
-        "typeof({0}).{1}() uses reflection and is not compatible with NativeAOT. Members may be trimmed. Consider source generators.",
+        "typeof({0}).{1}() uses reflection and is not compatible with NativeAOT. " +
+        "Annotate the type parameter with [DynamicallyAccessedMembers({2})] or use source generators.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        true,
+        helpLinkUri: TrimWarningsUrl);
 
     /// <summary>
     ///     Expression.Compile() generates code at runtime.
@@ -493,7 +507,8 @@ public static class Descriptors
         "Expression.Compile() generates code at runtime and is not compatible with NativeAOT. Use compiled delegates or source generators.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        true,
+        helpLinkUri: TrimWarningsUrl);
 
     /// <summary>
     ///     The 'dynamic' keyword uses runtime binding.
@@ -503,6 +518,55 @@ public static class Descriptors
         "EOE038",
         "'dynamic' is not AOT-safe",
         "The 'dynamic' keyword uses runtime binding and is not compatible with NativeAOT. Use strongly-typed code instead.",
+        Category,
+        DiagnosticSeverity.Warning,
+        true,
+        helpLinkUri: TrimWarningsUrl);
+
+    /// <summary>
+    ///     Parameter has validation attributes from System.ComponentModel.DataAnnotations.
+    ///     Validator.TryValidateObject uses reflection internally.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ValidationUsesReflection = new(
+        "EOE039",
+        "DataAnnotations validation uses reflection",
+        "Parameter '{0}' in endpoint '{1}' has validation attributes. " +
+        "Validator.TryValidateObject uses reflection and may cause trim warnings. " +
+        "Consider FluentValidation with source generators or manual validation.",
+        Category,
+        DiagnosticSeverity.Info,
+        true,
+        helpLinkUri: TrimWarningsUrl);
+
+    // ============================================================================
+    // EOE040-041: JSON context completeness
+    // ============================================================================
+
+    /// <summary>
+    ///     JsonSerializerContext is missing CamelCase property naming policy.
+    ///     Web APIs typically use camelCase for JSON properties.
+    /// </summary>
+    /// <remarks>
+    ///     This is an alias for EOE025 (MissingCamelCasePolicy) with different ID
+    ///     for clarity in documentation. EOE025 remains the primary diagnostic.
+    /// </remarks>
+    public static readonly DiagnosticDescriptor JsonContextMissingCamelCase = new(
+        "EOE040",
+        "JsonSerializerContext missing CamelCase",
+        "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility",
+        Category,
+        DiagnosticSeverity.Warning,
+        true);
+
+    /// <summary>
+    ///     JsonSerializerContext is missing ProblemDetails and HttpValidationProblemDetails.
+    ///     These types are required for error responses in ASP.NET Core.
+    /// </summary>
+    public static readonly DiagnosticDescriptor JsonContextMissingProblemDetails = new(
+        "EOE041",
+        "JsonSerializerContext missing error types",
+        "JsonSerializerContext '{0}' should include [JsonSerializable(typeof(ProblemDetails))] and " +
+        "[JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses",
         Category,
         DiagnosticSeverity.Warning,
         true);

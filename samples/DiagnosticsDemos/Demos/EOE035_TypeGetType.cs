@@ -1,42 +1,69 @@
-// EOE035: Type.GetType is not AOT-safe
-// ======================================
-// Type.GetType(string) is not AOT-compatible.
+// EOE035: Type.GetType is not AOT-safe (for dynamic patterns)
+// =============================================================
+// Type.GetType(string) with DYNAMIC type names is not AOT-compatible.
 // Types may be trimmed and unavailable at runtime.
 //
-// Native AOT trims unused types to reduce binary size.
-// Type.GetType("SomeType") may fail at runtime if that type was trimmed.
+// SAFE: Type.GetType("System.String") - string literal is analyzable
+// UNSAFE: Type.GetType(userInput) - dynamic type name
+// UNSAFE: Type.GetType("...", ignoreCase: true) - case-insensitive search
+//
+// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic
 
 namespace DiagnosticsDemos.Demos;
 
 public static class EOE035_TypeGetType
 {
     // -------------------------------------------------------------------------
-    // TRIGGERS EOE035: Using Type.GetType with string
+    // SAFE: String literal Type.GetType (NO WARNING)
+    // -------------------------------------------------------------------------
+    // Per Microsoft docs, string literals are statically analyzable
+    [Get("/api/eoe035/literal")]
+    public static ErrorOr<string> GetWithLiteral()
+    {
+        // ✅ No EOE035 warning - trimmer can see "System.String" at compile time
+        var type = Type.GetType("System.String");
+        return type?.FullName ?? "Not found";
+    }
+
+    // -------------------------------------------------------------------------
+    // TRIGGERS EOE035: Dynamic type name from parameter
     // -------------------------------------------------------------------------
     // Uncomment to see the diagnostic (warning):
     //
-    // [Get("/type")]
-    // public static ErrorOr<string> GetTypeInfo([FromQuery] string typeName)
+    // [Get("/api/eoe035/dynamic")]
+    // public static ErrorOr<string> GetDynamic([FromQuery] string typeName)
     // {
+    //     // ⚠️ EOE035: Type.GetType with a dynamic type name
     //     var type = Type.GetType(typeName);
     //     return type?.FullName ?? "Type not found";
     // }
 
     // -------------------------------------------------------------------------
-    // TRIGGERS EOE035: Using Type.GetType for dynamic loading
+    // TRIGGERS EOE035: Case-insensitive search
     // -------------------------------------------------------------------------
     // Uncomment to see the diagnostic (warning):
     //
-    // [Get("/load")]
-    // public static ErrorOr<string> LoadHandler([FromQuery] string handlerType)
+    // [Get("/api/eoe035/ignorecase")]
+    // public static ErrorOr<string> GetCaseInsensitive()
     // {
-    //     var type = Type.GetType(handlerType);
-    //     if (type == null) return Error.NotFound("Type.NotFound", "Handler not found");
-    //     return $"Loaded: {type.Name}";
+    //     // ⚠️ EOE035: ignoreCase:true breaks trimmer analysis
+    //     var type = Type.GetType("system.string", ignoreCase: true, throwOnError: false);
+    //     return type?.FullName ?? "Type not found";
     // }
 
     // -------------------------------------------------------------------------
-    // FIXED: Use typeof() for known types
+    // SAFE: Explicit case-sensitive search (NO WARNING)
+    // -------------------------------------------------------------------------
+    [Get("/api/eoe035/casesensitive")]
+    public static ErrorOr<string> GetCaseSensitive()
+    {
+        // ✅ No warning - string literal + explicit ignoreCase: false
+        var type = Type.GetType("System.String", throwOnError: false, ignoreCase: false);
+        return type?.FullName ?? "Not found";
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Use typeof() for known types (BEST APPROACH)
     // -------------------------------------------------------------------------
     [Get("/api/eoe035/known")]
     public static ErrorOr<string> GetKnownType()

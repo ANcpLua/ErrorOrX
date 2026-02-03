@@ -33,8 +33,9 @@ Verify diagnostics are emitted correctly:
 | EOE001 | Invalid return type |
 | EOE002 | Handler must be static |
 | EOE003-005 | Route validation |
-| EOE025 | Ambiguous parameter binding |
-| EOE040-041 | JSON context warnings |
+| EOE021 | Ambiguous parameter binding |
+| EOE034-038 | AOT safety (Activator, Type.GetType, reflection, Expression.Compile, dynamic) |
+| EOE039-041 | Validation reflection, JSON context warnings |
 
 ## Snapshot Testing
 

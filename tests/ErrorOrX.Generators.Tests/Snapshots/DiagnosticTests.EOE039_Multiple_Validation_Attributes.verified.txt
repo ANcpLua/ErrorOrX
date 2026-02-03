@@ -163,9 +163,9 @@ namespace ErrorOr.Generated
 
             var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();
 
-            // GET /todos/{id} -> global::DiagnosticTest.TodoApi.GetById
-            var __ep0 = app.MapGet(@"/todos/{id}", Invoke_Ep0)
-                .WithName("DiagnosticTest_TodoApi_GetById")
+            // POST /todos -> global::DiagnosticTest.TodoApi.Create
+            var __ep0 = app.MapPost(@"/todos", Invoke_Ep0)
+                .WithName("DiagnosticTest_TodoApi_Create")
                 .WithTags("TodoApi")
                 ;
             __endpointBuilders.Add(__ep0);
@@ -204,7 +204,7 @@ namespace ErrorOr.Generated
             await __result.ExecuteAsync(ctx);
         }
 
-        private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
+        private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
         {
             static global::Microsoft.AspNetCore.Mvc.ProblemDetails CreateBindProblem(string param, string reason) => new()
             {
@@ -214,14 +214,32 @@ namespace ErrorOr.Generated
                 Type = "https://httpstatuses.io/400",
             };
 
-            static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> BindFail(string param, string reason)
-                => Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason)));
+            static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> BindFail(string param, string reason)
+                => Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason)));
 
-            if (!TryGetRouteValue(ctx, "id", out var p0Raw) || !int.TryParse(p0Raw, out var p0)) return BindFail("id", "has invalid format");
-            var result = global::DiagnosticTest.TodoApi.GetById(p0);
+            string? p0;
+            if (!TryGetQueryValue(ctx, "title", out var p0Raw))
+            {
+                return BindFail("title", "is required");
+            }
+            else
+            {
+                p0 = p0Raw;
+            }
+            int? p1;
+            if (!TryGetQueryValue(ctx, "priority", out var p1Raw))
+            {
+                return BindFail("priority", "is required");
+            }
+            else
+            {
+                if (!int.TryParse(p1Raw, out var p1Temp)) return BindFail("priority", "has invalid format");
+                p1 = p1Temp;
+            }
+            var result = global::DiagnosticTest.TodoApi.Create(p0!, p1.Value);
             if (result.IsError)
             {
-                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 }));
+                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 }));
                 var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {
@@ -234,11 +252,11 @@ namespace ErrorOr.Generated
                 switch (first.Type)
                 {
                     default:
-                        return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem));
+                        return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem));
                 }
             }
 
-            return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<global::DiagnosticTest.Todo>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Ok(result.Value));
+            return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Ok(result.Value));
         }
 
         private static bool TryGetRouteValue(HttpContext ctx, string name, out string? value)
@@ -453,35 +471,16 @@ global using ErrorOr.Generated;
 // This file was auto-generated by ErrorOr.Generators.
 // Do not modify this file directly.
 
-// ErrorOrX JSON Context Helper
+// JSON serialization context for Native AOT support.
+#nullable enable
 
-// Detected user JsonSerializerContext: DiagnosticTest.AppJsonContext
-
-// ============================================================================
-// MISSING TYPES - Add these [JsonSerializable] attributes to your context:
-// ============================================================================
-//
-// [JsonSerializable(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails))]
-// [JsonSerializable(typeof(Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]
-//
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSerializable(typeof(string))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]
+internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonSerializerContext { }
 
     }
   ],
-  Diagnostics: [
-    {
-      Id: EOE007,
-      Severity: Error,
-      Message: Type 'Microsoft.AspNetCore.Mvc.ProblemDetails' used by 'ErrorOr endpoints' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails))] to your JsonSerializerContext.
-    },
-    {
-      Id: EOE007,
-      Severity: Error,
-      Message: Type 'Microsoft.AspNetCore.Http.HttpValidationProblemDetails' used by 'ErrorOr endpoints' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof(Microsoft.AspNetCore.Http.HttpValidationProblemDetails))] to your JsonSerializerContext.
-    },
-    {
-      Id: EOE041,
-      Severity: Warning,
-      Message: JsonSerializerContext 'DiagnosticTest.AppJsonContext' should include [JsonSerializable(typeof(ProblemDetails))] and [JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses
-    }
-  ]
+  Diagnostics: []
 }

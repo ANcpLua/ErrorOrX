@@ -15,25 +15,27 @@ namespace ErrorOr.Analyzers;
 public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>
-    ///     Reflection methods on Type that are not AOT-safe.
+    ///     Reflection methods on Type that are not AOT-safe, mapped to their DynamicallyAccessedMemberTypes.
     /// </summary>
-    private static readonly ImmutableHashSet<string> ReflectionMethods = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "GetProperties",
-        "GetProperty",
-        "GetMethods",
-        "GetMethod",
-        "GetFields",
-        "GetField",
-        "GetMembers",
-        "GetMember",
-        "GetEvents",
-        "GetEvent",
-        "GetConstructors",
-        "GetConstructor",
-        "InvokeMember",
-        "GetCustomAttributes",
-        "GetCustomAttribute");
+    private static readonly ImmutableDictionary<string, string> ReflectionMethodsToMemberTypes =
+        ImmutableDictionary.CreateRange<string, string>(StringComparer.Ordinal,
+        [
+            new KeyValuePair<string, string>("GetProperties", "DynamicallyAccessedMemberTypes.PublicProperties"),
+            new KeyValuePair<string, string>("GetProperty", "DynamicallyAccessedMemberTypes.PublicProperties"),
+            new KeyValuePair<string, string>("GetMethods", "DynamicallyAccessedMemberTypes.PublicMethods"),
+            new KeyValuePair<string, string>("GetMethod", "DynamicallyAccessedMemberTypes.PublicMethods"),
+            new KeyValuePair<string, string>("GetFields", "DynamicallyAccessedMemberTypes.PublicFields"),
+            new KeyValuePair<string, string>("GetField", "DynamicallyAccessedMemberTypes.PublicFields"),
+            new KeyValuePair<string, string>("GetMembers", "DynamicallyAccessedMemberTypes.All"),
+            new KeyValuePair<string, string>("GetMember", "DynamicallyAccessedMemberTypes.All"),
+            new KeyValuePair<string, string>("GetEvents", "DynamicallyAccessedMemberTypes.PublicEvents"),
+            new KeyValuePair<string, string>("GetEvent", "DynamicallyAccessedMemberTypes.PublicEvents"),
+            new KeyValuePair<string, string>("GetConstructors", "DynamicallyAccessedMemberTypes.PublicConstructors"),
+            new KeyValuePair<string, string>("GetConstructor", "DynamicallyAccessedMemberTypes.PublicConstructors"),
+            new KeyValuePair<string, string>("InvokeMember", "DynamicallyAccessedMemberTypes.All"),
+            new KeyValuePair<string, string>("GetCustomAttributes", "DynamicallyAccessedMemberTypes.All"),
+            new KeyValuePair<string, string>("GetCustomAttribute", "DynamicallyAccessedMemberTypes.All")
+        ]);
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
@@ -78,26 +80,27 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check for Type.GetType(string)
-        if (IsTypeGetType(method))
+        // Check for Type.GetType(string) - only warn if dynamic or case-insensitive
+        if (IsTypeGetType(method) && ShouldWarnForTypeGetType(invocation, out var warningReason))
         {
-            var typeString = GetFirstStringArgument(invocation);
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.TypeGetType,
                 invocation.GetLocation(),
-                typeString ?? "..."));
+                warningReason));
             return;
         }
 
         // Check for reflection methods on Type
-        if (IsReflectionMethod(method))
+        if (IsSystemType(method.ContainingType) &&
+            TryGetReflectionMemberType(method.Name, out var memberType))
         {
             var typeName = GetReceiverTypeName(invocation, context.SemanticModel);
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.ReflectionOverMembers,
                 invocation.GetLocation(),
                 typeName ?? "T",
-                method.Name));
+                method.Name,
+                memberType));
             return;
         }
 
@@ -145,9 +148,63 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
                method.Parameters[0].Type.SpecialType == SpecialType.System_String;
     }
 
-    private static bool IsReflectionMethod(ISymbol method)
+    /// <summary>
+    ///     Determines if Type.GetType should trigger a warning.
+    ///     Per Microsoft docs, Type.GetType is safe when:
+    ///     - The first argument is a string literal (analyzable at compile-time)
+    ///     - Case-insensitive search is NOT requested (ignoreCase parameter is not true)
+    /// </summary>
+    private static bool ShouldWarnForTypeGetType(InvocationExpressionSyntax invocation, out string warningReason)
     {
-        return IsSystemType(method.ContainingType) && ReflectionMethods.Contains(method.Name);
+        warningReason = string.Empty;
+        var arguments = invocation.ArgumentList.Arguments;
+        if (arguments.Count is 0)
+            return false;
+
+        var firstArg = arguments[0].Expression;
+
+        // Check if the first argument is a string literal - if not, it's dynamic and should warn
+        var isStringLiteral = firstArg is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression };
+        if (!isStringLiteral)
+        {
+            warningReason = "a dynamic type name";
+            return true;
+        }
+
+        // Check for case-insensitive overloads:
+        // - Type.GetType(string, bool throwOnError, bool ignoreCase)
+        // The ignoreCase parameter is the 3rd parameter (index 2)
+        if (arguments.Count >= 3)
+        {
+            var ignoreCaseArg = arguments[2].Expression;
+            // If ignoreCase is explicitly true, warn
+            if (ignoreCaseArg is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.TrueLiteralExpression })
+            {
+                warningReason = "case-insensitive search (ignoreCase: true)";
+                return true;
+            }
+
+            // If ignoreCase is a variable (not a literal false), be conservative and warn
+            if (ignoreCaseArg is not LiteralExpressionSyntax { RawKind: (int)SyntaxKind.FalseLiteralExpression })
+            {
+                warningReason = "a potentially case-insensitive search";
+                return true;
+            }
+        }
+
+        // String literal without case-insensitive search is safe
+        return false;
+    }
+
+    private static bool TryGetReflectionMemberType(string methodName, out string memberType)
+    {
+        return ReflectionMethodsToMemberTypes.TryGetValue(methodName, out memberType!);
+    }
+
+    private static bool IsReflectionMethod(IMethodSymbol method)
+    {
+        return IsSystemType(method.ContainingType) &&
+               ReflectionMethodsToMemberTypes.ContainsKey(method.Name);
     }
 
     private static bool IsSystemType(ISymbol? type)

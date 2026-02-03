@@ -808,19 +808,30 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Always check for ProblemDetails and HttpValidationProblemDetails
-        if (!registeredTypes.Any(static rt => WellKnownTypes.Fqn.ProblemDetails.TypeNamesEqual(rt)))
+        var missingProblemDetails = !registeredTypes.Any(static rt =>
+            WellKnownTypes.Fqn.ProblemDetails.TypeNamesEqual(rt));
+        var missingValidationProblemDetails = !registeredTypes.Any(static rt =>
+            WellKnownTypes.Fqn.HttpValidationProblemDetails.TypeNamesEqual(rt));
+
+        if (missingProblemDetails)
             missingTypes.Add(WellKnownTypes.Fqn.ProblemDetails);
-        if (!registeredTypes.Any(static rt =>
-                WellKnownTypes.Fqn.HttpValidationProblemDetails.TypeNamesEqual(rt)))
-        {
+        if (missingValidationProblemDetails)
             missingTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
-        }
 
         // Report EOE025 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
         {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MissingCamelCasePolicy,
+                Location.None,
+                fullClassName));
+        }
+
+        // Report EOE041 if user context is missing ProblemDetails types
+        if (missingProblemDetails || missingValidationProblemDetails)
+        {
+            spc.ReportDiagnostic(Diagnostic.Create(
+                Descriptors.JsonContextMissingProblemDetails,
                 Location.None,
                 fullClassName));
         }
