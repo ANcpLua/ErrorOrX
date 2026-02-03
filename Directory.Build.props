@@ -4,7 +4,7 @@
 
     <!-- Version for nuspec bundling (must match Directory.Packages.props) -->
     <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.21.0</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.28.0</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
     <!-- Repo-wide build settings -->
