@@ -18,11 +18,17 @@ public static class VersionedApi
 {
     [Get("/api/eoe030/versioned/v1/items")]
     [MapToApiVersion("1.0")]
-    public static ErrorOr<string> GetItemsV1() => "versioned items v1";
+    public static ErrorOr<string> GetItemsV1()
+    {
+        return "versioned items v1";
+    }
 
     [Get("/api/eoe030/versioned/v2/items")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetItemsV2() => "versioned items v2";
+    public static ErrorOr<string> GetItemsV2()
+    {
+        return "versioned items v2";
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -43,11 +49,17 @@ public static class NeutralApi
 {
     [Get("/api/eoe030/health")]
     [ApiVersionNeutral]
-    public static ErrorOr<string> GetHealth() => "healthy";
+    public static ErrorOr<string> GetHealth()
+    {
+        return "healthy";
+    }
 
     [Get("/api/eoe030/ping")]
     [ApiVersionNeutral]
-    public static ErrorOr<string> Ping() => "pong";
+    public static ErrorOr<string> Ping()
+    {
+        return "pong";
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -60,7 +72,10 @@ public static class EOE030_EndpointMissingVersioning
     [Get("/api/eoe030/data")]
     [MapToApiVersion("1.0")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetData() => "data";
+    public static ErrorOr<string> GetData()
+    {
+        return "data";
+    }
 }
 
 // -------------------------------------------------------------------------

@@ -40,7 +40,6 @@ internal static class NamingValidator
     ///     - First character must be uppercase
     ///     - No underscores (except as part of identifiers in some edge cases)
     ///     - After each word boundary, next letter should be uppercase
-    ///
     ///     This method checks:
     ///     - First character is uppercase letter
     ///     - No underscores in the name

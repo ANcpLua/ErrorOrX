@@ -36,34 +36,46 @@ public static class EOE008_BodyOnReadOnlyMethod
     public static ErrorOr<string> Search(
         [FromQuery] string query,
         [FromQuery] int page = 1)
-        => $"Searching '{query}' on page {page}";
-
-    // -------------------------------------------------------------------------
-    // FIXED: Use [AsParameters] for complex query objects on GET
-    // -------------------------------------------------------------------------
-    public record SearchParams(string Query, int Page, int PageSize);
+    {
+        return $"Searching '{query}' on page {page}";
+    }
 
     [Get("/api/eoe008/advanced-search")]
     public static ErrorOr<string> AdvancedSearch([AsParameters] SearchParams @params)
-        => $"Searching '{@params.Query}' page {@params.Page}";
+    {
+        return $"Searching '{@params.Query}' page {@params.Page}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use route parameters for DELETE
     // -------------------------------------------------------------------------
     [Delete("/api/eoe008/items/{id}")]
-    public static ErrorOr<Deleted> DeleteItem(int id) => Result.Deleted;
+    public static ErrorOr<Deleted> DeleteItem(int id)
+    {
+        return Result.Deleted;
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use POST/PUT for operations that need request bodies
     // -------------------------------------------------------------------------
     [Post("/api/eoe008/search")]
     public static ErrorOr<string> SearchWithPost([FromBody] SearchCriteria criteria)
-        => $"Searching: {criteria.Query}, page {criteria.Page}";
+    {
+        return $"Searching: {criteria.Query}, page {criteria.Page}";
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: HEAD follows GET semantics (no body)
     // ErrorOrX does not have a [Head] attribute - use [Get] with appropriate response
     // -------------------------------------------------------------------------
     [Get("/api/eoe008/check/{id}")]
-    public static ErrorOr<Success> CheckExists(int id) => Result.Success;
+    public static ErrorOr<Success> CheckExists(int id)
+    {
+        return Result.Success;
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Use [AsParameters] for complex query objects on GET
+    // -------------------------------------------------------------------------
+    public record SearchParams(string Query, int Page, int PageSize);
 }

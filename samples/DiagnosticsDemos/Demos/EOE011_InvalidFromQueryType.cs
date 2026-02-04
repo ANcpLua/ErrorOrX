@@ -47,7 +47,9 @@ public static class EOE011_InvalidFromQueryType
         [FromQuery] string? query,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
-        => $"Searching '{query}' - page {page}, size {pageSize}";
+    {
+        return $"Searching '{query}' - page {page}, size {pageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Arrays of primitives work with [FromQuery]
@@ -56,14 +58,18 @@ public static class EOE011_InvalidFromQueryType
     public static ErrorOr<string> Filter(
         [FromQuery] int[] ids,
         [FromQuery] string[] tags)
-        => $"Filtering {ids.Length} ids with {tags.Length} tags";
+    {
+        return $"Filtering {ids.Length} ids with {tags.Length} tags";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use [AsParameters] for flat objects
     // -------------------------------------------------------------------------
     [Get("/api/eoe011/items")]
     public static ErrorOr<string> GetItems([AsParameters] FlatFilter filter)
-        => $"Getting items: name={filter.Name}, page={filter.Page}, size={filter.PageSize}";
+    {
+        return $"Getting items: name={filter.Name}, page={filter.Page}, size={filter.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Nullable primitives work fine
@@ -73,7 +79,9 @@ public static class EOE011_InvalidFromQueryType
         [FromQuery] int? minPrice,
         [FromQuery] int? maxPrice,
         [FromQuery] DateTime? since)
-        => $"Min: {minPrice}, Max: {maxPrice}, Since: {since}";
+    {
+        return $"Min: {minPrice}, Max: {maxPrice}, Since: {since}";
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: Enums need explicit string parsing in route/query

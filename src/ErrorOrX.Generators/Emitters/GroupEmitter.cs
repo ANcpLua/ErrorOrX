@@ -54,7 +54,6 @@ internal static class GroupEmitter
             code.Append($"            var {groupVarName} = {vApiVarName}.MapGroup(\"{group.GroupPath}\")");
 
             if (!group.Versions.IsDefaultOrEmpty)
-            {
                 foreach (var v in group.Versions.AsImmutableArray())
                 {
                     var versionExpr = v.MinorVersion.HasValue
@@ -65,7 +64,6 @@ internal static class GroupEmitter
                         ? $".HasDeprecatedApiVersion({versionExpr})"
                         : $".HasApiVersion({versionExpr})");
                 }
-            }
 
             code.AppendLine(";");
         }
@@ -108,7 +106,6 @@ internal static class GroupEmitter
 
         // For grouped endpoints with specific version mappings, emit MapToApiVersion
         if (!ep.Versioning.MappedVersions.IsDefaultOrEmpty)
-        {
             foreach (var v in ep.Versioning.MappedVersions.AsImmutableArray())
             {
                 var versionExpr = v.MinorVersion.HasValue
@@ -116,7 +113,6 @@ internal static class GroupEmitter
                     : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
                 code.AppendLine($"                .MapToApiVersion({versionExpr})");
             }
-        }
 
         // Version-neutral within a versioned group
         if (ep.Versioning.IsVersionNeutral)

@@ -33,7 +33,9 @@ public static class EOE032_DuplicateRouteParameterBinding
     // -------------------------------------------------------------------------
     [Get("/api/eoe032/items/{id}")]
     public static ErrorOr<string> GetItem(int id, [FromQuery] string? filter)
-        => $"Item {id}, filter: {filter ?? "none"}";
+    {
+        return $"Item {id}, filter: {filter ?? "none"}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use [FromRoute] with explicit name for clarity
@@ -43,17 +45,21 @@ public static class EOE032_DuplicateRouteParameterBinding
         [FromRoute] int userId,
         [FromRoute] int orderId,
         [FromQuery] bool includeDetails = false)
-        => $"User {userId}, Order {orderId}, Details: {includeDetails}";
+    {
+        return $"User {userId}, Order {orderId}, Details: {includeDetails}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Different sources are OK even if parameter names "look" similar
     // -------------------------------------------------------------------------
     [Get("/api/eoe032/products/{productId}")]
     public static ErrorOr<string> GetProduct(
-        int productId,                              // From route
-        [FromQuery] int? categoryId,                // From query
-        [FromHeader(Name = "X-User-Id")] string? userId)  // From header
-        => $"Product {productId}, Category: {categoryId}, User: {userId}";
+        int productId, // From route
+        [FromQuery] int? categoryId, // From query
+        [FromHeader(Name = "X-User-Id")] string? userId) // From header
+    {
+        return $"Product {productId}, Category: {categoryId}, User: {userId}";
+    }
 
     // -------------------------------------------------------------------------
     // TIP: Parameter naming conventions

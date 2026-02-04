@@ -9,6 +9,7 @@
 namespace DiagnosticsDemos.Demos.Eoe026;
 
 public record OrderRequest(string ProductId, int Quantity);
+
 public record OrderResponse(string OrderId, string Status);
 
 // -------------------------------------------------------------------------
@@ -31,7 +32,9 @@ public record OrderResponse(string OrderId, string Status);
 // Don't forget ProblemDetails for error responses
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class EOE026JsonContext : JsonSerializerContext { }
+internal partial class EOE026JsonContext : JsonSerializerContext
+{
+}
 
 public static class EOE026_MissingJsonContextForBody
 {

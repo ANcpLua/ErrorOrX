@@ -30,15 +30,21 @@ namespace ErrorOrX.Sample;
 ///             <description>Service (DI)</description>
 ///         </item>
 ///         <item>
-///             <term><c>CancellationToken</c></term>
+///             <term>
+///                 <c>CancellationToken</c>
+///             </term>
 ///             <description>Special (from request)</description>
 ///         </item>
 ///         <item>
-///             <term><c>HttpContext</c></term>
+///             <term>
+///                 <c>HttpContext</c>
+///             </term>
 ///             <description>Special (current context)</description>
 ///         </item>
 ///         <item>
-///             <term><c>IFormFile</c></term>
+///             <term>
+///                 <c>IFormFile</c>
+///             </term>
 ///             <description>Special (uploaded file)</description>
 ///         </item>
 ///     </list>

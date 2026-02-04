@@ -61,7 +61,9 @@ public static class EOE036_ReflectionOverMembers
     // -------------------------------------------------------------------------
     [Get("/api/eoe036/model/{id}")]
     public static ErrorOr<DataModel> GetModel(int id)
-        => new DataModel { Id = id, Name = $"Item {id}", Description = "Description" };
+    {
+        return new DataModel { Id = id, Name = $"Item {id}", Description = "Description" };
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use explicit property access with a switch

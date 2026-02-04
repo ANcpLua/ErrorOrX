@@ -192,15 +192,11 @@ internal sealed class ErrorOrContext
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
-        {
             return false;
-        }
 
         if (IValidatableObject is not null &&
             type.AllInterfaces.Any(i => i.IsEqualTo(IValidatableObject)))
-        {
             return true;
-        }
 
         var current = type;
         while (current is INamedTypeSymbol namedType)
@@ -243,17 +239,13 @@ internal sealed class ErrorOrContext
 
         if (FormFileCollection is not null &&
             type.IsEqualTo(FormFileCollection))
-        {
             return true;
-        }
 
         if (IReadOnlyListOfT is not null &&
             type is INamedTypeSymbol { IsGenericType: true } named &&
             named.ConstructedFrom.IsEqualTo(IReadOnlyListOfT))
-        {
             if (IsFormFile(named.TypeArguments[0]))
                 return true;
-        }
 
         return false;
     }

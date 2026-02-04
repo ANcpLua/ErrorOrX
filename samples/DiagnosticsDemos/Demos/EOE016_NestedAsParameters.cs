@@ -23,6 +23,7 @@ public class InnerParams
 public class NestedOuterParams
 {
     public string? Query { get; set; }
+
     // In practice, nested expansion would need custom model binding
     public InnerParams Pagination { get; set; } = new();
 }
@@ -51,7 +52,9 @@ public static class EOE016_NestedAsParameters
     // -------------------------------------------------------------------------
     [Get("/api/eoe016/search")]
     public static ErrorOr<string> Search([AsParameters] FlattenedParams p)
-        => $"Query: {p.Query}, Page: {p.Page}, Size: {p.PageSize}";
+    {
+        return $"Query: {p.Query}, Page: {p.Page}, Size: {p.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use separate parameters
@@ -61,7 +64,21 @@ public static class EOE016_NestedAsParameters
         [FromQuery] string? query,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
-        => $"Query: {query}, Page: {page}, Size: {pageSize}";
+    {
+        return $"Query: {query}, Page: {page}, Size: {pageSize}";
+    }
+
+    [Get("/api/eoe016/composed")]
+    public static ErrorOr<string> Composed([AsParameters] ComposedParams p)
+    {
+        return $"Query: {p.Query}, Page: {p.Page}, Size: {p.PageSize}";
+    }
+
+    [Get("/api/eoe016/record")]
+    public static ErrorOr<string> SearchWithRecord([AsParameters] SearchParams p)
+    {
+        return $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}, Sort={p.SortBy}, Desc={p.Descending}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use composition WITHOUT [AsParameters] on nested type
@@ -69,16 +86,13 @@ public static class EOE016_NestedAsParameters
     public class ComposedParams
     {
         public string? Query { get; set; }
+
         // This is fine - InnerParams is NOT marked with [AsParameters]
         // But note: these won't bind automatically from query string
         // You'd need to manually construct or use FromQuery on individual props
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
-
-    [Get("/api/eoe016/composed")]
-    public static ErrorOr<string> Composed([AsParameters] ComposedParams p)
-        => $"Query: {p.Query}, Page: {p.Page}, Size: {p.PageSize}";
 
     // -------------------------------------------------------------------------
     // TIP: Records make flattened params easy to define
@@ -89,8 +103,4 @@ public static class EOE016_NestedAsParameters
         int PageSize = 10,
         string? SortBy = null,
         bool Descending = false);
-
-    [Get("/api/eoe016/record")]
-    public static ErrorOr<string> SearchWithRecord([AsParameters] SearchParams p)
-        => $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}, Sort={p.SortBy}, Desc={p.Descending}";
 }

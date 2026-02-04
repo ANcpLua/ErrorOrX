@@ -110,10 +110,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Emit grouped endpoint mappings
         foreach (var ctx in groupContexts)
-        {
-            foreach (var indexed in ctx.Group.Endpoints)
+        foreach (var indexed in ctx.Group.Endpoints)
             GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
-        }
 
         // Emit ungrouped endpoint mappings (legacy pattern)
         foreach (var indexed in grouping.UngroupedEndpoints)
@@ -230,7 +228,6 @@ public sealed partial class ErrorOrEndpointGenerator
         // If endpoint has specific versions to map to, emit MapToApiVersion calls
         var effectiveVersions = versioning.EffectiveVersions;
         if (!effectiveVersions.IsDefaultOrEmpty)
-        {
             foreach (var v in effectiveVersions.AsImmutableArray())
             {
                 var versionExpr = v.MinorVersion.HasValue
@@ -238,7 +235,6 @@ public sealed partial class ErrorOrEndpointGenerator
                     : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
                 code.AppendLine($"                .MapToApiVersion({versionExpr})");
             }
-        }
     }
 
     private static InvokerContext ComputeInvokerContext(
@@ -400,7 +396,8 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine();
     }
 
-    private static void EmitBindFailHelper(StringBuilder code, string returnTypeFqn, bool isAsync, bool useValidationProblem)
+    private static void EmitBindFailHelper(StringBuilder code, string returnTypeFqn, bool isAsync,
+        bool useValidationProblem)
     {
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
@@ -409,7 +406,8 @@ public sealed partial class ErrorOrEndpointGenerator
             // Use ValidationProblem to match the Results<..., ValidationProblem, ...> union type
             const string validationProblemExpr =
                 $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(new {WellKnownTypes.Fqn.Dictionary}<string, string[]> {{ [param] = [reason] }})";
-            var returnExpr = isAsync ? validationProblemExpr : $"Task.FromResult<{returnTypeFqn}>({validationProblemExpr})";
+            var returnExpr =
+                isAsync ? validationProblemExpr : $"Task.FromResult<{returnTypeFqn}>({validationProblemExpr})";
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
             code.AppendLine($"                => {returnExpr};");
@@ -428,7 +426,8 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("            };");
             code.AppendLine();
 
-            const string badRequestExpr = $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
+            const string badRequestExpr =
+                $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
             var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
@@ -544,7 +543,6 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                {");
 
         if (!ep.InferredErrorTypeNames.IsDefaultOrEmpty)
-        {
             foreach (var errorTypeName in ep.InferredErrorTypeNames.AsImmutableArray()
                          .Where(static e => e != ErrorMapping.Validation)
                          .Distinct()
@@ -555,7 +553,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{errorTypeName}:");
                 code.AppendLine($"                        return {wrapReturn(factory)};");
             }
-        }
 
         code.AppendLine("                    default:");
         code.AppendLine($"                        return {wrapReturn(ErrorMapping.GetFactory(ErrorMapping.Failure))};");
@@ -792,20 +789,16 @@ public sealed partial class ErrorOrEndpointGenerator
         // Collect registered types from user context
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        {
-            foreach (var typeFqn in ctx.SerializableTypes)
+        foreach (var typeFqn in ctx.SerializableTypes)
             registeredTypes.Add(typeFqn);
-        }
 
         // Find missing types
         var missingTypes = new List<string>();
 
         // Check endpoint types
         foreach (var type in jsonTypes)
-        {
             if (!registeredTypes.Any(rt => type.TypeNamesEqual(rt)))
                 missingTypes.Add(type);
-        }
 
         // Always check for ProblemDetails and HttpValidationProblemDetails
         var missingProblemDetails = !registeredTypes.Any(static rt =>
@@ -820,21 +813,17 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Report EOE025 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
-        {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MissingCamelCasePolicy,
                 Location.None,
                 fullClassName));
-        }
 
         // Report EOE041 if user context is missing ProblemDetails types
         if (missingProblemDetails || missingValidationProblemDetails)
-        {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.JsonContextMissingProblemDetails,
                 Location.None,
                 fullClassName));
-        }
 
         // Emit helper file with missing types as comments using IndentedStringBuilder
         var sb = new IndentedStringBuilder();
@@ -959,10 +948,8 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var p in ep.HandlerParameters)
-            {
                 if (p.Source == ParameterSource.Body)
                     types.Add(p.TypeFqn);
-            }
 
             if (ep is { IsSse: true, SseItemTypeFqn: not null })
             {

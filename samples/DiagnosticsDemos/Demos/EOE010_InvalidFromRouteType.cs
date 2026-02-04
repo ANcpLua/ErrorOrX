@@ -19,7 +19,10 @@ public readonly struct CustomId
 {
     public int Value { get; }
 
-    public CustomId(int value) => Value = value;
+    public CustomId(int value)
+    {
+        Value = value;
+    }
 
     // This static TryParse method makes it route-bindable
     public static bool TryParse(string? input, out CustomId result)
@@ -29,11 +32,15 @@ public readonly struct CustomId
             result = new CustomId(value);
             return true;
         }
+
         result = default;
         return false;
     }
 
-    public override string ToString() => Value.ToString();
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
 }
 
 public static class EOE010_InvalidFromRouteType
@@ -51,19 +58,31 @@ public static class EOE010_InvalidFromRouteType
     // FIXED: Use primitive types for route parameters
     // -------------------------------------------------------------------------
     [Get("/api/eoe010/todos/{id}")]
-    public static ErrorOr<string> GetById(int id) => $"Todo {id}";
+    public static ErrorOr<string> GetById(int id)
+    {
+        return $"Todo {id}";
+    }
 
     [Get("/api/eoe010/users/{userId:guid}")]
-    public static ErrorOr<string> GetUser(Guid userId) => $"User {userId}";
+    public static ErrorOr<string> GetUser(Guid userId)
+    {
+        return $"User {userId}";
+    }
 
     [Get("/api/eoe010/items/{name}")]
-    public static ErrorOr<string> GetByName(string name) => $"Item: {name}";
+    public static ErrorOr<string> GetByName(string name)
+    {
+        return $"Item: {name}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Custom type WITH TryParse can be used
     // -------------------------------------------------------------------------
     [Get("/api/eoe010/custom/{id}")]
-    public static ErrorOr<string> GetByCustomId(CustomId id) => $"Custom ID: {id}";
+    public static ErrorOr<string> GetByCustomId(CustomId id)
+    {
+        return $"Custom ID: {id}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: For complex filtering, use query parameters or [AsParameters]
@@ -72,7 +91,9 @@ public static class EOE010_InvalidFromRouteType
     public static ErrorOr<string> Search(
         [FromQuery] string name,
         [FromQuery] int page = 1)
-        => $"Searching for {name} on page {page}";
+    {
+        return $"Searching for {name} on page {page}";
+    }
 
     // -------------------------------------------------------------------------
     // Supported route parameter types
@@ -85,5 +106,7 @@ public static class EOE010_InvalidFromRouteType
         Guid guidVal,
         bool boolVal,
         DateTime dateVal)
-        => $"string={stringVal}, int={intVal}, long={longVal}, guid={guidVal}, bool={boolVal}, date={dateVal}";
+    {
+        return $"string={stringVal}, int={intVal}, long={longVal}, guid={guidVal}, bool={boolVal}, date={dateVal}";
+    }
 }

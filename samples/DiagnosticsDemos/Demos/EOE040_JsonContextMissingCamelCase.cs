@@ -9,8 +9,6 @@
 //
 // See: https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings
 
-using System.Text.Json.Serialization;
-
 namespace DiagnosticsDemos.Demos;
 
 // -------------------------------------------------------------------------
@@ -32,7 +30,9 @@ public static class EOE040_JsonContextMissingCamelCase
 {
     [Get("/api/eoe040/response")]
     public static ErrorOr<Eoe040Response> GetResponse()
-        => new Eoe040Response("Hello", 42);
+    {
+        return new Eoe040Response("Hello", 42);
+    }
 }
 
 public record Eoe040Response(string Message, int Value);

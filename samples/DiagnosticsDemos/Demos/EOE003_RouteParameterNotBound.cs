@@ -37,19 +37,26 @@ public static class EOE003_RouteParameterNotBound
     // FIXED: Add method parameter matching route parameter name
     // -------------------------------------------------------------------------
     [Get("/api/eoe003/todos/{id}")]
-    public static ErrorOr<string> GetById(int id) => $"Todo {id}";
+    public static ErrorOr<string> GetById(int id)
+    {
+        return $"Todo {id}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Parameter name must match (case-insensitive)
     // -------------------------------------------------------------------------
     [Get("/api/eoe003/users/{userId}/orders/{orderId}")]
     public static ErrorOr<string> GetOrder(int userId, int orderId)
-        => $"Order {orderId} for user {userId}";
+    {
+        return $"Order {orderId} for user {userId}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Using [FromRoute] with different parameter name
     // -------------------------------------------------------------------------
     [Get("/api/eoe003/products/{productId}")]
     public static ErrorOr<string> GetProduct([FromRoute(Name = "productId")] int id)
-        => $"Product {id}";
+    {
+        return $"Product {id}";
+    }
 }

@@ -1,12 +1,14 @@
 <Project>
-    <!-- Import root build settings -->
-    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+    <!-- Import root build settings (MSBuild only auto-imports first found, so chaining is explicit) -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" Condition="'$(DirectoryBuildPropsImported)' != 'true'"/>
+    <PropertyGroup>
+        <DirectoryBuildPropsImported>true</DirectoryBuildPropsImported>
+    </PropertyGroup>
 
     <!-- Allow SDK to inject packages even with CPM -->
     <PropertyGroup>
         <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
         <!-- NU1009: SDK-injected ANcpLua.Analyzers conflicts with CPM PackageVersion (known SDK limitation) -->
-        <!-- AL0018: Project uses Directory.Packages.props (CPM), not Version.props -->
-        <NoWarn>$(NoWarn);NU1009;MSB4011;AL0018</NoWarn>
+        <NoWarn>$(NoWarn);NU1009</NoWarn>
     </PropertyGroup>
 </Project>

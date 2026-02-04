@@ -12,6 +12,7 @@ public static ErrorOr<Todo> GetById(int id) => ...
 ```
 
 Outputs:
+
 - `MapErrorOrEndpoints()` extension method
 - Typed `Results<...>` union for OpenAPI
 - Automatic parameter binding with smart inference
@@ -74,15 +75,16 @@ Priority order in `ClassifyParameter()`:
 4. **Primitives** - Query binding for non-route primitives
 5. **Custom binding** - Types with `TryParse` or `BindAsync`
 6. **Smart inference** (HTTP-aware):
-   - Interface/abstract types -> Service
-   - Service naming patterns -> Service
-   - POST/PUT/PATCH + complex -> **Body**
-   - GET/DELETE + complex -> **Error EOE021**
-   - Fallback -> Service
+    - Interface/abstract types -> Service
+    - Service naming patterns -> Service
+    - POST/PUT/PATCH + complex -> **Body**
+    - GET/DELETE + complex -> **Error EOE021**
+    - Fallback -> Service
 
 ### Service Type Detection
 
 `IsLikelyServiceType()` detects:
+
 - Interface with Service suffix (`ITodoService`)
 - Common DI suffixes: `*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`, `*Context` (with Db)
 
@@ -100,29 +102,29 @@ public static ErrorOr<List<Todo>> Search([AsParameters] SearchFilter filter) => 
 
 ## Key Source Files
 
-| File | Responsibility |
-|------|----------------|
-| `Initialize.cs` | Generator entry, pipeline orchestration |
-| `ParameterBinding.cs` | Parameter classification and smart inference |
-| `Emitter.cs` | Code generation (mappings, JSON context, AOT wrapper) |
-| `Extractor.cs` | Method/attribute extraction |
-| `Analyzer.cs` | JSON context detection, AOT validation |
-| `Descriptors.cs` | All diagnostic definitions (EOE001-EOE041) |
-| `ErrorMapping.cs` | ErrorType -> HTTP status mapping |
-| `WellKnownTypes.cs` | FQN string constants |
-| `RouteValidator.cs` | Route validation and parameter lookup |
-| `ResultsUnionTypeBuilder.cs` | Build Results<...> union types |
+| File                         | Responsibility                                        |
+|------------------------------|-------------------------------------------------------|
+| `Initialize.cs`              | Generator entry, pipeline orchestration               |
+| `ParameterBinding.cs`        | Parameter classification and smart inference          |
+| `Emitter.cs`                 | Code generation (mappings, JSON context, AOT wrapper) |
+| `Extractor.cs`               | Method/attribute extraction                           |
+| `Analyzer.cs`                | JSON context detection, AOT validation                |
+| `Descriptors.cs`             | All diagnostic definitions (EOE001-EOE041)            |
+| `ErrorMapping.cs`            | ErrorType -> HTTP status mapping                      |
+| `WellKnownTypes.cs`          | FQN string constants                                  |
+| `RouteValidator.cs`          | Route validation and parameter lookup                 |
+| `ResultsUnionTypeBuilder.cs` | Build Results<...> union types                        |
 
 ## ANcpLua.Roslyn.Utilities Used
 
-| Utility | Purpose |
-|---------|---------|
-| `DiagnosticFlow<T>` | Railway-oriented error handling |
-| `.SelectFlow()` | Transform with diagnostic collection |
-| `EquatableArray<T>` | Value-equality for incremental caching |
-| `AwaitableContext` | Unwrap `Task<T>`, `ValueTask<T>` |
-| `CollectionContext` | Unwrap collections |
-| `.WithTrackingName()` | Add step name for cache verification |
+| Utility               | Purpose                                |
+|-----------------------|----------------------------------------|
+| `DiagnosticFlow<T>`   | Railway-oriented error handling        |
+| `.SelectFlow()`       | Transform with diagnostic collection   |
+| `EquatableArray<T>`   | Value-equality for incremental caching |
+| `AwaitableContext`    | Unwrap `Task<T>`, `ValueTask<T>`       |
+| `CollectionContext`   | Unwrap collections                     |
+| `.WithTrackingName()` | Add step name for cache verification   |
 
 ## MSBuild Properties
 
@@ -132,7 +134,8 @@ public static ErrorOr<List<Todo>> Search([AsParameters] SearchFilter filter) => 
 </PropertyGroup>
 ```
 
-When user has `JsonSerializerContext`, generator emits `ErrorOrJsonContext.MissingTypes.g.cs` with copy-paste attributes.
+When user has `JsonSerializerContext`, generator emits `ErrorOrJsonContext.MissingTypes.g.cs` with copy-paste
+attributes.
 
 ## Testing
 

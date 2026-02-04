@@ -47,31 +47,47 @@ public static class EOE005_InvalidRoutePattern
     // FIXED: Valid route patterns
     // -------------------------------------------------------------------------
     [Get("/api/eoe005/todos/{id}")]
-    public static ErrorOr<string> GetById(int id) => $"todo {id}";
+    public static ErrorOr<string> GetById(int id)
+    {
+        return $"todo {id}";
+    }
 
     [Get("/api/eoe005/items/{id:int}")]
-    public static ErrorOr<string> GetWithConstraint(int id) => $"item {id}";
+    public static ErrorOr<string> GetWithConstraint(int id)
+    {
+        return $"item {id}";
+    }
 
     [Get("/api/eoe005/products/{id:guid}")]
-    public static ErrorOr<string> GetWithGuid(Guid id) => $"product {id}";
+    public static ErrorOr<string> GetWithGuid(Guid id)
+    {
+        return $"product {id}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Multiple parameters
     // -------------------------------------------------------------------------
     [Get("/api/eoe005/users/{userId}/orders/{orderId}")]
     public static ErrorOr<string> GetUserOrder(int userId, int orderId)
-        => $"Order {orderId} for user {userId}";
+    {
+        return $"Order {orderId} for user {userId}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Optional parameters (use ? suffix)
     // -------------------------------------------------------------------------
     [Get("/api/eoe005/search/{query?}")]
     public static ErrorOr<string> Search(string? query = null)
-        => $"Searching for: {query ?? "all"}";
+    {
+        return $"Searching for: {query ?? "all"}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Catch-all parameters (use * or ** prefix)
     // -------------------------------------------------------------------------
     [Get("/api/eoe005/files/{*path}")]
-    public static ErrorOr<string> GetFile(string path) => $"File: {path}";
+    public static ErrorOr<string> GetFile(string path)
+    {
+        return $"File: {path}";
+    }
 }

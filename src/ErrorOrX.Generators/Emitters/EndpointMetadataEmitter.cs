@@ -52,15 +52,11 @@ internal static class EndpointMetadataEmitter
             .FirstOrDefault(static p => p.Source == ParameterSource.Body);
 
         if (bodyParam.Name is not null)
-        {
             code.AppendLine(
-                        $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
-        }
+                $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
         else if (ep.HasFormParams)
-        {
             code.AppendLine(
-                        $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
-        }
+                $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
     }
 
     /// <summary>
@@ -108,13 +104,11 @@ internal static class EndpointMetadataEmitter
             // Error responses
             foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                          .OrderBy(static x => x))
-            {
                 EmitProducesMetadataLine(code, indent, statusCode,
                     statusCode == 400
                         ? WellKnownTypes.Fqn.HttpValidationProblemDetails
                         : WellKnownTypes.Fqn.ProblemDetails,
                     WellKnownTypes.Constants.ContentTypeProblemJson);
-            }
         }
     }
 
@@ -146,61 +140,41 @@ internal static class EndpointMetadataEmitter
         {
             var policies = middleware.AuthorizationPolicies.AsImmutableArray();
             if (policies.IsDefaultOrEmpty)
-            {
                 code.AppendLine($"{indent}.RequireAuthorization()");
-            }
             else if (policies.Length == 1)
-            {
                 code.AppendLine($"{indent}.RequireAuthorization(\"{policies[0]}\")");
-            }
             else
-            {
                 code.AppendLine(
-                                $"{indent}.RequireAuthorization({string.Join(", ", policies.Select(static p => $"\"{p}\""))})");
-            }
+                    $"{indent}.RequireAuthorization({string.Join(", ", policies.Select(static p => $"\"{p}\""))})");
         }
 
         // Rate Limiting: [EnableRateLimiting("policy")] / [EnableRateLimiting] / [DisableRateLimiting]
         if (middleware.DisableRateLimiting)
-        {
             code.AppendLine($"{indent}.DisableRateLimiting()");
-        }
         else if (middleware.EnableRateLimiting)
-        {
             code.AppendLine(middleware.RateLimitingPolicy is not null
-                        ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
-                        : $"{indent}.RequireRateLimiting()");
-        }
+                ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
+                : $"{indent}.RequireRateLimiting()");
 
         // Output Caching: [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")]
         if (middleware.EnableOutputCache)
         {
             if (middleware.OutputCachePolicy is not null)
-            {
                 code.AppendLine($"{indent}.CacheOutput(\"{middleware.OutputCachePolicy}\")");
-            }
             else if (middleware.OutputCacheDuration is { } duration)
-            {
                 code.AppendLine(
-                                $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
-            }
+                    $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
             else
-            {
                 code.AppendLine($"{indent}.CacheOutput()");
-            }
         }
 
         // CORS: [EnableCors("policy")] / [EnableCors] / [DisableCors]
         if (middleware.DisableCors)
-        {
             code.AppendLine($"{indent}.DisableCors()");
-        }
         else if (middleware.EnableCors)
-        {
             code.AppendLine(middleware.CorsPolicy is not null
-                        ? $"{indent}.RequireCors(\"{middleware.CorsPolicy}\")"
-                        : $"{indent}.RequireCors()");
-        }
+                ? $"{indent}.RequireCors(\"{middleware.CorsPolicy}\")"
+                : $"{indent}.RequireCors()");
     }
 
     /// <summary>

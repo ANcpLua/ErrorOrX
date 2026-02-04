@@ -55,7 +55,9 @@ public static class EOE024_UndocumentedInterfaceCall
     [Get("/api/eoe024/todos/{id}")]
     [ProducesError(404, "NotFound")]
     public static ErrorOr<Eoe024TodoItem> GetTodoWithDocs(int id, ITodoRepository repo)
-        => repo.GetById(id);
+    {
+        return repo.GetById(id);
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Document all errors the interface method might return
@@ -63,20 +65,27 @@ public static class EOE024_UndocumentedInterfaceCall
     [Post("/api/eoe024/todos")]
     [ProducesError(409, "Conflict")]
     public static ErrorOr<Eoe024TodoItem> CreateTodo([FromBody] string title, ITodoRepository repo)
-        => repo.Create(title);
+    {
+        return repo.Create(title);
+    }
 
     [Delete("/api/eoe024/todos/{id}")]
     [ProducesError(404, "NotFound")]
     [ProducesError(403, "Forbidden")]
     public static ErrorOr<Deleted> DeleteTodo(int id, ITodoRepository repo)
-        => repo.Delete(id);
+    {
+        return repo.Delete(id);
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use interface with [ReturnsError] attributes
     // -------------------------------------------------------------------------
     [Get("/api/eoe024/documented/{id}")]
     public static ErrorOr<Eoe024TodoItem> GetFromDocumentedRepo(int id, IDocumentedRepository repo)
-        => repo.GetById(id);  // No warning - interface method has [ReturnsError]
+    {
+        return repo.GetById(id);
+        // No warning - interface method has [ReturnsError]
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Don't delegate - handle errors inline

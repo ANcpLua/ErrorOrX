@@ -14,34 +14,34 @@ dotnet test --project tests/ErrorOrX.Tests --filter-method "*Should_Return_Value
 
 ### ErrorOr Core
 
-| Test File | Coverage |
-|-----------|----------|
+| Test File                       | Coverage                           |
+|---------------------------------|------------------------------------|
 | `ErrorOr.InstantiationTests.cs` | Construction, implicit conversions |
-| `ErrorOr.EqualityTests.cs` | IEquatable, operators |
-| `ErrorOr.HashCodeTests.cs` | GetHashCode consistency |
-| `ErrorOr.ImmutabilityTests.cs` | Immutability guarantees |
-| `ErrorOr.InterfaceTests.cs` | IErrorOr non-generic interface |
+| `ErrorOr.EqualityTests.cs`      | IEquatable, operators              |
+| `ErrorOr.HashCodeTests.cs`      | GetHashCode consistency            |
+| `ErrorOr.ImmutabilityTests.cs`  | Immutability guarantees            |
+| `ErrorOr.InterfaceTests.cs`     | IErrorOr non-generic interface     |
 
 ### Fluent API
 
-| Test File | Coverage |
-|-----------|----------|
-| `ErrorOr.ThenTests.cs` | Then chaining (sync) |
-| `ErrorOr.ThenAsyncTests.cs` | ThenAsync variants |
-| `ErrorOr.ElseTests.cs` | Else fallback (sync) |
-| `ErrorOr.ElseAsyncTests.cs` | ElseAsync variants |
-| `ErrorOr.MatchTests.cs` | Match transformation |
-| `ErrorOr.SwitchTests.cs` | Switch side effects |
-| `ErrorOr.FailIfTests.cs` | FailIf conditional failure |
+| Test File                      | Coverage                       |
+|--------------------------------|--------------------------------|
+| `ErrorOr.ThenTests.cs`         | Then chaining (sync)           |
+| `ErrorOr.ThenAsyncTests.cs`    | ThenAsync variants             |
+| `ErrorOr.ElseTests.cs`         | Else fallback (sync)           |
+| `ErrorOr.ElseAsyncTests.cs`    | ElseAsync variants             |
+| `ErrorOr.MatchTests.cs`        | Match transformation           |
+| `ErrorOr.SwitchTests.cs`       | Switch side effects            |
+| `ErrorOr.FailIfTests.cs`       | FailIf conditional failure     |
 | `ErrorOr.OrExtensionsTests.cs` | OrNotFound, OrValidation, etc. |
 
 ### Error Types
 
-| Test File | Coverage |
-|-----------|----------|
-| `ErrorTests.cs` | Error factory methods |
-| `Error.EqualityTests.cs` | Error struct equality |
-| `TypedResultsTests.cs` | Result.Success/Created/Updated/Deleted |
+| Test File                | Coverage                               |
+|--------------------------|----------------------------------------|
+| `ErrorTests.cs`          | Error factory methods                  |
+| `Error.EqualityTests.cs` | Error struct equality                  |
+| `TypedResultsTests.cs`   | Result.Success/Created/Updated/Deleted |
 
 ## Test Pattern
 
@@ -63,7 +63,7 @@ public void Method_Scenario_ExpectedBehavior()
 
 ## Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| xunit.v3.mtp-v2 | xUnit v3 with MTP |
+| Package           | Purpose           |
+|-------------------|-------------------|
+| xunit.v3.mtp-v2   | xUnit v3 with MTP |
 | AwesomeAssertions | Fluent assertions |

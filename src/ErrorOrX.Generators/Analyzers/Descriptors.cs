@@ -17,7 +17,9 @@ public static class Descriptors
 
     // Help link URLs for AOT diagnostics
     private const string TrimWarningsUrl = "https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings";
-    private const string IntrinsicApisUrl = "https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic";
+
+    private const string IntrinsicApisUrl =
+        "https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic";
 
     // ============================================================================
     // EOE001-007: Core validation

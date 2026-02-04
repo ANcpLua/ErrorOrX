@@ -77,4 +77,6 @@ namespace DiagnosticsDemos;
 // Error response types
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class AppJsonContext : JsonSerializerContext { }
+internal partial class AppJsonContext : JsonSerializerContext
+{
+}

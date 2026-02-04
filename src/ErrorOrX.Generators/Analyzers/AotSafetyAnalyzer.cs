@@ -106,11 +106,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         // Check for Expression.Compile()
         if (IsExpressionCompile(method))
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.ExpressionCompile,
                 invocation.GetLocation()));
-        }
     }
 
     private static void AnalyzeDynamic(SyntaxNodeAnalysisContext context)
@@ -124,11 +122,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
 
         var typeInfo = context.SemanticModel.GetTypeInfo(identifier, context.CancellationToken);
         if (typeInfo.Type is IDynamicTypeSymbol)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.DynamicKeyword,
                 identifier.GetLocation()));
-        }
     }
 
     private static bool IsActivatorCreateInstance(ISymbol method)
@@ -201,12 +197,6 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         return ReflectionMethodsToMemberTypes.TryGetValue(methodName, out memberType!);
     }
 
-    private static bool IsReflectionMethod(IMethodSymbol method)
-    {
-        return IsSystemType(method.ContainingType) &&
-               ReflectionMethodsToMemberTypes.ContainsKey(method.Name);
-    }
-
     private static bool IsSystemType(ISymbol? type)
     {
         return type?.ToDisplayString() == "System.Type";
@@ -234,9 +224,7 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
                 IsGenericMethod: true,
                 TypeArguments.Length: > 0
             })
-        {
             return method.TypeArguments[0].ToDisplayString();
-        }
 
         // Runtime type argument: Activator.CreateInstance(typeof(T))
         if (invocation.ArgumentList.Arguments.Any())

@@ -22,25 +22,15 @@ public static class EOE015_AnonymousReturnType
     // -------------------------------------------------------------------------
     [Get("/api/eoe015/todos/{id}")]
     public static ErrorOr<TodoSummary> GetTodoSummary(int id)
-        => new TodoSummary(id, $"Todo {id}");
-
-    // -------------------------------------------------------------------------
-    // FIXED: Use named class types
-    // -------------------------------------------------------------------------
-    public class StatusResponse
     {
-        public string Status { get; set; } = "ok";
-        public int Code { get; set; } = 200;
+        return new TodoSummary(id, $"Todo {id}");
     }
 
     [Get("/api/eoe015/status")]
     public static ErrorOr<StatusResponse> GetStatus()
-        => new StatusResponse();
-
-    // -------------------------------------------------------------------------
-    // FIXED: Generic wrapper with concrete type argument
-    // -------------------------------------------------------------------------
-    public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
+    {
+        return new StatusResponse();
+    }
 
     [Get("/api/eoe015/todos")]
     public static ErrorOr<PagedResult<TodoSummary>> GetTodos(
@@ -54,12 +44,28 @@ public static class EOE015_AnonymousReturnType
         return new PagedResult<TodoSummary>(todos, 100, page, pageSize);
     }
 
+    [Get("/api/eoe015/wrapped/{id}")]
+    public static ErrorOr<ApiResponse<TodoSummary>> GetWrappedTodo(int id)
+    {
+        return new ApiResponse<TodoSummary>(new TodoSummary(id, $"Todo {id}"));
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Use named class types
+    // -------------------------------------------------------------------------
+    public class StatusResponse
+    {
+        public string Status { get; set; } = "ok";
+        public int Code { get; set; } = 200;
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Generic wrapper with concrete type argument
+    // -------------------------------------------------------------------------
+    public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
+
     // -------------------------------------------------------------------------
     // TIP: Records are excellent for API response types
     // -------------------------------------------------------------------------
     public record ApiResponse<T>(T Data, string Message = "Success", bool IsSuccess = true);
-
-    [Get("/api/eoe015/wrapped/{id}")]
-    public static ErrorOr<ApiResponse<TodoSummary>> GetWrappedTodo(int id)
-        => new ApiResponse<TodoSummary>(new TodoSummary(id, $"Todo {id}"));
 }

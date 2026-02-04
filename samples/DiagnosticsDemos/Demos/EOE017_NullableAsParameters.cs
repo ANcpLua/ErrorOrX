@@ -41,26 +41,38 @@ public static class EOE017_NullableAsParameters
     // -------------------------------------------------------------------------
     [Get("/api/eoe017/search")]
     public static ErrorOr<string> Search([AsParameters] SearchParams p)
-        => $"Query: {p.Query ?? "all"}, Page: {p.Page}";
+    {
+        return $"Query: {p.Query ?? "all"}, Page: {p.Page}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Non-nullable record with nullable properties
     // -------------------------------------------------------------------------
     [Get("/api/eoe017/filter")]
     public static ErrorOr<string> Filter([AsParameters] FilterParams f)
-        => $"Name: {f.Name ?? "any"}, Price: {f.MinPrice}-{f.MaxPrice}";
+    {
+        return $"Name: {f.Name ?? "any"}, Price: {f.MinPrice}-{f.MaxPrice}";
+    }
+
+    [Get("/api/eoe017/optional")]
+    public static ErrorOr<string> Optional([AsParameters] OptionalParams p)
+    {
+        return $"Query={p.Query ?? "all"}, Page={p.Page ?? 1}, Size={p.PageSize}";
+    }
+
+    [Get("/api/eoe017/defaults")]
+    public static ErrorOr<string> WithDefaults([AsParameters] DefaultParams p)
+    {
+        return $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // TIP: Make properties nullable, not the container
     // -------------------------------------------------------------------------
     public record OptionalParams(
-        string? Query = null,       // Property is nullable (optional)
-        int? Page = null,           // Property is nullable with null default
-        int PageSize = 10);         // Property has non-null default
-
-    [Get("/api/eoe017/optional")]
-    public static ErrorOr<string> Optional([AsParameters] OptionalParams p)
-        => $"Query={p.Query ?? "all"}, Page={p.Page ?? 1}, Size={p.PageSize}";
+        string? Query = null, // Property is nullable (optional)
+        int? Page = null, // Property is nullable with null default
+        int PageSize = 10); // Property has non-null default
 
     // -------------------------------------------------------------------------
     // TIP: Use default values in records for optional parameters
@@ -69,8 +81,4 @@ public static class EOE017_NullableAsParameters
         string Query = "default",
         int Page = 1,
         int PageSize = 10);
-
-    [Get("/api/eoe017/defaults")]
-    public static ErrorOr<string> WithDefaults([AsParameters] DefaultParams p)
-        => $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}";
 }

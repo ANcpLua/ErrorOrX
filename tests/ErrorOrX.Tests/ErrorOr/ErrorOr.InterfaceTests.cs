@@ -169,12 +169,10 @@ public class ErrorOrInterfaceTests
         // Assert
         intErrorOr.IsError.Should().BeTrue();
         stringErrorOr.IsError.Should().BeTrue();
-        var intErrors = ((IErrorOr)intErrorOr).Errors;
-        Unreachable.ThrowIf(intErrors is null);
+        var intErrors = ((IErrorOr)intErrorOr).Errors!;
         intErrors[0].Should().Be(sharedError);
 
-        var stringErrors = ((IErrorOr)stringErrorOr).Errors;
-        Unreachable.ThrowIf(stringErrors is null);
+        var stringErrors = ((IErrorOr)stringErrorOr).Errors!;
         stringErrors[0].Should().Be(sharedError);
     }
 

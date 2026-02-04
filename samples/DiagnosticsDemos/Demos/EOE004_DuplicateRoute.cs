@@ -25,23 +25,41 @@ public static class EOE004_DuplicateRoute
     // FIXED: Use different routes for each handler
     // -------------------------------------------------------------------------
     [Get("/api/eoe004/items")]
-    public static ErrorOr<string> GetAllItems() => "all items";
+    public static ErrorOr<string> GetAllItems()
+    {
+        return "all items";
+    }
 
     [Get("/api/eoe004/items/{id}")]
-    public static ErrorOr<string> GetItemById(int id) => $"item {id}";
+    public static ErrorOr<string> GetItemById(int id)
+    {
+        return $"item {id}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Same route with different HTTP methods is OK
     // -------------------------------------------------------------------------
     [Get("/api/eoe004/resources")]
-    public static ErrorOr<string> GetResources() => "get resources";
+    public static ErrorOr<string> GetResources()
+    {
+        return "get resources";
+    }
 
     [Post("/api/eoe004/resources")]
-    public static ErrorOr<string> CreateResource() => "created resource";
+    public static ErrorOr<string> CreateResource()
+    {
+        return "created resource";
+    }
 
     [Put("/api/eoe004/resources/{id}")]
-    public static ErrorOr<string> UpdateResource(int id) => $"updated {id}";
+    public static ErrorOr<string> UpdateResource(int id)
+    {
+        return $"updated {id}";
+    }
 
     [Delete("/api/eoe004/resources/{id}")]
-    public static ErrorOr<Deleted> DeleteResource(int id) => Result.Deleted;
+    public static ErrorOr<Deleted> DeleteResource(int id)
+    {
+        return Result.Deleted;
+    }
 }

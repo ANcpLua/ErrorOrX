@@ -19,7 +19,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw();
+        static void ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class SwitchTests
         action.Should().NotThrow();
         return;
 
-        static void ThenAction(Person _) => Unreachable.Throw();
+        static void ThenAction(Person _) => Throw.UnreachableException();
 
         void ElsesAction(IReadOnlyList<Error> errors) => errors.Should().BeEquivalentTo(errorOrPerson.Errors);
     }
@@ -59,7 +59,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void OnFirstErrorAction(Error _) => Unreachable.Throw();
+        static void OnFirstErrorAction(Error _) => Throw.UnreachableException();
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class SwitchTests
         action.Should().NotThrow();
         return;
 
-        static void ThenAction(Person _) => Unreachable.Throw();
+        static void ThenAction(Person _) => Throw.UnreachableException();
 
         void OnFirstErrorAction(Error errors)
             => errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
@@ -101,7 +101,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void OnFirstErrorAction(Error _) => Unreachable.Throw();
+        static void OnFirstErrorAction(Error _) => Throw.UnreachableException();
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void ElsesAction(IReadOnlyList<Error> _) => Unreachable.Throw();
+        static void ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException();
     }
 
     private sealed record Person(string Name);

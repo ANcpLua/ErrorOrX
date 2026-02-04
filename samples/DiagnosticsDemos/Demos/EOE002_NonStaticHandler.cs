@@ -30,7 +30,10 @@ public class EOE002_NonStaticHandler
     // FIXED: Make the method static
     // -------------------------------------------------------------------------
     [Get("/api/eoe002/valid")]
-    public static ErrorOr<string> GetValid() => "static method";
+    public static ErrorOr<string> GetValid()
+    {
+        return "static method";
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: If you need instance state, inject it as a service parameter

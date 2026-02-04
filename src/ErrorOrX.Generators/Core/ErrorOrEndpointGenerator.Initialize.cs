@@ -217,7 +217,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             spc.ReportDiagnostic(diagnostic);
     }
 
-    private static void ReportVersioningInconsistencies(SourceProductionContext spc, ImmutableArray<EndpointDescriptor> endpoints)
+    private static void ReportVersioningInconsistencies(SourceProductionContext spc,
+        ImmutableArray<EndpointDescriptor> endpoints)
     {
         foreach (var diagnostic in ApiVersioningValidator.DetectMissingVersioning(endpoints))
             spc.ReportDiagnostic(diagnostic);
@@ -264,29 +265,23 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
                 // EOE015: Anonymous return type
                 if (returnInfo.IsAnonymousType)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
-                }
 
                 // EOE018: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
                             returnInfo.InaccessibleTypeName ?? "unknown",
                             m.Name,
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
-                }
 
                 // EOE019: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
                             m.Name,
                             returnInfo.TypeParameterName ?? "T"));
-                }
 
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))

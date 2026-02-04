@@ -3,7 +3,7 @@
 ### New Rules
 
  Rule ID | Category          | Severity | Notes
----------|-------------------|----------|------------------------------------------
+---------|-------------------|----------|--------------------------------------------
  EOE001  | ErrorOr.Endpoints | Error    | Invalid return type
  EOE002  | ErrorOr.Endpoints | Error    | Handler must be static
  EOE003  | ErrorOr.Endpoints | Error    | Route parameter not bound

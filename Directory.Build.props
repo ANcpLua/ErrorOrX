@@ -1,4 +1,9 @@
 <Project>
+    <!-- Guard against double-import (MSB4011) -->
+    <PropertyGroup>
+        <DirectoryBuildPropsImported>true</DirectoryBuildPropsImported>
+    </PropertyGroup>
+
     <!-- Import versioning -->
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
@@ -24,10 +29,11 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
-    <!-- Suppress known SDK-related warnings -->
+    <!-- Suppress known repo-wide warnings -->
     <PropertyGroup>
-        <!-- SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
+        <!-- NETSDK1023: SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
         <!-- AL0017: Hardcoded version rule is for SDK development, not consumer projects -->
-        <NoWarn>$(NoWarn);NETSDK1023;AL0017</NoWarn>
+        <!-- AL0018: Repo uses CPM (Directory.Packages.props), not Version.props for package versions -->
+        <NoWarn>$(NoWarn);NETSDK1023;AL0017;AL0018</NoWarn>
     </PropertyGroup>
 </Project>

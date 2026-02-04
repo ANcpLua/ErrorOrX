@@ -10,6 +10,42 @@ namespace DiagnosticsDemos.Demos;
 
 public static class EOE009_AcceptedOnReadOnlyMethod
 {
+    [Post("/api/eoe009/import")]
+    [AcceptedResponse]
+    public static ErrorOr<string> StartImport([FromBody] ImportRequest request)
+    {
+        // Start async import job and return immediately
+        // The job will be processed in the background
+        var jobId = Guid.NewGuid().ToString();
+        return jobId;
+    }
+
+    [Put("/api/eoe009/batch-update")]
+    [AcceptedResponse]
+    public static ErrorOr<string> StartBatchUpdate([FromBody] BatchUpdateRequest request)
+    {
+        // Start batch update job
+        var jobId = Guid.NewGuid().ToString();
+        return jobId;
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: GET should return immediate results, not 202 Accepted
+    // -------------------------------------------------------------------------
+    [Get("/api/eoe009/items/{id}")]
+    public static ErrorOr<string> GetItem(int id)
+    {
+        return $"Item {id}";
+    }
+
+    // -------------------------------------------------------------------------
+    // FIXED: For DELETE, consider returning 204 No Content (default) or the deleted item
+    // -------------------------------------------------------------------------
+    [Delete("/api/eoe009/items/{id}")]
+    public static ErrorOr<Deleted> DeleteItem(int id)
+    {
+        return Result.Deleted;
+    }
     // -------------------------------------------------------------------------
     // TRIGGERS EOE009: [AcceptedResponse] with GET
     // -------------------------------------------------------------------------
@@ -33,39 +69,8 @@ public static class EOE009_AcceptedOnReadOnlyMethod
     // -------------------------------------------------------------------------
     public record ImportRequest(string Url);
 
-    [Post("/api/eoe009/import")]
-    [AcceptedResponse]
-    public static ErrorOr<string> StartImport([FromBody] ImportRequest request)
-    {
-        // Start async import job and return immediately
-        // The job will be processed in the background
-        var jobId = Guid.NewGuid().ToString();
-        return jobId;
-    }
-
     // -------------------------------------------------------------------------
     // FIXED: Use [AcceptedResponse] with PUT for long-running updates
     // -------------------------------------------------------------------------
     public record BatchUpdateRequest(List<int> Ids, string NewStatus);
-
-    [Put("/api/eoe009/batch-update")]
-    [AcceptedResponse]
-    public static ErrorOr<string> StartBatchUpdate([FromBody] BatchUpdateRequest request)
-    {
-        // Start batch update job
-        var jobId = Guid.NewGuid().ToString();
-        return jobId;
-    }
-
-    // -------------------------------------------------------------------------
-    // FIXED: GET should return immediate results, not 202 Accepted
-    // -------------------------------------------------------------------------
-    [Get("/api/eoe009/items/{id}")]
-    public static ErrorOr<string> GetItem(int id) => $"Item {id}";
-
-    // -------------------------------------------------------------------------
-    // FIXED: For DELETE, consider returning 204 No Content (default) or the deleted item
-    // -------------------------------------------------------------------------
-    [Delete("/api/eoe009/items/{id}")]
-    public static ErrorOr<Deleted> DeleteItem(int id) => Result.Deleted;
 }

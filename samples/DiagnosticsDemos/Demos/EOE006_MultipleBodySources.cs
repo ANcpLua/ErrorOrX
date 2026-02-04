@@ -46,11 +46,15 @@ public static class EOE006_MultipleBodySources
     // -------------------------------------------------------------------------
     [Post("/api/eoe006/json")]
     public static ErrorOr<string> CreateFromJson([FromBody] CreateRequest request)
-        => $"Created: {request.Name}";
+    {
+        return $"Created: {request.Name}";
+    }
 
     [Post("/api/eoe006/form")]
     public static ErrorOr<string> CreateFromForm([FromForm] IFormFile file)
-        => $"Uploaded: {file.FileName}";
+    {
+        return $"Uploaded: {file.FileName}";
+    }
 
     [Post("/api/eoe006/stream")]
     public static async Task<ErrorOr<string>> ProcessStream(Stream body)
@@ -68,7 +72,8 @@ public static class EOE006_MultipleBodySources
         int id,
         [FromBody] CreateRequest body,
         [FromQuery] bool validate,
-        [FromHeader(Name = "X-Correlation-Id")] string? correlationId)
+        [FromHeader(Name = "X-Correlation-Id")]
+        string? correlationId)
     {
         return $"Created {body.Name} with id {id}, validated: {validate}, correlation: {correlationId}";
     }

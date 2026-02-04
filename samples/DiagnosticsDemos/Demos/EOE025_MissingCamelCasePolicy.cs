@@ -24,7 +24,9 @@ public record PersonResponse(int Id, string FirstName, string LastName);
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(PersonResponse))]
 [JsonSerializable(typeof(List<PersonResponse>))]
-internal partial class EOE025JsonContext : JsonSerializerContext { }
+internal partial class EOE025JsonContext : JsonSerializerContext
+{
+}
 
 public static class EOE025_MissingCamelCasePolicy
 {
@@ -38,15 +40,19 @@ public static class EOE025_MissingCamelCasePolicy
 
     [Get("/api/eoe025/person/{id}")]
     public static ErrorOr<PersonResponse> GetPerson(int id)
-        => new PersonResponse(id, "John", "Doe");
+    {
+        return new PersonResponse(id, "John", "Doe");
+    }
 
     [Get("/api/eoe025/people")]
     public static ErrorOr<List<PersonResponse>> GetPeople()
-        => new List<PersonResponse>
+    {
+        return new List<PersonResponse>
         {
             new(1, "John", "Doe"),
             new(2, "Jane", "Smith")
         };
+    }
 }
 
 // -------------------------------------------------------------------------

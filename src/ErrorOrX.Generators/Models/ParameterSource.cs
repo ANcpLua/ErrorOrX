@@ -57,32 +57,16 @@ internal sealed class ParameterSource : IEquatable<ParameterSource>
 
     private ParameterSource(
         string id,
-        bool isFromRequest,
-        bool requiresJsonContext,
-        bool isSpecialType,
-        bool isComposite = false)
+        bool _, // isFromRequest - reserved for future use
+        bool __, // requiresJsonContext - reserved for future use
+        bool ___, // isSpecialType - reserved for future use
+        bool ____ = false) // isComposite - reserved for future use
     {
         Id = id;
-        IsFromRequest = isFromRequest;
-        RequiresJsonContext = requiresJsonContext;
-        IsSpecialType = isSpecialType;
-        IsComposite = isComposite;
     }
 
     /// <summary>Gets the unique identifier for this source.</summary>
     private string Id { get; }
-
-    /// <summary>Gets whether this source binds from HTTP request data (vs DI or special types).</summary>
-    public bool IsFromRequest { get; }
-
-    /// <summary>Gets whether this source requires JsonSerializerContext for AOT.</summary>
-    public bool RequiresJsonContext { get; }
-
-    /// <summary>Gets whether this is a special auto-bound type (HttpContext, CancellationToken).</summary>
-    public bool IsSpecialType { get; }
-
-    /// <summary>Gets whether this source expands into child parameters ([AsParameters]).</summary>
-    public bool IsComposite { get; }
 
     /// <summary>Gets whether this source binds from form-related data.</summary>
     public bool IsFormRelated => this == Form || this == FormFile || this == FormFiles || this == FormCollection;

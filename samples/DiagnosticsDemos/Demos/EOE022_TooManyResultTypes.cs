@@ -45,11 +45,6 @@ public static class EOE022_TooManyResultTypes
         return $"Item {id}";
     }
 
-    // -------------------------------------------------------------------------
-    // FIXED: Typical CRUD operations need few error types
-    // -------------------------------------------------------------------------
-    public record CreateItemRequest(string Name);
-
     [Post("/api/eoe022/items")]
     public static ErrorOr<string> CreateItem([FromBody] CreateItemRequest request)
     {
@@ -98,4 +93,9 @@ public static class EOE022_TooManyResultTypes
 
         return $"Updated {id}: {request.Name}";
     }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Typical CRUD operations need few error types
+    // -------------------------------------------------------------------------
+    public record CreateItemRequest(string Name);
 }

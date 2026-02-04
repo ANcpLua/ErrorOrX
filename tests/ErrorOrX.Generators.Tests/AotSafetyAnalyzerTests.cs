@@ -1,5 +1,3 @@
-using ErrorOr.Analyzers;
-
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
@@ -8,6 +6,57 @@ namespace ErrorOrX.Generators.Tests;
 /// </summary>
 public class AotSafetyAnalyzerTests : AnalyzerTestBase<AotSafetyAnalyzer>
 {
+    #region EOE037 - Expression.Compile
+
+    [Fact]
+    public Task EOE037_ExpressionCompile()
+    {
+        const string Source = """
+                              using System;
+                              using System.Linq.Expressions;
+
+                              namespace AotTest;
+
+                              public class MyService
+                              {
+                                  public Func<int, int> Compile()
+                                  {
+                                      Expression<Func<int, int>> expr = x => x * 2;
+                                      return {|EOE037:expr.Compile()|};
+                                  }
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
+    #region EOE038 - Dynamic keyword
+
+    [Fact]
+    public Task EOE038_DynamicKeyword()
+    {
+        const string Source = """
+                              using System;
+
+                              namespace AotTest;
+
+                              public class MyService
+                              {
+                                  public object Process(object input)
+                                  {
+                                      {|EOE038:dynamic|} d = input;
+                                      return d.ToString();
+                                  }
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
     #region EOE034 - Activator.CreateInstance
 
     [Fact]
@@ -275,57 +324,6 @@ public class AotSafetyAnalyzerTests : AnalyzerTestBase<AotSafetyAnalyzer>
                                   public MemberInfo[] GetMembers()
                                   {
                                       return {|EOE036:typeof(string).GetMembers()|};
-                                  }
-                              }
-                              """;
-
-        return VerifyAsync(Source);
-    }
-
-    #endregion
-
-    #region EOE037 - Expression.Compile
-
-    [Fact]
-    public Task EOE037_ExpressionCompile()
-    {
-        const string Source = """
-                              using System;
-                              using System.Linq.Expressions;
-
-                              namespace AotTest;
-
-                              public class MyService
-                              {
-                                  public Func<int, int> Compile()
-                                  {
-                                      Expression<Func<int, int>> expr = x => x * 2;
-                                      return {|EOE037:expr.Compile()|};
-                                  }
-                              }
-                              """;
-
-        return VerifyAsync(Source);
-    }
-
-    #endregion
-
-    #region EOE038 - Dynamic keyword
-
-    [Fact]
-    public Task EOE038_DynamicKeyword()
-    {
-        const string Source = """
-                              using System;
-
-                              namespace AotTest;
-
-                              public class MyService
-                              {
-                                  public object Process(object input)
-                                  {
-                                      {|EOE038:dynamic|} d = input;
-                                      return d.ToString();
                                   }
                               }
                               """;

@@ -52,14 +52,18 @@ public static class EOE038_DynamicKeyword
     // -------------------------------------------------------------------------
     [Post("/api/eoe038/process")]
     public static ErrorOr<string> ProcessTyped([FromBody] TypedData data)
-        => $"Name: {data.Name}, Value: {data.Value}";
+    {
+        return $"Name: {data.Name}, Value: {data.Value}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use concrete types instead of dynamic
     // -------------------------------------------------------------------------
     [Get("/api/eoe038/calculate")]
     public static ErrorOr<int> CalculateTyped([FromQuery] int a, [FromQuery] int b)
-        => a + b;
+    {
+        return a + b;
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use object with type checking when flexibility is needed
@@ -83,14 +87,20 @@ public static class EOE038_DynamicKeyword
     // -------------------------------------------------------------------------
     [Get("/api/eoe038/string")]
     public static ErrorOr<string> GetProcessedString([FromQuery] string input)
-        => ProcessValue(input);
+    {
+        return ProcessValue(input);
+    }
 
     [Get("/api/eoe038/int")]
     public static ErrorOr<string> GetProcessedInt([FromQuery] int input)
-        => ProcessValue(input);
+    {
+        return ProcessValue(input);
+    }
 
     private static string ProcessValue<T>(T value) where T : notnull
-        => $"Processed {typeof(T).Name}: {value}";
+    {
+        return $"Processed {typeof(T).Name}: {value}";
+    }
 }
 
 public record TypedData(string Name, int Value);

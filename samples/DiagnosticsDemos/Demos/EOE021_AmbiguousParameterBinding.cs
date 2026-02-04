@@ -53,7 +53,9 @@ public static class EOE021_AmbiguousParameterBinding
     // -------------------------------------------------------------------------
     [Get("/api/eoe021/search")]
     public static ErrorOr<string> SearchWithAsParameters([AsParameters] SearchFilter filter)
-        => $"Query: {filter.Query}, Page: {filter.Page}, Size: {filter.PageSize}";
+    {
+        return $"Query: {filter.Query}, Page: {filter.Page}, Size: {filter.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use [FromServices] for dependency injection
@@ -62,7 +64,9 @@ public static class EOE021_AmbiguousParameterBinding
     public static ErrorOr<string> SearchWithService(
         [FromQuery] string query,
         [FromServices] ISearchService service)
-        => service.Search(query);
+    {
+        return service.Search(query);
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use individual [FromQuery] parameters
@@ -72,7 +76,9 @@ public static class EOE021_AmbiguousParameterBinding
         [FromQuery] string? query,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
-        => $"Query: {query}, Page: {page}, Size: {pageSize}";
+    {
+        return $"Query: {query}, Page: {page}, Size: {pageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: DELETE with individual parameters
@@ -91,12 +97,16 @@ public static class EOE021_AmbiguousParameterBinding
     // NOTE: POST/PUT/PATCH can have implicit body binding
     // -------------------------------------------------------------------------
     [Post("/api/eoe021/items")]
-    public static ErrorOr<string> CreateItem(SearchFilter request)  // Implicitly [FromBody]
-        => $"Created with query: {request.Query}";
+    public static ErrorOr<string> CreateItem(SearchFilter request) // Implicitly [FromBody]
+    {
+        return $"Created with query: {request.Query}";
+    }
 
     [Put("/api/eoe021/items/{id}")]
-    public static ErrorOr<string> UpdateItem(int id, SearchFilter request)  // Implicitly [FromBody]
-        => $"Updated {id} with query: {request.Query}";
+    public static ErrorOr<string> UpdateItem(int id, SearchFilter request) // Implicitly [FromBody]
+    {
+        return $"Updated {id} with query: {request.Query}";
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: Interface types are auto-detected as services
@@ -104,6 +114,8 @@ public static class EOE021_AmbiguousParameterBinding
     [Get("/api/eoe021/auto-service")]
     public static ErrorOr<string> AutoService(
         [FromQuery] string query,
-        ISearchService service)  // Auto-detected as [FromServices]
-        => service.Search(query);
+        ISearchService service) // Auto-detected as [FromServices]
+    {
+        return service.Search(query);
+    }
 }

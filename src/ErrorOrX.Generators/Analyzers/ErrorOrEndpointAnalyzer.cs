@@ -182,22 +182,20 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             return;
 
         foreach (var param in method.Parameters)
+        foreach (var attr in param.GetAttributes())
         {
-            foreach (var attr in param.GetAttributes())
-            {
-                if (attr.AttributeClass is null)
-                    continue;
+            if (attr.AttributeClass is null)
+                continue;
 
-                // Check if the attribute inherits from ValidationAttribute
-                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        Descriptors.ValidationUsesReflection,
-                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                        param.Name,
-                        method.Name));
-                    break; // Only report once per parameter
-                }
+            // Check if the attribute inherits from ValidationAttribute
+            if (InheritsFrom(attr.AttributeClass, validationAttributeType))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    Descriptors.ValidationUsesReflection,
+                    param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                    param.Name,
+                    method.Name));
+                break; // Only report once per parameter
             }
         }
     }
@@ -473,15 +471,11 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             // Check for body-related types using pattern matchers
             if (IsStream(param.Type) || IsPipeReader(param.Type))
-            {
                 hasStream = true;
-            }
             else if (IsFormFile(param.Type) ||
-                                 IsFormFileCollection(param.Type) ||
-                                 IsFormCollection(param.Type))
-            {
+                     IsFormFileCollection(param.Type) ||
+                     IsFormCollection(param.Type))
                 hasFromForm = true;
-            }
         }
 
         // Multiple [FromBody] is always an error

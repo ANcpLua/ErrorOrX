@@ -11,7 +11,10 @@ namespace DiagnosticsDemos.Demos;
 
 public class DataProcessor
 {
-    public string Process(string input) => $"Processed: {input}";
+    public string Process(string input)
+    {
+        return $"Processed: {input}";
+    }
 }
 
 public interface IDataProcessor
@@ -21,7 +24,26 @@ public interface IDataProcessor
 
 public class DefaultProcessor : IDataProcessor
 {
-    public string Process(string input) => $"Default: {input}";
+    public string Process(string input)
+    {
+        return $"Default: {input}";
+    }
+}
+
+public class JsonProcessor : IDataProcessor
+{
+    public string Process(string input)
+    {
+        return $"JSON: {input}";
+    }
+}
+
+public class XmlProcessor : IDataProcessor
+{
+    public string Process(string input)
+    {
+        return $"XML: {input}";
+    }
 }
 
 public static class EOE034_ActivatorCreateInstance
@@ -68,7 +90,9 @@ public static class EOE034_ActivatorCreateInstance
     public static ErrorOr<string> ProcessInjected(
         [FromQuery] string input,
         [FromServices] IDataProcessor processor)
-        => processor.Process(input);
+    {
+        return processor.Process(input);
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use factory methods
@@ -86,13 +110,20 @@ public static class EOE034_ActivatorCreateInstance
 // -------------------------------------------------------------------------
 public static class ProcessorFactory
 {
-    public static IDataProcessor Create() => new DefaultProcessor();
-
-    public static IDataProcessor Create(string type) => type switch
+    public static IDataProcessor Create()
     {
-        "default" => new DefaultProcessor(),
-        _ => new DefaultProcessor()
-    };
+        return new DefaultProcessor();
+    }
+
+    public static IDataProcessor Create(string type)
+    {
+        return type switch
+        {
+            "json" => new JsonProcessor(),
+            "xml" => new XmlProcessor(),
+            _ => new DefaultProcessor()
+        };
+    }
 }
 
 // -------------------------------------------------------------------------

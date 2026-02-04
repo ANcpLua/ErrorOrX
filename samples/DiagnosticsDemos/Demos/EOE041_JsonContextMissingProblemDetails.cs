@@ -9,10 +9,6 @@
 //
 // See: https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings
 
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
 namespace DiagnosticsDemos.Demos;
 
 // -------------------------------------------------------------------------

@@ -1,11 +1,13 @@
+using ErrorOrX.Tests.TestUtils;
+
 namespace ErrorOrX.Tests.Errors;
 
 public sealed class ErrorEqualityTests
 {
-    public static readonly TheoryData<string, string, int, Dictionary<string, object>?> ValidData =
+    public static readonly TheoryData<string, string, int, SerializableMetadata> ValidData =
         new()
         {
-            { "CodeA", "DescriptionA", 1, null },
+            { "CodeA", "DescriptionA", 1, new SerializableMetadata(null) },
             { "CodeB", "DescriptionB", 3215, new Dictionary<string, object> { { "foo", "bar" }, { "baz", "qux" } } }
         };
 
@@ -31,10 +33,11 @@ public sealed class ErrorEqualityTests
         string code,
         string description,
         int numericType,
-        Dictionary<string, object>? metadata)
+        SerializableMetadata metadata)
     {
-        var error1 = Error.Custom(numericType, code, description, metadata);
-        var clonedDictionary = metadata is null ? null : new Dictionary<string, object>(metadata);
+        Dictionary<string, object>? dict = metadata;
+        var error1 = Error.Custom(numericType, code, description, dict);
+        var clonedDictionary = dict is null ? null : new Dictionary<string, object>(dict);
         var error2 = Error.Custom(numericType, code, description, clonedDictionary);
 
         var result = error1.Equals(error2);
@@ -70,10 +73,11 @@ public sealed class ErrorEqualityTests
         string code,
         string description,
         int numericType,
-        Dictionary<string, object>? metadata)
+        SerializableMetadata metadata)
     {
-        var error1 = Error.Custom(numericType, code, description, metadata);
-        var clonedDictionary = metadata is null ? null : new Dictionary<string, object>(metadata);
+        Dictionary<string, object>? dict = metadata;
+        var error1 = Error.Custom(numericType, code, description, dict);
+        var clonedDictionary = dict is null ? null : new Dictionary<string, object>(dict);
         var error2 = Error.Custom(numericType, code, description, clonedDictionary);
 
         var hashCode1 = error1.GetHashCode();

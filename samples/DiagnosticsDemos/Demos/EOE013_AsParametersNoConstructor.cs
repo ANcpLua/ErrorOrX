@@ -11,7 +11,10 @@ namespace DiagnosticsDemos.Demos;
 // Invalid: Only private constructor
 public class PrivateConstructorParams
 {
-    private PrivateConstructorParams() { }
+    private PrivateConstructorParams()
+    {
+    }
+
     public string? Query { get; set; }
 }
 
@@ -54,14 +57,30 @@ public static class EOE013_AsParametersNoConstructor
     // -------------------------------------------------------------------------
     [Get("/api/eoe013/search")]
     public static ErrorOr<string> Search([AsParameters] PublicConstructorParams p)
-        => $"Query: {p.Query}, Page: {p.Page}";
+    {
+        return $"Query: {p.Query}, Page: {p.Page}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Records work great with [AsParameters]
     // -------------------------------------------------------------------------
     [Get("/api/eoe013/items")]
     public static ErrorOr<string> GetItems([AsParameters] RecordParams p)
-        => $"Query: {p.Query}, Page: {p.Page}";
+    {
+        return $"Query: {p.Query}, Page: {p.Page}";
+    }
+
+    [Get("/api/eoe013/struct-search")]
+    public static ErrorOr<string> StructSearch([AsParameters] StructParams p)
+    {
+        return $"Query: {p.Query}, Page: {p.Page}";
+    }
+
+    [Get("/api/eoe013/paginated")]
+    public static ErrorOr<string> GetPaginated([AsParameters] PaginationParams p)
+    {
+        return $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}, Sort={p.SortBy}, Desc={p.Descending}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Struct with parameterless constructor
@@ -72,10 +91,6 @@ public static class EOE013_AsParametersNoConstructor
         public int Page { get; set; }
     }
 
-    [Get("/api/eoe013/struct-search")]
-    public static ErrorOr<string> StructSearch([AsParameters] StructParams p)
-        => $"Query: {p.Query}, Page: {p.Page}";
-
     // -------------------------------------------------------------------------
     // TIP: Records with default values work well
     // -------------------------------------------------------------------------
@@ -85,8 +100,4 @@ public static class EOE013_AsParametersNoConstructor
         int PageSize = 10,
         string SortBy = "Id",
         bool Descending = false);
-
-    [Get("/api/eoe013/paginated")]
-    public static ErrorOr<string> GetPaginated([AsParameters] PaginationParams p)
-        => $"Query={p.Query}, Page={p.Page}, Size={p.PageSize}, Sort={p.SortBy}, Desc={p.Descending}";
 }

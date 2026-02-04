@@ -32,7 +32,10 @@ namespace DiagnosticsDemos.Demos;
 public static class EOE029_ApiVersioningPackageNotReferenced
 {
     [Get("/api/eoe029/items")]
-    public static ErrorOr<string> GetItems() => "items";
+    public static ErrorOr<string> GetItems()
+    {
+        return "items";
+    }
 
     // -------------------------------------------------------------------------
     // To use API versioning, add the package:

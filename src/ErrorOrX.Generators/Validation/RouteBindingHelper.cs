@@ -53,13 +53,11 @@ internal static class RouteBindingHelper
         ImmutableArray<RouteMethodParameterInfo>.Builder builder)
     {
         if (parameter.Source == ParameterSource.Route)
-        {
             builder.Add(new RouteMethodParameterInfo(
                 parameter.Name,
                 parameter.KeyName ?? parameter.Name,
                 parameter.TypeFqn,
                 parameter.IsNullable));
-        }
 
         if (parameter.Children.IsDefaultOrEmpty)
             return;

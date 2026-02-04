@@ -31,7 +31,9 @@ public static class EOE014_InvalidFromHeaderType
     [Get("/api/eoe014/string-header")]
     public static ErrorOr<string> GetWithStringHeader(
         [FromHeader(Name = "X-Request-Id")] string? requestId)
-        => $"Request ID: {requestId ?? "none"}";
+    {
+        return $"Request ID: {requestId ?? "none"}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Primitive types with TryParse work
@@ -39,12 +41,17 @@ public static class EOE014_InvalidFromHeaderType
     [Get("/api/eoe014/int-header")]
     public static ErrorOr<string> GetWithIntHeader(
         [FromHeader(Name = "X-Page-Size")] int pageSize = 10)
-        => $"Page size: {pageSize}";
+    {
+        return $"Page size: {pageSize}";
+    }
 
     [Get("/api/eoe014/bool-header")]
     public static ErrorOr<string> GetWithBoolHeader(
-        [FromHeader(Name = "X-Include-Metadata")] bool includeMetadata = false)
-        => $"Include metadata: {includeMetadata}";
+        [FromHeader(Name = "X-Include-Metadata")]
+        bool includeMetadata = false)
+    {
+        return $"Include metadata: {includeMetadata}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Collections of strings for multi-value headers
@@ -52,7 +59,9 @@ public static class EOE014_InvalidFromHeaderType
     [Get("/api/eoe014/array-header")]
     public static ErrorOr<string> GetWithArrayHeader(
         [FromHeader(Name = "Accept-Language")] string[]? languages)
-        => $"Languages: {string.Join(", ", languages ?? [])}";
+    {
+        return $"Languages: {string.Join(", ", languages ?? [])}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Common header patterns
@@ -60,10 +69,13 @@ public static class EOE014_InvalidFromHeaderType
     [Get("/api/eoe014/common-headers")]
     public static ErrorOr<string> GetWithCommonHeaders(
         [FromHeader(Name = "Authorization")] string? authorization,
-        [FromHeader(Name = "X-Correlation-Id")] string? correlationId,
+        [FromHeader(Name = "X-Correlation-Id")]
+        string? correlationId,
         [FromHeader(Name = "Accept")] string? accept,
         [FromHeader(Name = "Content-Type")] string? contentType)
-        => $"Auth: {authorization?.Substring(0, 10) ?? "none"}..., Correlation: {correlationId}";
+    {
+        return $"Auth: {authorization?.Substring(0, 10) ?? "none"}..., Correlation: {correlationId}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Nullable primitive headers with defaults
@@ -72,5 +84,7 @@ public static class EOE014_InvalidFromHeaderType
     public static ErrorOr<string> GetWithOptionalHeaders(
         [FromHeader(Name = "X-Priority")] int? priority,
         [FromHeader(Name = "X-Timeout")] int timeout = 30)
-        => $"Priority: {priority?.ToString() ?? "default"}, Timeout: {timeout}s";
+    {
+        return $"Priority: {priority?.ToString() ?? "default"}, Timeout: {timeout}s";
+    }
 }

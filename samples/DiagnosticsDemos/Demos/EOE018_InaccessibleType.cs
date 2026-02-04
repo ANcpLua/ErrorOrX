@@ -38,11 +38,16 @@ public static class EOE018_InaccessibleType
     // FIXED: Use public types
     // -------------------------------------------------------------------------
     [Get("/api/eoe018/public")]
-    public static ErrorOr<PublicData> GetPublic() => new PublicData { Value = "public" };
+    public static ErrorOr<PublicData> GetPublic()
+    {
+        return new PublicData { Value = "public" };
+    }
 
     [Post("/api/eoe018/create")]
     public static ErrorOr<string> Create([FromBody] PublicRequest request)
-        => $"Created: {request.Name}";
+    {
+        return $"Created: {request.Name}";
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: Internal types work within the same assembly but public is preferred

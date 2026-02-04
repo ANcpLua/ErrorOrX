@@ -30,22 +30,34 @@ public static class EOE027_VersionNeutralWithMappings
     // -------------------------------------------------------------------------
     [Get("/api/eoe027/health")]
     [ApiVersionNeutral]
-    public static ErrorOr<string> GetHealthNeutral() => "healthy";
+    public static ErrorOr<string> GetHealthNeutral()
+    {
+        return "healthy";
+    }
 
     [Get("/api/eoe027/ping")]
     [ApiVersionNeutral]
-    public static ErrorOr<string> Ping() => "pong";
+    public static ErrorOr<string> Ping()
+    {
+        return "pong";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use only [MapToApiVersion] for version-specific endpoints
     // -------------------------------------------------------------------------
     [Get("/api/eoe027/v1/items")]
     [MapToApiVersion("1.0")]
-    public static ErrorOr<string> GetItemsV1() => "items v1";
+    public static ErrorOr<string> GetItemsV1()
+    {
+        return "items v1";
+    }
 
     [Get("/api/eoe027/v2/items")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetItemsV2() => "items v2 with new fields";
+    public static ErrorOr<string> GetItemsV2()
+    {
+        return "items v2 with new fields";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Endpoint available in multiple versions
@@ -53,7 +65,10 @@ public static class EOE027_VersionNeutralWithMappings
     [Get("/api/eoe027/shared")]
     [MapToApiVersion("1.0")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetShared() => "shared across v1 and v2";
+    public static ErrorOr<string> GetShared()
+    {
+        return "shared across v1 and v2";
+    }
 }
 
 // -------------------------------------------------------------------------

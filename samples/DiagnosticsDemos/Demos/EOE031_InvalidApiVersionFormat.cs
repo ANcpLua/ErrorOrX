@@ -42,7 +42,7 @@ namespace DiagnosticsDemos.Demos;
 // -------------------------------------------------------------------------
 // FIXED: Valid version formats
 // -------------------------------------------------------------------------
-[ApiVersion("1.0")]  // Major.Minor
+[ApiVersion("1.0")] // Major.Minor
 [ApiVersion("2.0")]
 [ApiVersion("2.1")]
 public static class EOE031_InvalidApiVersionFormat
@@ -52,15 +52,24 @@ public static class EOE031_InvalidApiVersionFormat
 
     [Get("/api/eoe031/v1/items")]
     [MapToApiVersion("1.0")]
-    public static ErrorOr<string> GetItemsV1() => "items v1.0";
+    public static ErrorOr<string> GetItemsV1()
+    {
+        return "items v1.0";
+    }
 
     [Get("/api/eoe031/v2/items")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetItemsV2() => "items v2.0";
+    public static ErrorOr<string> GetItemsV2()
+    {
+        return "items v2.0";
+    }
 
     [Get("/api/eoe031/v21/items")]
     [MapToApiVersion("2.1")]
-    public static ErrorOr<string> GetItemsV21() => "items v2.1";
+    public static ErrorOr<string> GetItemsV21()
+    {
+        return "items v2.1";
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -73,15 +82,24 @@ public static class MajorOnlyVersionApi
 {
     [Get("/api/eoe031/major/v1/items")]
     [MapToApiVersion("1")]
-    public static ErrorOr<string> GetItemsV1() => "items v1";
+    public static ErrorOr<string> GetItemsV1()
+    {
+        return "items v1";
+    }
 
     [Get("/api/eoe031/major/v2/items")]
     [MapToApiVersion("2")]
-    public static ErrorOr<string> GetItemsV2() => "items v2";
+    public static ErrorOr<string> GetItemsV2()
+    {
+        return "items v2";
+    }
 
     [Get("/api/eoe031/major/v3/items")]
     [MapToApiVersion("3")]
-    public static ErrorOr<string> GetItemsV3() => "items v3";
+    public static ErrorOr<string> GetItemsV3()
+    {
+        return "items v3";
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -95,19 +113,31 @@ public static class PreviewVersionApi
 {
     [Get("/api/eoe031/preview/stable/items")]
     [MapToApiVersion("1.0")]
-    public static ErrorOr<string> GetItemsStable() => "items stable";
+    public static ErrorOr<string> GetItemsStable()
+    {
+        return "items stable";
+    }
 
     [Get("/api/eoe031/preview/beta/items")]
     [MapToApiVersion("2.0-beta")]
-    public static ErrorOr<string> GetItemsBeta() => "items beta - new features";
+    public static ErrorOr<string> GetItemsBeta()
+    {
+        return "items beta - new features";
+    }
 
     [Get("/api/eoe031/preview/rc/items")]
     [MapToApiVersion("2.0-rc1")]
-    public static ErrorOr<string> GetItemsRc() => "items release candidate";
+    public static ErrorOr<string> GetItemsRc()
+    {
+        return "items release candidate";
+    }
 
     [Get("/api/eoe031/preview/v2/items")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetItemsV2Stable() => "items v2 stable";
+    public static ErrorOr<string> GetItemsV2Stable()
+    {
+        return "items v2 stable";
+    }
 }
 
 // -------------------------------------------------------------------------

@@ -16,7 +16,8 @@ Native AOT support.
 - **Smart Binding** - Automatic parameter inference based on HTTP method and type
 - **OpenAPI Ready** - Typed `Results<...>` unions for complete API documentation
 - **Native AOT** - Reflection-free code generation with JSON serialization contexts
-- **Middleware Support** - Translates ASP.NET Core attributes to Minimal API fluent calls (authorization, rate limiting, caching)
+- **Middleware Support** - Translates ASP.NET Core attributes to Minimal API fluent calls (authorization, rate limiting,
+  caching)
 - **API Versioning** - Integrates with Asp.Versioning.Http for versioned endpoint groups
 - **38 Analyzers** - Real-time IDE feedback for route conflicts, binding errors, AOT compatibility
 
@@ -39,30 +40,31 @@ For each `[Get]`, `[Post]`, `[Put]`, `[Delete]`, `[Patch]` method:
 
 Automatic inference based on type and HTTP method:
 
-| Source | Inference Rule |
-|--------|----------------|
-| Route | Parameter name matches `{param}` in route |
-| Query | Primitive type not in route |
-| Body | POST/PUT/PATCH with complex type |
+| Source  | Inference Rule                                                        |
+|---------|-----------------------------------------------------------------------|
+| Route   | Parameter name matches `{param}` in route                             |
+| Query   | Primitive type not in route                                           |
+| Body    | POST/PUT/PATCH with complex type                                      |
 | Service | Interface, abstract, or DI naming pattern (`*Service`, `*Repository`) |
-| Special | `HttpContext`, `CancellationToken`, `IFormFile` |
+| Special | `HttpContext`, `CancellationToken`, `IFormFile`                       |
 
 [See BindingCodeEmitter.cs](src/ErrorOrX.Generators/Emitters/BindingCodeEmitter.cs)
 
 ### Error-to-HTTP Mapping
 
-Converts `ErrorOr` errors to proper HTTP responses with [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) ProblemDetails:
+Converts `ErrorOr` errors to proper HTTP responses with [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807)
+ProblemDetails:
 
-| ErrorType | HTTP Status | Response |
-|-----------|-------------|----------|
-| Validation | 400 | `ValidationProblem` with field errors |
-| Unauthorized | 401 | `Unauthorized()` |
-| Forbidden | 403 | `Forbid()` |
-| NotFound | 404 | `NotFound<ProblemDetails>` |
-| Conflict | 409 | `Conflict<ProblemDetails>` |
-| Failure | 500 | `InternalServerError<ProblemDetails>` |
-| Unexpected | 500 | `InternalServerError<ProblemDetails>` |
-| Custom(422) | 422 | `UnprocessableEntity<ProblemDetails>` |
+| ErrorType    | HTTP Status | Response                              |
+|--------------|-------------|---------------------------------------|
+| Validation   | 400         | `ValidationProblem` with field errors |
+| Unauthorized | 401         | `Unauthorized()`                      |
+| Forbidden    | 403         | `Forbid()`                            |
+| NotFound     | 404         | `NotFound<ProblemDetails>`            |
+| Conflict     | 409         | `Conflict<ProblemDetails>`            |
+| Failure      | 500         | `InternalServerError<ProblemDetails>` |
+| Unexpected   | 500         | `InternalServerError<ProblemDetails>` |
+| Custom(422)  | 422         | `UnprocessableEntity<ProblemDetails>` |
 
 [See ErrorMapping.cs](src/ErrorOrX.Generators/Models/ErrorMapping.cs)
 
@@ -106,15 +108,15 @@ app.MapErrorOrEndpoints()
 
 Real-time IDE feedback covering:
 
-| Category | Diagnostics | Examples |
-|----------|-------------|----------|
-| Core | EOE001-007 | Invalid return type, non-static handler, unbound route param |
-| Binding | EOE008-021 | Multiple body sources, invalid `[FromRoute]` type, ambiguous binding |
-| Results | EOE022-024 | Too many result types, unknown error factory, undocumented interface |
-| AOT/JSON | EOE025-026 | Missing camelCase, missing JsonSerializerContext |
-| Versioning | EOE027-031 | Version-neutral conflict, undeclared version, invalid format |
-| Naming | EOE032-033 | Duplicate route binding, non-PascalCase handler |
-| AOT Safety | EOE034-038 | `Activator.CreateInstance`, `dynamic`, `Expression.Compile()` |
+| Category   | Diagnostics | Examples                                                             |
+|------------|-------------|----------------------------------------------------------------------|
+| Core       | EOE001-007  | Invalid return type, non-static handler, unbound route param         |
+| Binding    | EOE008-021  | Multiple body sources, invalid `[FromRoute]` type, ambiguous binding |
+| Results    | EOE022-024  | Too many result types, unknown error factory, undocumented interface |
+| AOT/JSON   | EOE025-026  | Missing camelCase, missing JsonSerializerContext                     |
+| Versioning | EOE027-031  | Version-neutral conflict, undeclared version, invalid format         |
+| Naming     | EOE032-033  | Duplicate route binding, non-PascalCase handler                      |
+| AOT Safety | EOE034-038  | `Activator.CreateInstance`, `dynamic`, `Expression.Compile()`        |
 
 [See Descriptors.cs](src/ErrorOrX.Generators/Analyzers/Descriptors.cs)
 

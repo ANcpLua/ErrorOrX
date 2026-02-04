@@ -38,15 +38,24 @@ public static class EOE028_MappedVersionNotDeclared
 
     [Get("/api/eoe028/v1/items")]
     [MapToApiVersion("1.0")]
-    public static ErrorOr<string> GetItemsV1() => "items v1";
+    public static ErrorOr<string> GetItemsV1()
+    {
+        return "items v1";
+    }
 
     [Get("/api/eoe028/v2/items")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetItemsV2() => "items v2";
+    public static ErrorOr<string> GetItemsV2()
+    {
+        return "items v2";
+    }
 
     [Get("/api/eoe028/v3/items")]
     [MapToApiVersion("3.0")]
-    public static ErrorOr<string> GetItemsV3() => "items v3";
+    public static ErrorOr<string> GetItemsV3()
+    {
+        return "items v3";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Multiple versions on single endpoint (both v1 and v2 use same route)
@@ -54,11 +63,17 @@ public static class EOE028_MappedVersionNotDeclared
     [Get("/api/eoe028/legacy")]
     [MapToApiVersion("1.0")]
     [MapToApiVersion("2.0")]
-    public static ErrorOr<string> GetLegacy() => "legacy - works in v1 and v2";
+    public static ErrorOr<string> GetLegacy()
+    {
+        return "legacy - works in v1 and v2";
+    }
 
     [Get("/api/eoe028/modern")]
     [MapToApiVersion("3.0")]
-    public static ErrorOr<string> GetModern() => "modern - only in v3";
+    public static ErrorOr<string> GetModern()
+    {
+        return "modern - only in v3";
+    }
 }
 
 // -------------------------------------------------------------------------

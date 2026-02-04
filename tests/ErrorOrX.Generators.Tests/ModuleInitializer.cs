@@ -17,7 +17,8 @@ file static class ModuleInitializer
 
         // Configure Verify to properly serialize EquatableArray<T> as arrays
         // This prevents the ImmutableArray<T> default instance error during serialization
-        VerifierSettings.AddExtraSettings(static settings => settings.Converters.Add(new EquatableArrayJsonConverter()));
+        VerifierSettings.AddExtraSettings(static settings =>
+            settings.Converters.Add(new EquatableArrayJsonConverter()));
     }
 }
 

@@ -6,12 +6,12 @@ Source generator converting `ErrorOr<T>` handlers into ASP.NET Core Minimal API 
 
 **Always invoke** `/working-in-erroror` skill when starting work in this repo.
 
-| Task | Use |
-|------|-----|
-| Implementation | Task tool → `erroror-generator-specialist` |
-| Debugging | Task tool → `deep-debugger` |
+| Task              | Use                                             |
+|-------------------|-------------------------------------------------|
+| Implementation    | Task tool → `erroror-generator-specialist`      |
+| Debugging         | Task tool → `deep-debugger`                     |
 | Before completion | Run `dotnet build` + `dotnet test`, show output |
-| Cross-repo work | Invoke `/ancplua-ecosystem` first |
+| Cross-repo work   | Invoke `/ancplua-ecosystem` first               |
 
 ## Quick Reference
 
@@ -22,7 +22,8 @@ dotnet pack src/ErrorOrX/ErrorOrX.csproj -c Release
 dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release
 ```
 
-> **Note**: The `# VERIFY` comment bypasses the MTP smart-test-filtering hook that blocks full suite runs. Always include it for verification runs.
+> **Note**: The `# VERIFY` comment bypasses the MTP smart-test-filtering hook that blocks full suite runs. Always
+> include it for verification runs.
 
 ## What the Generator Does
 
@@ -100,18 +101,18 @@ Wrapper delegates lose original method attributes. Generator MUST emit:
 
 ## Smart Parameter Binding
 
-| Priority | Condition | Binding |
-|----------|-----------|---------|
-| 1 | Explicit attribute (`[FromBody]`, `[FromServices]`, etc.) | As specified |
-| 2 | Special types (`HttpContext`, `CancellationToken`) | Auto-detected |
-| 3 | Parameter name matches route `{param}` | Route |
-| 4 | Primitive type not in route | Query |
-| 5 | Interface type | Service |
-| 6 | Abstract type | Service |
-| 7 | Service naming (`I*Service`, `*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`) | Service |
-| 8 | POST/PUT/PATCH + complex type | **Body** |
-| 9 | GET/DELETE + complex type | **Error EOE021** |
-| 10 | Final fallback | Service |
+| Priority | Condition                                                                                               | Binding          |
+|----------|---------------------------------------------------------------------------------------------------------|------------------|
+| 1        | Explicit attribute (`[FromBody]`, `[FromServices]`, etc.)                                               | As specified     |
+| 2        | Special types (`HttpContext`, `CancellationToken`)                                                      | Auto-detected    |
+| 3        | Parameter name matches route `{param}`                                                                  | Route            |
+| 4        | Primitive type not in route                                                                             | Query            |
+| 5        | Interface type                                                                                          | Service          |
+| 6        | Abstract type                                                                                           | Service          |
+| 7        | Service naming (`I*Service`, `*Repository`, `*Handler`, `*Manager`, `*Provider`, `*Factory`, `*Client`) | Service          |
+| 8        | POST/PUT/PATCH + complex type                                                                           | **Body**         |
+| 9        | GET/DELETE + complex type                                                                               | **Error EOE021** |
+| 10       | Final fallback                                                                                          | Service          |
 
 ```csharp
 // Smart binding infers:
@@ -129,28 +130,28 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 
 ## ErrorType to HTTP Mapping (RFC 9110)
 
-| ErrorType | HTTP | TypedResult |
-|-----------|------|-------------|
-| Validation | 400 | ValidationProblem |
-| Unauthorized | 401 | UnauthorizedHttpResult |
-| Forbidden | 403 | ForbidHttpResult |
-| NotFound | 404 | NotFound\<ProblemDetails\> |
-| Conflict | 409 | Conflict\<ProblemDetails\> |
-| Failure | 500 | InternalServerError\<ProblemDetails\> |
-| Unexpected | 500 | InternalServerError\<ProblemDetails\> |
+| ErrorType    | HTTP | TypedResult                           |
+|--------------|------|---------------------------------------|
+| Validation   | 400  | ValidationProblem                     |
+| Unauthorized | 401  | UnauthorizedHttpResult                |
+| Forbidden    | 403  | ForbidHttpResult                      |
+| NotFound     | 404  | NotFound\<ProblemDetails\>            |
+| Conflict     | 409  | Conflict\<ProblemDetails\>            |
+| Failure      | 500  | InternalServerError\<ProblemDetails\> |
+| Unexpected   | 500  | InternalServerError\<ProblemDetails\> |
 
 ## Diagnostics Summary
 
-| Category | IDs | Description |
-|----------|-----|-------------|
-| Handler validation | EOE001-002 | Invalid return type, must be static |
-| Route validation | EOE003-005 | Unbound parameter, duplicate route, invalid pattern |
-| Binding validation | EOE006, EOE008-021 | Multiple body, invalid binding types, ambiguous binding |
-| Union types | EOE022-024 | Too many types, unknown factory, undocumented interface |
-| JSON/AOT | EOE007, EOE025-026, EOE039-041 | Not serializable, missing CamelCase, missing context, validation reflection |
-| API versioning | EOE027-031 | Version-neutral conflicts, undeclared versions |
-| Route/naming | EOE032-033 | Duplicate route params, non-PascalCase method names |
-| AOT safety | EOE034-038 | Activator, Type.GetType, reflection, Expression.Compile, dynamic |
+| Category           | IDs                            | Description                                                                 |
+|--------------------|--------------------------------|-----------------------------------------------------------------------------|
+| Handler validation | EOE001-002                     | Invalid return type, must be static                                         |
+| Route validation   | EOE003-005                     | Unbound parameter, duplicate route, invalid pattern                         |
+| Binding validation | EOE006, EOE008-021             | Multiple body, invalid binding types, ambiguous binding                     |
+| Union types        | EOE022-024                     | Too many types, unknown factory, undocumented interface                     |
+| JSON/AOT           | EOE007, EOE025-026, EOE039-041 | Not serializable, missing CamelCase, missing context, validation reflection |
+| API versioning     | EOE027-031                     | Version-neutral conflicts, undeclared versions                              |
+| Route/naming       | EOE032-033                     | Duplicate route params, non-PascalCase method names                         |
+| AOT safety         | EOE034-038                     | Activator, Type.GetType, reflection, Expression.Compile, dynamic            |
 
 ## Consumer Setup
 
@@ -190,13 +191,13 @@ app.MapErrorOrEndpoints();
 
 ## Source of Truth Files
 
-| File | Owns |
-|------|------|
-| `Descriptors.cs` | All diagnostics (EOE001-EOE041) |
-| `ErrorMapping.cs` | ErrorType names, HTTP codes, TypedResult factories |
-| `EndpointModels.cs` | All data structures |
-| `WellKnownTypes.cs` | All FQN string constants |
-| `RouteValidator.cs` | Route validation, parameter lookup building |
+| File                | Owns                                               |
+|---------------------|----------------------------------------------------|
+| `Descriptors.cs`    | All diagnostics (EOE001-EOE041)                    |
+| `ErrorMapping.cs`   | ErrorType names, HTTP codes, TypedResult factories |
+| `EndpointModels.cs` | All data structures                                |
+| `WellKnownTypes.cs` | All FQN string constants                           |
+| `RouteValidator.cs` | Route validation, parameter lookup building        |
 
 ## Project Structure
 
@@ -212,21 +213,21 @@ tests/
 
 ## Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| ANcpLua.Roslyn.Utilities | 1.28.0 | Incremental generator utilities |
-| ANcpLua.Roslyn.Utilities.Testing | 1.28.0 | Generator testing framework |
-| ANcpLua.Analyzers | 1.10.7 | Code quality analyzers |
-| Microsoft.CodeAnalysis.CSharp | 5.0.0 | Roslyn APIs |
-| xunit.v3 | 3.2.2 | Testing framework |
-| AwesomeAssertions | 9.3.0 | Fluent assertions |
+| Package                          | Version | Purpose                         |
+|----------------------------------|---------|---------------------------------|
+| ANcpLua.Roslyn.Utilities         | 1.28.0  | Incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | 1.28.0  | Generator testing framework     |
+| ANcpLua.Analyzers                | 1.10.7  | Code quality analyzers          |
+| Microsoft.CodeAnalysis.CSharp    | 5.0.0   | Roslyn APIs                     |
+| xunit.v3                         | 3.2.2   | Testing framework               |
+| AwesomeAssertions                | 9.3.0   | Fluent assertions               |
 
 ## Before Writing New Code
 
 **Search for existing implementations first.** Common duplication areas:
 
-| Concept | Symbol-based API | String-based API |
-|---------|------------------|------------------|
-| Unwrap nullable | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `TypeNameHelper.UnwrapNullable(string)` |
-| Type comparison | Roslyn `ITypeSymbol.Equals` | `TypeNameHelper.TypeNamesMatch()` |
-| Route parameters | - | `RouteValidator.BuildRouteParameterLookup()` |
+| Concept          | Symbol-based API                             | String-based API                             |
+|------------------|----------------------------------------------|----------------------------------------------|
+| Unwrap nullable  | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `TypeNameHelper.UnwrapNullable(string)`      |
+| Type comparison  | Roslyn `ITypeSymbol.Equals`                  | `TypeNameHelper.TypeNamesMatch()`            |
+| Route parameters | -                                            | `RouteValidator.BuildRouteParameterLookup()` |

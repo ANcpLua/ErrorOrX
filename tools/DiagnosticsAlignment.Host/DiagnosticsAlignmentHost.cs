@@ -1,3 +1,0 @@
-namespace ErrorOrX.DiagnosticsAlignment;
-
-internal static class DiagnosticsAlignmentHost;

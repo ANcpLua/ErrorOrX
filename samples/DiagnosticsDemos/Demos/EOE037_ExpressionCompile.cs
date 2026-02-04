@@ -7,8 +7,6 @@
 // and delegates, but Compile() requires runtime code generation which
 // is not available in AOT-compiled applications.
 
-using System.Linq.Expressions;
-
 namespace DiagnosticsDemos.Demos;
 
 public static class EOE037_ExpressionCompile
@@ -83,12 +81,15 @@ public static class EOE037_ExpressionCompile
         return spec.Apply(items).ToList();
     }
 
-    private static List<DataItem> GetSampleItems() =>
-    [
-        new DataItem { Id = 1, Name = "Alpha", Value = 100 },
-        new DataItem { Id = 2, Name = "Beta", Value = 200 },
-        new DataItem { Id = 3, Name = "Gamma", Value = 300 }
-    ];
+    private static List<DataItem> GetSampleItems()
+    {
+        return
+        [
+            new DataItem { Id = 1, Name = "Alpha", Value = 100 },
+            new DataItem { Id = 2, Name = "Beta", Value = 200 },
+            new DataItem { Id = 3, Name = "Gamma", Value = 300 }
+        ];
+    }
 }
 
 public class DataItem

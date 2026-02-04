@@ -10,6 +10,7 @@ namespace DiagnosticsDemos.Demos;
 
 // Types for this demo
 public record ProductResponse(int Id, string Name, decimal Price);
+
 public record CategoryResponse(int Id, string Name);
 
 // -------------------------------------------------------------------------
@@ -33,7 +34,9 @@ public record CategoryResponse(int Id, string Name);
 [JsonSerializable(typeof(List<ProductResponse>))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class EOE007JsonContext : JsonSerializerContext { }
+internal partial class EOE007JsonContext : JsonSerializerContext
+{
+}
 
 public static class EOE007_TypeNotInJsonContext
 {
@@ -44,19 +47,25 @@ public static class EOE007_TypeNotInJsonContext
 
     [Get("/api/eoe007/products/{id}")]
     public static ErrorOr<ProductResponse> GetProduct(int id)
-        => new ProductResponse(id, $"Product {id}", 99.99m);
+    {
+        return new ProductResponse(id, $"Product {id}", 99.99m);
+    }
 
     [Get("/api/eoe007/products")]
     public static ErrorOr<List<ProductResponse>> GetAllProducts()
-        => new List<ProductResponse>
+    {
+        return new List<ProductResponse>
         {
             new(1, "Widget", 9.99m),
             new(2, "Gadget", 19.99m)
         };
+    }
 
     [Get("/api/eoe007/categories/{id}")]
     public static ErrorOr<CategoryResponse> GetCategory(int id)
-        => new CategoryResponse(id, $"Category {id}");
+    {
+        return new CategoryResponse(id, $"Category {id}");
+    }
 
     // -------------------------------------------------------------------------
     // NOTE: Always include ProblemDetails types for error responses

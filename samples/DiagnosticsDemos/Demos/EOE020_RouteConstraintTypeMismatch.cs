@@ -38,38 +38,61 @@ public static class EOE020_RouteConstraintTypeMismatch
     // FIXED: Match parameter type to constraint
     // -------------------------------------------------------------------------
     [Get("/api/eoe020/todos/{id:int}")]
-    public static ErrorOr<string> GetById(int id) => $"Todo {id}";
+    public static ErrorOr<string> GetById(int id)
+    {
+        return $"Todo {id}";
+    }
 
     [Get("/api/eoe020/items/{id:guid}")]
-    public static ErrorOr<string> GetByGuid(Guid id) => $"Item {id}";
+    public static ErrorOr<string> GetByGuid(Guid id)
+    {
+        return $"Item {id}";
+    }
 
     [Get("/api/eoe020/filter/{active:bool}")]
-    public static ErrorOr<string> FilterByBool(bool active) => $"Active: {active}";
+    public static ErrorOr<string> FilterByBool(bool active)
+    {
+        return $"Active: {active}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Common constraint patterns
     // -------------------------------------------------------------------------
     [Get("/api/eoe020/users/{userId:long}")]
-    public static ErrorOr<string> GetUser(long userId) => $"User {userId}";
+    public static ErrorOr<string> GetUser(long userId)
+    {
+        return $"User {userId}";
+    }
 
     [Get("/api/eoe020/products/{price:decimal}")]
-    public static ErrorOr<string> GetByPrice(decimal price) => $"Price: {price}";
+    public static ErrorOr<string> GetByPrice(decimal price)
+    {
+        return $"Price: {price}";
+    }
 
     [Get("/api/eoe020/orders/{date:datetime}")]
-    public static ErrorOr<string> GetByDate(DateTime date) => $"Date: {date:yyyy-MM-dd}";
+    public static ErrorOr<string> GetByDate(DateTime date)
+    {
+        return $"Date: {date:yyyy-MM-dd}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Constraints can be combined
     // -------------------------------------------------------------------------
     [Get("/api/eoe020/paged/{page:int:min(1)}/{size:int:range(1,100)}")]
     public static ErrorOr<string> GetPaged(int page, int size)
-        => $"Page {page}, Size {size}";
+    {
+        return $"Page {page}, Size {size}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: String parameters don't need constraints
     // -------------------------------------------------------------------------
     [Get("/api/eoe020/search/{query}")]
-    public static ErrorOr<string> Search(string query) => $"Searching: {query}";
+    public static ErrorOr<string> Search(string query)
+    {
+        return $"Searching: {query}";
+    }
 
     // -------------------------------------------------------------------------
     // Available route constraints reference:

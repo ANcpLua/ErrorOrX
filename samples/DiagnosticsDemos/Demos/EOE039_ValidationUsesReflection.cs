@@ -37,7 +37,9 @@ public static class EOE039_ValidationUsesReflection
     // -------------------------------------------------------------------------
     [Post("/api/eoe039/simple")]
     public static ErrorOr<TodoItem> CreateSimple(SimpleTodoRequest request)
-        => new TodoItem(1, request.Title, request.Description);
+    {
+        return new TodoItem(1, request.Title, request.Description);
+    }
 
     // -------------------------------------------------------------------------
     // ALTERNATIVE: Manual validation (AOT-safe)
@@ -64,13 +66,16 @@ public record CreateTodoRequest(
 // Request with multiple validation attributes (triggers EOE039)
 public record RegisterRequest(
     [Required] [EmailAddress] string Email,
-    [Required] [StringLength(50, MinimumLength = 2)] string Name,
+    [Required]
+    [StringLength(50, MinimumLength = 2)]
+    string Name,
     [Required] [MinLength(8)] string Password);
 
 // Simple request without validation (no warning)
 public record SimpleTodoRequest(string Title, string? Description);
 
 public record TodoItem(int Id, string Title, string? Description);
+
 public record UserResponse(string Email, string Name);
 
 // -------------------------------------------------------------------------

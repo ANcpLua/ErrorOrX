@@ -29,19 +29,26 @@ public static class EOE001_InvalidReturnType
     // FIXED: Return ErrorOr<T> for synchronous methods
     // -------------------------------------------------------------------------
     [Get("/api/eoe001/sync")]
-    public static ErrorOr<string> GetValidSync() => "valid response";
+    public static ErrorOr<string> GetValidSync()
+    {
+        return "valid response";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Return Task<ErrorOr<T>> for asynchronous methods
     // -------------------------------------------------------------------------
     [Get("/api/eoe001/async")]
     public static Task<ErrorOr<string>> GetValidAsync()
-        => Task.FromResult<ErrorOr<string>>("valid async response");
+    {
+        return Task.FromResult<ErrorOr<string>>("valid async response");
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Return ValueTask<ErrorOr<T>> for high-performance async paths
     // -------------------------------------------------------------------------
     [Get("/api/eoe001/valuetask")]
     public static ValueTask<ErrorOr<string>> GetValidValueTask()
-        => ValueTask.FromResult<ErrorOr<string>>("valid valuetask response");
+    {
+        return ValueTask.FromResult<ErrorOr<string>>("valid valuetask response");
+    }
 }

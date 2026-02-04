@@ -28,9 +28,9 @@
 
     <ItemGroup>
         <!-- API Versioning for versioning demos (EOE027-EOE031) -->
-        <PackageReference Include="Asp.Versioning.Http" />
+        <PackageReference Include="Asp.Versioning.Http"/>
         <!-- OpenAPI for transformer types -->
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     </ItemGroup>
 
     <ItemGroup>

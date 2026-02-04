@@ -51,21 +51,27 @@ public static class EOE012_InvalidAsParametersType
     // -------------------------------------------------------------------------
     [Get("/api/eoe012/search-class")]
     public static ErrorOr<string> SearchWithClass([AsParameters] SearchParamsClass @params)
-        => $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    {
+        return $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use [AsParameters] with struct types
     // -------------------------------------------------------------------------
     [Get("/api/eoe012/search-struct")]
     public static ErrorOr<string> SearchWithStruct([AsParameters] SearchParamsStruct @params)
-        => $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    {
+        return $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use [AsParameters] with record types
     // -------------------------------------------------------------------------
     [Get("/api/eoe012/search-record")]
     public static ErrorOr<string> SearchWithRecord([AsParameters] SearchParamsRecord @params)
-        => $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    {
+        return $"Searching '{@params.Query}' - page {@params.Page}, size {@params.PageSize}";
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: For primitive parameters, use [FromQuery] or [FromRoute]
@@ -74,5 +80,7 @@ public static class EOE012_InvalidAsParametersType
     public static ErrorOr<string> GetPaged(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
-        => $"Page {page}, size {pageSize}";
+    {
+        return $"Page {page}, size {pageSize}";
+    }
 }

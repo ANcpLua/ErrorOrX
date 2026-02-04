@@ -10,8 +10,11 @@ namespace DiagnosticsDemos.Demos;
 
 // Supporting types defined first to be visible in the endpoint class
 public record Item019(int Id, string Title);
+
 public record User019(int Id, string Name);
+
 public record Product019(int Id, string Name, decimal Price);
+
 public record PagedResult019<T>(List<T> Items, int TotalCount, int Page, int PageSize);
 
 public static class EOE019_TypeParameterNotSupported
@@ -36,49 +39,65 @@ public static class EOE019_TypeParameterNotSupported
     // FIXED: Use concrete types
     // -------------------------------------------------------------------------
     [Get("/api/eoe019/string")]
-    public static ErrorOr<string> GetString() => "hello";
+    public static ErrorOr<string> GetString()
+    {
+        return "hello";
+    }
 
     [Get("/api/eoe019/item/{id}")]
-    public static ErrorOr<Item019> GetItem(int id) => new Item019(id, $"Item {id}");
+    public static ErrorOr<Item019> GetItem(int id)
+    {
+        return new Item019(id, $"Item {id}");
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Use closed generic types (with concrete type arguments)
     // -------------------------------------------------------------------------
     [Get("/api/eoe019/items")]
     public static ErrorOr<List<Item019>> GetItems()
-        => new List<Item019>
+    {
+        return new List<Item019>
         {
             new(1, "First"),
             new(2, "Second")
         };
+    }
 
     [Get("/api/eoe019/dict")]
     public static ErrorOr<Dictionary<string, Item019>> GetItemDict()
-        => new Dictionary<string, Item019>
+    {
+        return new Dictionary<string, Item019>
         {
             ["first"] = new(1, "First"),
             ["second"] = new(2, "Second")
         };
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Generic wrapper with concrete type argument
     // -------------------------------------------------------------------------
     [Get("/api/eoe019/paged")]
     public static ErrorOr<PagedResult019<Item019>> GetPagedItems()
-        => new PagedResult019<Item019>(
-            [new(1, "First")],
-            TotalCount: 100,
-            Page: 1,
-            PageSize: 10);
+    {
+        return new PagedResult019<Item019>(
+            [new Item019(1, "First")],
+            100,
+            1,
+            10);
+    }
 
     // -------------------------------------------------------------------------
     // TIP: Create specific endpoint methods for each concrete type
     // -------------------------------------------------------------------------
     [Get("/api/eoe019/users")]
     public static ErrorOr<List<User019>> GetUsers()
-        => new List<User019> { new(1, "Alice"), new(2, "Bob") };
+    {
+        return new List<User019> { new(1, "Alice"), new(2, "Bob") };
+    }
 
     [Get("/api/eoe019/products")]
     public static ErrorOr<List<Product019>> GetProducts()
-        => new List<Product019> { new(1, "Widget", 9.99m) };
+    {
+        return new List<Product019> { new(1, "Widget", 9.99m) };
+    }
 }

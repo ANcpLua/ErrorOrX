@@ -54,11 +54,6 @@ public static class EOE023_UnknownErrorFactory
         return $"Item {id}";
     }
 
-    // -------------------------------------------------------------------------
-    // FIXED: Use standard error types for common scenarios
-    // -------------------------------------------------------------------------
-    public record CreateRequest(string Name, string Email);
-
     [Post("/api/eoe023/items")]
     public static ErrorOr<string> CreateItem([FromBody] CreateRequest request)
     {
@@ -90,6 +85,11 @@ public static class EOE023_UnknownErrorFactory
 
         return Result.Deleted;
     }
+
+    // -------------------------------------------------------------------------
+    // FIXED: Use standard error types for common scenarios
+    // -------------------------------------------------------------------------
+    public record CreateRequest(string Name, string Email);
 
     // -------------------------------------------------------------------------
     // Known ErrorType to HTTP status mapping:

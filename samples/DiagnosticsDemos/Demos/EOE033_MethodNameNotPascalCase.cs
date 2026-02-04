@@ -46,35 +46,61 @@ public static class EOE033_MethodNameNotPascalCase
     // FIXED: Use PascalCase method names
     // -------------------------------------------------------------------------
     [Get("/api/eoe033/items/{id}")]
-    public static ErrorOr<string> GetById(int id) => $"Item {id}";
+    public static ErrorOr<string> GetById(int id)
+    {
+        return $"Item {id}";
+    }
 
     [Get("/api/eoe033/items")]
-    public static ErrorOr<string> GetAllItems() => "all items";
+    public static ErrorOr<string> GetAllItems()
+    {
+        return "all items";
+    }
 
     [Post("/api/eoe033/items")]
-    public static ErrorOr<string> CreateItem([FromBody] string name) => $"Created: {name}";
+    public static ErrorOr<string> CreateItem([FromBody] string name)
+    {
+        return $"Created: {name}";
+    }
 
     [Put("/api/eoe033/items/{id}")]
     public static ErrorOr<string> UpdateItem(int id, [FromBody] string name)
-        => $"Updated {id}: {name}";
+    {
+        return $"Updated {id}: {name}";
+    }
 
     [Delete("/api/eoe033/items/{id}")]
-    public static ErrorOr<Deleted> DeleteItem(int id) => Result.Deleted;
+    public static ErrorOr<Deleted> DeleteItem(int id)
+    {
+        return Result.Deleted;
+    }
 
     // -------------------------------------------------------------------------
     // FIXED: Common naming patterns
     // -------------------------------------------------------------------------
     [Get("/api/eoe033/users/{id}")]
-    public static ErrorOr<string> GetUserById(int id) => $"User {id}";
+    public static ErrorOr<string> GetUserById(int id)
+    {
+        return $"User {id}";
+    }
 
     [Get("/api/eoe033/users")]
-    public static ErrorOr<string> ListUsers() => "users";
+    public static ErrorOr<string> ListUsers()
+    {
+        return "users";
+    }
 
     [Post("/api/eoe033/users")]
-    public static ErrorOr<string> CreateUser([FromBody] string name) => $"Created: {name}";
+    public static ErrorOr<string> CreateUser([FromBody] string name)
+    {
+        return $"Created: {name}";
+    }
 
     [Get("/api/eoe033/search")]
-    public static ErrorOr<string> SearchItems([FromQuery] string query) => $"Searching: {query}";
+    public static ErrorOr<string> SearchItems([FromQuery] string query)
+    {
+        return $"Searching: {query}";
+    }
 
     // -------------------------------------------------------------------------
     // TIP: Method naming conventions for APIs

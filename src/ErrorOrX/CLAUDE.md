@@ -38,15 +38,15 @@ Error.Custom(422, "Validation.Complex", "Complex validation failed")
 
 ### `ErrorType` to HTTP Mapping
 
-| ErrorType | HTTP | Use Case |
-|-----------|------|----------|
-| Validation | 400 | Input validation failures |
-| Unauthorized | 401 | Authentication required |
-| Forbidden | 403 | Insufficient permissions |
-| NotFound | 404 | Resource doesn't exist |
-| Conflict | 409 | State conflict (duplicate, version) |
-| Failure | 500 | Known operational failure |
-| Unexpected | 500 | Unhandled/unknown errors |
+| ErrorType    | HTTP | Use Case                            |
+|--------------|------|-------------------------------------|
+| Validation   | 400  | Input validation failures           |
+| Unauthorized | 401  | Authentication required             |
+| Forbidden    | 403  | Insufficient permissions            |
+| NotFound     | 404  | Resource doesn't exist              |
+| Conflict     | 409  | State conflict (duplicate, version) |
+| Failure      | 500  | Known operational failure           |
+| Unexpected   | 500  | Unhandled/unknown errors            |
 
 ### `Result` Marker Types
 
@@ -59,13 +59,13 @@ Result.Deleted   // 204 No Content
 
 ## Fluent API
 
-| Method | Purpose | Example |
-|--------|---------|---------|
-| `Then` | Chain on success | `.Then(user => ValidateAge(user))` |
-| `Else` | Handle errors | `.Else(errors => DefaultUser)` |
-| `Match` | Transform both cases | `.Match(ok => ..., err => ...)` |
-| `Switch` | Side effects | `.Switch(ok => Log(ok), err => Log(err))` |
-| `FailIf` | Conditional failure | `.FailIf(u => u.IsDeleted, Error.NotFound(...))` |
+| Method   | Purpose              | Example                                          |
+|----------|----------------------|--------------------------------------------------|
+| `Then`   | Chain on success     | `.Then(user => ValidateAge(user))`               |
+| `Else`   | Handle errors        | `.Else(errors => DefaultUser)`                   |
+| `Match`  | Transform both cases | `.Match(ok => ..., err => ...)`                  |
+| `Switch` | Side effects         | `.Switch(ok => Log(ok), err => Log(err))`        |
+| `FailIf` | Conditional failure  | `.FailIf(u => u.IsDeleted, Error.NotFound(...))` |
 
 ### `Or*` Extensions (Nullable to ErrorOr)
 
@@ -76,15 +76,15 @@ user.OrUnauthorized("Invalid credentials");
 record.OrValidation("Record is invalid");
 ```
 
-| Extension | Error Type | Auto-Generated Code |
-|-----------|------------|---------------------|
-| `.OrNotFound()` | NotFound | `{TypeName}.NotFound` |
-| `.OrValidation()` | Validation | `{TypeName}.Invalid` |
+| Extension           | Error Type   | Auto-Generated Code       |
+|---------------------|--------------|---------------------------|
+| `.OrNotFound()`     | NotFound     | `{TypeName}.NotFound`     |
+| `.OrValidation()`   | Validation   | `{TypeName}.Invalid`      |
 | `.OrUnauthorized()` | Unauthorized | `{TypeName}.Unauthorized` |
-| `.OrForbidden()` | Forbidden | `{TypeName}.Forbidden` |
-| `.OrConflict()` | Conflict | `{TypeName}.Conflict` |
-| `.OrFailure()` | Failure | `{TypeName}.Failure` |
-| `.OrError(Error)` | Any | User-provided |
+| `.OrForbidden()`    | Forbidden    | `{TypeName}.Forbidden`    |
+| `.OrConflict()`     | Conflict     | `{TypeName}.Conflict`     |
+| `.OrFailure()`      | Failure      | `{TypeName}.Failure`      |
+| `.OrError(Error)`   | Any          | User-provided             |
 
 ## File Structure
 
@@ -107,4 +107,5 @@ src/ErrorOrX/
 
 ## Package Flow
 
-`ErrorOrX.Generators` declares dependency on `ErrorOrX` with `PrivateAssets="none"`, ensuring this runtime DLL flows to consuming projects.
+`ErrorOrX.Generators` declares dependency on `ErrorOrX` with `PrivateAssets="none"`, ensuring this runtime DLL flows to
+consuming projects.

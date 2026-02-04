@@ -58,7 +58,7 @@ public static class EOE035_TypeGetType
     public static ErrorOr<string> GetCaseSensitive()
     {
         // ✅ No warning - string literal + explicit ignoreCase: false
-        var type = Type.GetType("System.String", throwOnError: false, ignoreCase: false);
+        var type = Type.GetType("System.String", false, false);
         return type?.FullName ?? "Not found";
     }
 
@@ -88,13 +88,21 @@ public static class EOE035_TypeGetType
     // FIXED: Use generic type parameters
     // -------------------------------------------------------------------------
     [Get("/api/eoe035/info/string")]
-    public static ErrorOr<string> GetStringInfo() => GetTypeInfoInternal<string>();
+    public static ErrorOr<string> GetStringInfo()
+    {
+        return GetTypeInfoInternal<string>();
+    }
 
     [Get("/api/eoe035/info/int")]
-    public static ErrorOr<string> GetIntInfo() => GetTypeInfoInternal<int>();
+    public static ErrorOr<string> GetIntInfo()
+    {
+        return GetTypeInfoInternal<int>();
+    }
 
     private static ErrorOr<string> GetTypeInfoInternal<T>()
-        => $"Type: {typeof(T).FullName}, Default: {default(T)}";
+    {
+        return $"Type: {typeof(T).FullName}, Default: {default(T)}";
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -111,10 +119,14 @@ public static class TypeRegistry
     };
 
     public static bool TryGetType(string key, out Type type)
-        => _types.TryGetValue(key, out type!);
+    {
+        return _types.TryGetValue(key, out type!);
+    }
 
     public static void Register<T>(string key)
-        => _types[key] = typeof(T);
+    {
+        _types[key] = typeof(T);
+    }
 }
 
 // -------------------------------------------------------------------------
