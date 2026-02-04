@@ -4,6 +4,28 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-02-04
+
+### Removed
+
+- **tools/ directory**: Removed internal DiagnosticsAlignment tooling
+  - `DiagnosticsAlignment.Analyzers` was orphaned (not referenced by any project)
+  - `DiagnosticsAlignment.Host` was dead code (empty class with unused AdditionalFiles)
+  - `DiagnosticsAlignment.Tool` functionality moved to ANcpLua.Analyzers
+
+### Fixed
+
+- **MSB4011 double-import warning**: Added `DirectoryBuildPropsImported` guard property to prevent nested
+  `Directory.Build.props` from importing root twice
+
+- **AL0018 false positive**: Moved suppression to root `Directory.Build.props` since repo uses CPM
+  (`ManagePackageVersionsCentrally=true`) which AL0018 couldn't detect without AdditionalFiles
+
+- **Unused properties in ParameterSource**: Removed `IsFromRequest`, `RequiresJsonContext`, `IsSpecialType`,
+  `IsComposite` properties that were never read. Constructor params kept as discards for API stability.
+
+## [3.2.0] - 2026-02-01
+
 ### Fixed
 
 - **BUG-001: TryGetReferencedSymbol NRE for ILocalSymbol**: Fixed `NullReferenceException` when error type inference
