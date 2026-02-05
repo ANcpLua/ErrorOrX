@@ -121,7 +121,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         if (attr.ConstructorArguments.Length > 0 &&
             attr.ConstructorArguments[0].Value is string p &&
             !string.IsNullOrWhiteSpace(p))
+        {
             return p;
+        }
 
         return "/";
     }
@@ -152,20 +154,24 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         var summaryStart = xml.IndexOfOrdinal("<summary>");
         var summaryEnd = xml.IndexOfOrdinal("</summary>");
         if (summaryStart >= 0 && summaryEnd > summaryStart)
+        {
             summary = xml.Substring(summaryStart + 9, summaryEnd - summaryStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace("\n", " ")
                 .Trim();
+        }
 
         var remarksStart = xml.IndexOfOrdinal("<remarks>");
         var remarksEnd = xml.IndexOfOrdinal("</remarks>");
         if (remarksStart >= 0 && remarksEnd > remarksStart)
+        {
             description = xml.Substring(remarksStart + 9, remarksEnd - remarksStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace("\n", " ")
                 .Trim();
+        }
 
         return (summary, description);
     }
@@ -234,7 +240,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // Skip null symbols and compiler-generated types
         if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol ||
             symbol.IsImplicitlyDeclared)
+        {
             return null;
+        }
 
         // Skip types without XML docs
         var xmlDoc = symbol.GetDocumentationCommentXml();
@@ -371,8 +379,10 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             code.AppendLine($"            [\"{op.OperationId}\"] = new Dictionary<string, string>");
             code.AppendLine("            {");
             foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
+            {
                 code.AppendLine(
                     $"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
+            }
 
             code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }

@@ -137,30 +137,38 @@ internal static class RouteValidator
 
         var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
         if (escapedStripped.Contains("{}"))
+        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
                 location,
                 pattern,
                 "Route contains empty parameter '{}'. Parameter names are required."));
+        }
 
         var openCount = escapedStripped.Count(static c => c == '{');
         var closeCount = escapedStripped.Count(static c => c == '}');
         if (openCount != closeCount)
+        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
                 location,
                 pattern,
                 $"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'"));
+        }
 
         var routeParams = ExtractRouteParameters(pattern);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var param in routeParams)
+        {
             if (!seen.Add(param.Name))
+            {
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.InvalidRoutePattern,
                     location,
                     pattern,
                     $"Route contains duplicate parameter '{{{param.Name}}}'"));
+            }
+        }
 
         return diagnostics.ToImmutable();
     }
@@ -179,16 +187,22 @@ internal static class RouteValidator
 
         var boundRouteNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var mp in methodParams)
+        {
             if (mp.BoundRouteName is not null)
                 boundRouteNames.Add(mp.BoundRouteName);
+        }
 
         foreach (var rp in routeParams)
+        {
             if (!boundRouteNames.Contains(rp.Name))
+            {
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.RouteParameterNotBound,
                     location,
                     pattern,
                     rp.Name));
+            }
+        }
 
         return diagnostics.ToImmutable();
     }
@@ -274,7 +288,9 @@ internal static class RouteValidator
     {
         if (!TryGetConstraintContext(routeParam, methodParamsByRouteName, out var methodParam, out var typeFqn,
                 out var constraint))
+        {
             return;
+        }
 
         if (FormatOnlyConstraints.Contains(constraint))
             return;

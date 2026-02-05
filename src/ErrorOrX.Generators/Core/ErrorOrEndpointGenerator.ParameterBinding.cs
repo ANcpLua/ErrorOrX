@@ -135,16 +135,22 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
+        {
             return TryGetAttributeName(parameter, context.FromRoute, WellKnownTypes.FromRouteAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromQuery))
+        {
             return TryGetAttributeName(parameter, context.FromQuery, WellKnownTypes.FromQueryAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromHeader))
+        {
             return TryGetAttributeName(parameter, context.FromHeader, WellKnownTypes.FromHeaderAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromForm))
             return TryGetAttributeName(parameter, context.FromForm, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
@@ -202,8 +208,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (meta.HasFromServices)
             return ParameterSuccess(in meta, ParameterSource.Service);
         if (meta.HasFromKeyedServices)
+        {
             return ParameterSuccess(in meta, ParameterSource.KeyedService,
                 keyedServiceKey: meta.KeyedServiceKey);
+        }
 
         if (meta.HasFromHeader)
             return ClassifyFromHeaderParameter(in meta, method, diagnostics);
@@ -378,8 +386,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.QueryName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE011: [FromQuery] only supports primitives or collections of primitives
         diagnostics.Add(DiagnosticInfo.Create(
@@ -412,8 +422,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.HeaderName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE014: [FromHeader] requires string, primitive with TryParse, or collection thereof
         diagnostics.Add(DiagnosticInfo.Create(
@@ -469,8 +481,10 @@ public sealed partial class ErrorOrEndpointGenerator
         // For complex form DTOs, analyze the constructor to build child parameter info
         // BCL handles actual binding - we just need structure for code generation
         if (meta.Symbol.Type is not INamedTypeSymbol typeSymbol)
+        {
             // Non-named types get simple form binding - BCL will handle/fail at runtime
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.FormName);
+        }
 
         var constructor = typeSymbol.Constructors
             .Where(static c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -478,8 +492,10 @@ public sealed partial class ErrorOrEndpointGenerator
             .FirstOrDefault();
 
         if (constructor is null || constructor.Parameters.Length is 0)
+        {
             // No suitable constructor - simple form binding
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.FormName);
+        }
 
         // Build child parameters for DTO constructor
         var children = ImmutableArray.CreateBuilder<EndpointParameter>(constructor.Parameters.Length);
@@ -720,7 +736,9 @@ public sealed partial class ErrorOrEndpointGenerator
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
             !IsTaskLike(method.ReturnType, context) || method.Parameters.Length < 1 ||
             !context.IsHttpContext(method.Parameters[0].Type))
+        {
             return CustomBindingMethod.None;
+        }
 
         if (method.Parameters.Length >= 2 && context.IsParameterInfo(method.Parameters[1].Type))
             return CustomBindingMethod.BindAsyncWithParam;
@@ -755,12 +773,16 @@ public sealed partial class ErrorOrEndpointGenerator
         if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method ||
             method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) ||
             method.Parameters[^1].RefKind != RefKind.Out)
+        {
             return CustomBindingMethod.None;
+        }
 
         if (method.Parameters.Length >= 3)
+        {
             for (var i = 1; i < method.Parameters.Length - 1; i++)
                 if (IsFormatProvider(method.Parameters[i].Type, context))
                     return CustomBindingMethod.TryParseWithFormat;
+        }
 
         return CustomBindingMethod.TryParse;
     }
@@ -770,8 +792,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType == SpecialType.System_String) return true;
 
         if (type is INamedTypeSymbol { IsGenericType: true } named && context.ReadOnlySpanOfT is not null)
+        {
             return named.ConstructedFrom.IsEqualTo(context.ReadOnlySpanOfT) &&
                    named.TypeArguments is [{ SpecialType: SpecialType.System_Char }];
+        }
 
         return false;
     }
@@ -860,7 +884,9 @@ public sealed partial class ErrorOrEndpointGenerator
         // Pattern: is { } attrClass - guards null before IsEqualTo call
         if (attributeSymbol is not null && attributes.Any(attr =>
                 attr.AttributeClass is { } attrClass && attrClass.IsEqualTo(attributeSymbol)))
+        {
             return true;
+        }
 
         var matcher = new AttributeNameMatcher(attributeName);
         return attributes.Any(attr => matcher.IsMatch(attr.AttributeClass));
@@ -890,14 +916,18 @@ public sealed partial class ErrorOrEndpointGenerator
             return null;
 
         foreach (var namedArg in attr.NamedArguments)
+        {
             if (string.Equals(namedArg.Key, "Name", StringComparison.OrdinalIgnoreCase) &&
                 namedArg.Value.Value is string name && !string.IsNullOrWhiteSpace(name))
                 return name;
+        }
 
         if (attr.ConstructorArguments.Length > 0 &&
             attr.ConstructorArguments[0].Value is string ctorArg &&
             !string.IsNullOrWhiteSpace(ctorArg))
+        {
             return ctorArg;
+        }
 
         if (attr.ApplicationSyntaxReference?.GetSyntax() is { } syntax)
         {
@@ -928,8 +958,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Check using fluent matchers for common DI naming patterns
         if (type is INamedTypeSymbol namedType)
+        {
             if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
                 return true;
+        }
 
         return false;
     }

@@ -25,6 +25,7 @@ internal static class GroupAggregator
         var ungroupedList = new List<IndexedEndpoint>();
 
         foreach (var item in indexed)
+        {
             if (item.Endpoint.RouteGroup.GroupPath is { } path)
             {
                 if (!groupDict.TryGetValue(path, out var list))
@@ -39,6 +40,7 @@ internal static class GroupAggregator
             {
                 ungroupedList.Add(item);
             }
+        }
 
         var grouped = groupDict
             .OrderBy(static kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)

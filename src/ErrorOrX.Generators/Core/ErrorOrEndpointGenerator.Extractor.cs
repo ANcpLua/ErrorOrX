@@ -31,8 +31,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
+        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
+        }
 
         switch (innerType)
         {
@@ -54,16 +56,24 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.SuccessMarker is not null &&
             innerType.IsEqualTo(context.SuccessMarker))
+        {
             kind = SuccessKind.Success;
+        }
         else if (context.CreatedMarker is not null &&
-                 innerType.IsEqualTo(context.CreatedMarker))
+                         innerType.IsEqualTo(context.CreatedMarker))
+        {
             kind = SuccessKind.Created;
+        }
         else if (context.UpdatedMarker is not null &&
-                 innerType.IsEqualTo(context.UpdatedMarker))
+                         innerType.IsEqualTo(context.UpdatedMarker))
+        {
             kind = SuccessKind.Updated;
+        }
         else if (context.DeletedMarker is not null &&
-                 innerType.IsEqualTo(context.DeletedMarker))
+                         innerType.IsEqualTo(context.DeletedMarker))
+        {
             kind = SuccessKind.Deleted;
+        }
 
         if (TryUnwrapAsyncEnumerable(innerType, context, out var elementType))
         {
@@ -100,6 +110,7 @@ public sealed partial class ErrorOrEndpointGenerator
         string? bestMatch = null;
 
         for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
+        {
             foreach (var member in current.GetMembers())
             {
                 // Pattern-as-spec: public readable property
@@ -107,7 +118,9 @@ public sealed partial class ErrorOrEndpointGenerator
                     {
                         DeclaredAccessibility: Accessibility.Public, GetMethod: not null
                     } property)
+                {
                     continue;
+                }
 
                 // Exact match "Id" is preferred - return immediately
                 if (property.Name == "Id")
@@ -117,6 +130,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
                     bestMatch ??= property.Name;
             }
+        }
 
         return bestMatch;
     }
@@ -165,7 +179,9 @@ public sealed partial class ErrorOrEndpointGenerator
         if ((context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT)) ||
             (context.ValueTaskOfT is not null &&
              constructed.IsEqualTo(context.ValueTaskOfT)))
+        {
             return (named.TypeArguments[0], true);
+        }
 
         return (type, false);
     }
@@ -214,10 +230,14 @@ public sealed partial class ErrorOrEndpointGenerator
         // AL0029: Need to extract constructor arguments, not just check existence
 #pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
+        {
             if (context.ProducesErrorAttribute is not null &&
                 attr.AttributeClass?.IsEqualTo(context.ProducesErrorAttribute) == true &&
                 attr.ConstructorArguments is [{ Value: int statusCode }, ..])
+            {
                 results.Add(new ProducesErrorInfo(statusCode));
+            }
+        }
 #pragma warning restore AL0029
 
         return results.Count > 0
@@ -280,8 +300,10 @@ public sealed partial class ErrorOrEndpointGenerator
         bool hasExplicitProducesError)
     {
         foreach (var child in node.DescendantNodes())
+        {
             ProcessNode(semanticModel, child, errorTypeNames, customErrors, visitedSymbols, seenCustomCodes, context,
                 diagnostics, endpointMethodName, hasExplicitProducesError);
+        }
     }
 
     private static void ProcessNode(
@@ -304,7 +326,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 seenCustomCodes,
                 context,
                 diagnostics))
+        {
             return;
+        }
 
         // Check for interface/abstract method calls that return ErrorOr
         if (TryDetectUndocumentedInterfaceCall(
@@ -317,7 +341,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 errorTypeNames,
                 customErrors,
                 seenCustomCodes))
+        {
             return;
+        }
 
         if (!TryGetReferencedSymbol(semanticModel, child, visitedSymbols, out var symbol))
             return;
@@ -326,9 +352,11 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var bodyToScan = GetBodyToScan(reference.GetSyntax());
             if (bodyToScan is not null)
+            {
                 CollectErrorTypesRecursive(semanticModel, bodyToScan, errorTypeNames, customErrors,
                     visitedSymbols, seenCustomCodes, context, diagnostics, endpointMethodName,
                     hasExplicitProducesError);
+            }
         }
     }
 
@@ -600,7 +628,9 @@ public sealed partial class ErrorOrEndpointGenerator
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
         if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol || context.Error is null ||
             !symbol.ContainingType.IsEqualTo(context.Error))
+        {
             return false;
+        }
 
         factoryName = symbol.Name;
         return true;
@@ -671,10 +701,12 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.AllowAnonymousAttribute is not null &&
             attrClass.IsEqualTo(context.AllowAnonymousAttribute))
+        {
             return current with
             {
                 AllowAnonymous = true
             };
+        }
 
         return current;
     }
@@ -695,10 +727,12 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.DisableRateLimitingAttribute is not null &&
             attrClass.IsEqualTo(context.DisableRateLimitingAttribute))
+        {
             return current with
             {
                 Disabled = true
             };
+        }
 
         return current;
     }
@@ -708,7 +742,9 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (context.OutputCacheAttribute is null ||
             !attrClass.IsEqualTo(context.OutputCacheAttribute))
+        {
             return current;
+        }
 
         var result = current with
         {
@@ -717,16 +753,20 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var namedArg in attr.NamedArguments)
         {
             if (namedArg is { Key: "PolicyName", Value.Value: string policy })
+            {
                 result = result with
                 {
                     Policy = policy
                 };
+            }
 
             if (namedArg is { Key: "Duration", Value.Value: int duration })
+            {
                 result = result with
                 {
                     Duration = duration
                 };
+            }
         }
 
         return result;
@@ -748,10 +788,12 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.DisableCorsAttribute is not null &&
             attrClass.IsEqualTo(context.DisableCorsAttribute))
+        {
             return current with
             {
                 Disabled = true
             };
+        }
 
         return current;
     }
@@ -940,7 +982,9 @@ public sealed partial class ErrorOrEndpointGenerator
             if (context.ApiVersionAttribute is not null &&
                 attrClass.IsEqualTo(context.ApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
+            {
                 versions.Add(versionString);
+            }
         }
 #pragma warning restore AL0029
 
@@ -968,7 +1012,9 @@ public sealed partial class ErrorOrEndpointGenerator
             if (context.MapToApiVersionAttribute is not null &&
                 attrClass.IsEqualTo(context.MapToApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
+            {
                 versions.Add(versionString);
+            }
         }
 #pragma warning restore AL0029
 
@@ -1009,12 +1055,16 @@ public sealed partial class ErrorOrEndpointGenerator
             // Extract optional ApiName from named arguments
             string? apiName = null;
             foreach (var namedArg in attr.NamedArguments)
+            {
                 if (namedArg is
                     {
                         Key: "ApiName",
                         Value.Value: string name
                     })
+                {
                     apiName = name;
+                }
+            }
 
             return new RouteGroupInfo(groupPath, apiName);
         }
