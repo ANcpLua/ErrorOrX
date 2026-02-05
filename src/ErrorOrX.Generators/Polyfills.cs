@@ -203,7 +203,7 @@ namespace System
         /// <summary>Constructs an Index using a value and indicating if the index is from the start or from the end.</summary>
         public Index(int value, bool fromEnd = false)
         {
-            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
+            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
             _value = fromEnd ? ~value : value;
         }
 
@@ -221,17 +221,15 @@ namespace System
         /// <summary>Creates an Index from the start at the position indicated by the value.</summary>
         public static Index FromStart(int value)
         {
-            return value < 0
-                ? throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative")
-                : new Index(value);
+            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
+            return new Index(value);
         }
 
         /// <summary>Creates an Index from the end at the position indicated by the value.</summary>
         public static Index FromEnd(int value)
         {
-            return value < 0
-                ? throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative")
-                : new Index(~value);
+            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
+            return new Index(~value);
         }
 
         /// <summary>Gets the index value.</summary>

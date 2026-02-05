@@ -8,57 +8,30 @@
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <LangVersion>latest</LangVersion>
-
-        <!-- Generator packaging configuration -->
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <DevelopmentDependency>true</DevelopmentDependency>
         <NoWarn>$(NoWarn);NU5128</NoWarn>
-
-        <!-- Source Link -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════════
-         GLOBAL USINGS
-         ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
         <Using Include="ANcpLua.Roslyn.Utilities"/>
     </ItemGroup>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════════
-         ANALYZER RELEASE TRACKING (for RS2008)
-         ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
         <AdditionalFiles Include="AnalyzerReleases.Shipped.md"/>
         <AdditionalFiles Include="AnalyzerReleases.Unshipped.md"/>
     </ItemGroup>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════════
-         PACKAGE DEPENDENCY: ErrorOrX runtime flows to consumers
-         ReferenceOutputAssembly=false → No compile-time reference (TFM incompatible)
-         PrivateAssets=none → Dependency appears in nupkg for consumers
-         ═══════════════════════════════════════════════════════════════════════════ -->
-
-    <!-- ═══════════════════════════════════════════════════════════════════════════
-         GENERATOR DEPENDENCIES (bundled, not exposed to consumers)
-         ═══════════════════════════════════════════════════════════════════════════ -->
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
         <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true"/>
-        <!-- PolySharp removed - using Polyfills.cs to avoid type conflicts with test projects -->
     </ItemGroup>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════════
-         CODE QUALITY ANALYZERS (not using ANcpLua.NET.Sdk, so explicit version)
-         ═══════════════════════════════════════════════════════════════════════════ -->
-    <ItemGroup>
-    </ItemGroup>
-
-    <!-- Expose dependencies to projects referencing this generator via ProjectReference -->
     <PropertyGroup>
         <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
     </PropertyGroup>
@@ -73,7 +46,6 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
     </ItemGroup>
 
-    <!-- Add ErrorOrX as a package dependency that flows to consumers -->
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>

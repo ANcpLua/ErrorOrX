@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <!-- Import generator props for ProjectReference (NuGet does this automatically) -->
     <Import Project="../../src/ErrorOrX.Generators/build/ErrorOrX.Generators.props"/>
 
     <PropertyGroup>
@@ -10,9 +9,7 @@
         <Nullable>enable</Nullable>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
-        <!-- Use app's AppJsonSerializerContext instead of auto-generated -->
         <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
-        <!-- Suppress code style analyzers for demo code -->
         <NoWarn>$(NoWarn);AL0014;AL0025;AL0039</NoWarn>
     </PropertyGroup>
 
@@ -21,22 +18,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Global usings for ErrorOr types -->
         <Using Include="ErrorOr"/>
         <Using Include="DiagnosticsDemos"/>
     </ItemGroup>
 
     <ItemGroup>
-        <!-- API Versioning for versioning demos (EOE027-EOE031) -->
         <PackageReference Include="Asp.Versioning.Http"/>
-        <!-- OpenAPI for transformer types -->
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     </ItemGroup>
 
     <ItemGroup>
-        <!-- ErrorOrX runtime (net10.0) -->
         <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
-        <!-- ErrorOrX.Generators (netstandard2.0) as analyzer -->
         <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false"/>

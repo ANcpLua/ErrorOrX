@@ -16,9 +16,11 @@ public sealed class IntegrationTestAppFactory : WebApplicationFactory<Integratio
         });
 
         appBuilder.WebHost.UseTestServer();
+        appBuilder.Services.AddHealthChecks();
         IntegrationTestApp.ConfigureServices(appBuilder.Services);
 
         var app = appBuilder.Build();
+        app.MapHealthChecks("/health");
         IntegrationTestApp.Configure(app);
         app.Start();
 

@@ -1,26 +1,20 @@
 <Project>
-    <!-- Guard against double-import (MSB4011) -->
     <PropertyGroup>
         <DirectoryBuildPropsImported>true</DirectoryBuildPropsImported>
     </PropertyGroup>
 
-    <!-- Import versioning -->
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
-    <!-- Version for nuspec bundling (must match Directory.Packages.props) -->
     <PropertyGroup>
         <ANcpLuaRoslynUtilitiesVersion>1.28.0</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
-    <!-- Repo-wide build settings -->
     <PropertyGroup>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Deterministic>true</Deterministic>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-
-        <!-- Package metadata defaults -->
         <Authors>ANcpLua</Authors>
         <Copyright>Copyright (c) 2025 Alexander Nachtmann</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -29,11 +23,7 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
-    <!-- Suppress known repo-wide warnings -->
     <PropertyGroup>
-        <!-- NETSDK1023: SDK implicitly adds JonSkeet.RoslynAnalyzers but we need explicit ref for CPM -->
-        <!-- AL0017: Hardcoded version rule is for SDK development, not consumer projects -->
-        <!-- AL0018: Repo uses CPM (Directory.Packages.props), not Version.props for package versions -->
         <NoWarn>$(NoWarn);NETSDK1023;AL0017;AL0018</NoWarn>
     </PropertyGroup>
 </Project>

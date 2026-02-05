@@ -21,11 +21,11 @@ public sealed class IntegrationTestApp
     public static void ConfigureServices(IServiceCollection services)
     {
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(o =>
+            .AddCookie(static o =>
             {
                 o.LoginPath = "/login";
                 o.AccessDeniedPath = "/denied";
-                o.Events.OnRedirectToLogin = context =>
+                o.Events.OnRedirectToLogin = static context =>
                 {
                     if (context.Request.Path.StartsWithSegments("/parity", StringComparison.Ordinal))
                     {
@@ -38,7 +38,7 @@ public sealed class IntegrationTestApp
                 };
             });
         services.AddAuthorization();
-        
+
         services.AddErrorOrEndpoints();
     }
 }
