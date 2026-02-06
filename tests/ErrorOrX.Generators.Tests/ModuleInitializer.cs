@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using VerifyTests;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -9,17 +8,11 @@ namespace ErrorOrX.Generators.Tests;
 file static class ModuleInitializer
 {
     [ModuleInitializer]
-    public static void Initialize()
-    {
-        // Initialize Verify.SourceGenerators - handles GeneratorDriverRunResult serialization
-        // This properly handles ImmutableArray<T> and other Roslyn types
-        VerifySourceGenerators.Initialize();
-
+    public static void Initialize() =>
         // Configure Verify to properly serialize EquatableArray<T> as arrays
         // This prevents the ImmutableArray<T> default instance error during serialization
         VerifierSettings.AddExtraSettings(static settings =>
             settings.Converters.Add(new EquatableArrayJsonConverter()));
-    }
 }
 
 /// <summary>

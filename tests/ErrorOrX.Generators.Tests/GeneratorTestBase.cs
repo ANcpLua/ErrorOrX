@@ -80,8 +80,11 @@ public abstract class GeneratorTestBase
         return await Test<ErrorOrEndpointGenerator>.Run(source, TestContext.Current.CancellationToken);
     }
 
+    private const string AttributesHintName = "ErrorOrEndpointAttributes.Mappings.g.cs";
+
     /// <summary>
     ///     Runs the generator and verifies output using Verify snapshots.
+    ///     Excludes the shared attributes file (tested once in GeneratorCachingTests).
     /// </summary>
     protected static async Task VerifyAsync(string source)
     {
@@ -90,6 +93,7 @@ public abstract class GeneratorTestBase
         await Verify(new
         {
             GeneratedSources = result.Files
+                .Where(static f => f.HintName != AttributesHintName)
                 .Select(static f => new { f.HintName, Source = f.Content })
                 .OrderBy(static s => s.HintName),
             Diagnostics = result.Diagnostics
@@ -109,6 +113,7 @@ public abstract class GeneratorTestBase
         await Verify(new
         {
             GeneratedSources = result.Files
+                .Where(static f => f.HintName != AttributesHintName)
                 .Select(static f => new { f.HintName, Source = f.Content })
                 .OrderBy(static s => s.HintName),
             Diagnostics = result.Diagnostics

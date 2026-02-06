@@ -6,81 +6,24 @@ namespace ErrorOrX.Generators.Tests;
 public class GeneratorCachingTests : GeneratorTestBase
 {
     [Fact]
-    public async Task Generator_Produces_Output_For_Simple_Endpoint()
+    public async Task Generator_Emits_Shared_Attributes_File()
     {
         const string Source = """
                               using ErrorOr;
 
-
-                              namespace CachingTest;
+                              namespace AttributeTest;
 
                               public static class TestEndpoints
                               {
-                                  [Get("/cached")]
-                                  public static ErrorOr<string> Get() => "cached";
+                                  [Get("/test")]
+                                  public static ErrorOr<string> Get() => "test";
                               }
                               """;
 
         using var result = await RunAsync(Source);
 
-        result.Files.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public async Task Generator_Produces_Output_For_Multiple_Endpoints()
-    {
-        const string Source = """
-                              using ErrorOr;
-
-
-                              namespace CachingTest;
-
-                              public static class MultipleEndpoints
-                              {
-                                  [Get("/one")]
-                                  public static ErrorOr<string> GetOne() => "one";
-
-                                  [Post("/two")]
-                                  public static ErrorOr<int> PostTwo() => 42;
-
-                                  [Delete("/three/{id}")]
-                                  public static ErrorOr<bool> DeleteThree(int id) => true;
-                              }
-                              """;
-
-        using var result = await RunAsync(Source);
-
-        result.Files.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public async Task Generator_Handles_Complex_Parameters()
-    {
-        const string Source = """
-                              using ErrorOr;
-
-                              using Microsoft.AspNetCore.Mvc;
-
-                              namespace CachingTest;
-
-                              public record CreateRequest(string Name, int Value);
-                              public record Response(int Id, string Name);
-
-                              public static class ComplexEndpoints
-                              {
-                                  [Post("/items")]
-                                  public static ErrorOr<Response> Create([FromBody] CreateRequest request)
-                                      => new Response(1, request.Name);
-
-                                  [Get("/items/{id}")]
-                                  public static ErrorOr<Response> GetById(int id)
-                                      => new Response(id, "item");
-                              }
-                              """;
-
-        using var result = await RunAsync(Source);
-
-        result.Files.Should().NotBeEmpty();
+        var attributes = result.Files.First(static f => f.HintName == "ErrorOrEndpointAttributes.Mappings.g.cs");
+        await Verify(new { attributes.HintName, Source = attributes.Content }).UseDirectory("Snapshots");
     }
 
     [Fact]

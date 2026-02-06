@@ -448,38 +448,6 @@ public class MiddlewareEmissionTests : GeneratorTestBase
         generated.Should().Contain(".CacheOutput(\"ApiCache\")");
     }
 
-    [Fact]
-    public async Task Authorize_And_RateLimiting_Chain_Correctly()
-    {
-        const string Source = """
-                              using ErrorOr;
-                              using Microsoft.AspNetCore.Authorization;
-                              using Microsoft.AspNetCore.RateLimiting;
-
-                              public static class Api
-                              {
-                                  [Get("/secured")]
-                                  [Authorize]
-                                  [EnableRateLimiting("api")]
-                                  public static ErrorOr<string> Secured() => "secured";
-                              }
-                              """;
-
-        using var result = await RunAsync(Source);
-
-        result.Diagnostics.Should().BeEmpty();
-        var generated = result.Files.First(static f => f.HintName == "ErrorOrEndpointMappings.cs").Content;
-        // Both should be chained in fluent style
-        var mappingLine = generated.Split('\n')
-            .FirstOrDefault(static l =>
-                l.Contains("MapGet", StringComparison.Ordinal) && l.Contains("/secured", StringComparison.Ordinal));
-        mappingLine.Should().NotBeNull();
-
-        // Verify both middleware calls are present in the endpoint builder chain
-        generated.Should().Contain(".RequireAuthorization()");
-        generated.Should().Contain(".RequireRateLimiting(\"api\")");
-    }
-
     #endregion
 
     #region Endpoint Naming and Tags

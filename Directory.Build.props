@@ -6,7 +6,7 @@
     <Import Project="$(MSBuildThisFileDirectory)version.props"/>
 
     <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.28.0</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.30.2</ANcpLuaRoslynUtilitiesVersion>
     </PropertyGroup>
 
     <PropertyGroup>
