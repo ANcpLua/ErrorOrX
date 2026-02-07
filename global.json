@@ -1,15 +1,15 @@
 {
-  "sdk": {
-    "version": "10.0.102",
-    "rollForward": "minor",
-    "allowPrerelease": true
-  },
-  "msbuild-sdks": {
-    "ANcpLua.NET.Sdk": "2.0.2",
-    "ANcpLua.NET.Sdk.Web": "2.0.2",
-    "ANcpLua.NET.Sdk.Test": "2.0.2"
-  },
-  "test": {
-    "runner": "Microsoft.Testing.Platform"
-  }
+    "sdk": {
+        "version": "10.0.102",
+        "rollForward": "minor",
+        "allowPrerelease": true
+    },
+    "msbuild-sdks": {
+        "ANcpLua.NET.Sdk": "2.0.5",
+        "ANcpLua.NET.Sdk.Web": "2.0.5",
+        "ANcpLua.NET.Sdk.Test": "2.0.5"
+    },
+    "test": {
+        "runner": "Microsoft.Testing.Platform"
+    }
 }

@@ -26,5 +26,6 @@
     <Folder Name="/tests/">
         <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj"/>
         <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Integration.Tests/ErrorOrX.Integration.Tests.csproj"/>
     </Folder>
 </Solution>

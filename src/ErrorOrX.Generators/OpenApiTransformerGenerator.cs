@@ -213,7 +213,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             searchPos = contentEnd + 8;
         }
 
-        return [..parameters];
+        return [.. parameters];
     }
 
     private static string GetReflectionFullName(INamedTypeSymbol symbol)

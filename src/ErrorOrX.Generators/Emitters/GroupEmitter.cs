@@ -70,7 +70,7 @@ internal static class GroupEmitter
             code.AppendLine(";");
         }
         else
-            // Simple group without versioning
+        // Simple group without versioning
         {
             code.AppendLine($"            var {groupVarName} = app.MapGroup(\"{group.GroupPath}\");");
         }

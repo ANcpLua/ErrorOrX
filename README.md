@@ -19,7 +19,7 @@ Native AOT support.
 - **Middleware Support** - Translates ASP.NET Core attributes to Minimal API fluent calls (authorization, rate limiting,
   caching)
 - **API Versioning** - Integrates with Asp.Versioning.Http for versioned endpoint groups
-- **38 Analyzers** - Real-time IDE feedback for route conflicts, binding errors, AOT compatibility
+- **41 Analyzers** - Real-time IDE feedback for route conflicts, binding errors, AOT compatibility
 
 ## What the Generator Produces
 

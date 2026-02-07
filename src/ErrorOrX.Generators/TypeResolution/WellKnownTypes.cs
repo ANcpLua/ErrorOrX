@@ -1,5 +1,3 @@
-// ReSharper disable InconsistentNaming
-
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -23,7 +21,6 @@ internal static class WellKnownTypes
     public const string ReturnsErrorAttribute = "ErrorOr.ReturnsErrorAttribute";
 
     public const string ErrorOrT = "ErrorOr.ErrorOr`1";
-    public const string ErrorType = "ErrorOr.ErrorType";
     public const string Error = "ErrorOr.Error";
 
     public const string Success = "ErrorOr.Success";
@@ -37,25 +34,19 @@ internal static class WellKnownTypes
     public const string FromQueryAttribute = "Microsoft.AspNetCore.Mvc.FromQueryAttribute";
     public const string FromRouteAttribute = "Microsoft.AspNetCore.Mvc.FromRouteAttribute";
     public const string FromServicesAttribute = "Microsoft.AspNetCore.Mvc.FromServicesAttribute";
-    public const string ProblemDetails = "Microsoft.AspNetCore.Mvc.ProblemDetails";
 
     public const string AsParametersAttribute = "Microsoft.AspNetCore.Http.AsParametersAttribute";
     public const string HttpContext = "Microsoft.AspNetCore.Http.HttpContext";
-    public const string HttpValidationProblemDetails = "Microsoft.AspNetCore.Http.HttpValidationProblemDetails";
     public const string FormCollection = "Microsoft.AspNetCore.Http.IFormCollection";
     public const string FormFile = "Microsoft.AspNetCore.Http.IFormFile";
     public const string FormFileCollection = "Microsoft.AspNetCore.Http.IFormFileCollection";
     public const string BindableFromHttpContext = "Microsoft.AspNetCore.Http.IBindableFromHttpContext`1";
-    public const string TypedResults = "Microsoft.AspNetCore.Http.TypedResults";
 
     public const string FromKeyedServicesAttribute =
         "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 
     public const string ValidationAttribute = "System.ComponentModel.DataAnnotations.ValidationAttribute";
     public const string IValidatableObject = "System.ComponentModel.DataAnnotations.IValidatableObject";
-    public const string Validator = "System.ComponentModel.DataAnnotations.Validator";
-    public const string ValidationContext = "System.ComponentModel.DataAnnotations.ValidationContext";
-    public const string ValidationResult = "System.ComponentModel.DataAnnotations.ValidationResult";
 
     public const string CancellationToken = "System.Threading.CancellationToken";
     public const string JsonSerializableAttribute = "System.Text.Json.Serialization.JsonSerializableAttribute";
@@ -109,7 +100,6 @@ internal static class WellKnownTypes
     public const string ApiVersion = "Asp.Versioning.ApiVersion";
 
     public const string RouteGroupAttribute = "ErrorOr.RouteGroupAttribute";
-    public const string AllowEmptyBodyAttribute = "ErrorOr.AllowEmptyBodyAttribute";
     public const string EndpointMetadataAttribute = "ErrorOr.EndpointMetadataAttribute";
 
     /// <summary>
@@ -140,7 +130,6 @@ internal static class WellKnownTypes
     ///     These intentionally shadow outer-class constants which use metadata names.
     ///     Outer: for Roslyn symbol lookup | Fqn: for emitted source code.
     /// </summary>
-    // ReSharper disable MemberHidesStaticFromOuterClass - Intentional: metadata vs codegen naming
     public static class Fqn
     {
         // Frequently used Fqn constants emitted in generated code

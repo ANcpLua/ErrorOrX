@@ -7,60 +7,23 @@ namespace ErrorOr.Generators;
 internal sealed class ParameterSource : IEquatable<ParameterSource>
 {
     // Request-based sources
-    public static readonly ParameterSource Route = new("Route",
-        true, false, false);
+    public static readonly ParameterSource Route = new("Route");
+    public static readonly ParameterSource Body = new("Body");
+    public static readonly ParameterSource Query = new("Query");
+    public static readonly ParameterSource Header = new("Header");
+    public static readonly ParameterSource Form = new("Form");
+    public static readonly ParameterSource FormFile = new("FormFile");
+    public static readonly ParameterSource FormFiles = new("FormFiles");
+    public static readonly ParameterSource FormCollection = new("FormCollection");
+    public static readonly ParameterSource Stream = new("Stream");
+    public static readonly ParameterSource PipeReader = new("PipeReader");
+    public static readonly ParameterSource Service = new("Service");
+    public static readonly ParameterSource KeyedService = new("KeyedService");
+    public static readonly ParameterSource HttpContext = new("HttpContext");
+    public static readonly ParameterSource CancellationToken = new("CancellationToken");
+    public static readonly ParameterSource AsParameters = new("AsParameters");
 
-    public static readonly ParameterSource Body = new("Body",
-        true, true, false);
-
-    public static readonly ParameterSource Query = new("Query",
-        true, false, false);
-
-    public static readonly ParameterSource Header = new("Header",
-        true, false, false);
-
-    public static readonly ParameterSource Form = new("Form",
-        true, false, false);
-
-    public static readonly ParameterSource FormFile = new("FormFile",
-        true, false, false);
-
-    public static readonly ParameterSource FormFiles = new("FormFiles",
-        true, false, false);
-
-    public static readonly ParameterSource FormCollection = new("FormCollection",
-        true, false, false);
-
-    public static readonly ParameterSource Stream = new("Stream",
-        true, false, false);
-
-    public static readonly ParameterSource PipeReader = new("PipeReader",
-        true, false, false);
-
-    // DI-based sources
-    public static readonly ParameterSource Service = new("Service",
-        false, false, false);
-
-    public static readonly ParameterSource KeyedService = new("KeyedService",
-        false, false, false);
-
-    // Special types (auto-bound by ASP.NET Core)
-    public static readonly ParameterSource HttpContext = new("HttpContext",
-        false, false, true);
-
-    public static readonly ParameterSource CancellationToken = new("CancellationToken",
-        false, false, true);
-
-    // Composite binding
-    public static readonly ParameterSource AsParameters = new("AsParameters",
-        true, false, false, true);
-
-    private ParameterSource(
-        string id,
-        bool _, // isFromRequest - reserved for future use
-        bool __, // requiresJsonContext - reserved for future use
-        bool ___, // isSpecialType - reserved for future use
-        bool ____ = false) // isComposite - reserved for future use
+    private ParameterSource(string id)
     {
         Id = id;
     }
