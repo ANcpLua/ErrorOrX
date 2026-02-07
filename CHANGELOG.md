@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-02-07
+
+### Changed
+
+- **Test suite cleanup**: Removed redundant assertion-based tests (-7,823 lines), consolidated shared boilerplate into
+  dedicated snapshot tests. 446 tests remain with identical coverage.
+
+- **Updated dependencies**: ANcpLua.Roslyn.Utilities 1.28.0 → 1.30.2, cleaned up .editorconfig with generator-specific
+  suppression rationale.
+
+- **Generator code cleanup**: Removed unused `ParameterSource` properties, simplified constructor signatures, added
+  documentation comments for suppressed warnings in .csproj.
+
+### Fixed
+
+- **Integration tests missing from solution**: Added `ErrorOrX.Integration.Tests` to `ErrorOrX.slnx`.
+
+- **Documentation accuracy**: Fixed README analyzer count (38 → 41), corrected CLAUDE.md dependency versions.
+
 ## [3.3.0] - 2026-02-04
 
 ### Removed
@@ -46,9 +65,6 @@ All notable changes to this project are documented in this file.
   `CompilationProvider` with `.Combine()` pattern. Reduces symbol lookups from N×90 to 90 for N endpoints.
 
 ### Added
-
-- **EOE055 Diagnostic**: Warning when multiple method parameters bind to the same route parameter name. Helps catch
-  configuration errors early instead of silent "first wins" behavior.
 
 - **BugRegressionTests**: New test class with regression tests for BUG-001 through BUG-005 to prevent future regressions.
 

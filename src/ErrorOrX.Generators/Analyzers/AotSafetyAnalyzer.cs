@@ -243,15 +243,6 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         return "T";
     }
 
-    private static string? GetFirstStringArgument(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.ArgumentList.Arguments.Count is 0)
-            return null;
-
-        var firstArg = invocation.ArgumentList.Arguments[0].Expression;
-        return firstArg is LiteralExpressionSyntax { Token.Value: string value } ? value : firstArg.ToString();
-    }
-
     private static string? GetReceiverTypeName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)

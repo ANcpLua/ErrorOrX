@@ -32,6 +32,8 @@ public static class EOE001_InvalidReturnType
     public static ErrorOr<string> GetValidSync()
     {
         return "valid response";
+
+
     }
 
     // -------------------------------------------------------------------------

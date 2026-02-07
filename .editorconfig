@@ -66,3 +66,19 @@ resharper_redundant_nullable_warning_suppression_highlighting = none
 [**/src/**/*.cs]
 # CA1859 requires concrete types for performance; Rider's suggestion to widen conflicts
 resharper_parameter_type_can_be_enumerable_local_highlighting = none
+
+# ============================================================================
+# Generator-Specific Suppressions
+# ============================================================================
+
+# Polyfills.cs: Types MUST live in System.* namespaces for netstandard2.0
+# compatibility (e.g., System.Runtime.CompilerServices.IsExternalInit).
+# The namespace intentionally does not match the folder structure.
+[**/ErrorOrX.Generators/Polyfills.cs]
+dotnet_diagnostic.IDE0130.severity = none
+
+# Extractor.cs: AL0029 flags foreach-over-GetAttributes() loops, suggesting
+# HasAttribute() instead. These loops legitimately need to extract constructor
+# arguments and named arguments from AttributeData, not just check existence.
+[**/ErrorOrX.Generators/Core/ErrorOrEndpointGenerator.Extractor.cs]
+dotnet_diagnostic.AL0029.severity = none

@@ -85,7 +85,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in userContexts)
         {
             foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+                registeredTypes.Add(typeFqn);
         }
 
         // Combine all needed types

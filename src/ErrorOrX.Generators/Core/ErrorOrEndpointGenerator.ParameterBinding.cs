@@ -59,7 +59,6 @@ public sealed partial class ErrorOrEndpointGenerator
         ErrorOrContext context,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        _ = diagnostics; // Reserved for future diagnostics
         var type = parameter.Type;
         var typeFqn = type.GetFullyQualifiedName();
 
@@ -204,7 +203,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (meta.HasFromForm)
-            return ClassifyFromFormParameter(in meta, method, diagnostics, context);
+            return ClassifyFromFormParameter(in meta, context);
         if (meta.HasFromServices)
             return ParameterSuccess(in meta, ParameterSource.Service);
         if (meta.HasFromKeyedServices)
@@ -326,7 +325,6 @@ public sealed partial class ErrorOrEndpointGenerator
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        _ = routeParameters; // Reserved for future validation of route parameter existence
         var hasTryParse = meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat;
 
         // EOE010: [FromRoute] requires primitive or TryParse
@@ -436,13 +434,9 @@ public sealed partial class ErrorOrEndpointGenerator
         return ParameterClassificationResult.Error;
     }
 
-    // ReSharper disable once UnusedParameter.Local - matches common classifier delegate signature
     private static ParameterClassificationResult ClassifyFromFormParameter(
             in ParameterMeta meta,
-            IMethodSymbol _,
-            ImmutableArray<DiagnosticInfo>.Builder __,
             ErrorOrContext context)
-        // ReSharper restore UnusedParameter.Local
     {
         if (meta.IsFormFile)
             return ParameterSuccess(in meta, ParameterSource.FormFile, formName: meta.FormName);
@@ -862,7 +856,6 @@ public sealed partial class ErrorOrEndpointGenerator
             : (false, true);
     }
 
-    // ReSharper disable once SuggestBaseTypeForParameter - IParameterSymbol is semantically correct
     private static string? ExtractKeyFromKeyedServiceAttribute(IParameterSymbol parameter)
     {
         var matcher = new AttributeNameMatcher(WellKnownTypes.FromKeyedServicesAttribute);
@@ -875,7 +868,6 @@ public sealed partial class ErrorOrEndpointGenerator
         return val switch { string s => $"\"{s}\"", _ => val?.ToString() };
     }
 
-    // ReSharper disable once SuggestBaseTypeForParameter - IParameterSymbol is semantically correct
     private static bool HasParameterAttribute(IParameterSymbol parameter, INamedTypeSymbol? attributeSymbol,
         string attributeName)
     {

@@ -196,21 +196,21 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         foreach (var param in method.Parameters)
         {
             foreach (var attr in param.GetAttributes())
-        {
-            if (attr.AttributeClass is null)
-                continue;
-
-            // Check if the attribute inherits from ValidationAttribute
-            if (InheritsFrom(attr.AttributeClass, validationAttributeType))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    Descriptors.ValidationUsesReflection,
-                    param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                    param.Name,
-                    method.Name));
-                break; // Only report once per parameter
+                if (attr.AttributeClass is null)
+                    continue;
+
+                // Check if the attribute inherits from ValidationAttribute
+                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        Descriptors.ValidationUsesReflection,
+                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                        param.Name,
+                        method.Name));
+                    break; // Only report once per parameter
+                }
             }
-        }
         }
     }
 
@@ -419,11 +419,11 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                     break;
                 // Generic endpoint attribute - extract HTTP method from first constructor arg
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
-                {
-                    if (attr.ConstructorArguments is [{ Value: string m }, ..])
-                        httpMethod = m.ToUpperInvariant();
-                    break;
-                }
+                    {
+                        if (attr.ConstructorArguments is [{ Value: string m }, ..])
+                            httpMethod = m.ToUpperInvariant();
+                        break;
+                    }
             }
 
             if (httpMethod is null)

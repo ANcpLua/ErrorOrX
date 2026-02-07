@@ -45,11 +45,11 @@ public sealed partial class ErrorOrEndpointGenerator
             // Also check if the inner type contains type parameters (e.g., List<T>)
             case INamedTypeSymbol namedInner when
                 namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol):
-            {
-                var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
-                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                    null, null, true, firstTypeParam.Name);
-            }
+                {
+                    var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
+                    return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                        null, null, true, firstTypeParam.Name);
+                }
         }
 
         var kind = SuccessKind.Payload;
@@ -227,8 +227,6 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var results = new List<ProducesErrorInfo>();
 
-        // AL0029: Need to extract constructor arguments, not just check existence
-#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (context.ProducesErrorAttribute is not null &&
@@ -238,7 +236,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 results.Add(new ProducesErrorInfo(statusCode));
             }
         }
-#pragma warning restore AL0029
 
         return results.Count > 0
             ? new EquatableArray<ProducesErrorInfo>([.. results])
@@ -435,8 +432,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var foundAny = false;
 
-        // AL0029: Need to extract constructor arguments, not just check existence
-#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass?.IsEqualTo(context.ReturnsErrorAttribute) != true) continue;
@@ -445,33 +440,28 @@ public sealed partial class ErrorOrEndpointGenerator
             if (args.Length < 2)
                 continue;
 
-            // Check which constructor was used:
-            // 1. ReturnsErrorAttribute(ErrorType errorType, string errorCode)
-            // 2. ReturnsErrorAttribute(int statusCode, string errorCode)
+            // Distinguish constructors by the first argument's type:
+            // 1. ReturnsErrorAttribute(ErrorType errorType, string errorCode) — args[0].Type is enum
+            // 2. ReturnsErrorAttribute(int statusCode, string errorCode) — args[0].Type is int
+            if (args[0].Value is not int intValue || args[1].Value is not string errorCode)
+                continue;
 
-            switch (args[0].Value)
+            if (args[0].Type is INamedTypeSymbol { TypeKind: TypeKind.Enum })
             {
-                case int when args[1].Value is string customErrorCode:
-                {
-                    // Custom error with status code
-                    if (seenCustomCodes.Add(customErrorCode))
-                        customErrors.Add(new CustomErrorInfo(customErrorCode));
-
-                    foundAny = true;
-                    break;
-                }
-                case int enumValue when args[1].Value is string:
-                {
-                    // Standard ErrorType - map enum int value to string name
-                    var errorTypeName = MapEnumValueToName(enumValue);
-                    if (errorTypeName is not null)
-                        errorTypeNames.Add(errorTypeName);
-                    foundAny = true;
-                    break;
-                }
+                // Standard ErrorType — map enum int value to string name
+                var errorTypeName = MapEnumValueToName(intValue);
+                if (errorTypeName is not null)
+                    errorTypeNames.Add(errorTypeName);
+                foundAny = true;
+            }
+            else
+            {
+                // Custom error with explicit HTTP status code
+                if (seenCustomCodes.Add(errorCode))
+                    customErrors.Add(new CustomErrorInfo(errorCode));
+                foundAny = true;
             }
         }
-#pragma warning restore AL0029
 
         return foundAny;
     }
@@ -838,8 +828,6 @@ public sealed partial class ErrorOrEndpointGenerator
         ICollection<ApiVersionInfo> supportedVersions,
         ref bool isVersionNeutral)
     {
-        // AL0029: Need to extract constructor arguments and check multiple attribute types
-#pragma warning disable AL0029
         foreach (var attr in symbol.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -862,7 +850,6 @@ public sealed partial class ErrorOrEndpointGenerator
                     supportedVersions.Add(versionInfo.Value);
             }
         }
-#pragma warning restore AL0029
     }
 
     private static void ExtractMappedVersions(
@@ -870,8 +857,6 @@ public sealed partial class ErrorOrEndpointGenerator
         ErrorOrContext context,
         ICollection<ApiVersionInfo> mappedVersions)
     {
-        // AL0029: Need to extract constructor arguments from attribute data
-#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -886,7 +871,6 @@ public sealed partial class ErrorOrEndpointGenerator
                     mappedVersions.Add(versionInfo.Value);
             }
         }
-#pragma warning restore AL0029
     }
 
     /// <summary>
@@ -921,11 +905,11 @@ public sealed partial class ErrorOrEndpointGenerator
                 return new ApiVersionInfo(major, minor, null, isDeprecated);
             // ApiVersion(double version) - e.g., 1.0
             case [{ Value: double doubleVersion }]:
-            {
-                var majorPart = (int)doubleVersion;
-                var minorPart = (int)((doubleVersion - majorPart) * 10);
-                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
-            }
+                {
+                    var majorPart = (int)doubleVersion;
+                    var minorPart = (int)((doubleVersion - majorPart) * 10);
+                    return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
+                }
             default:
                 return null;
         }
@@ -972,8 +956,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var versions = ImmutableArray.CreateBuilder<string>();
 
-        // AL0029: Need to extract constructor arguments
-#pragma warning disable AL0029
         foreach (var attr in containingType.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -986,7 +968,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 versions.Add(versionString);
             }
         }
-#pragma warning restore AL0029
 
         return versions.ToImmutable();
     }
@@ -1002,8 +983,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var versions = ImmutableArray.CreateBuilder<string>();
 
-        // AL0029: Need to extract constructor arguments
-#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -1016,7 +995,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 versions.Add(versionString);
             }
         }
-#pragma warning restore AL0029
 
         return versions.ToImmutable();
     }
@@ -1035,8 +1013,6 @@ public sealed partial class ErrorOrEndpointGenerator
         if (context.RouteGroupAttribute is null)
             return default;
 
-        // AL0029: Need to extract constructor arguments and named arguments
-#pragma warning disable AL0029
         var attrs = containingType.GetAttributes();
         foreach (var attr in attrs)
         {
@@ -1068,7 +1044,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
             return new RouteGroupInfo(groupPath, apiName);
         }
-#pragma warning restore AL0029
 
         return default;
     }
@@ -1080,8 +1055,6 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var metadata = ImmutableArray.CreateBuilder<MetadataEntry>();
 
-        // AL0029: Need to extract constructor arguments and process multiple attribute types
-#pragma warning disable AL0029
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
@@ -1091,12 +1064,12 @@ public sealed partial class ErrorOrEndpointGenerator
             {
                 // [Obsolete] → deprecated metadata
                 case "ObsoleteAttribute":
-                {
-                    metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
-                    if (attr.ConstructorArguments is [{ Value: string msg }, ..])
-                        metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
-                    continue;
-                }
+                    {
+                        metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
+                        if (attr.ConstructorArguments is [{ Value: string msg }, ..])
+                            metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
+                        continue;
+                    }
                 // [EndpointMetadata(key, value)]
                 case "EndpointMetadataAttribute" when
                     attr.ConstructorArguments is [{ Value: string key }, { Value: string value }]:
@@ -1104,7 +1077,6 @@ public sealed partial class ErrorOrEndpointGenerator
                     break;
             }
         }
-#pragma warning restore AL0029
 
         return metadata.Count > 0
             ? new EquatableArray<MetadataEntry>(metadata.ToImmutable())

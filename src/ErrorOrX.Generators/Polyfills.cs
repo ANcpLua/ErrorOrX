@@ -1,8 +1,6 @@
 // Minimal polyfills for netstandard2.0 - replaces PolySharp to avoid type conflicts
 // when test projects reference this assembly with ReferenceOutputAssembly="true"
 
-#pragma warning disable IDE0130 // Namespace does not match folder structure
-
 namespace System.Diagnostics.CodeAnalysis
 {
     /// <summary>

@@ -112,7 +112,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in groupContexts)
         {
             foreach (var indexed in ctx.Group.Endpoints)
-            GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
+                GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
         }
 
         // Emit ungrouped endpoint mappings (legacy pattern)
@@ -797,7 +797,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in userContexts)
         {
             foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+                registeredTypes.Add(typeFqn);
         }
 
         // Find missing types
