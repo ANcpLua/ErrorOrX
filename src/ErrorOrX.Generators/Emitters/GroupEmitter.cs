@@ -93,12 +93,13 @@ internal static class GroupEmitter
         // Use relative pattern (group prefix already handled by MapGroup)
         var relativePattern = GetRelativePattern(in ep);
 
-        // Emit the map call against the group variable
-        // Store builder for CompositeEndpointConventionBuilder
+        // Cast to Delegate to force the Delegate overload of MapGet/MapPost/etc.
+        // Without this cast, the compiler selects the RequestDelegate overload,
+        // which bypasses RequestDelegateFactory and makes endpoints invisible to OpenAPI.
         var mapMethod = GetMapMethod(ep.HttpMethod);
         code.Append(mapMethod == "MapMethods"
-            ? $"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{globalIndex})"
-            : $"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", Invoke_Ep{globalIndex})");
+            ? $"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{globalIndex})"
+            : $"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", (Delegate)Invoke_Ep{globalIndex})");
 
         // Emit operation name
         code.AppendLine();

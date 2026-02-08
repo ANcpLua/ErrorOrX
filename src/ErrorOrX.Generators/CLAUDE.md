@@ -7,8 +7,8 @@ Roslyn source generator and analyzers for ErrorOrX. Target: `netstandard2.0`.
 Converts `ErrorOr<T>` methods with route attributes into ASP.NET Core Minimal API endpoints:
 
 ```csharp
-[Get("/todos/{id}")]
-public static ErrorOr<Todo> GetById(int id) => ...
+[Get("/todos/{id:guid}")]
+public static ErrorOr<Todo> GetById(Guid id) => ...
 ```
 
 Outputs:
@@ -37,17 +37,17 @@ return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors)
 ### AOT Wrapper Pattern
 
 ```csharp
-// Wrapper - returns Task (no Delegate cast needed)
-private static async Task Invoke_Ep1(HttpContext ctx)
+// Wrapper - returns typed Results<...> for OpenAPI visibility
+// MapGet passes (Delegate)Invoke_Ep1 to force Delegate overload
+private static async Task<Results<Ok<T>, ...>> Invoke_Ep1(HttpContext ctx)
 {
-    var __result = await Invoke_Ep1_Core(ctx);
-    await __result.ExecuteAsync(ctx);
+    return await Invoke_Ep1_Core(ctx);
 }
 
 // Core - returns typed Results<...> for OpenAPI
 private static Task<IResult> Invoke_Ep1_Core(HttpContext ctx)
 {
-    int id = (int)ctx.Request.RouteValues["id"]!;
+    Guid id = Guid.Parse((string)ctx.Request.RouteValues["id"]!);
     var result = TodoApi.GetById(id);
     if (result.IsError) return Task.FromResult(ToProblem(result.Errors));
     return Task.FromResult(TypedResults.Ok(result.Value));

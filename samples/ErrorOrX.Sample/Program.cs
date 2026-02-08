@@ -1,7 +1,7 @@
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services
-    .AddOpenApi()
+    .AddErrorOrOpenApi()
     .AddSingleton(TimeProvider.System)
     .AddScoped<ITodoService, TodoService>();
 
@@ -17,5 +17,6 @@ app.MapOpenApi();
 
 // convention builder return (like ASP.NET Core's MapRazorComponents)
 app.MapErrorOrEndpoints();
+
 
 app.Run();

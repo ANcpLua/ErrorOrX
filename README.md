@@ -143,16 +143,16 @@ using ErrorOr;
 
 public static class TodoApi
 {
-    [Get("/todos/{id}")]
-    public static ErrorOr<Todo> GetById(int id, ITodoService svc)
+    [Get("/todos/{id:guid}")]
+    public static ErrorOr<Todo> GetById(Guid id, ITodoService svc)
         => svc.GetById(id).OrNotFound($"Todo {id} not found");
 
     [Post("/todos")]
     public static ErrorOr<Todo> Create(CreateTodoRequest req, ITodoService svc)
         => svc.Create(req);  // 201 Created
 
-    [Delete("/todos/{id}")]
-    public static ErrorOr<Deleted> Delete(int id, ITodoService svc)
+    [Delete("/todos/{id:guid}")]
+    public static ErrorOr<Deleted> Delete(Guid id, ITodoService svc)
         => svc.Delete(id) ? Result.Deleted : Error.NotFound();
 }
 ```
@@ -244,11 +244,11 @@ public interface ITodoService
 {
     [ReturnsError(ErrorType.NotFound, "Todo.NotFound")]
     [ReturnsError(ErrorType.Validation, "Todo.Invalid")]
-    ErrorOr<Todo> GetById(int id);
+    ErrorOr<Todo> GetById(Guid id);
 }
 
-[Get("/todos/{id}")]
-public static ErrorOr<Todo> GetById(int id, ITodoService svc) =>
+[Get("/todos/{id:guid}")]
+public static ErrorOr<Todo> GetById(Guid id, ITodoService svc) =>
     svc.GetById(id);
 // Generates: Results<Ok<Todo>, NotFound<ProblemDetails>, ValidationProblem>
 ```
@@ -267,9 +267,9 @@ public static ErrorOr<Todo> Create(
     ITodoService svc)         // -> Service (interface)
     => svc.Create(req);
 
-[Get("/todos/{id}")]
+[Get("/todos/{id:guid}")]
 public static ErrorOr<Todo> GetById(
-    int id,                   // -> Route (matches {id})
+    Guid id,                  // -> Route (matches {id})
     ITodoService svc)         // -> Service
     => svc.GetById(id).OrNotFound();
 ```

@@ -92,25 +92,23 @@ internal static class EndpointMetadataEmitter
             ep.Middleware,
             ep.HasParameterValidation);
 
-        // Only emit explicit produces metadata when we can't use union types
-        // (Union types provide this metadata automatically)
-        if (!unionResult.CanUseUnion)
-        {
-            // Success response
-            EmitProducesMetadataLine(code, indent, successInfo.StatusCode,
-                successInfo.HasBody ? ep.SuccessTypeFqn : null,
-                WellKnownTypes.Constants.ContentTypeJson);
+        // Always emit explicit Produces metadata for OpenAPI visibility.
+        // The wrapper uses RequestDelegate signature (returns Task), so ASP.NET Core's
+        // RequestDelegateFactory never inspects the union return type for metadata.
+        // Success response
+        EmitProducesMetadataLine(code, indent, successInfo.StatusCode,
+            successInfo.HasBody ? ep.SuccessTypeFqn : null,
+            WellKnownTypes.Constants.ContentTypeJson);
 
-            // Error responses
-            foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
-                         .OrderBy(static x => x))
-            {
-                EmitProducesMetadataLine(code, indent, statusCode,
-                    statusCode == 400
-                        ? WellKnownTypes.Fqn.HttpValidationProblemDetails
-                        : WellKnownTypes.Fqn.ProblemDetails,
-                    WellKnownTypes.Constants.ContentTypeProblemJson);
-            }
+        // Error responses
+        foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
+                     .OrderBy(static x => x))
+        {
+            EmitProducesMetadataLine(code, indent, statusCode,
+                statusCode == 400
+                    ? WellKnownTypes.Fqn.HttpValidationProblemDetails
+                    : WellKnownTypes.Fqn.ProblemDetails,
+                WellKnownTypes.Constants.ContentTypeProblemJson);
         }
     }
 

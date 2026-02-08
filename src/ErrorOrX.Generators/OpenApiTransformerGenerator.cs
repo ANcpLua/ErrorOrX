@@ -106,6 +106,9 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         // We will store it exactly as extracted from attribute.
         // Note: HttpMethod needs to be UPPER CASE for matching.
 
+        // Extract parameter definitions for OpenAPI
+        var parameters = ExtractParameterDefinitions(method, pattern);
+
         return new OpenApiEndpointInfo(
             operationId,
             tagName,
@@ -113,7 +116,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             description,
             httpMethod.ToUpperInvariant(),
             pattern,
-            new EquatableArray<(string, string)>(parameterDocs));
+            new EquatableArray<(string, string)>(parameterDocs),
+            new EquatableArray<OpenApiParameterInfo>(parameters));
     }
 
     private static string GetPattern(AttributeData attr)
@@ -214,6 +218,215 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         }
 
         return [.. parameters];
+    }
+
+    private static ImmutableArray<OpenApiParameterInfo> ExtractParameterDefinitions(
+        IMethodSymbol method, string pattern)
+    {
+        var routeParams = RouteValidator.ExtractRouteParameters(pattern);
+        var routeParamNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rp in routeParams)
+            routeParamNames.Add(rp.Name);
+
+        var parameters = new List<OpenApiParameterInfo>();
+
+        foreach (var param in method.Parameters)
+        {
+            var typeFqn = param.Type.ToDisplayString();
+
+            // Skip special types (services, context, etc.)
+            if (IsSkippedParameterType(param, typeFqn))
+                continue;
+
+            // Check explicit binding attributes
+            var (explicitLocation, explicitName) = GetExplicitBinding(param);
+
+            string name;
+            string location;
+            bool required;
+
+            if (explicitLocation is not null)
+            {
+                // Explicit attribute wins
+                name = explicitName ?? param.Name;
+                location = explicitLocation;
+                required = location == "path" ||
+                           (param.Type.NullableAnnotation != NullableAnnotation.Annotated &&
+                            !param.HasExplicitDefaultValue);
+            }
+            else if (routeParamNames.Contains(param.Name))
+            {
+                // Route parameter
+                name = param.Name;
+                location = "path";
+                required = true;
+
+                // Check if optional in route template
+                foreach (var rp in routeParams)
+                {
+                    if (string.Equals(rp.Name, param.Name, StringComparison.OrdinalIgnoreCase) && rp.IsOptional)
+                    {
+                        required = false;
+                        break;
+                    }
+                }
+            }
+            else if (IsPrimitiveType(typeFqn))
+            {
+                // Primitive not in route = query
+                name = param.Name;
+                location = "query";
+                required = param.Type.NullableAnnotation != NullableAnnotation.Annotated &&
+                           !param.HasExplicitDefaultValue;
+            }
+            else
+            {
+                // Complex type without explicit binding - skip (it's body or service)
+                continue;
+            }
+
+            var (schemaType, schemaFormat) = GetOpenApiSchema(typeFqn);
+            parameters.Add(new OpenApiParameterInfo(name, location, required, schemaType, schemaFormat));
+        }
+
+        return [.. parameters];
+    }
+
+    private static bool IsSkippedParameterType(IParameterSymbol param, string typeFqn)
+    {
+        // Skip special framework types
+        if (typeFqn is WellKnownTypes.HttpContext or WellKnownTypes.CancellationToken
+            or WellKnownTypes.FormFile or WellKnownTypes.FormFileCollection
+            or WellKnownTypes.Stream or WellKnownTypes.PipeReader or WellKnownTypes.FormCollection)
+            return true;
+
+        // Skip interface types (services)
+        if (param.Type.TypeKind == TypeKind.Interface)
+            return true;
+
+        // Skip abstract types (services)
+        if (param.Type.IsAbstract && param.Type.TypeKind == TypeKind.Class)
+            return true;
+
+        // Skip [FromServices] / [FromKeyedServices] / [FromBody] / [FromForm]
+        foreach (var attr in param.GetAttributes())
+        {
+            var attrName = attr.AttributeClass?.ToDisplayString();
+            if (attrName is WellKnownTypes.FromServicesAttribute or WellKnownTypes.FromBodyAttribute
+                or WellKnownTypes.FromFormAttribute or WellKnownTypes.FromKeyedServicesAttribute)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static (string? Location, string? Name) GetExplicitBinding(IParameterSymbol param)
+    {
+        foreach (var attr in param.GetAttributes())
+        {
+            var attrName = attr.AttributeClass?.ToDisplayString();
+            switch (attrName)
+            {
+                case WellKnownTypes.FromRouteAttribute:
+                {
+                    var name = GetAttributeStringArg(attr, "Name");
+                    return ("path", name);
+                }
+                case WellKnownTypes.FromQueryAttribute:
+                {
+                    var name = GetAttributeStringArg(attr, "Name");
+                    return ("query", name);
+                }
+                case WellKnownTypes.FromHeaderAttribute:
+                {
+                    var name = GetAttributeStringArg(attr, "Name");
+                    return ("header", name);
+                }
+            }
+        }
+
+        return (null, null);
+    }
+
+    private static string? GetAttributeStringArg(AttributeData attr, string propName)
+    {
+        foreach (var kvp in attr.NamedArguments)
+        {
+            if (kvp.Key == propName && kvp.Value.Value is string s && !string.IsNullOrWhiteSpace(s))
+                return s;
+        }
+
+        return null;
+    }
+
+    private static bool IsPrimitiveType(string typeFqn)
+    {
+        // Strip nullable wrapper
+        var type = typeFqn.EndsWith("?") ? typeFqn.Substring(0, typeFqn.Length - 1) : typeFqn;
+
+        return type is "int" or "System.Int32"
+            or "long" or "System.Int64"
+            or "short" or "System.Int16"
+            or "uint" or "System.UInt32"
+            or "ulong" or "System.UInt64"
+            or "ushort" or "System.UInt16"
+            or "byte" or "System.Byte"
+            or "sbyte" or "System.SByte"
+            or "bool" or "System.Boolean"
+            or "decimal" or "System.Decimal"
+            or "double" or "System.Double"
+            or "float" or "System.Single"
+            or "string" or "System.String"
+            or "System.Guid"
+            or "System.DateTime"
+            or "System.DateTimeOffset"
+            or "System.DateOnly"
+            or "System.TimeOnly"
+            or "System.TimeSpan";
+    }
+
+    private static (string SchemaType, string? SchemaFormat) GetOpenApiSchema(string typeFqn)
+    {
+        // Strip nullable wrapper
+        var type = typeFqn.EndsWith("?") ? typeFqn.Substring(0, typeFqn.Length - 1) : typeFqn;
+
+        return type switch
+        {
+            "int" or "System.Int32" => ("integer", "int32"),
+            "long" or "System.Int64" => ("integer", "int64"),
+            "short" or "System.Int16" => ("integer", "int16"),
+            "uint" or "System.UInt32" => ("integer", "int32"),
+            "ulong" or "System.UInt64" => ("integer", "int64"),
+            "ushort" or "System.UInt16" => ("integer", "int16"),
+            "byte" or "System.Byte" => ("integer", "int32"),
+            "sbyte" or "System.SByte" => ("integer", "int32"),
+            "bool" or "System.Boolean" => ("boolean", null),
+            "decimal" or "System.Decimal" => ("number", "double"),
+            "double" or "System.Double" => ("number", "double"),
+            "float" or "System.Single" => ("number", "float"),
+            "System.Guid" => ("string", "uuid"),
+            "System.DateTime" => ("string", "date-time"),
+            "System.DateTimeOffset" => ("string", "date-time"),
+            "System.DateOnly" => ("string", "date"),
+            "System.TimeOnly" => ("string", "time"),
+            "System.TimeSpan" => ("string", "duration"),
+            _ => ("string", null)
+        };
+    }
+
+    /// <summary>
+    ///     Maps internal schema type string to OpenApi v2.0 JsonSchemaType enum name for emission.
+    /// </summary>
+    private static string ToJsonSchemaTypeEnum(string schemaType)
+    {
+        return schemaType switch
+        {
+            "integer" => "JsonSchemaType.Integer",
+            "number" => "JsonSchemaType.Number",
+            "boolean" => "JsonSchemaType.Boolean",
+            "string" => "JsonSchemaType.String",
+            _ => "JsonSchemaType.String"
+        };
     }
 
     private static string GetReflectionFullName(INamedTypeSymbol symbol)
@@ -336,7 +549,13 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             .OrderBy(static e => e.Pattern, StringComparer.Ordinal)
             .ThenBy(static e => e.HttpMethod, StringComparer.Ordinal).ToList();
 
-        if (opsWithDocs.Count is 0)
+        // Collect operations with OpenAPI parameter definitions
+        var opsWithParams = endpoints
+            .Where(static e => !e.Parameters.IsDefaultOrEmpty)
+            .OrderBy(static e => e.OperationId, StringComparer.Ordinal)
+            .ToList();
+
+        if (opsWithDocs.Count is 0 && opsWithParams.Count is 0)
             return false;
 
         // Collect operations with parameter docs
@@ -345,8 +564,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             .ToList();
 
         code.AppendLine("/// <summary>");
-        code.AppendLine("/// Operation transformer that applies XML documentation to operations.");
-        code.AppendLine("/// Each entry is a strict 1:1 mapping from XML doc to operation metadata.");
+        code.AppendLine("/// Operation transformer that applies XML documentation and parameter definitions to operations.");
+        code.AppendLine("/// Each entry is a strict 1:1 mapping from handler signature to operation metadata.");
         code.AppendLine("/// </summary>");
         code.AppendLine("file sealed class XmlDocOperationTransformer : IOpenApiOperationTransformer");
         code.AppendLine("{");
@@ -389,6 +608,44 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
         code.AppendLine();
+
+        // Emit parameter definitions dictionary
+        if (opsWithParams.Count > 0)
+        {
+            code.AppendLine("    // Pre-computed parameter definitions from handler signatures");
+            code.AppendLine(
+                "    private static readonly FrozenDictionary<string, (string Name, ParameterLocation Location, bool Required, JsonSchemaType SchemaType, string? SchemaFormat)[]> ParameterDefs =");
+            code.AppendLine(
+                "        new Dictionary<string, (string, ParameterLocation, bool, JsonSchemaType, string?)[]>");
+            code.AppendLine("        {");
+
+            foreach (var op in opsWithParams)
+            {
+                code.Append($"            [\"{op.OperationId}\"] = [(");
+                var first = true;
+                foreach (var p in op.Parameters.AsImmutableArray())
+                {
+                    if (!first) code.Append("), (");
+                    var format = p.SchemaFormat is not null ? $"\"{p.SchemaFormat}\"" : "null";
+                    var locationEnum = p.Location switch
+                    {
+                        "path" => "ParameterLocation.Path",
+                        "header" => "ParameterLocation.Header",
+                        _ => "ParameterLocation.Query"
+                    };
+                    var schemaTypeEnum = ToJsonSchemaTypeEnum(p.SchemaType);
+                    code.Append(
+                        $"\"{p.Name}\", {locationEnum}, {(p.Required ? "true" : "false")}, {schemaTypeEnum}, {format}");
+                    first = false;
+                }
+
+                code.AppendLine(")],");
+            }
+
+            code.AppendLine("        }.ToFrozenDictionary(StringComparer.Ordinal);");
+            code.AppendLine();
+        }
+
         code.AppendLine("    public Task TransformAsync(");
         code.AppendLine("        OpenApiOperation operation,");
         code.AppendLine("        OpenApiOperationTransformerContext context,");
@@ -420,6 +677,31 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         code.AppendLine("                operation.Description ??= docs.Description;");
         code.AppendLine("        }");
         code.AppendLine();
+
+        // Emit parameter definitions application code
+        if (opsWithParams.Count > 0)
+        {
+            code.AppendLine("        // Add parameter definitions from handler signatures");
+            code.AppendLine("        if (ParameterDefs.TryGetValue(operationId, out var paramDefs))");
+            code.AppendLine("        {");
+            code.AppendLine("            operation.Parameters ??= [];");
+            code.AppendLine(
+                "            foreach (var (pName, pLocation, pRequired, pSchemaType, pSchemaFormat) in paramDefs)");
+            code.AppendLine("            {");
+            code.AppendLine("                var schema = new OpenApiSchema { Type = pSchemaType };");
+            code.AppendLine("                if (pSchemaFormat is not null) schema.Format = pSchemaFormat;");
+            code.AppendLine("                operation.Parameters.Add(new OpenApiParameter");
+            code.AppendLine("                {");
+            code.AppendLine("                    Name = pName,");
+            code.AppendLine("                    In = pLocation,");
+            code.AppendLine("                    Required = pRequired,");
+            code.AppendLine("                    Schema = schema");
+            code.AppendLine("                });");
+            code.AppendLine("            }");
+            code.AppendLine("        }");
+            code.AppendLine();
+        }
+
         code.AppendLine("        // Apply parameter descriptions");
         code.AppendLine(
             "        if (ParameterDocs.TryGetValue(operationId, out var paramDocs) && operation.Parameters is not null)");

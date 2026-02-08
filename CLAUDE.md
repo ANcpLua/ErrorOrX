@@ -31,18 +31,18 @@ Convert `ErrorOr<T>` handlers into fully-wired ASP.NET endpoints:
 
 ```
 User writes:                         Generator produces:
-[Get("/todos/{id}")]                 app.MapGet("/todos/{id}", Invoke_Ep1)
-ErrorOr<Todo> GetById(int id)   ->       .WithName("TodoApi_GetById")
+[Get("/todos/{id:guid}")]             app.MapGet("/todos/{id:guid}", (Delegate)Invoke_Ep1)
+ErrorOr<Todo> GetById(Guid id)  ->       .WithName("TodoApi_GetById")
+                                         .WithMetadata(new ProducesResponseTypeMetadata(...))
                                          .RequireAuthorization("Admin")
                                          ;
 
-                                     static async Task Invoke_Ep1(HttpContext ctx)
+                                     static async Task<Results<Ok<Todo>, ...>> Invoke_Ep1(HttpContext ctx)
                                      {
-                                         var __result = await Invoke_Ep1_Core(ctx);
-                                         await __result.ExecuteAsync(ctx);
+                                         return await Invoke_Ep1_Core(ctx);
                                      }
 
-                                     static Task<IResult> Invoke_Ep1_Core(...)
+                                     static Task<Results<Ok<Todo>, ...>> Invoke_Ep1_Core(...)
                                      {
                                          var result = TodoApi.GetById(id);
                                          if (result.IsError) return ToProblem(result.Errors);
@@ -71,24 +71,24 @@ return result.Match(
 
 ### AOT Wrapper Pattern
 
-Two-method pattern ensures Native AOT compatibility:
+Two-method pattern ensures Native AOT compatibility and OpenAPI visibility:
 
 ```csharp
-// Wrapper - matches RequestDelegate (HttpContext -> Task)
-private static async Task Invoke_Ep1(HttpContext ctx)
+// Wrapper - returns typed Results<...> for OpenAPI metadata
+// MapGet uses (Delegate)Invoke_Ep1 to force the Delegate overload
+private static async Task<Results<Ok<Todo>, NotFound<PD>>> Invoke_Ep1(HttpContext ctx)
 {
-    var __result = await Invoke_Ep1_Core(ctx);
-    await __result.ExecuteAsync(ctx);
+    return await Invoke_Ep1_Core(ctx);
 }
 
-// Core - returns typed Results<...> for OpenAPI
+// Core - returns typed Results<...> with handler logic
 private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
 {
     // ... handler logic using minimal interface
 }
 ```
 
-**Why**: `(Delegate)` cast forces reflection; `Task<Results<...>>` cannot have `[JsonSerializable]`.
+**Why**: Without `(Delegate)` cast, `Func<HttpContext, Task<T>>` matches `RequestDelegate` — endpoints become invisible to OpenAPI. The cast forces `RequestDelegateFactory` to process the delegate, enabling typed return inspection.
 
 ### Middleware Emission
 

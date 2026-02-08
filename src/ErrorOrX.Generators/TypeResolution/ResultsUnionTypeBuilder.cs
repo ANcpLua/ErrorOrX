@@ -167,10 +167,12 @@ internal static class ResultsUnionTypeBuilder
             .Select(static e => e.TypeFqn);
 
         // Build Results<T1, ..., Tn> type
+        // Include error status codes for explicit Produces metadata (needed because the wrapper
+        // uses RequestDelegate signature, so union types don't provide metadata automatically)
         return new UnionTypeResult(
             true,
             $"{WellKnownTypes.Fqn.HttpResults.Results}<{string.Join(", ", sortedTypes)}>",
-            default,
+            new EquatableArray<int>([.. unionEntries.Where(static e => e.Status >= 400).Select(static e => e.Status).OrderBy(static x => x)]),
             hasValidationError);
     }
 

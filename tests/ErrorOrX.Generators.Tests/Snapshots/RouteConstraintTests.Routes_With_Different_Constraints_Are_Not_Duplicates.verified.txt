@@ -57,16 +57,22 @@ namespace ErrorOr.Generated
             var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();
 
             // GET /users/{id:alpha} -> global::MyNamespace.MyEndpoints.GetUserByName
-            var __ep0 = app.MapGet(@"/users/{id:alpha}", Invoke_Ep0)
+            var __ep0 = app.MapGet(@"/users/{id:alpha}", (Delegate)Invoke_Ep0)
                 .WithName("MyNamespace_MyEndpoints_GetUserByName")
                 .WithTags("My")
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(200, typeof(string), new[] { "application/json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(400, typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails), new[] { "application/problem+json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(500, typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails), new[] { "application/problem+json" }))
                 ;
             __endpointBuilders.Add(__ep0);
 
             // GET /users/{id:int} -> global::MyNamespace.MyEndpoints.GetUserById
-            var __ep1 = app.MapGet(@"/users/{id:int}", Invoke_Ep1)
+            var __ep1 = app.MapGet(@"/users/{id:int}", (Delegate)Invoke_Ep1)
                 .WithName("MyNamespace_MyEndpoints_GetUserById")
                 .WithTags("My")
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(200, typeof(string), new[] { "application/json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(400, typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails), new[] { "application/problem+json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(500, typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails), new[] { "application/problem+json" }))
                 ;
             __endpointBuilders.Add(__ep1);
 
@@ -98,10 +104,9 @@ namespace ErrorOr.Generated
             return new ErrorOrEndpointsBuilder(services);
         }
 
-        private static async Task Invoke_Ep0(HttpContext ctx)
+        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0(HttpContext ctx)
         {
-            var __result = await Invoke_Ep0_Core(ctx);
-            await __result.ExecuteAsync(ctx);
+            return await Invoke_Ep0_Core(ctx);
         }
 
         private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
@@ -141,10 +146,9 @@ namespace ErrorOr.Generated
             return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Ok(result.Value));
         }
 
-        private static async Task Invoke_Ep1(HttpContext ctx)
+        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep1(HttpContext ctx)
         {
-            var __result = await Invoke_Ep1_Core(ctx);
-            await __result.ExecuteAsync(ctx);
+            return await Invoke_Ep1_Core(ctx);
         }
 
         private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)

@@ -145,11 +145,13 @@ public sealed partial class ErrorOrEndpointGenerator
             $"            // {ep.HttpMethod} {ep.Pattern} -> {ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}");
         var mapMethod = Emit.MapMethod(ep.HttpMethod);
 
-        // Use typed Map* methods without Delegate cast for AOT compatibility
-        // Store builder for CompositeEndpointConventionBuilder
+        // Cast to Delegate to force the Delegate overload of MapGet/MapPost/etc.
+        // Without this cast, the compiler selects the RequestDelegate overload
+        // (since Func<HttpContext, Task<T>> is also Func<HttpContext, Task>),
+        // which bypasses RequestDelegateFactory and makes endpoints invisible to OpenAPI.
         code.AppendLine(mapMethod == "MapMethods"
-            ? $"            var __ep{index} = app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, Invoke_Ep{index})"
-            : $"            var __ep{index} = app.{mapMethod}(@\"{ep.Pattern}\", Invoke_Ep{index})");
+            ? $"            var __ep{index} = app.MapMethods(@\"{ep.Pattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{index})"
+            : $"            var __ep{index} = app.{mapMethod}(@\"{ep.Pattern}\", (Delegate)Invoke_Ep{index})");
 
         var (_, operationId) =
             EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
@@ -326,10 +328,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitWrapperMethod(StringBuilder code, in InvokerContext ctx)
     {
-        code.AppendLine($"        private static async Task {ctx.WrapperName}(HttpContext ctx)");
+        var returnType = ctx.UnionResult.ReturnTypeFqn;
+        code.AppendLine($"        private static async Task<{returnType}> {ctx.WrapperName}(HttpContext ctx)");
         code.AppendLine("        {");
-        code.AppendLine($"            var __result = await {ctx.CoreName}(ctx);");
-        code.AppendLine("            await __result.ExecuteAsync(ctx);");
+        code.AppendLine($"            return await {ctx.CoreName}(ctx);");
         code.AppendLine("        }");
         code.AppendLine();
     }

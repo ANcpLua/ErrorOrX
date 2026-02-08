@@ -440,6 +440,16 @@ internal readonly record struct JsonContextInfo(
     bool HasCamelCasePolicy);
 
 /// <summary>
+///     Represents a parameter for OpenAPI documentation.
+/// </summary>
+internal readonly record struct OpenApiParameterInfo(
+    string Name,
+    string Location,
+    bool Required,
+    string SchemaType,
+    string? SchemaFormat);
+
+/// <summary>
 ///     Immutable endpoint info for OpenAPI generation.
 /// </summary>
 internal readonly record struct OpenApiEndpointInfo(
@@ -449,7 +459,8 @@ internal readonly record struct OpenApiEndpointInfo(
     string? Description,
     string HttpMethod,
     string Pattern,
-    EquatableArray<(string ParamName, string Description)> ParameterDocs);
+    EquatableArray<(string ParamName, string Description)> ParameterDocs,
+    EquatableArray<OpenApiParameterInfo> Parameters);
 
 /// <summary>
 ///     Immutable type metadata for schema generation.
