@@ -100,13 +100,6 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         var containingTypeFqn = containingType.GetFullyQualifiedName();
         var (tagName, operationId) = EndpointNameHelper.GetEndpointIdentity(containingTypeFqn, method.Name);
 
-        // Normalized pattern for matching (remove leading slash if present, handle duplicates logic)
-        // But for OpenAPI context.Description.RelativePath usually has NO leading slash for route groups?
-        // Actually context.Description.RelativePath usually matches the full route pattern.
-        // We will store it exactly as extracted from attribute.
-        // Note: HttpMethod needs to be UPPER CASE for matching.
-
-        // Extract parameter definitions for OpenAPI
         var parameters = ExtractParameterDefinitions(method, pattern);
 
         return new OpenApiEndpointInfo(
