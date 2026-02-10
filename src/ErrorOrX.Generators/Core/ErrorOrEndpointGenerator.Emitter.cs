@@ -79,6 +79,13 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine(
             "        public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)");
         code.AppendLine("        {");
+        code.AppendLine(
+            "            // The (Delegate) cast forces the Delegate overload of MapGet/MapPost/etc.,");
+        code.AppendLine(
+            "            // which uses reflection internally. This is safe because the generator controls");
+        code.AppendLine(
+            "            // all delegate signatures and parameter binding at compile time.");
+        code.AppendLine("#pragma warning disable IL2026, IL3050");
         code.AppendLine("            // Validate that AddErrorOrEndpoints() was called");
         code.AppendLine("            var marker = app.ServiceProvider.GetService<ErrorOrEndpointsMarkerService>();");
         code.AppendLine("            if (marker is null)");
@@ -119,6 +126,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var indexed in grouping.UngroupedEndpoints)
             EmitMapCall(code, indexed.Endpoint, indexed.OriginalIndex, maxArity, ungroupedVersionSet.HasVersioning);
 
+        code.AppendLine("#pragma warning restore IL2026, IL3050");
         code.AppendLine();
         code.AppendLine("            return new CompositeEndpointConventionBuilder(__endpointBuilders);");
         code.AppendLine("        }");

@@ -44,6 +44,10 @@ namespace ErrorOr.Generated
         /// </example>
         public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)
         {
+            // The (Delegate) cast forces the Delegate overload of MapGet/MapPost/etc.,
+            // which uses reflection internally. This is safe because the generator controls
+            // all delegate signatures and parameter binding at compile time.
+#pragma warning disable IL2026, IL3050
             // Validate that AddErrorOrEndpoints() was called
             var marker = app.ServiceProvider.GetService<ErrorOrEndpointsMarkerService>();
             if (marker is null)
@@ -67,6 +71,7 @@ namespace ErrorOr.Generated
                 .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(500, typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails), new[] { "application/problem+json" }))
                 ;
             __endpointBuilders.Add(__ep0);
+#pragma warning restore IL2026, IL3050
 
             return new CompositeEndpointConventionBuilder(__endpointBuilders);
         }
