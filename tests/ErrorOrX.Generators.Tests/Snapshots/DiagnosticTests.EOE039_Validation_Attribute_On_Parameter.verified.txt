@@ -42,12 +42,12 @@ namespace ErrorOr.Generated
         ///    .RequireRateLimiting("api");
         /// </code>
         /// </example>
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026",
+            Justification = "Delegates are generated at compile time with known signatures.")]
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050",
+            Justification = "Delegates are generated at compile time with known signatures.")]
         public static IEndpointConventionBuilder MapErrorOrEndpoints(this IEndpointRouteBuilder app)
         {
-            // The (Delegate) cast forces the Delegate overload of MapGet/MapPost/etc.,
-            // which uses reflection internally. This is safe because the generator controls
-            // all delegate signatures and parameter binding at compile time.
-#pragma warning disable IL2026, IL3050
             // Validate that AddErrorOrEndpoints() was called
             var marker = app.ServiceProvider.GetService<ErrorOrEndpointsMarkerService>();
             if (marker is null)
@@ -72,7 +72,6 @@ namespace ErrorOr.Generated
                 ;
             __endpointBuilders.Add(__ep0);
 
-#pragma warning restore IL2026, IL3050
 
             return new CompositeEndpointConventionBuilder(__endpointBuilders);
         }
