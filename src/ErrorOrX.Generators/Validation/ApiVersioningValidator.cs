@@ -51,7 +51,9 @@ internal static class ApiVersioningValidator
 
         // EOE029: Package not referenced but versioning attributes used
         if (!hasApiVersioningSupport && method is not null)
+        {
             ValidatePackageReferenced(methodName, method, location, diagnostics);
+        }
 
         // EOE027: Version-neutral with mappings
         ValidateVersionNeutralWithMappings(methodName, versioning, location, diagnostics);
@@ -96,7 +98,9 @@ internal static class ApiVersioningValidator
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (versioning.MappedVersions.IsDefaultOrEmpty || versioning.SupportedVersions.IsDefaultOrEmpty)
+        {
             return;
+        }
 
         // Build set of declared versions for fast lookup
         var declaredVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -174,7 +178,9 @@ internal static class ApiVersioningValidator
     {
         // Null check with explicit pattern to satisfy nullability analysis
         if (version is not { Length: > 0 } v || string.IsNullOrWhiteSpace(v))
+        {
             return false;
+        }
 
         // Check for "v" prefix which is invalid
         if (v.Length > 1 &&
@@ -228,14 +234,18 @@ internal static class ApiVersioningValidator
         foreach (var attr in symbol.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass)
+            {
                 continue;
+            }
 
             // Check by name since we can't resolve the type
             var attrName = attrClass.Name;
             foreach (var versioningAttrName in VersioningAttributeNames)
             {
                 if (string.Equals(attrName, versioningAttrName, StringComparison.Ordinal))
+                {
                     return true;
+                }
             }
         }
 
@@ -252,7 +262,9 @@ internal static class ApiVersioningValidator
             : version.MajorVersion.ToString();
 
         if (!string.IsNullOrEmpty(version.Status))
+        {
             result += $"-{version.Status}";
+        }
 
         return result;
     }
@@ -267,12 +279,16 @@ internal static class ApiVersioningValidator
         ImmutableArray<EndpointDescriptor> endpoints)
     {
         if (endpoints.IsDefaultOrEmpty || endpoints.Length < 2)
+        {
             return ImmutableArray<Diagnostic>.Empty;
+        }
 
         // Check if ANY endpoint has versioning
         var hasVersionedEndpoints = endpoints.Any(static ep => ep.Versioning.HasVersioning);
         if (!hasVersionedEndpoints)
+        {
             return ImmutableArray<Diagnostic>.Empty;
+        }
 
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
@@ -280,7 +296,9 @@ internal static class ApiVersioningValidator
         {
             // Skip endpoints that already have versioning
             if (ep.Versioning.HasVersioning)
+            {
                 continue;
+            }
 
             diagnostics.Add(Diagnostic.Create(
                 Descriptors.EndpointMissingVersioning,

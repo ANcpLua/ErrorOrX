@@ -1,7 +1,3 @@
-using System.Net.Http;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace ErrorOrX.Integration.Tests;
 
 public abstract class IntegrationTestBase : IClassFixture<IntegrationTestAppFactory>, IAsyncLifetime
@@ -23,7 +19,7 @@ public abstract class IntegrationTestBase : IClassFixture<IntegrationTestAppFact
 
     public virtual ValueTask DisposeAsync()
     {
-        Client?.Dispose();
+        Client.Dispose();
         return ValueTask.CompletedTask;
     }
 }

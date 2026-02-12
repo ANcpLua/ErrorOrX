@@ -23,12 +23,16 @@ internal static class ResultsUnionTypeBuilder
         var maxArity = DefaultMaxArity;
 
         if (referenceArities.IsDefaultOrEmpty)
+        {
             return maxArity;
+        }
 
         foreach (var arity in referenceArities)
         {
             if (arity > maxArity)
+            {
                 maxArity = arity;
+            }
         }
 
         return maxArity;
@@ -37,19 +41,25 @@ internal static class ResultsUnionTypeBuilder
     internal static int GetResultsUnionArity(MetadataReference reference)
     {
         if (reference is not PortableExecutableReference peReference)
+        {
             return 0;
+        }
 
         try
         {
             if (peReference.GetMetadata() is not AssemblyMetadata assemblyMetadata)
+            {
                 return 0;
+            }
 
             var maxArity = 0;
             foreach (var module in assemblyMetadata.GetModules())
             {
                 var reader = module.GetMetadataReader();
                 if (!IsHttpResultsAssembly(reader))
+                {
                     continue;
+                }
 
                 TryUpdateMaxArity(reader, ref maxArity);
             }
@@ -159,7 +169,9 @@ internal static class ResultsUnionTypeBuilder
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
+        {
             return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware, hasValidationError);
+        }
 
         // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
@@ -260,11 +272,15 @@ internal static class ResultsUnionTypeBuilder
         {
             var typeDef = reader.GetTypeDefinition(handle);
             if (!IsResultsUnionType(reader, typeDef))
+            {
                 continue;
+            }
 
             var arity = typeDef.GetGenericParameters().Count;
             if (arity > maxArity)
+            {
                 maxArity = arity;
+            }
         }
     }
 
@@ -274,7 +290,9 @@ internal static class ResultsUnionTypeBuilder
         {
             var ns = reader.GetString(typeDef.Namespace);
             if (!string.Equals(ns, "Microsoft.AspNetCore.Http.HttpResults", StringComparison.Ordinal))
+            {
                 return false;
+            }
         }
         else
         {
@@ -291,7 +309,9 @@ internal static class ResultsUnionTypeBuilder
         ISet<int> includedStatuses)
     {
         if (errorTypeNamesArray.IsDefaultOrEmpty)
+        {
             return false;
+        }
 
         var hasUnknown = false;
         foreach (var errorTypeName in errorTypeNamesArray
@@ -299,7 +319,10 @@ internal static class ResultsUnionTypeBuilder
                      .OrderBy(static x => x, StringComparer.Ordinal))
         {
             if (!ErrorMapping.IsKnownErrorType(errorTypeName))
+            {
                 hasUnknown = true;
+            }
+
             AddInferredError(errorTypeName, unionEntries, includedStatuses);
         }
 
@@ -316,7 +339,9 @@ internal static class ResultsUnionTypeBuilder
         // Validation is now handled in AddSuccessAndBindingOutcomes (uses ValidationProblem for 400)
         // Skip adding here to avoid duplicate 400 entries
         if (errorTypeName == ErrorMapping.Validation)
+        {
             return;
+        }
 
         if (!includedStatuses.Contains(entry.StatusCode))
         {
@@ -330,12 +355,16 @@ internal static class ResultsUnionTypeBuilder
         ICollection<int> includedStatuses)
     {
         if (declaredProducesErrors.IsDefaultOrEmpty)
+        {
             return false;
+        }
 
         foreach (var producesError in declaredProducesErrors)
         {
             if (!includedStatuses.Contains(producesError.StatusCode))
+            {
                 return true; // Found a status code not in our static union mapping
+            }
         }
 
         return false;
@@ -377,7 +406,9 @@ internal static class ResultsUnionTypeBuilder
         }
 
         if (middleware is { EnableRateLimiting: true, DisableRateLimiting: false })
+        {
             allStatuses.Add(429);
+        }
     }
 
     /// <summary>
@@ -388,7 +419,9 @@ internal static class ResultsUnionTypeBuilder
         ISet<int> allStatuses)
     {
         if (inferredErrorTypeNames.IsDefaultOrEmpty)
+        {
             return;
+        }
 
         var array = inferredErrorTypeNames.AsImmutableArray();
         foreach (var errorTypeName in array.Distinct())
@@ -403,7 +436,9 @@ internal static class ResultsUnionTypeBuilder
         ISet<int> allStatuses)
     {
         if (declaredProducesErrors.IsDefaultOrEmpty)
+        {
             return;
+        }
 
         foreach (var pe in declaredProducesErrors)
             allStatuses.Add(pe.StatusCode);

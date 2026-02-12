@@ -21,10 +21,10 @@ internal static class WellKnownTypes
     public const string ReturnsErrorAttribute = "ErrorOr.ReturnsErrorAttribute";
 
     public const string ErrorOrT = "ErrorOr.ErrorOr`1";
-    public const string Error = "ErrorOr.Error";
+    public const string ErrorStruct = "ErrorOr.Error";
 
     public const string Success = "ErrorOr.Success";
-    public const string Created = "ErrorOr.Created";
+    public const string CreatedMarker = "ErrorOr.Created";
     public const string Updated = "ErrorOr.Updated";
     public const string Deleted = "ErrorOr.Deleted";
 
@@ -97,7 +97,6 @@ internal static class WellKnownTypes
     public const string ApiVersionAttribute = "Asp.Versioning.ApiVersionAttribute";
     public const string ApiVersionNeutralAttribute = "Asp.Versioning.ApiVersionNeutralAttribute";
     public const string MapToApiVersionAttribute = "Asp.Versioning.MapToApiVersionAttribute";
-    public const string ApiVersion = "Asp.Versioning.ApiVersion";
 
     public const string RouteGroupAttribute = "ErrorOr.RouteGroupAttribute";
     public const string EndpointMetadataAttribute = "ErrorOr.EndpointMetadataAttribute";
@@ -127,7 +126,6 @@ internal static class WellKnownTypes
 
     /// <summary>
     ///     Fully-qualified names for generated code output (with global:: prefix).
-    ///     These intentionally shadow outer-class constants which use metadata names.
     ///     Outer: for Roslyn symbol lookup | Fqn: for emitted source code.
     /// </summary>
     public static class Fqn
@@ -135,8 +133,6 @@ internal static class WellKnownTypes
         // Frequently used Fqn constants emitted in generated code
         public const string ErrorType = "global::ErrorOr.ErrorType";
         public const string Error = "global::ErrorOr.Error";
-        public const string ProducesErrorAttribute = "global::ErrorOr.ProducesErrorAttribute";
-        public const string AcceptedResponseAttribute = "global::ErrorOr.AcceptedResponseAttribute";
 
         public const string ProblemDetails = "global::Microsoft.AspNetCore.Mvc.ProblemDetails";
 

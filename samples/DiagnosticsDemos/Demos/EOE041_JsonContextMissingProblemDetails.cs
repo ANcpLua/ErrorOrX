@@ -35,10 +35,14 @@ public static class EOE041_JsonContextMissingProblemDetails
     public static ErrorOr<Eoe041Response> GetItem(int id)
     {
         if (id <= 0)
+        {
             return Error.Validation("Id.Invalid", "Id must be positive");
+        }
 
         if (id == 404)
+        {
             return Error.NotFound("Item.NotFound", $"Item {id} not found");
+        }
 
         return new Eoe041Response(id, $"Item {id}");
     }

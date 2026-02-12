@@ -63,10 +63,14 @@ public static class EOE037_ExpressionCompile
         var items = GetSampleItems();
 
         if (!string.IsNullOrEmpty(name))
+        {
             items = items.Where(x => x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
 
         if (minValue.HasValue)
+        {
             items = items.Where(x => x.Value >= minValue.Value).ToList();
+        }
 
         return items;
     }
@@ -111,13 +115,19 @@ public class SearchSpec
     public IEnumerable<DataItem> Apply(IEnumerable<DataItem> items)
     {
         if (!string.IsNullOrEmpty(Name))
+        {
             items = items.Where(x => x.Name.Contains(Name, StringComparison.OrdinalIgnoreCase));
+        }
 
         if (MinValue.HasValue)
+        {
             items = items.Where(x => x.Value >= MinValue.Value);
+        }
 
         if (MaxValue.HasValue)
+        {
             items = items.Where(x => x.Value <= MaxValue.Value);
+        }
 
         return items;
     }

@@ -19,10 +19,14 @@ internal static class NamingValidator
     public static DiagnosticInfo? ValidatePascalCase(string methodName, Location location)
     {
         if (string.IsNullOrEmpty(methodName))
+        {
             return null;
+        }
 
         if (IsPascalCase(methodName))
+        {
             return null;
+        }
 
         var suggested = ToPascalCase(methodName);
         return DiagnosticInfo.Create(
@@ -47,15 +51,21 @@ internal static class NamingValidator
     internal static bool IsPascalCase(string name)
     {
         if (string.IsNullOrEmpty(name))
+        {
             return false;
+        }
 
         // First character must be uppercase
         if (!char.IsUpper(name[0]))
+        {
             return false;
+        }
 
         // No underscores allowed in PascalCase
         if (name.Contains("_"))
+        {
             return false;
+        }
 
         return true;
     }
@@ -73,7 +83,9 @@ internal static class NamingValidator
     internal static string ToPascalCase(string name)
     {
         if (string.IsNullOrEmpty(name))
+        {
             return name;
+        }
 
         // Split by underscores and capitalize each part
         var parts = name.Split('_');
@@ -82,12 +94,16 @@ internal static class NamingValidator
         foreach (var part in parts)
         {
             if (string.IsNullOrEmpty(part))
+            {
                 continue;
+            }
 
             // Capitalize first letter, keep rest as-is
             sb.Append(char.ToUpperInvariant(part[0]));
             if (part.Length > 1)
+            {
                 sb.Append(part.Substring(1));
+            }
         }
 
         return sb.Length > 0 ? sb.ToString() : name;

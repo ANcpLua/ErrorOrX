@@ -39,12 +39,35 @@ internal static class IncrementalProviderExtensions
             var capacity = e0.Length + e1.Length + e2.Length + e3.Length + e4.Length + e5.Length;
             var builder = ImmutableArray.CreateBuilder<T>(capacity);
 
-            if (!e0.IsDefaultOrEmpty) builder.AddRange(e0.AsImmutableArray());
-            if (!e1.IsDefaultOrEmpty) builder.AddRange(e1.AsImmutableArray());
-            if (!e2.IsDefaultOrEmpty) builder.AddRange(e2.AsImmutableArray());
-            if (!e3.IsDefaultOrEmpty) builder.AddRange(e3.AsImmutableArray());
-            if (!e4.IsDefaultOrEmpty) builder.AddRange(e4.AsImmutableArray());
-            if (!e5.IsDefaultOrEmpty) builder.AddRange(e5.AsImmutableArray());
+            if (!e0.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e0.AsImmutableArray());
+            }
+
+            if (!e1.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e1.AsImmutableArray());
+            }
+
+            if (!e2.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e2.AsImmutableArray());
+            }
+
+            if (!e3.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e3.AsImmutableArray());
+            }
+
+            if (!e4.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e4.AsImmutableArray());
+            }
+
+            if (!e5.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e5.AsImmutableArray());
+            }
 
             return new EquatableArray<T>(builder.ToImmutable());
         });
@@ -89,15 +112,50 @@ internal static class IncrementalProviderExtensions
                            e5.Length + e6.Length + e7.Length + e8.Length;
             var builder = ImmutableArray.CreateBuilder<T>(capacity);
 
-            if (!e0.IsDefaultOrEmpty) builder.AddRange(e0.AsImmutableArray());
-            if (!e1.IsDefaultOrEmpty) builder.AddRange(e1.AsImmutableArray());
-            if (!e2.IsDefaultOrEmpty) builder.AddRange(e2.AsImmutableArray());
-            if (!e3.IsDefaultOrEmpty) builder.AddRange(e3.AsImmutableArray());
-            if (!e4.IsDefaultOrEmpty) builder.AddRange(e4.AsImmutableArray());
-            if (!e5.IsDefaultOrEmpty) builder.AddRange(e5.AsImmutableArray());
-            if (!e6.IsDefaultOrEmpty) builder.AddRange(e6.AsImmutableArray());
-            if (!e7.IsDefaultOrEmpty) builder.AddRange(e7.AsImmutableArray());
-            if (!e8.IsDefaultOrEmpty) builder.AddRange(e8.AsImmutableArray());
+            if (!e0.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e0.AsImmutableArray());
+            }
+
+            if (!e1.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e1.AsImmutableArray());
+            }
+
+            if (!e2.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e2.AsImmutableArray());
+            }
+
+            if (!e3.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e3.AsImmutableArray());
+            }
+
+            if (!e4.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e4.AsImmutableArray());
+            }
+
+            if (!e5.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e5.AsImmutableArray());
+            }
+
+            if (!e6.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e6.AsImmutableArray());
+            }
+
+            if (!e7.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e7.AsImmutableArray());
+            }
+
+            if (!e8.IsDefaultOrEmpty)
+            {
+                builder.AddRange(e8.AsImmutableArray());
+            }
 
             return new EquatableArray<T>(builder.ToImmutable());
         });

@@ -52,7 +52,7 @@ Automatic inference based on type and HTTP method:
 
 ### Error-to-HTTP Mapping
 
-Converts `ErrorOr` errors to proper HTTP responses with [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807)
+Converts `ErrorOr` errors to proper HTTP responses with [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)
 ProblemDetails:
 
 | ErrorType    | HTTP Status | Response                              |
@@ -104,7 +104,7 @@ app.MapErrorOrEndpoints()
     .RequireRateLimiting("api");                  // Global rate limit
 ```
 
-### Analyzers (38 Diagnostics)
+### Analyzers (41 Diagnostics)
 
 Real-time IDE feedback covering:
 
@@ -113,7 +113,7 @@ Real-time IDE feedback covering:
 | Core       | EOE001-007  | Invalid return type, non-static handler, unbound route param         |
 | Binding    | EOE008-021  | Multiple body sources, invalid `[FromRoute]` type, ambiguous binding |
 | Results    | EOE022-024  | Too many result types, unknown error factory, undocumented interface |
-| AOT/JSON   | EOE025-026  | Missing camelCase, missing JsonSerializerContext                     |
+| AOT/JSON   | EOE025-026, EOE039-041 | Missing camelCase, missing JsonSerializerContext, validation reflection |
 | Versioning | EOE027-031  | Version-neutral conflict, undeclared version, invalid format         |
 | Naming     | EOE032-033  | Duplicate route binding, non-PascalCase handler                      |
 | AOT Safety | EOE034-038  | `Activator.CreateInstance`, `dynamic`, `Expression.Compile()`        |

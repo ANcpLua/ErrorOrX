@@ -37,10 +37,14 @@ public static class EOE022_TooManyResultTypes
     public static ErrorOr<string> GetItem(int id)
     {
         if (id <= 0)
+        {
             return Error.Validation("Item.InvalidId", "ID must be positive");
+        }
 
         if (id > 1000)
+        {
             return Error.NotFound("Item.NotFound", $"Item {id} not found");
+        }
 
         return $"Item {id}";
     }
@@ -49,11 +53,15 @@ public static class EOE022_TooManyResultTypes
     public static ErrorOr<string> CreateItem([FromBody] CreateItemRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
+        {
             return Error.Validation("Item.NameRequired", "Name is required");
+        }
 
         // Simulated duplicate check
         if (request.Name == "existing")
+        {
             return Error.Conflict("Item.Duplicate", "Item already exists");
+        }
 
         return $"Created: {request.Name}";
     }
@@ -62,10 +70,14 @@ public static class EOE022_TooManyResultTypes
     public static ErrorOr<Deleted> DeleteItem(int id)
     {
         if (id <= 0)
+        {
             return Error.Validation("Item.InvalidId", "ID must be positive");
+        }
 
         if (id > 1000)
+        {
             return Error.NotFound("Item.NotFound", $"Item {id} not found");
+        }
 
         return Result.Deleted;
     }
@@ -81,15 +93,25 @@ public static class EOE022_TooManyResultTypes
     {
         // All validation errors use the same error type
         if (id <= 0)
+        {
             return Error.Validation("Item.InvalidId", "ID must be positive");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Name))
+        {
             return Error.Validation("Item.NameRequired", "Name is required");
+        }
+
         if (request.Name.Length > 100)
+        {
             return Error.Validation("Item.NameTooLong", "Name cannot exceed 100 characters");
+        }
 
         // Business logic errors
         if (id > 1000)
+        {
             return Error.NotFound("Item.NotFound", $"Item {id} not found");
+        }
 
         return $"Updated {id}: {request.Name}";
     }

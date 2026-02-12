@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 
 namespace ErrorOrX.Integration.Tests;
 
@@ -19,7 +18,7 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
 
         var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>(ct);
         problem.Should().NotBeNull();
-        problem!.Status.Should().Be(400);
+        problem.Status.Should().Be(400);
     }
 
     [Fact]

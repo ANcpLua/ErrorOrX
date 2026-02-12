@@ -21,13 +21,12 @@ public class PrivateConstructorParams
 // Invalid: Constructor with unbindable parameter
 public class UnbindableConstructorParams
 {
-    private readonly object _internalState;
-
     public UnbindableConstructorParams(object internalState)
     {
-        _internalState = internalState;
+        InternalState = internalState;
     }
 
+    internal object InternalState { get; }
     public string? Query { get; set; }
 }
 

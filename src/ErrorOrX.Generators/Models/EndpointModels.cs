@@ -260,7 +260,9 @@ internal readonly record struct EndpointDescriptor(
             foreach (var p in HandlerParameters.AsImmutableArray())
             {
                 if (p.Source == ParameterSource.Body)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -277,7 +279,9 @@ internal readonly record struct EndpointDescriptor(
             foreach (var p in HandlerParameters.AsImmutableArray())
             {
                 if (p.Source.IsFormRelated)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -295,7 +299,9 @@ internal readonly record struct EndpointDescriptor(
             foreach (var p in HandlerParameters.AsImmutableArray())
             {
                 if (p.Source == ParameterSource.Body || p.Source.IsFormRelated)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -312,7 +318,9 @@ internal readonly record struct EndpointDescriptor(
             foreach (var p in HandlerParameters.AsImmutableArray())
             {
                 if (p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -329,7 +337,9 @@ internal readonly record struct EndpointDescriptor(
             foreach (var p in HandlerParameters.AsImmutableArray())
             {
                 if (p.RequiresValidation)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -342,7 +352,9 @@ internal readonly record struct EndpointDescriptor(
         foreach (var entry in Metadata.AsImmutableArray())
         {
             if (entry.Key == key)
+            {
                 return entry.Value;
+            }
         }
 
         return null;
@@ -354,7 +366,9 @@ internal readonly record struct EndpointDescriptor(
         foreach (var entry in Metadata.AsImmutableArray())
         {
             if (entry.Key == key)
+            {
                 return true;
+            }
         }
 
         return false;

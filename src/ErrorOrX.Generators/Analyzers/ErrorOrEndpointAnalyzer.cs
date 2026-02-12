@@ -55,12 +55,16 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SymbolAnalysisContext context)
     {
         if (context.Symbol is not IMethodSymbol method)
+        {
             return;
+        }
 
         // Find ErrorOr endpoint attributes
         var endpointAttributes = GetEndpointAttributes(method);
         if (endpointAttributes.Count is 0)
+        {
             return;
+        }
 
         // EOE002: Handler must be static
         if (!method.IsStatic)
@@ -107,7 +111,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // If pattern is invalid, skip further route analysis
         if (patternDiagnostics.Count > 0)
+        {
             return;
+        }
 
         // Extract route parameters with constraints
         var routeParams = ExtractRouteParametersWithConstraints(pattern);
@@ -191,14 +197,18 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     {
         var validationAttributeType = context.Compilation.GetTypeByMetadataName(WellKnownTypes.ValidationAttribute);
         if (validationAttributeType is null)
+        {
             return;
+        }
 
         foreach (var param in method.Parameters)
         {
             foreach (var attr in param.GetAttributes())
             {
                 if (attr.AttributeClass is null)
+                {
                     continue;
+                }
 
                 // Check if the attribute inherits from ValidationAttribute
                 if (InheritsFrom(attr.AttributeClass, validationAttributeType))
@@ -217,13 +227,16 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     /// <summary>
     ///     Checks if a type inherits from a base type.
     /// </summary>
-    private static bool InheritsFrom(ITypeSymbol type, ITypeSymbol baseType)
+    private static bool InheritsFrom(ITypeSymbol type, ISymbol baseType)
     {
         var current = type.BaseType;
         while (current is not null)
         {
             if (SymbolEqualityComparer.Default.Equals(current, baseType))
+            {
                 return true;
+            }
+
             current = current.BaseType;
         }
 
@@ -260,17 +273,25 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         if (mp.TypeFqn is not { } typeFqn)
+        {
             return;
+        }
 
         // Skip format-only constraints
         if (IsFormatOnlyConstraint(constraint))
+        {
             return;
+        }
 
         // Validate based on constraint type
         if (rp.IsCatchAll)
+        {
             ValidateCatchAllConstraint(context, rp, mp, typeFqn, attributeLocation);
+        }
         else
+        {
             ValidateTypedConstraint(context, rp, constraint, mp, typeFqn, attributeLocation);
+        }
     }
 
     /// <summary>
@@ -319,7 +340,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     {
         // Look up expected types for this constraint using shared RouteValidator
         if (!RouteValidator.ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
+        {
             return; // Unknown constraint (e.g., custom) - skip validation
+        }
 
         // Get the actual type, unwrapping Nullable<T> for optional parameters
         var actualTypeFqn = typeFqn.UnwrapNullable(rp.IsOptional || mp.IsNullable);
@@ -346,7 +369,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         foreach (var expected in expectedTypes)
         {
             if (TypeNamesMatch(actualTypeFqn, expected))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -394,7 +419,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         foreach (var attr in method.GetAttributes())
         {
             if (attr.AttributeClass?.Name is not { } attrName)
+            {
                 continue;
+            }
 
             string? httpMethod = null;
             var pattern = "/";
@@ -421,13 +448,18 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
                     {
                         if (attr.ConstructorArguments is [{ Value: string m }, ..])
+                        {
                             httpMethod = m.ToUpperInvariant();
+                        }
+
                         break;
                     }
             }
 
             if (httpMethod is null)
+            {
                 continue;
+            }
 
             // Extract pattern from constructor arguments
             var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
@@ -450,15 +482,21 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static bool IsValidReturnType(ITypeSymbol returnType)
     {
         if (returnType is not INamedTypeSymbol named)
+        {
             return false;
+        }
 
         // Direct ErrorOr<T>
         if (IsErrorOr(named))
+        {
             return true;
+        }
 
         // Task<ErrorOr<T>> or ValueTask<ErrorOr<T>>
         if (named.Name is "Task" or "ValueTask" && named is { IsGenericType: true, TypeArguments.Length: > 0 })
+        {
             return IsErrorOr(named.TypeArguments[0]);
+        }
 
         return false;
     }
@@ -495,15 +533,22 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             // Check for body-related types using pattern matchers
             if (IsStream(param.Type) || IsPipeReader(param.Type))
+            {
                 hasStream = true;
+            }
             else if (IsFormFile(param.Type) ||
                      IsFormFileCollection(param.Type) ||
                      IsFormCollection(param.Type))
+            {
                 hasFromForm = true;
+            }
         }
 
         // Multiple [FromBody] is always an error
-        if (bodyCount > 1) return bodyCount;
+        if (bodyCount > 1)
+        {
+            return bodyCount;
+        }
 
         // Otherwise return number of distinct body source buckets used
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
@@ -532,19 +577,26 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // Check for empty parameter names: {}
         if (escapedStripped.Contains("{}"))
+        {
             issues.Add("Route contains empty parameter '{}'. Parameter names are required");
+        }
 
         // Check for unclosed braces
         var openCount = escapedStripped.Count(static c => c == '{');
         var closeCount = escapedStripped.Count(static c => c == '}');
-        if (openCount != closeCount) issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
+        if (openCount != closeCount)
+        {
+            issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
+        }
 
         // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
         {
             if (!paramNames.Add(rp.Name))
+            {
                 issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
+            }
         }
 
         return issues;

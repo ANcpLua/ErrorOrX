@@ -23,7 +23,9 @@ public sealed partial class ErrorOrEndpointGenerator
         EmitMappings(spc, sorted, jsonTypes.Count > 0, maxArity);
 
         if (jsonTypes.Count > 0 && generateJsonContext)
+        {
             EmitJsonContext(spc, jsonTypes, userContexts);
+        }
     }
 
     private static void EmitGlobalUsings(SourceProductionContext spc)
@@ -111,7 +113,9 @@ public sealed partial class ErrorOrEndpointGenerator
             .ToImmutableArray();
         var ungroupedVersionSet = ComputeGlobalVersionSet(ungroupedEndpoints);
         if (ungroupedVersionSet.HasVersioning && !ungroupedEndpoints.IsDefaultOrEmpty)
+        {
             EmitVersionSet(code, ungroupedVersionSet);
+        }
 
         // Emit route group declarations (eShop-style NewVersionedApi + MapGroup)
         var groupContexts = GroupEmitter.EmitGroupDeclarations(code, grouping.Groups);
@@ -133,7 +137,9 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine();
 
         if (hasJsonTypes)
+        {
             EmitJsonConfigExtension(code);
+        }
 
         // Emit invokers for ALL endpoints (grouped and ungrouped)
         for (var i = 0; i < endpoints.Length; i++)
@@ -225,7 +231,9 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // If no global version set exists, don't emit anything
         if (!hasGlobalVersionSet)
+        {
             return;
+        }
 
         // Version-neutral endpoints don't map to any specific version
         if (versioning.IsVersionNeutral)
@@ -281,7 +289,9 @@ public sealed partial class ErrorOrEndpointGenerator
         var usesBindFail = ctx.HasFormBinding;
 
         if (ctx.HasFormBinding)
+        {
             EmitFormContentTypeGuard(bodyCode);
+        }
 
         var args = new StringBuilder();
         var validationParams = new List<(int Index, string ParamName)>();
@@ -289,15 +299,23 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var param = ep.HandlerParameters[i];
             usesBindFail |= EmitParameterBinding(bodyCode, in param, $"p{i}", "BindFail");
-            if (i > 0) args.Append(", ");
+            if (i > 0)
+            {
+                args.Append(", ");
+            }
+
             args.Append(BuildArgumentExpression(in param, $"p{i}"));
 
             if (param.RequiresValidation)
+            {
                 validationParams.Add((i, $"p{i}"));
+            }
         }
 
         if (validationParams.Count > 0)
+        {
             EmitBclValidation(bodyCode, validationParams, ctx.UnionResult.ReturnTypeFqn, ctx.NeedsAwait);
+        }
 
         var awaitKeyword = ep.IsAsync ? "await " : "";
         bodyCode.AppendLine(
@@ -359,10 +377,14 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        {");
 
         if (usesBindFail)
+        {
             EmitBindFailHelper(code, returnType, ctx.NeedsAwait, ctx.UnionResult.UsesValidationProblemFor400);
+        }
 
         if (ctx.HasBodyBinding)
+        {
             EmitBindFail415Helper(code, returnType, ctx.NeedsAwait);
+        }
 
         code.Append(bodyCode);
         code.AppendLine("        }");
@@ -501,14 +523,20 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Only apply Location header for POST endpoints returning Created with an Id property
         if (ep.HttpMethod != WellKnownTypes.HttpMethod.Post)
+        {
             return successInfo.Factory;
+        }
 
         if (successInfo.StatusCode != 201)
+        {
             return successInfo.Factory;
+        }
 
         // Location header requires both a body (with the Id value) and a detected Id property
         if (!successInfo.HasBody)
+        {
             return successInfo.Factory;
+        }
 
         return ep.LocationIdPropertyName is not { Length: > 0 } idProp
             ? successInfo.Factory
@@ -524,7 +552,10 @@ public sealed partial class ErrorOrEndpointGenerator
         var hasValidation = !ep.InferredErrorTypeNames.IsDefaultOrEmpty &&
                             ep.InferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
 
-        if (!hasValidation) return;
+        if (!hasValidation)
+        {
+            return;
+        }
 
         code.AppendLine($"                if (first.Type == {WellKnownTypes.Fqn.ErrorType}.Validation)");
         code.AppendLine("                {");
@@ -817,7 +848,9 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var type in jsonTypes)
         {
             if (!registeredTypes.Any(rt => type.TypeNamesEqual(rt)))
+            {
                 missingTypes.Add(type);
+            }
         }
 
         // Always check for ProblemDetails and HttpValidationProblemDetails
@@ -827,9 +860,14 @@ public sealed partial class ErrorOrEndpointGenerator
             WellKnownTypes.Fqn.HttpValidationProblemDetails.TypeNamesEqual(rt));
 
         if (missingProblemDetails)
+        {
             missingTypes.Add(WellKnownTypes.Fqn.ProblemDetails);
+        }
+
         if (missingValidationProblemDetails)
+        {
             missingTypes.Add(WellKnownTypes.Fqn.HttpValidationProblemDetails);
+        }
 
         // Report EOE025 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
@@ -959,7 +997,11 @@ public sealed partial class ErrorOrEndpointGenerator
         Array.Sort(list, static (a, b) =>
         {
             var c = string.CompareOrdinal(a.HttpMethod, b.HttpMethod);
-            if (c is not 0) return c;
+            if (c is not 0)
+            {
+                return c;
+            }
+
             c = string.CompareOrdinal(a.Pattern, b.Pattern);
             return c is not 0 ? c : string.CompareOrdinal(a.HandlerMethodName, b.HandlerMethodName);
         });
@@ -974,7 +1016,9 @@ public sealed partial class ErrorOrEndpointGenerator
             foreach (var p in ep.HandlerParameters)
             {
                 if (p.Source == ParameterSource.Body)
+                {
                     types.Add(p.TypeFqn);
+                }
             }
 
             if (ep is { IsSse: true, SseItemTypeFqn: not null })
@@ -988,7 +1032,9 @@ public sealed partial class ErrorOrEndpointGenerator
                     ep.SuccessKind,
                     ep.IsAcceptedResponse);
                 if (successInfo.HasBody)
+                {
                     types.Add(ep.SuccessTypeFqn);
+                }
             }
         }
 

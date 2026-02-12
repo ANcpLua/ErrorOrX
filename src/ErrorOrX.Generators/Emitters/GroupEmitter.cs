@@ -19,7 +19,9 @@ internal static class GroupEmitter
         ImmutableArray<RouteGroupAggregate> groups)
     {
         if (groups.IsDefaultOrEmpty)
+        {
             return ImmutableArray<GroupEmitContext>.Empty;
+        }
 
         var contexts = ImmutableArray.CreateBuilder<GroupEmitContext>(groups.Length);
 
@@ -121,7 +123,9 @@ internal static class GroupEmitter
 
         // Version-neutral within a versioned group
         if (ep.Versioning.IsVersionNeutral)
+        {
             code.AppendLine("                .IsApiVersionNeutral()");
+        }
 
         // Emit all endpoint metadata: tags, accepts, produces, middleware
         // Uses shared helper for consistency with ungrouped endpoints

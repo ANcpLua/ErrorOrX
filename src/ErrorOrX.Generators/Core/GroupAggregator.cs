@@ -90,7 +90,9 @@ internal static class GroupAggregator
     public static string GetRelativePattern(in EndpointDescriptor ep)
     {
         if (!ep.RouteGroup.HasRouteGroup || ep.RouteGroup.GroupPath is not { } groupPath)
+        {
             return ep.Pattern;
+        }
 
         // Normalize paths for comparison (remove leading slashes)
         var normalizedGroup = groupPath.TrimStart('/');

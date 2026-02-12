@@ -1,6 +1,8 @@
 // Minimal polyfills for netstandard2.0 - replaces PolySharp to avoid type conflicts
 // when test projects reference this assembly with ReferenceOutputAssembly="true"
 
+using ANcpLua.Roslyn.Utilities;
+
 namespace System.Diagnostics.CodeAnalysis
 {
     /// <summary>
@@ -188,7 +190,10 @@ namespace System
             var start = Start.GetOffset(length);
             var end = End.GetOffset(length);
             if ((uint)end > (uint)length || (uint)start > (uint)end)
+            {
                 throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
             return (start, end - start);
         }
     }
@@ -201,7 +206,7 @@ namespace System
         /// <summary>Constructs an Index using a value and indicating if the index is from the start or from the end.</summary>
         public Index(int value, bool fromEnd = false)
         {
-            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
+            _ = Guard.NotNegative(value);
             _value = fromEnd ? ~value : value;
         }
 
@@ -219,14 +224,14 @@ namespace System
         /// <summary>Creates an Index from the start at the position indicated by the value.</summary>
         public static Index FromStart(int value)
         {
-            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
+            _ = Guard.NotNegative(value);
             return new Index(value);
         }
 
         /// <summary>Creates an Index from the end at the position indicated by the value.</summary>
         public static Index FromEnd(int value)
         {
-            _ = ANcpLua.Roslyn.Utilities.Guard.NotNegative(value);
+            _ = Guard.NotNegative(value);
             return new Index(~value);
         }
 

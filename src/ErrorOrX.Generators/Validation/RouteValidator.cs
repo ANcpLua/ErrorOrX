@@ -81,13 +81,17 @@ internal static class RouteValidator
     public static ImmutableArray<RouteParameterInfo> ExtractRouteParameters(string pattern)
     {
         if (string.IsNullOrWhiteSpace(pattern))
+        {
             return ImmutableArray<RouteParameterInfo>.Empty;
+        }
 
         var cleanPattern = pattern.Replace("{{", "").Replace("}}", "");
 
         var matches = SRouteParameterRegexInstance.Matches(cleanPattern);
         if (matches.Count is 0)
+        {
             return ImmutableArray<RouteParameterInfo>.Empty;
+        }
 
         var builder = ImmutableArray.CreateBuilder<RouteParameterInfo>(matches.Count);
 
@@ -189,7 +193,9 @@ internal static class RouteValidator
         foreach (var mp in methodParams)
         {
             if (mp.BoundRouteName is not null)
+            {
                 boundRouteNames.Add(mp.BoundRouteName);
+            }
         }
 
         foreach (var rp in routeParams)
@@ -260,21 +266,27 @@ internal static class RouteValidator
         foreach (var param in methodParams)
         {
             if (requireTypeFqn && param.TypeFqn is null)
+            {
                 continue;
+            }
 
             var routeName = param.BoundRouteName ?? param.Name;
 
             // First parameter wins for deterministic behavior
             if (lookup.TryGetValue(routeName, out var existingParam))
                 // Report EOE032 for duplicate route parameter binding
+            {
                 diagnostics?.Add(DiagnosticInfo.Create(
                     Descriptors.DuplicateRouteParameterBinding,
                     location,
                     routeName,
                     existingParam.Name,
                     param.Name));
+            }
             else
+            {
                 lookup[routeName] = param;
+            }
         }
 
         return lookup;
@@ -293,7 +305,9 @@ internal static class RouteValidator
         }
 
         if (FormatOnlyConstraints.Contains(constraint))
+        {
             return;
+        }
 
         if (routeParam.IsCatchAll)
         {
@@ -302,11 +316,15 @@ internal static class RouteValidator
         }
 
         if (!ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
+        {
             return; // Unknown constraint - skip validation (could be custom)
+        }
 
         var actualTypeFqn = typeFqn.UnwrapNullable(routeParam.IsOptional || methodParam.IsNullable);
         if (MatchesExpectedType(actualTypeFqn, expectedTypes))
+        {
             return;
+        }
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
@@ -330,13 +348,19 @@ internal static class RouteValidator
         constraint = string.Empty;
 
         if (routeParam.Constraint is null)
+        {
             return false;
+        }
 
         if (!methodParamsByRouteName.TryGetValue(routeParam.Name, out var mp))
+        {
             return false;
+        }
 
         if (mp.TypeFqn is null)
+        {
             return false;
+        }
 
         methodParam = mp;
         typeFqn = mp.TypeFqn;
@@ -352,7 +376,9 @@ internal static class RouteValidator
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (typeFqn.IsStringType())
+        {
             return;
+        }
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
@@ -371,14 +397,20 @@ internal static class RouteValidator
         foreach (var expected in expectedTypes)
         {
             if (string.Equals(normalizedActual, expected, StringComparison.Ordinal))
+            {
                 return true;
+            }
 
             if (normalizedActual.EndsWithOrdinal("." + expected))
+            {
                 return true;
+            }
 
             var aliasedActual = normalizedActual.GetCSharpKeyword();
             if (aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -390,7 +422,9 @@ internal static class RouteValidator
     public static ImmutableArray<Diagnostic> DetectDuplicateRoutes(ImmutableArray<EndpointDescriptor> endpoints)
     {
         if (endpoints.IsDefaultOrEmpty || endpoints.Length < 2)
+        {
             return ImmutableArray<Diagnostic>.Empty;
+        }
 
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
         var routeMap = new Dictionary<string, EndpointDescriptor>(StringComparer.OrdinalIgnoreCase);
@@ -400,6 +434,7 @@ internal static class RouteValidator
             var normalizedKey = CanonicalizeRoute(ep.HttpMethod, ep.Pattern);
 
             if (routeMap.TryGetValue(normalizedKey, out var existing))
+            {
                 diagnostics.Add(Diagnostic.Create(
                     Descriptors.DuplicateRoute,
                     Location.None,
@@ -407,8 +442,11 @@ internal static class RouteValidator
                     ep.Pattern,
                     existing.HandlerContainingTypeFqn.ExtractShortTypeName(),
                     existing.HandlerMethodName));
+            }
             else
+            {
                 routeMap[normalizedKey] = ep;
+            }
         }
 
         return diagnostics.ToImmutable();
@@ -423,8 +461,15 @@ internal static class RouteValidator
         var method = httpMethod.ToUpperInvariant();
 
         var p = pattern.Trim();
-        if (!p.StartsWithOrdinal("/")) p = "/" + p;
-        if (p.Length > 1 && p.EndsWithOrdinal("/")) p = p[..^1];
+        if (!p.StartsWithOrdinal("/"))
+        {
+            p = "/" + p;
+        }
+
+        if (p.Length > 1 && p.EndsWithOrdinal("/"))
+        {
+            p = p[..^1];
+        }
 
         var segments = p.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
         var result = new List<string>(segments.Length + 1)
@@ -450,7 +495,9 @@ internal static class RouteValidator
                     {
                         var cName = cm.Groups["name"].Value.ToLowerInvariant();
                         if (ConstraintToTypes.ContainsKey(cName))
+                        {
                             cList.Add(cName);
+                        }
                     }
                 }
 

@@ -46,10 +46,14 @@ public static class EOE023_UnknownErrorFactory
     public static ErrorOr<string> GetItem(int id)
     {
         if (id < 0)
+        {
             return Error.Validation("Item.InvalidId", "ID cannot be negative");
+        }
 
         if (id == 0)
+        {
             return Error.NotFound("Item.NotFound", "Item not found");
+        }
 
         return $"Item {id}";
     }
@@ -59,11 +63,15 @@ public static class EOE023_UnknownErrorFactory
     {
         // Input validation -> Validation
         if (string.IsNullOrWhiteSpace(request.Name))
+        {
             return Error.Validation("Item.NameRequired", "Name is required");
+        }
 
         // Duplicate check -> Conflict
         if (request.Email == "existing@example.com")
+        {
             return Error.Conflict("Item.EmailExists", "Email already registered");
+        }
 
         return $"Created: {request.Name}";
     }
@@ -73,15 +81,21 @@ public static class EOE023_UnknownErrorFactory
     {
         // Authentication check -> Unauthorized
         if (string.IsNullOrEmpty(userId))
+        {
             return Error.Unauthorized("Auth.Required", "Authentication required");
+        }
 
         // Authorization check -> Forbidden
         if (userId != "admin")
+        {
             return Error.Forbidden("Auth.AdminOnly", "Admin access required");
+        }
 
         // Resource check -> NotFound
         if (id > 1000)
+        {
             return Error.NotFound("Item.NotFound", $"Item {id} not found");
+        }
 
         return Result.Deleted;
     }

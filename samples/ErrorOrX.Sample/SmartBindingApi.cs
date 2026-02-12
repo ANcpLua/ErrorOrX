@@ -60,7 +60,9 @@ public static class SmartBindingApi
     {
         var result = await svc.GetByIdAsync(id, ct);
         if (result.IsError)
+        {
             return result.Errors.ToArray();
+        }
 
         var updated = new UpdateTodoRequest(request.Title, result.Value.IsComplete);
         return await svc.UpdateAsync(id, updated, ct);

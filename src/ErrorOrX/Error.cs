@@ -41,10 +41,14 @@ public readonly record struct Error
     public bool Equals(Error other)
     {
         if (Type != other.Type || Code != other.Code || Description != other.Description)
+        {
             return false;
+        }
 
         if (_metadata is null)
+        {
             return other._metadata is null;
+        }
 
         return other._metadata is not null && CompareMetadata(_metadata, other._metadata);
     }
@@ -152,7 +156,9 @@ public readonly record struct Error
     public override int GetHashCode()
     {
         if (_metadata is null)
+        {
             return HashCode.Combine(Code, Description, Type);
+        }
 
         var hashCode = new HashCode();
         hashCode.Add(Code);
@@ -173,10 +179,14 @@ public readonly record struct Error
         FrozenDictionary<string, object> otherMetadata)
     {
         if (ReferenceEquals(metadata, otherMetadata))
+        {
             return true;
+        }
 
         if (metadata.Count != otherMetadata.Count)
+        {
             return false;
+        }
 
         foreach (var kvp in metadata)
         {

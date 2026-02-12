@@ -49,10 +49,14 @@ public static class EOE039_ValidationUsesReflection
     {
         // Manual validation - fully AOT compatible
         if (string.IsNullOrWhiteSpace(request.Title))
+        {
             return Error.Validation("Title.Required", "Title is required");
+        }
 
         if (request.Title.Length > 100)
+        {
             return Error.Validation("Title.TooLong", "Title must be 100 characters or less");
+        }
 
         return new TodoItem(1, request.Title, request.Description);
     }

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -63,11 +64,15 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not InvocationExpressionSyntax invocation)
+        {
             return;
+        }
 
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         if (symbolInfo.Symbol is not IMethodSymbol method)
+        {
             return;
+        }
 
         // Check for Activator.CreateInstance
         if (IsActivatorCreateInstance(method))
@@ -116,11 +121,15 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeDynamic(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not IdentifierNameSyntax identifier)
+        {
             return;
+        }
 
         // Check if this is the 'dynamic' keyword used as a type
         if (identifier.Identifier.Text != "dynamic")
+        {
             return;
+        }
 
         var typeInfo = context.SemanticModel.GetTypeInfo(identifier, context.CancellationToken);
         if (typeInfo.Type is IDynamicTypeSymbol)
@@ -159,7 +168,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         warningReason = string.Empty;
         var arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count is 0)
+        {
             return false;
+        }
 
         var firstArg = arguments[0].Expression;
 
@@ -196,9 +207,11 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool TryGetReflectionMemberType(string methodName, out string memberType)
+    private static bool TryGetReflectionMemberType(string methodName, [NotNullWhen(true)] out string? memberType)
     {
-        return ReflectionMethodsToMemberTypes.TryGetValue(methodName, out memberType!);
+        var found = ReflectionMethodsToMemberTypes.TryGetValue(methodName, out var value);
+        memberType = value;
+        return found;
     }
 
     private static bool IsSystemType(ISymbol? type)
@@ -209,10 +222,14 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
     private static bool IsExpressionCompile(ISymbol method)
     {
         if (method.Name != "Compile")
+        {
             return false;
+        }
 
         if (method.ContainingType is not { } containingType)
+        {
             return false;
+        }
 
         // Check if it's on LambdaExpression or Expression<TDelegate>
         var typeName = containingType.ToDisplayString();
@@ -237,7 +254,9 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
         {
             var firstArg = invocation.ArgumentList.Arguments[0].Expression;
             if (firstArg is TypeOfExpressionSyntax typeOf)
+            {
                 return typeOf.Type.ToString();
+            }
         }
 
         return "T";
@@ -246,11 +265,15 @@ public sealed class AotSafetyAnalyzer : DiagnosticAnalyzer
     private static string? GetReceiverTypeName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
             return null;
+        }
 
         // typeof(T).GetProperties() - extract T
         if (memberAccess.Expression is TypeOfExpressionSyntax typeOf)
+        {
             return typeOf.Type.ToString();
+        }
 
         // variable.GetType().GetProperties() - get the type from semantic model
         var receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;

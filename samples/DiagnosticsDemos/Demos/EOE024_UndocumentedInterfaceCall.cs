@@ -95,10 +95,14 @@ public static class EOE024_UndocumentedInterfaceCall
     {
         // All error paths are visible to the generator
         if (id <= 0)
+        {
             return Error.Validation("Todo.InvalidId", "ID must be positive");
+        }
 
         if (id > 1000)
+        {
             return Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+        }
 
         return new Eoe024TodoItem(id, $"Todo {id}");
     }

@@ -33,7 +33,9 @@ public sealed class TodoService : ITodoService
         await Task.Delay(10, ct); // Simulate I/O
         var index = _todos.FindIndex(t => t.Id == id);
         if (index < 0)
+        {
             return Error.NotFound("Todo.NotFound", $"Todo {id} not found");
+        }
 
         _todos[index] = _todos[index] with
         {

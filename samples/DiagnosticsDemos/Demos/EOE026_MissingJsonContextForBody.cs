@@ -45,7 +45,9 @@ public static class EOE026_MissingJsonContextForBody
     public static ErrorOr<OrderResponse> CreateOrder([FromBody] OrderRequest request)
     {
         if (request.Quantity <= 0)
+        {
             return Error.Validation("Order.InvalidQuantity", "Quantity must be positive");
+        }
 
         return new OrderResponse(Guid.NewGuid().ToString(), "Created");
     }
@@ -54,7 +56,9 @@ public static class EOE026_MissingJsonContextForBody
     public static ErrorOr<OrderResponse> GetOrder(string id)
     {
         if (string.IsNullOrEmpty(id))
+        {
             return Error.Validation("Order.InvalidId", "Order ID is required");
+        }
 
         return new OrderResponse(id, "Completed");
     }

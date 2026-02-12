@@ -17,7 +17,7 @@ internal sealed class ErrorOrContext
         AcceptedResponseAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AcceptedResponseAttribute);
         ReturnsErrorAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ReturnsErrorAttribute);
         ErrorOrOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorOrT)?.ConstructedFrom;
-        Error = compilation.GetBestTypeByMetadataName(WellKnownTypes.Error);
+        Error = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorStruct);
 
         FromKeyedServicesAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromKeyedServicesAttribute);
         AsParametersAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AsParametersAttribute);
@@ -32,7 +32,7 @@ internal sealed class ErrorOrContext
         CancellationToken = compilation.GetBestTypeByMetadataName(WellKnownTypes.CancellationToken);
 
         SuccessMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Success);
-        CreatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Created);
+        CreatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.CreatedMarker);
         UpdatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Updated);
         DeletedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Deleted);
 
@@ -188,7 +188,9 @@ internal sealed class ErrorOrContext
     public bool RequiresValidation(ITypeSymbol? type)
     {
         if (type is null || ValidationAttribute is null)
+        {
             return false;
+        }
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
@@ -208,10 +210,14 @@ internal sealed class ErrorOrContext
             foreach (var member in namedType.GetMembers())
             {
                 if (member is not IPropertySymbol property)
+                {
                     continue;
+                }
 
                 if (property.HasAttribute(ValidationAttribute))
+                {
                     return true;
+                }
             }
 
             current = namedType.BaseType;
@@ -225,10 +231,14 @@ internal sealed class ErrorOrContext
     {
         type = type?.UnwrapNullable();
         if (type is null)
+        {
             return false;
+        }
 
         if (FormFile is not null && type.IsOrImplements(FormFile))
+        {
             return true;
+        }
 
         return type.Name == "IFormFile" &&
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
@@ -239,7 +249,9 @@ internal sealed class ErrorOrContext
     {
         type = type?.UnwrapNullable();
         if (type is null)
+        {
             return false;
+        }
 
         if (FormFileCollection is not null &&
             type.IsEqualTo(FormFileCollection))
@@ -252,7 +264,9 @@ internal sealed class ErrorOrContext
             named.ConstructedFrom.IsEqualTo(IReadOnlyListOfT))
         {
             if (IsFormFile(named.TypeArguments[0]))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -263,7 +277,9 @@ internal sealed class ErrorOrContext
     {
         type = type?.UnwrapNullable();
         if (type is null)
+        {
             return false;
+        }
 
         return FormCollection is not null && type.IsOrImplements(FormCollection);
     }
@@ -273,10 +289,14 @@ internal sealed class ErrorOrContext
     {
         type = type?.UnwrapNullable();
         if (type is null)
+        {
             return false;
+        }
 
         if (HttpContext is not null && type.IsOrInheritsFrom(HttpContext))
+        {
             return true;
+        }
 
         return type.Name == "HttpContext" &&
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
@@ -286,11 +306,15 @@ internal sealed class ErrorOrContext
     public bool IsStream(ITypeSymbol? type)
     {
         if (type is null)
+        {
             return false;
+        }
 
         type = type.UnwrapNullable();
         if (Stream is not null)
+        {
             return type.IsOrInheritsFrom(Stream);
+        }
 
         return type.Name == "Stream" &&
                type.ContainingNamespace.ToDisplayString() == "System.IO";
@@ -300,11 +324,15 @@ internal sealed class ErrorOrContext
     public bool IsPipeReader(ITypeSymbol? type)
     {
         if (type is null)
+        {
             return false;
+        }
 
         type = type.UnwrapNullable();
         if (PipeReader is not null)
+        {
             return type.IsOrInheritsFrom(PipeReader);
+        }
 
         return type.Name == "PipeReader" &&
                type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
@@ -314,11 +342,15 @@ internal sealed class ErrorOrContext
     public bool IsCancellationToken(ITypeSymbol? type)
     {
         if (type is null)
+        {
             return false;
+        }
 
         type = type.UnwrapNullable();
         if (CancellationToken is not null)
+        {
             return type.IsEqualTo(CancellationToken);
+        }
 
         return type.Name == "CancellationToken" &&
                type.ContainingNamespace.ToDisplayString() == "System.Threading";
@@ -328,11 +360,15 @@ internal sealed class ErrorOrContext
     public bool IsParameterInfo(ITypeSymbol? type)
     {
         if (type is null)
+        {
             return false;
+        }
 
         type = type.UnwrapNullable();
         if (ParameterInfo is not null)
+        {
             return type.IsEqualTo(ParameterInfo);
+        }
 
         return type.Name == "ParameterInfo" &&
                type.ContainingNamespace.ToDisplayString() == "System.Reflection";

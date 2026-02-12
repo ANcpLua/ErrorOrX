@@ -17,7 +17,9 @@ public sealed partial class ErrorOrEndpointGenerator
         bool publishAot)
     {
         if (endpoints.IsDefaultOrEmpty)
+        {
             return;
+        }
 
         // Collect body types and response types separately
         var bodyTypes = new Dictionary<string, string>(); // typeFqn -> endpointName
@@ -29,8 +31,12 @@ public sealed partial class ErrorOrEndpointGenerator
             foreach (var param in ep.HandlerParameters)
             {
                 if (param.Source == ParameterSource.Body)
+                {
                     if (!bodyTypes.ContainsKey(param.TypeFqn))
+                    {
                         bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
+                    }
+                }
             }
 
             // Collect response types
@@ -42,15 +48,22 @@ public sealed partial class ErrorOrEndpointGenerator
                     ep.IsAcceptedResponse);
 
                 if (successInfo.HasBody && !responseTypes.ContainsKey(ep.SuccessTypeFqn))
+                {
                     responseTypes[ep.SuccessTypeFqn] = ep.HandlerMethodName;
+                }
             }
         }
 
         // Always need ProblemDetails for error responses
         if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.ProblemDetails))
+        {
             responseTypes[WellKnownTypes.Fqn.ProblemDetails] = "ErrorOr endpoints";
+        }
+
         if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.HttpValidationProblemDetails))
+        {
             responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = "ErrorOr endpoints";
+        }
 
         // CRITICAL: If no user-defined JsonSerializerContext exists but we have body parameters,
         // this is an ERROR in AOT mode. The generated ErrorOrJsonContext cannot be used by
@@ -65,7 +78,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 foreach (var kvp in bodyTypes)
                 {
                     if (kvp.Key.IsPrimitiveJsonType())
+                    {
                         continue;
+                    }
 
                     var displayType = kvp.Key.StripGlobalPrefix();
                     spc.ReportDiagnostic(Diagnostic.Create(
@@ -93,19 +108,25 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var kvp in bodyTypes)
         {
             if (!allNeededTypes.ContainsKey(kvp.Key))
+            {
                 allNeededTypes[kvp.Key] = kvp.Value;
+            }
         }
 
         foreach (var kvp in responseTypes)
         {
             if (!allNeededTypes.ContainsKey(kvp.Key))
+            {
                 allNeededTypes[kvp.Key] = kvp.Value;
+            }
         }
 
         foreach (var kvp in allNeededTypes)
         {
             if (kvp.Key.IsPrimitiveJsonType())
+            {
                 continue;
+            }
 
             var isRegistered = registeredTypes.Any(rt => kvp.Key.TypeNamesEqual(rt));
             if (!isRegistered)
@@ -147,7 +168,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 {
                     // Failure/Unexpected map to InternalServerError (500), which is already in baseCount
                     if (type is ErrorMapping.Failure or ErrorMapping.Unexpected)
+                    {
                         continue;
+                    }
 
                     // All others (Validation, NotFound, Conflict, etc.) map to distinct types
                     errorTypeCount++;
@@ -199,10 +222,14 @@ internal static class JsonContextProvider
         foreach (var attr in attributes)
         {
             if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSerializableAttribute)
+            {
                 continue;
+            }
 
             if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg }, ..])
+            {
                 serializableTypes.Add(typeArg.GetFullyQualifiedName());
+            }
         }
 
         // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
@@ -210,12 +237,16 @@ internal static class JsonContextProvider
         foreach (var attr in attributes)
         {
             if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSourceGenerationOptionsAttribute)
+            {
                 continue;
+            }
 
             foreach (var namedArg in attr.NamedArguments)
             {
                 if (namedArg.Key != "PropertyNamingPolicy")
+                {
                     continue;
+                }
 
                 var enumValue = namedArg.Value.Value;
                 if (namedArg.Value.Type is INamedTypeSymbol enumType &&
@@ -228,11 +259,15 @@ internal static class JsonContextProvider
             }
 
             if (hasCamelCasePolicy)
+            {
                 break;
+            }
         }
 
         if (serializableTypes.Count is 0)
+        {
             return ImmutableArray<JsonContextInfo>.Empty;
+        }
 
         var className = classSymbol.Name;
         var namespaceName = classSymbol.ContainingNamespace?.IsGlobalNamespace == true
@@ -258,7 +293,10 @@ internal static class JsonContextProvider
         while (current is not null)
         {
             if (current.ToDisplayString() == WellKnownTypes.JsonSerializerContext)
+            {
                 return true;
+            }
+
             current = current.BaseType;
         }
 

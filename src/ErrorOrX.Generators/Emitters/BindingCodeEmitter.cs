@@ -85,7 +85,11 @@ internal static class BindingCodeEmitter
         string bindFailFn)
     {
         code.AppendLine($"            var {paramName} = form.Files.GetFile(\"{param.KeyName ?? param.Name}\");");
-        if (param.IsNullable) return false;
+        if (param.IsNullable)
+        {
+            return false;
+        }
+
         code.AppendLine(
             $"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"is required\");");
         return true;
@@ -106,7 +110,9 @@ internal static class BindingCodeEmitter
         string bindFailFn)
     {
         if (param.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
+        {
             return EmitBindAsyncBinding(code, in param, paramName, bindFailFn);
+        }
 
         var queryKey = param.KeyName ?? param.Name;
         return param is { IsCollection: true, CollectionItemTypeFqn: { } itemType }
@@ -119,7 +125,11 @@ internal static class BindingCodeEmitter
     {
         var baseType = param.TypeFqn.TrimEnd('?');
         code.AppendLine($"            var {paramName} = await {baseType}.BindAsync(ctx);");
-        if (param.IsNullable) return false;
+        if (param.IsNullable)
+        {
+            return false;
+        }
+
         code.AppendLine(
             $"            if ({paramName} is null) return {bindFailFn}(\"{param.Name}\", \"binding failed\");");
         return true;
@@ -271,7 +281,9 @@ internal static class BindingCodeEmitter
         // Determine effective behavior: explicit > nullability-based default
         var effectiveBehavior = param.EmptyBodyBehavior;
         if (effectiveBehavior == EmptyBodyBehavior.Default)
+        {
             effectiveBehavior = param.IsNullable ? EmptyBodyBehavior.Allow : EmptyBodyBehavior.Disallow;
+        }
 
         return effectiveBehavior switch
         {
@@ -512,10 +524,14 @@ internal static class BindingCodeEmitter
         code.AppendLine($"{pad}{{");
 
         if (filterExpr is not null)
+        {
             code.AppendLine($"{pad4}if ({filterExpr}) continue;");
+        }
 
         if (keyVarDecl is not null)
+        {
             code.AppendLine($"{pad4}{keyVarDecl}");
+        }
 
         code.AppendLine($"{pad4}if (!{dictName}.TryGetValue({keyExpr}, out var existing))");
         code.AppendLine($"{pad8}{dictName}[{keyExpr}] = new[] {{ {valueExpr} }};");

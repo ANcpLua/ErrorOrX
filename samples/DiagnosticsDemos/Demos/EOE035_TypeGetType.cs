@@ -79,7 +79,9 @@ public static class EOE035_TypeGetType
     public static ErrorOr<string> GetFromRegistry([FromQuery] string key)
     {
         if (!TypeRegistry.TryGetType(key, out var type))
+        {
             return Error.NotFound("Type.NotFound", $"Type '{key}' not registered");
+        }
 
         return $"Type: {type.FullName}";
     }
@@ -118,9 +120,9 @@ public static class TypeRegistry
         ["datetime"] = typeof(DateTime)
     };
 
-    public static bool TryGetType(string key, out Type type)
+    public static bool TryGetType(string key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Type? type)
     {
-        return _types.TryGetValue(key, out type!);
+        return _types.TryGetValue(key, out type);
     }
 
     public static void Register<T>(string key)

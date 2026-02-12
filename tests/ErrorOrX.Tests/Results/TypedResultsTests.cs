@@ -212,7 +212,9 @@ public class ResultTypesTests
     private static ErrorOr<Created> SimulateResourceCreation(bool shouldSucceed)
     {
         if (shouldSucceed)
+        {
             return Result.Created;
+        }
 
         return Error.Conflict("Resource.AlreadyExists", "The resource already exists");
     }
