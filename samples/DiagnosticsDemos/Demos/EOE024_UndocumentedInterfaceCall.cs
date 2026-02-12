@@ -1,12 +1,3 @@
-// EOE024: Undocumented interface call
-// =====================================
-// Endpoint calls interface/abstract method returning ErrorOr without error documentation.
-//
-// When an endpoint delegates to an interface method that returns ErrorOr<T>,
-// the generator cannot infer what errors might be returned. You must document
-// potential errors using [ProducesError] on the endpoint or [ReturnsError] on
-// the interface method.
-
 namespace DiagnosticsDemos.Demos;
 
 // Interface that returns ErrorOr - generator can't infer errors
@@ -28,6 +19,16 @@ public interface IDocumentedRepository
 
 public record Eoe024TodoItem(int Id, string Title);
 
+/// <summary>
+/// EOE024: Undocumented interface call — Endpoint calls interface/abstract method returning ErrorOr
+/// without error documentation.
+/// </summary>
+/// <remarks>
+/// When an endpoint delegates to an interface method that returns ErrorOr&lt;T&gt;,
+/// the generator cannot infer what errors might be returned. You must document
+/// potential errors using [ProducesError] on the endpoint or [ReturnsError] on
+/// the interface method.
+/// </remarks>
 public static class EOE024_UndocumentedInterfaceCall
 {
     // -------------------------------------------------------------------------

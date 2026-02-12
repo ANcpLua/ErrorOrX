@@ -1,13 +1,13 @@
-// EOE022: Too many result types
-// ================================
-// Endpoint has too many result types for Results<...> union.
-//
-// ASP.NET Core's Results<T1, T2, ...> supports up to 6 type parameters.
-// If an endpoint can produce more than 6 different response types,
-// OpenAPI documentation may be incomplete. This is an informational diagnostic.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE022: Too many result types — Endpoint has too many result types for Results&lt;...&gt; union.
+/// </summary>
+/// <remarks>
+/// ASP.NET Core's Results&lt;T1, T2, ...&gt; supports up to 6 type parameters.
+/// If an endpoint can produce more than 6 different response types,
+/// OpenAPI documentation may be incomplete. This is an informational diagnostic.
+/// </remarks>
 public static class EOE022_TooManyResultTypes
 {
     // -------------------------------------------------------------------------

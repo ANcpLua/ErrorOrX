@@ -1,16 +1,14 @@
-// EOE023: Unknown error factory
-// ================================
-// Error factory method is not a known ErrorType.
-//
-// The generator recognizes these Error factory methods:
-// - Error.Failure, Error.Unexpected, Error.Validation
-// - Error.Conflict, Error.NotFound, Error.Unauthorized, Error.Forbidden
-//
-// Error.Custom() creates errors with custom types that may not map to
-// standard HTTP status codes, so a warning is issued.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE023: Unknown error factory — Error factory method is not a known ErrorType.
+/// </summary>
+/// <remarks>
+/// The generator recognizes Error.Failure, Error.Unexpected, Error.Validation,
+/// Error.Conflict, Error.NotFound, Error.Unauthorized, and Error.Forbidden.
+/// Error.Custom() creates errors with custom types that may not map to
+/// standard HTTP status codes, so a warning is issued.
+/// </remarks>
 public static class EOE023_UnknownErrorFactory
 {
     // -------------------------------------------------------------------------

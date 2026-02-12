@@ -1,12 +1,3 @@
-// EOE036: Reflection over members is not AOT-safe
-// =================================================
-// Reflection over type members is not AOT-compatible.
-// Members may be trimmed and unavailable at runtime.
-//
-// Native AOT trims unused members to reduce binary size.
-// GetMethods(), GetProperties(), etc. may return incomplete results
-// or fail entirely if the members were trimmed.
-
 namespace DiagnosticsDemos.Demos;
 
 public class DataModel
@@ -16,6 +7,15 @@ public class DataModel
     public string Description { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// EOE036: Reflection over members is not AOT-safe — Reflection over type members is not AOT-compatible
+/// because members may be trimmed and unavailable at runtime.
+/// </summary>
+/// <remarks>
+/// Native AOT trims unused members to reduce binary size.
+/// GetMethods(), GetProperties(), etc. may return incomplete results
+/// or fail entirely if the members were trimmed.
+/// </remarks>
 public static class EOE036_ReflectionOverMembers
 {
     // -------------------------------------------------------------------------

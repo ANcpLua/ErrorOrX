@@ -1,11 +1,3 @@
-// EOE028: Mapped version not declared
-// =====================================
-// Endpoint has [MapToApiVersion] for a version not declared with [ApiVersion].
-// The mapped version should be one of the supported versions.
-//
-// If you map to version "2.0" but only declare [ApiVersion("1.0")] on the class,
-// the endpoint won't be reachable in version 2.0.
-
 using Asp.Versioning;
 
 namespace DiagnosticsDemos.Demos;
@@ -26,6 +18,13 @@ namespace DiagnosticsDemos.Demos;
 // -------------------------------------------------------------------------
 // FIXED: Declare all versions used in [MapToApiVersion]
 // -------------------------------------------------------------------------
+/// <summary>
+/// EOE028: Mapped version not declared — Endpoint has [MapToApiVersion] for a version not declared with [ApiVersion].
+/// </summary>
+/// <remarks>
+/// If you map to version "2.0" but only declare [ApiVersion("1.0")] on the class,
+/// the endpoint won't be reachable in version 2.0.
+/// </remarks>
 [ApiVersion("1.0")]
 [ApiVersion("2.0")]
 [ApiVersion("3.0")]

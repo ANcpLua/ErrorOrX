@@ -1,13 +1,13 @@
-// EOE020: Route constraint type mismatch
-// ========================================
-// Route constraint type does not match parameter type.
-// For example, {id:int} requires int parameter, not string.
-//
-// Route constraints like :int, :guid, :bool validate the URL format.
-// The method parameter type should match the constraint.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE020: Route constraint type mismatch — Route constraint type does not match parameter type
+/// (e.g. {id:int} requires an int parameter, not string).
+/// </summary>
+/// <remarks>
+/// Route constraints like :int, :guid, :bool validate the URL format.
+/// The method parameter type should match the constraint.
+/// </remarks>
 public static class EOE020_RouteConstraintTypeMismatch
 {
     // -------------------------------------------------------------------------

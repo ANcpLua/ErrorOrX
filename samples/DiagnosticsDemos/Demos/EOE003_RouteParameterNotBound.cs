@@ -1,12 +1,12 @@
-// EOE003: Route parameter not bound
-// ===================================
-// Route template has a parameter that no method parameter captures.
-//
-// When a route contains {paramName}, there must be a corresponding method
-// parameter that will receive the route value.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE003: Route parameter not bound — Route template has a parameter that no method parameter captures.
+/// </summary>
+/// <remarks>
+/// When a route contains {paramName}, there must be a corresponding method
+/// parameter that will receive the route value.
+/// </remarks>
 public static class EOE003_RouteParameterNotBound
 {
     // -------------------------------------------------------------------------

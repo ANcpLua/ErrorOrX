@@ -1,11 +1,3 @@
-// EOE007: Type not AOT-serializable
-// ===================================
-// Type used in endpoint not registered in JsonSerializerContext for AOT.
-//
-// For Native AOT support, all types that need JSON serialization must be
-// registered in a [JsonSerializable] context. This diagnostic is reported
-// by the generator (not analyzer) because it requires cross-file analysis.
-
 namespace DiagnosticsDemos.Demos;
 
 // Types for this demo
@@ -38,6 +30,14 @@ internal partial class EOE007JsonContext : JsonSerializerContext
 {
 }
 
+/// <summary>
+/// EOE007: Type not AOT-serializable — Type used in endpoint is not registered in JsonSerializerContext for AOT.
+/// </summary>
+/// <remarks>
+/// For Native AOT support, all types that need JSON serialization must be
+/// registered in a [JsonSerializable] context. This diagnostic is reported
+/// by the generator (not analyzer) because it requires cross-file analysis.
+/// </remarks>
 public static class EOE007_TypeNotInJsonContext
 {
     // -------------------------------------------------------------------------

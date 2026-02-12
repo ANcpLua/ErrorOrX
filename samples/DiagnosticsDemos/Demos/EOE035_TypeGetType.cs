@@ -1,16 +1,14 @@
-// EOE035: Type.GetType is not AOT-safe (for dynamic patterns)
-// =============================================================
-// Type.GetType(string) with DYNAMIC type names is not AOT-compatible.
-// Types may be trimmed and unavailable at runtime.
-//
-// SAFE: Type.GetType("System.String") - string literal is analyzable
-// UNSAFE: Type.GetType(userInput) - dynamic type name
-// UNSAFE: Type.GetType("...", ignoreCase: true) - case-insensitive search
-//
-// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE035: Type.GetType is not AOT-safe — Type.GetType(string) with dynamic type names is not AOT-compatible
+/// because types may be trimmed and unavailable at runtime.
+/// </summary>
+/// <remarks>
+/// String literal calls like Type.GetType("System.String") are safe and analyzable.
+/// Dynamic type names from parameters or case-insensitive searches are unsafe.
+/// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic
+/// </remarks>
 public static class EOE035_TypeGetType
 {
     // -------------------------------------------------------------------------

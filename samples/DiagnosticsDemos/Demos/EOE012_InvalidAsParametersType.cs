@@ -1,10 +1,3 @@
-// EOE012: Invalid [AsParameters] type
-// =====================================
-// [AsParameters] used on non-class/struct type.
-//
-// [AsParameters] expands a class or struct's properties into individual parameters.
-// It cannot be used with primitive types or interfaces.
-
 namespace DiagnosticsDemos.Demos;
 
 // Valid: Class type for [AsParameters]
@@ -26,6 +19,13 @@ public struct SearchParamsStruct
 // Valid: Record type for [AsParameters]
 public record SearchParamsRecord(string? Query, int Page = 1, int PageSize = 10);
 
+/// <summary>
+/// EOE012: Invalid [AsParameters] type — [AsParameters] used on non-class/struct type.
+/// </summary>
+/// <remarks>
+/// [AsParameters] expands a class or struct's properties into individual parameters.
+/// It cannot be used with primitive types or interfaces.
+/// </remarks>
 public static class EOE012_InvalidAsParametersType
 {
     // -------------------------------------------------------------------------

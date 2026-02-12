@@ -1,13 +1,13 @@
-// EOE009: [AcceptedResponse] on read-only method
-// ================================================
-// [AcceptedResponse] on GET/DELETE is semantically unusual.
-//
-// HTTP 202 Accepted indicates that a request has been accepted for processing
-// but the processing has not been completed. This is typically used for
-// async POST/PUT operations, not read operations.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE009: [AcceptedResponse] on read-only method — [AcceptedResponse] on GET/DELETE is semantically unusual.
+/// </summary>
+/// <remarks>
+/// HTTP 202 Accepted indicates that a request has been accepted for processing
+/// but the processing has not been completed. This is typically used for
+/// async POST/PUT operations, not read operations.
+/// </remarks>
 public static class EOE009_AcceptedOnReadOnlyMethod
 {
     [Post("/api/eoe009/import")]

@@ -1,16 +1,16 @@
-// EOE027: Version-neutral with mappings
-// =======================================
-// Endpoint is version-neutral but has explicit version mappings.
-// [ApiVersionNeutral] and [MapToApiVersion] are mutually exclusive.
-//
-// [ApiVersionNeutral] means the endpoint works across all versions.
-// [MapToApiVersion] means the endpoint is specific to certain versions.
-// Using both is contradictory.
-
 using Asp.Versioning;
 
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE027: Version-neutral with mappings — Endpoint is version-neutral but has explicit version mappings;
+/// [ApiVersionNeutral] and [MapToApiVersion] are mutually exclusive.
+/// </summary>
+/// <remarks>
+/// [ApiVersionNeutral] means the endpoint works across all versions.
+/// [MapToApiVersion] means the endpoint is specific to certain versions.
+/// Using both is contradictory.
+/// </remarks>
 [ApiVersion("1.0")]
 [ApiVersion("2.0")]
 public static class EOE027_VersionNeutralWithMappings

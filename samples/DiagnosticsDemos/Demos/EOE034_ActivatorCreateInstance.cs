@@ -1,12 +1,3 @@
-// EOE034: Activator.CreateInstance is not AOT-safe
-// ==================================================
-// Activator.CreateInstance is not AOT-compatible.
-// Use factory methods or explicit construction instead.
-//
-// Native AOT requires all types to be known at compile time.
-// Activator.CreateInstance uses reflection to create objects at runtime,
-// which won't work in AOT-compiled applications.
-
 namespace DiagnosticsDemos.Demos;
 
 public class DataProcessor
@@ -46,6 +37,15 @@ public class XmlProcessor : IDataProcessor
     }
 }
 
+/// <summary>
+/// EOE034: Activator.CreateInstance is not AOT-safe — Activator.CreateInstance is not AOT-compatible;
+/// use factory methods or explicit construction instead.
+/// </summary>
+/// <remarks>
+/// Native AOT requires all types to be known at compile time.
+/// Activator.CreateInstance uses reflection to create objects at runtime,
+/// which won't work in AOT-compiled applications.
+/// </remarks>
 public static class EOE034_ActivatorCreateInstance
 {
     // -------------------------------------------------------------------------

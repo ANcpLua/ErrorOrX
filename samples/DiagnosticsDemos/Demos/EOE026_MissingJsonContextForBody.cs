@@ -1,11 +1,3 @@
-// EOE026: Missing JsonSerializerContext for AOT
-// ===============================================
-// No JsonSerializerContext found but endpoint uses request body.
-// Without a user-defined context, AOT serialization will fail.
-//
-// For Native AOT support, you must define a JsonSerializerContext
-// with [JsonSerializable] attributes for all request/response types.
-
 namespace DiagnosticsDemos.Demos.Eoe026;
 
 public record OrderRequest(string ProductId, int Quantity);
@@ -36,6 +28,14 @@ internal partial class EOE026JsonContext : JsonSerializerContext
 {
 }
 
+/// <summary>
+/// EOE026: Missing JsonSerializerContext for AOT — No JsonSerializerContext found but endpoint uses request body,
+/// so AOT serialization will fail.
+/// </summary>
+/// <remarks>
+/// For Native AOT support, you must define a JsonSerializerContext
+/// with [JsonSerializable] attributes for all request/response types.
+/// </remarks>
 public static class EOE026_MissingJsonContextForBody
 {
     // -------------------------------------------------------------------------

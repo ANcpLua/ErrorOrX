@@ -1,11 +1,3 @@
-// EOE021: Ambiguous parameter binding
-// =====================================
-// Complex type parameter on bodyless/custom method requires explicit binding attribute.
-//
-// GET, DELETE, HEAD, and OPTIONS methods cannot have implicit body binding.
-// When you have a complex type parameter on these methods, you must specify
-// how to bind it: [AsParameters], [FromBody], or [FromServices].
-
 namespace DiagnosticsDemos.Demos;
 
 // Complex types used in examples
@@ -28,6 +20,14 @@ public interface ISearchService
     string Search(string query);
 }
 
+/// <summary>
+/// EOE021: Ambiguous parameter binding — Complex type parameter on bodyless method requires explicit binding attribute.
+/// </summary>
+/// <remarks>
+/// GET, DELETE, HEAD, and OPTIONS methods cannot have implicit body binding.
+/// When you have a complex type parameter on these methods, you must specify
+/// how to bind it: [AsParameters], [FromBody], or [FromServices].
+/// </remarks>
 public static class EOE021_AmbiguousParameterBinding
 {
     // -------------------------------------------------------------------------

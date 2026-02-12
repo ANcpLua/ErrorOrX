@@ -1,14 +1,3 @@
-// EOE041: JsonSerializerContext missing error types
-// ==================================================
-// When using a custom JsonSerializerContext with ErrorOrX,
-// you must include ProblemDetails and HttpValidationProblemDetails
-// for error response serialization.
-//
-// ErrorOrX converts ErrorOr errors to ProblemDetails responses.
-// Without these types in your context, error serialization will fail.
-//
-// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings
-
 namespace DiagnosticsDemos.Demos;
 
 // -------------------------------------------------------------------------
@@ -29,6 +18,14 @@ namespace DiagnosticsDemos.Demos;
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
 internal partial class CompleteJsonContext : JsonSerializerContext;
 
+/// <summary>
+/// EOE041: JsonSerializerContext missing error types — Custom JsonSerializerContext must include
+/// ProblemDetails and HttpValidationProblemDetails for error response serialization.
+/// </summary>
+/// <remarks>
+/// ErrorOrX converts ErrorOr errors to ProblemDetails responses.
+/// Without these types in your context, error serialization will fail.
+/// </remarks>
 public static class EOE041_JsonContextMissingProblemDetails
 {
     [Get("/api/eoe041/item/{id}")]

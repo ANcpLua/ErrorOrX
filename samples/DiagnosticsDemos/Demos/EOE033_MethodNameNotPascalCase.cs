@@ -1,13 +1,13 @@
-// EOE033: Handler method name not PascalCase
-// ============================================
-// Handler method name should follow PascalCase convention.
-// The first character should be uppercase, and no underscores should be used.
-//
-// C# naming conventions use PascalCase for public methods.
-// This helps maintain consistency and readability.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE033: Handler method name not PascalCase — Handler method name should follow PascalCase convention
+/// with uppercase first character and no underscores.
+/// </summary>
+/// <remarks>
+/// C# naming conventions use PascalCase for public methods.
+/// This helps maintain consistency and readability.
+/// </remarks>
 public static class EOE033_MethodNameNotPascalCase
 {
     // -------------------------------------------------------------------------

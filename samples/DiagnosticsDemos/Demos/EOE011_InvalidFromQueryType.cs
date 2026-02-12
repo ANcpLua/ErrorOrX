@@ -1,10 +1,3 @@
-// EOE011: Invalid [FromQuery] type
-// ==================================
-// [FromQuery] parameter type is not a supported primitive or collection of primitives.
-//
-// Query string values can only bind to primitive types or arrays/lists of primitives.
-// Complex nested objects cannot be bound from query strings without [AsParameters].
-
 namespace DiagnosticsDemos.Demos;
 
 // Complex filter class - cannot be used with [FromQuery]
@@ -28,6 +21,13 @@ public class FlatFilter
     public int PageSize { get; set; } = 10;
 }
 
+/// <summary>
+/// EOE011: Invalid [FromQuery] type — [FromQuery] parameter type is not a supported primitive or collection of primitives.
+/// </summary>
+/// <remarks>
+/// Query string values can only bind to primitive types or arrays/lists of primitives.
+/// Complex nested objects cannot be bound from query strings without [AsParameters].
+/// </remarks>
 public static class EOE011_InvalidFromQueryType
 {
     // -------------------------------------------------------------------------

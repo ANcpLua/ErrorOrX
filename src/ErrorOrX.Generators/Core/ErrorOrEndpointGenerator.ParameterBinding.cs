@@ -1036,7 +1036,7 @@ public sealed partial class ErrorOrEndpointGenerator
             : (false, true);
     }
 
-    private static string? ExtractKeyFromKeyedServiceAttribute(IParameterSymbol parameter)
+    private static string? ExtractKeyFromKeyedServiceAttribute(ISymbol parameter)
     {
         var matcher = new AttributeNameMatcher(WellKnownTypes.FromKeyedServicesAttribute);
         var attr = parameter.GetAttributes().FirstOrDefault(a => matcher.IsMatch(a.AttributeClass));
@@ -1050,7 +1050,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return val switch { string s => $"\"{s}\"", _ => val?.ToString() };
     }
 
-    private static bool HasParameterAttribute(IParameterSymbol parameter, INamedTypeSymbol? attributeSymbol,
+    private static bool HasParameterAttribute(ISymbol parameter, INamedTypeSymbol? attributeSymbol,
         string attributeName)
     {
         var attributes = parameter.GetAttributes();

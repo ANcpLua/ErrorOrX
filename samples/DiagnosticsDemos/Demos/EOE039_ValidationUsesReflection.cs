@@ -1,18 +1,16 @@
-// EOE039: DataAnnotations validation uses reflection
-// ===================================================
-// Parameters with validation attributes (e.g., [Required], [StringLength])
-// trigger Validator.TryValidateObject which uses reflection internally.
-//
-// This may cause trim warnings when publishing with Native AOT.
-// Consider using FluentValidation with source generators or manual validation.
-//
-// Severity: Info (validation works, but generates trim warnings)
-// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings
-
 using System.ComponentModel.DataAnnotations;
 
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE039: DataAnnotations validation uses reflection — Parameters with validation attributes
+/// (e.g. [Required], [StringLength]) trigger Validator.TryValidateObject which uses reflection internally.
+/// </summary>
+/// <remarks>
+/// This may cause trim warnings when publishing with Native AOT.
+/// Consider using FluentValidation with source generators or manual validation.
+/// Severity: Info (validation works, but generates trim warnings).
+/// </remarks>
 public static class EOE039_ValidationUsesReflection
 {
     // -------------------------------------------------------------------------

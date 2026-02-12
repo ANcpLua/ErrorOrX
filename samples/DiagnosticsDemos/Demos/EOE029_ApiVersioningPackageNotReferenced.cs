@@ -1,11 +1,3 @@
-// EOE029: Asp.Versioning package not referenced
-// ===============================================
-// Asp.Versioning.Http package is not referenced but [ApiVersion] attributes are used.
-// Install the package: dotnet add package Asp.Versioning.Http
-//
-// This demo file won't trigger EOE029 because the package IS referenced.
-// The diagnostic appears when you use versioning attributes without the package.
-
 // -------------------------------------------------------------------------
 // HOW TO TRIGGER EOE029:
 // -------------------------------------------------------------------------
@@ -28,6 +20,15 @@ namespace DiagnosticsDemos.Demos;
 // -------------------------------------------------------------------------
 // FIXED: With Asp.Versioning.Http package properly referenced
 // -------------------------------------------------------------------------
+/// <summary>
+/// EOE029: Asp.Versioning package not referenced — Asp.Versioning.Http package is not referenced
+/// but [ApiVersion] attributes are used.
+/// </summary>
+/// <remarks>
+/// This demo file won't trigger EOE029 because the package IS referenced.
+/// The diagnostic appears when you use versioning attributes without the package.
+/// Install the package: dotnet add package Asp.Versioning.Http.
+/// </remarks>
 [ApiVersion("1.0")]
 public static class EOE029_ApiVersioningPackageNotReferenced
 {

@@ -1,11 +1,3 @@
-// EOE017: Nullable [AsParameters] not supported
-// ===============================================
-// [AsParameters] cannot be applied to nullable types.
-// Parameter expansion requires a concrete instance.
-//
-// The model binder cannot expand a null object's properties, so [AsParameters]
-// types must be non-nullable.
-
 namespace DiagnosticsDemos.Demos;
 
 public class SearchParams
@@ -16,6 +8,14 @@ public class SearchParams
 
 public record FilterParams(string? Name, int? MinPrice, int? MaxPrice);
 
+/// <summary>
+/// EOE017: Nullable [AsParameters] not supported — [AsParameters] cannot be applied to nullable types
+/// because parameter expansion requires a concrete instance.
+/// </summary>
+/// <remarks>
+/// The model binder cannot expand a null object's properties, so [AsParameters]
+/// types must be non-nullable.
+/// </remarks>
 public static class EOE017_NullableAsParameters
 {
     // -------------------------------------------------------------------------

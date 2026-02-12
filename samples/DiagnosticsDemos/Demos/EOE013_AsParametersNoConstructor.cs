@@ -1,11 +1,3 @@
-// EOE013: [AsParameters] type has no constructor
-// ================================================
-// [AsParameters] type has no accessible constructor.
-//
-// The model binder needs to instantiate the [AsParameters] type, which requires
-// a public parameterless constructor, or a constructor where all parameters
-// can be bound from the request.
-
 namespace DiagnosticsDemos.Demos;
 
 // Invalid: Only private constructor
@@ -40,6 +32,14 @@ public class PublicConstructorParams
 // Valid: Primary constructor record (parameters match property names)
 public record RecordParams(string? Query, int Page = 1);
 
+/// <summary>
+/// EOE013: [AsParameters] type has no constructor — [AsParameters] type has no accessible constructor.
+/// </summary>
+/// <remarks>
+/// The model binder needs to instantiate the [AsParameters] type, which requires
+/// a public parameterless constructor, or a constructor where all parameters
+/// can be bound from the request.
+/// </remarks>
 public static class EOE013_AsParametersNoConstructor
 {
     // -------------------------------------------------------------------------

@@ -1,14 +1,14 @@
-// EOE037: Expression.Compile is not AOT-safe
-// ============================================
-// Expression.Compile() generates code at runtime.
-// This is not supported in NativeAOT.
-//
-// Expression trees are a powerful feature for building dynamic queries
-// and delegates, but Compile() requires runtime code generation which
-// is not available in AOT-compiled applications.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE037: Expression.Compile is not AOT-safe — Expression.Compile() generates code at runtime,
+/// which is not supported in NativeAOT.
+/// </summary>
+/// <remarks>
+/// Expression trees are a powerful feature for building dynamic queries
+/// and delegates, but Compile() requires runtime code generation which
+/// is not available in AOT-compiled applications.
+/// </remarks>
 public static class EOE037_ExpressionCompile
 {
     // -------------------------------------------------------------------------

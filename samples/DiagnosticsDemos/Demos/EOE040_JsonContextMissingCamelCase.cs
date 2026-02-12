@@ -1,14 +1,3 @@
-// EOE040: JsonSerializerContext missing CamelCase
-// ================================================
-// When using a custom JsonSerializerContext with ErrorOrX,
-// you should configure PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
-// for ASP.NET Core compatibility.
-//
-// ASP.NET Core defaults to camelCase for JSON property names.
-// Mismatched casing can cause serialization/deserialization issues.
-//
-// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings
-
 namespace DiagnosticsDemos.Demos;
 
 // -------------------------------------------------------------------------
@@ -26,6 +15,14 @@ namespace DiagnosticsDemos.Demos;
 [JsonSerializable(typeof(Eoe040Response))]
 internal partial class GoodJsonContext : JsonSerializerContext;
 
+/// <summary>
+/// EOE040: JsonSerializerContext missing CamelCase — Custom JsonSerializerContext should configure
+/// PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility.
+/// </summary>
+/// <remarks>
+/// ASP.NET Core defaults to camelCase for JSON property names.
+/// Mismatched casing can cause serialization/deserialization issues.
+/// </remarks>
 public static class EOE040_JsonContextMissingCamelCase
 {
     [Get("/api/eoe040/response")]

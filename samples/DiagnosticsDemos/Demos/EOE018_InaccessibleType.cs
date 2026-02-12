@@ -1,13 +1,13 @@
-// EOE018: Inaccessible type in endpoint
-// =======================================
-// Private or protected types cannot be used in endpoint signatures.
-// Generated code cannot access them.
-//
-// The source generator creates code in a different class/namespace that needs
-// to access your types. Private and protected types are not accessible.
-
 namespace DiagnosticsDemos.Demos;
 
+/// <summary>
+/// EOE018: Inaccessible type in endpoint — Private or protected types cannot be used in endpoint signatures
+/// because generated code cannot access them.
+/// </summary>
+/// <remarks>
+/// The source generator creates code in a different class/namespace that needs
+/// to access your types. Private and protected types are not accessible.
+/// </remarks>
 public static class EOE018_InaccessibleType
 {
     // -------------------------------------------------------------------------

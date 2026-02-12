@@ -1,12 +1,11 @@
-// EOE015: Anonymous return type not supported
-// =============================================
-// Anonymous types cannot be used as ErrorOr value types.
-// They have no stable identity for JSON serialization.
-
 namespace DiagnosticsDemos.Demos;
 
 public record TodoSummary(int Id, string Title);
 
+/// <summary>
+/// EOE015: Anonymous return type not supported — Anonymous types cannot be used as ErrorOr value types
+/// because they have no stable identity for JSON serialization.
+/// </summary>
 public static class EOE015_AnonymousReturnType
 {
     // -------------------------------------------------------------------------

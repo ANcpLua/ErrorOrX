@@ -1,10 +1,3 @@
-// EOE014: Invalid [FromHeader] type
-// ====================================
-// [FromHeader] with non-string type requires TryParse.
-//
-// Header values come as strings. To bind to other types, the type must
-// be string, a primitive with TryParse, or a collection thereof.
-
 namespace DiagnosticsDemos.Demos;
 
 // Complex type without TryParse - cannot be used with [FromHeader]
@@ -14,6 +7,13 @@ public class ComplexHeader
     public int Priority { get; set; }
 }
 
+/// <summary>
+/// EOE014: Invalid [FromHeader] type — [FromHeader] with non-string type requires TryParse.
+/// </summary>
+/// <remarks>
+/// Header values come as strings. To bind to other types, the type must
+/// be string, a primitive with TryParse, or a collection thereof.
+/// </remarks>
 public static class EOE014_InvalidFromHeaderType
 {
     // -------------------------------------------------------------------------

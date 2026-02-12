@@ -1,11 +1,3 @@
-// EOE019: Type parameter not supported
-// ======================================
-// Type parameters (open generics) cannot be used in endpoint return types.
-// The generator cannot emit code for unbound generic types.
-//
-// ErrorOr endpoints require concrete types so the generator can emit
-// proper JSON serialization and HTTP response code.
-
 namespace DiagnosticsDemos.Demos;
 
 // Supporting types defined first to be visible in the endpoint class
@@ -17,6 +9,13 @@ public record Product019(int Id, string Name, decimal Price);
 
 public record PagedResult019<T>(List<T> Items, int TotalCount, int Page, int PageSize);
 
+/// <summary>
+/// EOE019: Type parameter not supported — Open generic type parameters cannot be used in endpoint return types.
+/// </summary>
+/// <remarks>
+/// ErrorOr endpoints require concrete types so the generator can emit
+/// proper JSON serialization and HTTP response code.
+/// </remarks>
 public static class EOE019_TypeParameterNotSupported
 {
     // -------------------------------------------------------------------------

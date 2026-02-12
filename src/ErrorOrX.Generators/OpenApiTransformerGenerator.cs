@@ -350,7 +350,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static (string? Location, string? Name) GetExplicitBinding(IParameterSymbol param)
+    private static (string? Location, string? Name) GetExplicitBinding(ISymbol param)
     {
         foreach (var attr in param.GetAttributes())
         {
