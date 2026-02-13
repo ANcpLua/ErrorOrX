@@ -10,7 +10,7 @@
         <File Path="CHANGELOG.md"/>
         <File Path="CLAUDE.md"/>
         <File Path="Directory.Build.targets"/>
-        <File Path="version.props"/>
+        <File Path="Version.props"/>
     </Folder>
 
     <!-- Source Projects -->

@@ -32,8 +32,8 @@ jobs:
               node = root.find(f".//{tag}")
               return (node.text or "").strip()
 
-          version_prefix = read_text("version.props", "VersionPrefix")
-          version_suffix = read_text("version.props", "VersionSuffix")
+          version_prefix = read_text("Version.props", "VersionPrefix")
+          version_suffix = read_text("Version.props", "VersionSuffix")
           version = version_prefix if not version_suffix else f"{version_prefix}-{version_suffix}"
 
           root = ET.parse("Directory.Packages.props").getroot()
