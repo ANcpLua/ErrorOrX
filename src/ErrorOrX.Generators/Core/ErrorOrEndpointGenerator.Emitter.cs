@@ -159,7 +159,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (hasJsonTypes || hasValidatableTypes)
         {
-            EmitJsonConfigExtension(code, hasValidatableTypes);
+            EmitAddErrorOrEndpointsExtension(code, hasValidatableTypes);
         }
 
         // Emit invokers for ALL endpoints (grouped and ungrouped)
@@ -595,7 +595,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine();
     }
 
-    private static void EmitJsonConfigExtension(StringBuilder code, bool hasValidatableTypes = false)
+    private static void EmitAddErrorOrEndpointsExtension(StringBuilder code, bool hasValidatableTypes = false)
     {
         // Emit fluent builder: AddErrorOrEndpoints() returns IErrorOrEndpointsBuilder
         code.AppendLine("        /// <summary>");

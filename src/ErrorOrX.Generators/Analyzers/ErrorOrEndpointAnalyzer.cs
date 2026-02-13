@@ -115,21 +115,18 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Extract route parameters with constraints
+        // Parse verb once at method scope — null for custom/unrecognized HTTP methods
+        var verb = HttpVerbExtensions.ParseMethodString(httpMethod);
+
+        // Extract route parameters with constraints — route binding requires a recognized verb
         var routeParams = ExtractRouteParametersWithConstraints(pattern);
-        if (!routeParams.IsDefaultOrEmpty)
+        if (!routeParams.IsDefaultOrEmpty && verb is not null)
         {
             var routeParamNames = routeParams
                 .Select(static r => r.Name)
                 .ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
             var errorOrContext = new ErrorOrContext(context.Compilation);
-
-            var verb = HttpVerbExtensions.ParseMethodString(httpMethod);
-            if (verb is null)
-            {
-                return;
-            }
 
             var bindingFlow =
                 RouteBindingHelper.BindRouteParameters(method, routeParamNames, errorOrContext, verb.Value);
@@ -168,8 +165,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         // EOE008: Body on read-only HTTP method
+        var isBodyless = verb?.IsBodyless() ?? WellKnownTypes.HttpMethod.IsBodyless(httpMethod);
         var hasBody = bodyCount > 0;
-        if (hasBody && WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
+        if (hasBody && isBodyless)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.BodyOnReadOnlyMethod,
@@ -179,8 +177,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         // EOE009: [AcceptedResponse] on read-only method
-        if (HasAcceptedResponseAttribute(method, null) &&
-            WellKnownTypes.HttpMethod.IsBodyless(httpMethod))
+        if (HasAcceptedResponseAttribute(method, null) && isBodyless)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,

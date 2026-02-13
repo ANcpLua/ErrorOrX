@@ -2,7 +2,7 @@ namespace ErrorOr.Generators;
 
 /// <summary>
 ///     HTTP verb enum matching ASP.NET Core MapGet/MapPost/etc. methods.
-///     No default/discard arms — the compiler forces handling of new members.
+///     Exhaustive switch expressions — all members handled explicitly, discard arms are defensive only.
 /// </summary>
 internal enum HttpVerb : byte
 {

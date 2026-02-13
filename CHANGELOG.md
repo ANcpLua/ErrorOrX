@@ -4,6 +4,26 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Analyzer early-return scoping**: Custom HTTP methods (e.g., `[ErrorOrEndpoint("CONNECT", "/path/{id}")]`) with route
+  parameters silently skipped EOE006, EOE008, EOE009, and EOE039 diagnostics. The `return` when `ParseMethodString`
+  returned null exited the entire `AnalyzeEndpoint` method instead of just the route binding block.
+
+- **HttpVerb doc comment**: Corrected misleading "No default/discard arms" comment — the enum's switch expressions do
+  have defensive discard arms (`_ => throw`), which is intentional for the `byte`-backed enum.
+
+### Changed
+
+- **Renamed `EmitJsonConfigExtension`** to `EmitAddErrorOrEndpointsExtension` — the method emits the
+  `AddErrorOrEndpoints()` service registration extension, not JSON configuration. Historical name no longer matched.
+
+- **Typed `IsBodyless` in analyzer**: EOE008 and EOE009 now use `HttpVerb.IsBodyless()` with string fallback for custom
+  verbs, replacing the previous string-only `WellKnownTypes.HttpMethod.IsBodyless()` calls.
+
+- **Updated dependencies**: ANcpLua.Analyzers 1.13.0 → 1.14.0, ANcpLua.Roslyn.Utilities 1.31.0 → 1.33.0,
+  ANcpLua.NET.Sdk 2.0.5 → 2.0.6, .NET SDK 10.0.102 → 10.0.103.
+
 ## [3.6.0] - 2026-02-13
 
 ### Added
