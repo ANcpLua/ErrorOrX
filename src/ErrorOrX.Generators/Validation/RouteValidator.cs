@@ -18,11 +18,13 @@ internal static class RouteValidator
 {
     private static readonly Regex SRouteParameterRegexInstance = new(
         @"(?<!\{)\{(?<star>\*)?(?<n>[a-zA-Z_][a-zA-Z0-9_]*)(?<constraints>(?::[a-zA-Z]+(?:\([^)]*\))?)*)(?<optional>\?)?\}(?!\})",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+        TimeSpan.FromSeconds(1));
 
     private static readonly Regex SIndividualConstraintRegex = new(
         @":(?<name>[a-zA-Z]+)(?:\((?<args>[^)]*)\))?",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+        TimeSpan.FromSeconds(1));
 
     /// <summary>
     ///     Maps route constraints to their expected CLR types.

@@ -33,7 +33,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     private static IncrementalValueProvider<EquatableArray<OpenApiEndpointInfo>> CombineHttpMethodProviders(
         IncrementalGeneratorInitializationContext context)
     {
-        return IncrementalProviderExtensions.CombineNine(
+        return IncrementalProviderExtensions.CombineAll(
             CreateEndpointProvider(context, WellKnownTypes.GetAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PostAttribute),
             CreateEndpointProvider(context, WellKnownTypes.PutAttribute),
@@ -97,7 +97,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         }
 
         // Extract XML documentation
-        var xmlDoc = method.GetDocumentationCommentXml();
+        var xmlDoc = method.GetDocumentationCommentXml(cancellationToken: ct);
         var (summary, description) = ParseXmlDoc(xmlDoc);
         var parameterDocs = ParseParamTags(xmlDoc);
 
@@ -148,8 +148,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static (string? summary, string? description) ParseXmlDoc(string? xml)
     {
-        // Use pattern matching to establish non-null reference for compiler
-        if (string.IsNullOrWhiteSpace(xml) || xml is null)
+        if (xml is null || string.IsNullOrWhiteSpace(xml))
         {
             return (null, null);
         }
@@ -185,7 +184,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static ImmutableArray<(string ParamName, string Description)> ParseParamTags(string? xml)
     {
-        if (string.IsNullOrWhiteSpace(xml) || xml is null)
+        if (xml is null || string.IsNullOrWhiteSpace(xml))
         {
             return ImmutableArray<(string, string)>.Empty;
         }
@@ -331,7 +330,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         }
 
         // Skip abstract types (services)
-        if (param.Type.IsAbstract && param.Type.TypeKind == TypeKind.Class)
+        if (param.Type is { IsAbstract: true, TypeKind: TypeKind.Class })
         {
             return true;
         }
@@ -462,16 +461,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static string GetReflectionFullName(ISymbol symbol)
     {
-        var typeNames = new Stack<string>();
-        for (ISymbol? current = symbol; current is not null; current = current.ContainingType)
-            typeNames.Push(current.MetadataName);
-
-        var typeName = string.Join("+", typeNames);
-        var ns = symbol.ContainingNamespace?.IsGlobalNamespace == true
-            ? null
-            : symbol.ContainingNamespace?.ToDisplayString();
-
-        return string.IsNullOrEmpty(ns) ? typeName : $"{ns}.{typeName}";
+        var fqn = ((ITypeSymbol)symbol).GetFullyQualifiedName();
+        return fqn.StartsWithOrdinal("global::") ? fqn.Substring("global::".Length) : fqn;
     }
 
     private static TypeMetadataInfo? ExtractTypeMetadata(
@@ -491,7 +482,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         }
 
         // Skip types without XML docs
-        var xmlDoc = symbol.GetDocumentationCommentXml();
+        var xmlDoc = symbol.GetDocumentationCommentXml(cancellationToken: ct);
         if (string.IsNullOrWhiteSpace(xmlDoc))
         {
             return null;

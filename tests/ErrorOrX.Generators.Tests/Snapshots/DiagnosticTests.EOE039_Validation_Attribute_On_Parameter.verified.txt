@@ -100,25 +100,17 @@ namespace ErrorOr.Generated
             return new ErrorOrEndpointsBuilder(services);
         }
 
-        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0(HttpContext ctx)
+        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.ValidationProblem, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0(HttpContext ctx)
         {
             return await Invoke_Ep0_Core(ctx);
         }
 
-        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
+        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.ValidationProblem, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
         {
-            static global::Microsoft.AspNetCore.Mvc.ProblemDetails CreateBindProblem(string param, string reason) => new()
-            {
-                Title = "Bad Request",
-                Detail = $"Parameter '{param}' {reason}.",
-                Status = 400,
-                Type = "https://httpstatuses.io/400",
-            };
+            static global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.ValidationProblem, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>> BindFail(string param, string reason)
+                => global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(new global::System.Collections.Generic.Dictionary<string, string[]> { [param] = [reason] });
 
-            static global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>> BindFail(string param, string reason)
-                => global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason));
-
-            static global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>> BindFail415()
+            static global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.ValidationProblem, global::Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>> BindFail415()
                 => global::Microsoft.AspNetCore.Http.TypedResults.StatusCode(415);
 
             if (ctx.Request.ContentLength is null or 0)
@@ -134,6 +126,28 @@ namespace ErrorOr.Generated
                 return BindFail("request", "has invalid JSON format");
             }
             if (p0 is null) return BindFail("request", "is required");
+
+            // BCL Validation
+            var p0ValidationResults = new global::System.Collections.Generic.List<global::System.ComponentModel.DataAnnotations.ValidationResult>();
+            if (!global::System.ComponentModel.DataAnnotations.Validator.TryValidateObject(p0!, new global::System.ComponentModel.DataAnnotations.ValidationContext(p0!), p0ValidationResults, validateAllProperties: true))
+            {
+                var validationDict = new global::System.Collections.Generic.Dictionary<string, string[]>();
+                foreach (var vr in p0ValidationResults)
+                {
+                    var key = vr.MemberNames.FirstOrDefault() ?? "";
+                    if (!validationDict.TryGetValue(key, out var existing))
+                        validationDict[key] = new[] { vr.ErrorMessage ?? "" };
+                    else
+                    {
+                        var arr = new string[existing.Length + 1];
+                        existing.CopyTo(arr, 0);
+                        arr[existing.Length] = vr.ErrorMessage ?? "";
+                        validationDict[key] = arr;
+                    }
+                }
+                return global::Microsoft.AspNetCore.Http.TypedResults.ValidationProblem(validationDict);
+            }
+
             var result = global::DiagnosticTest.TodoApi.Create(p0!);
             if (result.IsError)
             {

@@ -10,7 +10,7 @@ internal static class RouteBindingHelper
         IMethodSymbol method,
         ImmutableHashSet<string> routeParameters,
         ErrorOrContext context,
-        string httpMethod)
+        HttpVerb httpVerb)
     {
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         var bindingResult = ErrorOrEndpointGenerator.BindParameters(
@@ -18,7 +18,7 @@ internal static class RouteBindingHelper
             routeParameters,
             diagnostics,
             context,
-            httpMethod);
+            httpVerb);
 
         if (!bindingResult.IsValid)
         {

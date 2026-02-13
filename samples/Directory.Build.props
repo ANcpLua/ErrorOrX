@@ -1,0 +1,12 @@
+<Project>
+    <!-- Import root build settings -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" Condition="'$(DirectoryBuildPropsImported)' != 'true'"/>
+    <PropertyGroup>
+        <DirectoryBuildPropsImported>true</DirectoryBuildPropsImported>
+    </PropertyGroup>
+
+    <!-- Sample/demo code doesn't need production-level analysis -->
+    <PropertyGroup>
+        <AnalysisLevel>none</AnalysisLevel>
+    </PropertyGroup>
+</Project>

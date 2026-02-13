@@ -48,6 +48,10 @@ internal static class WellKnownTypes
     public const string ValidationAttribute = "System.ComponentModel.DataAnnotations.ValidationAttribute";
     public const string IValidatableObject = "System.ComponentModel.DataAnnotations.IValidatableObject";
 
+    public const string IValidatableInfoResolver = "Microsoft.Extensions.Validation.IValidatableInfoResolver";
+    public const string ValidatableTypeInfo = "Microsoft.Extensions.Validation.ValidatableTypeInfo";
+    public const string ValidatablePropertyInfo = "Microsoft.Extensions.Validation.ValidatablePropertyInfo";
+
     public const string CancellationToken = "System.Threading.CancellationToken";
     public const string JsonSerializableAttribute = "System.Text.Json.Serialization.JsonSerializableAttribute";
 
@@ -147,6 +151,15 @@ internal static class WellKnownTypes
         public const string Validator = "global::System.ComponentModel.DataAnnotations.Validator";
         public const string ValidationContext = "global::System.ComponentModel.DataAnnotations.ValidationContext";
         public const string ValidationResult = "global::System.ComponentModel.DataAnnotations.ValidationResult";
+        public const string ValidationAttributeType = "global::System.ComponentModel.DataAnnotations.ValidationAttribute";
+
+        public const string ValidatableInfoResolver =
+            "global::Microsoft.Extensions.Validation.IValidatableInfoResolver";
+
+        public const string ValidatableTypeInfoBase = "global::Microsoft.Extensions.Validation.ValidatableTypeInfo";
+        public const string ValidatablePropertyInfoBase = "global::Microsoft.Extensions.Validation.ValidatablePropertyInfo";
+        public const string IValidatableInfo = "global::Microsoft.Extensions.Validation.IValidatableInfo";
+        public const string ValidationOptions = "global::Microsoft.Extensions.Validation.ValidationOptions";
 
         public const string JsonException = "global::System.Text.Json.JsonException";
 

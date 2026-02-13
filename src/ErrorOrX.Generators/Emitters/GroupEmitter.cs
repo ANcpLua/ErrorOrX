@@ -95,19 +95,7 @@ internal static class GroupEmitter
         // Use relative pattern (group prefix already handled by MapGroup)
         var relativePattern = GetRelativePattern(in ep);
 
-        // Cast to Delegate to force the Delegate overload of MapGet/MapPost/etc.
-        // Without this cast, the compiler selects the RequestDelegate overload,
-        // which bypasses RequestDelegateFactory and makes endpoints invisible to OpenAPI.
-        var mapMethod = GetMapMethod(ep.HttpMethod);
-        code.Append(mapMethod == "MapMethods"
-            ? $"            var __ep{globalIndex} = {groupVarName}.MapMethods(@\"{relativePattern}\", new[] {{ \"{ep.HttpMethod}\" }}, (Delegate)Invoke_Ep{globalIndex})"
-            : $"            var __ep{globalIndex} = {groupVarName}.{mapMethod}(@\"{relativePattern}\", (Delegate)Invoke_Ep{globalIndex})");
-
-        // Emit operation name
-        code.AppendLine();
-        var (_, operationId) =
-            EndpointNameHelper.GetEndpointIdentity(ep.HandlerContainingTypeFqn, ep.HandlerMethodName);
-        code.AppendLine($"                .WithName(\"{operationId}\")");
+        MapCallEmitter.EmitMapCallStart(code, in ep, groupVarName, relativePattern, globalIndex, "            ");
 
         // For grouped endpoints with specific version mappings, emit MapToApiVersion
         if (!ep.Versioning.MappedVersions.IsDefaultOrEmpty)
@@ -127,28 +115,9 @@ internal static class GroupEmitter
             code.AppendLine("                .IsApiVersionNeutral()");
         }
 
-        // Emit all endpoint metadata: tags, accepts, produces, middleware
-        // Uses shared helper for consistency with ungrouped endpoints
         EndpointMetadataEmitter.EmitEndpointMetadata(code, in ep, "                ", maxArity);
 
-        code.AppendLine("                ;");
-        code.AppendLine($"            __endpointBuilders.Add(__ep{globalIndex});");
-    }
-
-    /// <summary>
-    ///     Gets the Map method name for the HTTP verb.
-    /// </summary>
-    private static string GetMapMethod(string httpMethod)
-    {
-        return httpMethod switch
-        {
-            "GET" => "MapGet",
-            "POST" => "MapPost",
-            "PUT" => "MapPut",
-            "DELETE" => "MapDelete",
-            "PATCH" => "MapPatch",
-            _ => "MapMethods"
-        };
+        MapCallEmitter.EmitMapCallEnd(code, globalIndex, "            ");
     }
 
     /// <summary>

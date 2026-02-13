@@ -1,3 +1,7 @@
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
+using ANcpLua.Roslyn.Utilities.Contexts;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
@@ -36,8 +40,7 @@ internal sealed class ErrorOrContext
         UpdatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Updated);
         DeletedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Deleted);
 
-        TaskOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.TaskT)?.ConstructedFrom;
-        ValueTaskOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ValueTaskT)?.ConstructedFrom;
+        Awaitable = new AwaitableContext(compilation);
 
         ListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ListT)?.ConstructedFrom;
         IListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IListT)?.ConstructedFrom;
@@ -73,6 +76,9 @@ internal sealed class ErrorOrContext
         ValidationAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ValidationAttribute);
         IValidatableObject = compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableObject);
 
+        IValidatableInfoResolverSymbol =
+            compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableInfoResolver);
+
         ApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionAttribute);
         ApiVersionNeutralAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionNeutralAttribute);
         MapToApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.MapToApiVersionAttribute);
@@ -92,8 +98,7 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? UpdatedMarker { get; }
     public INamedTypeSymbol? DeletedMarker { get; }
 
-    public INamedTypeSymbol? TaskOfT { get; }
-    public INamedTypeSymbol? ValueTaskOfT { get; }
+    public AwaitableContext Awaitable { get; }
 
     public INamedTypeSymbol? ListOfT { get; }
     public INamedTypeSymbol? IListOfT { get; }
@@ -143,6 +148,13 @@ internal sealed class ErrorOrContext
 
     private INamedTypeSymbol? ValidationAttribute { get; }
     private INamedTypeSymbol? IValidatableObject { get; }
+    private INamedTypeSymbol? IValidatableInfoResolverSymbol { get; }
+
+    /// <summary>
+    ///     Returns true if the Microsoft.Extensions.Validation package is referenced,
+    ///     meaning the consumer supports .NET 10 validation infrastructure.
+    /// </summary>
+    public bool HasValidationResolverSupport => IValidatableInfoResolverSymbol is not null;
 
     public INamedTypeSymbol? ApiVersionAttribute { get; }
     public INamedTypeSymbol? ApiVersionNeutralAttribute { get; }
@@ -180,10 +192,8 @@ internal sealed class ErrorOrContext
     ///     Determines if a type requires BCL validation.
     ///     Returns true if the type:
     ///     1. Has any property (including inherited) with an attribute deriving from ValidationAttribute, OR
-    ///     2. Implements IValidatableObject
-    ///     Used during parameter binding to mark parameters for validation metadata.
-    ///     ASP.NET Core runtime automatically invokes validation if metadata is present.
-    ///     This enables automatic validation detection without hardcoding specific attributes.
+    ///     2. Has a constructor parameter with a matching property and a ValidationAttribute (records), OR
+    ///     3. Implements IValidatableObject
     /// </summary>
     public bool RequiresValidation(ITypeSymbol? type)
     {
@@ -220,10 +230,262 @@ internal sealed class ErrorOrContext
                 }
             }
 
+            // In modern .NET, ValidationAttribute targets Parameter, so for records
+            // [Required] stays on the constructor parameter, not the synthesized property.
+            if (HasValidationAttributeOnConstructorParam(namedType))
+            {
+                return true;
+            }
+
             current = namedType.BaseType;
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Checks if any constructor parameter that corresponds to a property has a validation attribute.
+    ///     Handles records where attributes like [Required] target the parameter, not the property.
+    /// </summary>
+    private bool HasValidationAttributeOnConstructorParam(INamedTypeSymbol namedType)
+    {
+        foreach (var ctor in namedType.InstanceConstructors)
+        {
+            foreach (var param in ctor.Parameters)
+            {
+                if (!param.HasAttribute(ValidationAttribute))
+                {
+                    continue;
+                }
+
+                // Only count if there's a matching property (record positional parameter pattern)
+                foreach (var member in namedType.GetMembers(param.Name))
+                {
+                    if (member is IPropertySymbol)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Collects validatable property descriptors for a type.
+    ///     For each property, checks both property-level and constructor parameter-level attributes
+    ///     (records place validation attributes on the constructor parameter, not the property).
+    /// </summary>
+    public EquatableArray<ValidatablePropertyDescriptor> CollectValidatableProperties(ITypeSymbol? type)
+    {
+        if (type is null || ValidationAttribute is null)
+        {
+            return default;
+        }
+
+        var properties = ImmutableArray.CreateBuilder<ValidatablePropertyDescriptor>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var current = type;
+        while (current is INamedTypeSymbol namedType)
+        {
+            foreach (var member in namedType.GetMembers())
+            {
+                if (member is not IPropertySymbol property)
+                {
+                    continue;
+                }
+
+                // Skip properties already collected from derived type (handles overrides/hides)
+                if (!seen.Add(property.Name))
+                {
+                    continue;
+                }
+
+                var propertyAttrs = CollectValidationAttributes(property);
+                var ctorParam = FindMatchingConstructorParam(namedType, property.Name);
+                var paramAttrs = ctorParam is not null
+                    ? CollectValidationAttributes(ctorParam)
+                    : default;
+
+                var attrs = MergeValidationAttributes(propertyAttrs, paramAttrs);
+                if (attrs.IsDefaultOrEmpty)
+                {
+                    continue;
+                }
+
+                properties.Add(new ValidatablePropertyDescriptor(
+                    property.Name,
+                    property.Type.GetFullyQualifiedName(),
+                    property.Name,
+                    attrs));
+            }
+
+            current = namedType.BaseType;
+        }
+
+        return properties.Count > 0
+            ? new EquatableArray<ValidatablePropertyDescriptor>(properties.ToImmutable())
+            : default;
+    }
+
+    private static IParameterSymbol? FindMatchingConstructorParam(INamedTypeSymbol type, string propertyName)
+    {
+        foreach (var ctor in type.InstanceConstructors)
+        {
+            foreach (var param in ctor.Parameters)
+            {
+                if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
+                {
+                    return param;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static EquatableArray<ValidatableAttributeInfo> MergeValidationAttributes(
+        EquatableArray<ValidatableAttributeInfo> a, EquatableArray<ValidatableAttributeInfo> b)
+    {
+        if (a.IsDefaultOrEmpty) return b;
+        if (b.IsDefaultOrEmpty) return a;
+
+        var merged = ImmutableArray.CreateBuilder<ValidatableAttributeInfo>(a.Length + b.Length);
+        merged.AddRange(a.AsImmutableArray());
+        merged.AddRange(b.AsImmutableArray());
+        return new EquatableArray<ValidatableAttributeInfo>(merged.ToImmutable());
+    }
+
+    private EquatableArray<ValidatableAttributeInfo> CollectValidationAttributes(ISymbol property)
+    {
+        if (ValidationAttribute is null)
+        {
+            return default;
+        }
+
+        var attrs = ImmutableArray.CreateBuilder<ValidatableAttributeInfo>();
+        foreach (var attrData in property.GetAttributes())
+        {
+            if (attrData.AttributeClass is null)
+            {
+                continue;
+            }
+
+            if (!attrData.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
+            {
+                continue;
+            }
+
+            var ctorArgs = ImmutableArray.CreateBuilder<string>();
+            foreach (var arg in attrData.ConstructorArguments)
+            {
+                ctorArgs.Add(TypedConstantToLiteral(arg));
+            }
+
+            var namedArgs = ImmutableArray.CreateBuilder<NamedArgLiteral>();
+            foreach (var namedArg in attrData.NamedArguments)
+            {
+                namedArgs.Add(new NamedArgLiteral(namedArg.Key, TypedConstantToLiteral(namedArg.Value)));
+            }
+
+            attrs.Add(new ValidatableAttributeInfo(
+                attrData.AttributeClass.GetFullyQualifiedName(),
+                new EquatableArray<string>(ctorArgs.ToImmutable()),
+                new EquatableArray<NamedArgLiteral>(namedArgs.ToImmutable())));
+        }
+
+        return attrs.Count > 0
+            ? new EquatableArray<ValidatableAttributeInfo>(attrs.ToImmutable())
+            : default;
+    }
+
+    private static string TypedConstantToLiteral(TypedConstant constant)
+    {
+        if (constant.Kind == TypedConstantKind.Array)
+        {
+            var elements = constant.Values;
+            return $"new[] {{ {string.Join(", ", elements.Select(TypedConstantToLiteral))} }}";
+        }
+
+        if (constant.Value is null)
+        {
+            return "null";
+        }
+
+        return constant switch
+        {
+            { Kind: TypedConstantKind.Type, Value: ITypeSymbol typeSymbol } =>
+                $"typeof({typeSymbol.GetFullyQualifiedName()})",
+            { Kind: TypedConstantKind.Enum, Type: not null } =>
+                $"({constant.Type.GetFullyQualifiedName()}){constant.Value}",
+            _ => constant.Value switch
+            {
+                string s => $"\"{EscapeStringLiteral(s)}\"",
+                bool b => b ? "true" : "false",
+                char c => $"'{EscapeCharLiteral(c)}'",
+                float f => f.ToString(CultureInfo.InvariantCulture) + "f",
+                double d => d.ToString(CultureInfo.InvariantCulture) + "d",
+                decimal m => m.ToString(CultureInfo.InvariantCulture) + "m",
+                long l => $"{l}L",
+                ulong ul => $"{ul}UL",
+                uint ui => $"{ui}U",
+                _ => Convert.ToString(constant.Value, CultureInfo.InvariantCulture) ?? "null"
+            }
+        };
+    }
+
+    private static string EscapeStringLiteral(string s)
+    {
+        var sb = new StringBuilder(s.Length);
+        foreach (var c in s)
+        {
+            switch (c)
+            {
+                case '\\': sb.Append(@"\\"); break;
+                case '"': sb.Append("\\\""); break;
+                case '\n': sb.Append(@"\n"); break;
+                case '\r': sb.Append(@"\r"); break;
+                case '\t': sb.Append(@"\t"); break;
+                case '\0': sb.Append(@"\0"); break;
+                case '\a': sb.Append(@"\a"); break;
+                case '\b': sb.Append(@"\b"); break;
+                case '\f': sb.Append(@"\f"); break;
+                case '\v': sb.Append(@"\v"); break;
+                default:
+                    if (char.IsControl(c) || c > 127)
+                    {
+                        sb.Append($"\\u{(int)c:X4}");
+                    }
+                    else
+                    {
+                        sb.Append(c);
+                    }
+
+                    break;
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static string EscapeCharLiteral(char c)
+    {
+        return c switch
+        {
+            '\\' => @"\\",
+            '\'' => @"\'",
+            '\n' => @"\n",
+            '\r' => @"\r",
+            '\t' => @"\t",
+            '\0' => @"\0",
+            '\a' => @"\a",
+            '\b' => @"\b",
+            '\f' => @"\f",
+            '\v' => @"\v",
+            _ when char.IsControl(c) || c > 127 => $"\\u{(int)c:X4}",
+            _ => c.ToString()
+        };
     }
 
     /// <summary>Checks if the type implements IFormFile.</summary>

@@ -125,7 +125,8 @@ internal readonly record struct EndpointParameter(
     EquatableArray<EndpointParameter> Children,
     CustomBindingMethod CustomBinding = CustomBindingMethod.None,
     bool RequiresValidation = false,
-    EmptyBodyBehavior EmptyBodyBehavior = EmptyBodyBehavior.Default);
+    EmptyBodyBehavior EmptyBodyBehavior = EmptyBodyBehavior.Default,
+    EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties = default);
 
 /// <summary>
 ///     Raw metadata extracted from a method parameter for binding classification.
@@ -141,7 +142,8 @@ internal readonly record struct ParameterMeta(
     string BoundName,
     string? CollectionItemTypeFqn,
     RoutePrimitiveKind? CollectionItemPrimitiveKind,
-    CustomBindingMethod CustomBinding)
+    CustomBindingMethod CustomBinding,
+    EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties = default)
 {
     public bool HasFromBody => Flags.HasFlag(ParameterFlags.FromBody);
     public bool HasFromRoute => Flags.HasFlag(ParameterFlags.FromRoute);
@@ -230,7 +232,7 @@ internal readonly record struct MethodAnalysis(
 ///     Complete descriptor for an ErrorOr endpoint used for code generation.
 /// </summary>
 internal readonly record struct EndpointDescriptor(
-    string HttpMethod,
+    HttpVerb HttpVerb,
     string Pattern,
     string SuccessTypeFqn,
     SuccessKind SuccessKind,
@@ -248,8 +250,12 @@ internal readonly record struct EndpointDescriptor(
     MiddlewareInfo Middleware = default,
     VersioningInfo Versioning = default,
     RouteGroupInfo RouteGroup = default,
-    EquatableArray<MetadataEntry> Metadata = default)
+    EquatableArray<MetadataEntry> Metadata = default,
+    string? CustomHttpMethod = null)
 {
+    /// <summary>Gets the HTTP method string for emission (e.g., "GET", "POST", or custom like "CONNECT").</summary>
+    public string HttpMethod => CustomHttpMethod ?? HttpVerb.ToHttpString();
+
     /// <summary>
     ///     Returns true if any parameter is bound from body.
     /// </summary>
@@ -532,6 +538,38 @@ internal readonly record struct RouteGroupInfo(
     /// </summary>
     public bool HasRouteGroup => GroupPath is not null;
 }
+
+/// <summary>
+///     Represents a validation attribute extracted from a property for the IValidatableInfoResolver emitter.
+/// </summary>
+/// <summary>
+///     A named argument literal for a validation attribute (e.g., MinimumLength = 1).
+/// </summary>
+internal readonly record struct NamedArgLiteral(string Name, string Value);
+
+/// <summary>
+///     Represents a validation attribute extracted from a property for the IValidatableInfoResolver emitter.
+/// </summary>
+internal readonly record struct ValidatableAttributeInfo(
+    string AttributeTypeFqn,
+    EquatableArray<string> ConstructorArgLiterals,
+    EquatableArray<NamedArgLiteral> NamedArgLiterals);
+
+/// <summary>
+///     Represents a property on a validatable type, with its validation attribute metadata.
+/// </summary>
+internal readonly record struct ValidatablePropertyDescriptor(
+    string Name,
+    string TypeFqn,
+    string DisplayName,
+    EquatableArray<ValidatableAttributeInfo> ValidationAttributes);
+
+/// <summary>
+///     Represents a type that requires validation, along with its validatable properties.
+/// </summary>
+internal readonly record struct ValidatableTypeDescriptor(
+    string TypeFqn,
+    EquatableArray<ValidatablePropertyDescriptor> Properties);
 
 /// <summary>
 ///     Well-known metadata key constants.

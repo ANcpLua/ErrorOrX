@@ -10,6 +10,7 @@
         <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all"/>
         <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all"/>
         <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all"/>
+        <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all"/>
         <PackageReference Include="JonSkeet.RoslynAnalyzers" PrivateAssets="all" Condition="'@(PackageReference->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
     </ItemGroup>
 
@@ -17,6 +18,7 @@
         <!-- Ensure PackageVersion is defined for CPM -->
         <PackageVersion Update="ANcpLua.Analyzers" Version="1.13.0"/>
         <PackageVersion Include="ANcpLua.Analyzers" Version="1.13.0" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'ANcpLua.Analyzers'))' == ''"/>
+        <PackageVersion Include="Meziantou.Analyzer" Version="$(MeziantouAnalyzerVersion)"/>
         <!-- JonSkeet: SDK adds it for some projects, so use Update + conditional Include -->
         <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>
         <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>

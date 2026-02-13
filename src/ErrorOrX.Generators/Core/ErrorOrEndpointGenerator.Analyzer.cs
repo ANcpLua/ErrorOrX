@@ -10,36 +10,26 @@ namespace ErrorOr.Generators;
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
-    private static void AnalyzeJsonContextCoverage(
-        SourceProductionContext spc,
-        ImmutableArray<EndpointDescriptor> endpoints,
-        ImmutableArray<JsonContextInfo> userContexts,
-        bool publishAot)
+    /// <summary>
+    ///     Collects all types that require JSON serialization from the endpoint descriptors.
+    ///     Pure function — no diagnostics, just type collection.
+    /// </summary>
+    private static (Dictionary<string, string> BodyTypes, Dictionary<string, string> ResponseTypes)
+        CollectSerializableTypes(ImmutableArray<EndpointDescriptor> endpoints)
     {
-        if (endpoints.IsDefaultOrEmpty)
-        {
-            return;
-        }
-
-        // Collect body types and response types separately
         var bodyTypes = new Dictionary<string, string>(); // typeFqn -> endpointName
         var responseTypes = new Dictionary<string, string>();
 
         foreach (var ep in endpoints)
         {
-            // Collect body parameter types
             foreach (var param in ep.HandlerParameters)
             {
-                if (param.Source == ParameterSource.Body)
+                if (param.Source == ParameterSource.Body && !bodyTypes.ContainsKey(param.TypeFqn))
                 {
-                    if (!bodyTypes.ContainsKey(param.TypeFqn))
-                    {
-                        bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
-                    }
+                    bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
                 }
             }
 
-            // Collect response types
             if (!string.IsNullOrEmpty(ep.SuccessTypeFqn))
             {
                 var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
@@ -56,14 +46,25 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Always need ProblemDetails for error responses
         if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.ProblemDetails))
-        {
             responseTypes[WellKnownTypes.Fqn.ProblemDetails] = "ErrorOr endpoints";
+        if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.HttpValidationProblemDetails))
+            responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = "ErrorOr endpoints";
+
+        return (bodyTypes, responseTypes);
+    }
+
+    private static void AnalyzeJsonContextCoverage(
+        SourceProductionContext spc,
+        ImmutableArray<EndpointDescriptor> endpoints,
+        ImmutableArray<JsonContextInfo> userContexts,
+        bool publishAot)
+    {
+        if (endpoints.IsDefaultOrEmpty)
+        {
+            return;
         }
 
-        if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.HttpValidationProblemDetails))
-        {
-            responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = "ErrorOr endpoints";
-        }
+        var (bodyTypes, responseTypes) = CollectSerializableTypes(endpoints);
 
         // CRITICAL: If no user-defined JsonSerializerContext exists but we have body parameters,
         // this is an ERROR in AOT mode. The generated ErrorOrJsonContext cannot be used by
@@ -72,7 +73,6 @@ public sealed partial class ErrorOrEndpointGenerator
         // Only emit EOE026 when PublishAot=true to avoid false positives in non-AOT builds.
         if (userContexts.IsDefaultOrEmpty)
         {
-            // Report EOE026 for each body type - but only if PublishAot is enabled
             if (publishAot)
             {
                 foreach (var kvp in bodyTypes)
@@ -91,7 +91,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 }
             }
 
-            // No point checking type registration if there's no context at all
             return;
         }
 
@@ -108,17 +107,13 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var kvp in bodyTypes)
         {
             if (!allNeededTypes.ContainsKey(kvp.Key))
-            {
                 allNeededTypes[kvp.Key] = kvp.Value;
-            }
         }
 
         foreach (var kvp in responseTypes)
         {
             if (!allNeededTypes.ContainsKey(kvp.Key))
-            {
                 allNeededTypes[kvp.Key] = kvp.Value;
-            }
         }
 
         foreach (var kvp in allNeededTypes)
@@ -218,19 +213,7 @@ internal static class JsonContextProvider
         var attributes = classSymbol.GetAttributes();
 
         // Extract all JsonSerializable types
-        var serializableTypes = new List<string>();
-        foreach (var attr in attributes)
-        {
-            if (attr.AttributeClass?.ToDisplayString() != WellKnownTypes.JsonSerializableAttribute)
-            {
-                continue;
-            }
-
-            if (attr.ConstructorArguments is [{ Value: ITypeSymbol typeArg }, ..])
-            {
-                serializableTypes.Add(typeArg.GetFullyQualifiedName());
-            }
-        }
+        var serializableTypes = classSymbol.GetAttributeTypeArguments(WellKnownTypes.JsonSerializableAttribute);
 
         // Check for PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
         var hasCamelCasePolicy = false;
@@ -264,7 +247,7 @@ internal static class JsonContextProvider
             }
         }
 
-        if (serializableTypes.Count is 0)
+        if (serializableTypes.IsDefaultOrEmpty)
         {
             return ImmutableArray<JsonContextInfo>.Empty;
         }
@@ -279,7 +262,7 @@ internal static class JsonContextProvider
             new JsonContextInfo(
                 className,
                 namespaceName,
-                new EquatableArray<string>([.. serializableTypes]),
+                serializableTypes,
                 hasCamelCasePolicy)
         ];
     }

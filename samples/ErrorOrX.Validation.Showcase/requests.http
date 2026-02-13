@@ -1,0 +1,61 @@
+@host = http://localhost:5000
+
+### Create order - valid
+POST {{host}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "John Doe",
+  "email": "john@example.com",
+  "items": [
+    {
+      "productName": "Widget",
+      "quantity": 5,
+      "unitPrice": 9.99
+    }
+  ]
+}
+
+### Create order - invalid (missing required fields)
+POST {{host}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "",
+  "email": "not-an-email",
+  "items": []
+}
+
+### Create order - invalid (range violations)
+POST {{host}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "Jane",
+  "email": "jane@example.com",
+  "items": [
+    {
+      "productName": "Widget",
+      "quantity": -1,
+      "unitPrice": 0
+    }
+  ]
+}
+
+### Get all orders
+GET {{host}}/api/orders
+
+### Get order by ID
+GET {{host}}/api/orders/00000000-0000-0000-0000-000000000001
+
+### Update order
+PUT {{host}}/api/orders/00000000-0000-0000-0000-000000000001
+Content-Type: application/json
+
+{
+  "customerName": "Jane Doe Updated",
+  "email": "jane.updated@example.com"
+}
+
+### Delete order
+DELETE {{host}}/api/orders/00000000-0000-0000-0000-000000000001

@@ -10,5 +10,7 @@
         <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
         <!-- NU1009: SDK-injected ANcpLua.Analyzers conflicts with CPM PackageVersion (known SDK limitation) -->
         <NoWarn>$(NoWarn);NU1009</NoWarn>
+        <!-- Test code doesn't need production-level analysis -->
+        <AnalysisLevel>none</AnalysisLevel>
     </PropertyGroup>
 </Project>

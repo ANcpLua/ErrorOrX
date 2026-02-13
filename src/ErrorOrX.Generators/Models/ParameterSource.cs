@@ -46,7 +46,7 @@ internal sealed class ParameterSource : IEquatable<ParameterSource>
 
     public override int GetHashCode()
     {
-        return Id.GetHashCode();
+        return StringComparer.Ordinal.GetHashCode(Id);
     }
 
     public override string ToString()

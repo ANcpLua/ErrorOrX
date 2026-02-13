@@ -36,10 +36,18 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .Select(static (arities, _) => ResultsUnionTypeBuilder.DetectMaxArity(arities.AsImmutableArray()))
             .WithTrackingName(TrackingNames.ResultsUnionMaxArity);
 
-        context.RegisterSourceOutput(
-            endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(publishAotOption)
-                .Combine(maxResultsUnionArity),
-            EmitMappingsAndRunAnalysis);
+        var hasValidationResolverSupport = errorOrContextProvider
+            .Select(static (ctx, _) => ctx.HasValidationResolverSupport);
+
+        var emitInput = endpoints.Combine(jsonContexts).Combine(generateJsonContextOption).Combine(publishAotOption)
+            .Combine(maxResultsUnionArity).Combine(hasValidationResolverSupport)
+            .Select(static (data, _) =>
+            {
+                var (((((ep, jc), gjc), pa), mra), hvrs) = data;
+                return new EmitContext(ep, jc, gjc, pa, mra, hvrs);
+            });
+
+        context.RegisterSourceOutput(emitInput, static (spc, ctx) => EmitMappingsAndRunAnalysis(spc, in ctx));
     }
 
     /// <summary>
@@ -184,30 +192,27 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var baseProvider =
             CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute, errorOrContextProvider);
 
-        return IncrementalProviderExtensions.CombineSix(
+        return IncrementalProviderExtensions.CombineAll(
             getProvider, postProvider, putProvider,
             deleteProvider, patchProvider, baseProvider);
     }
 
     private static void EmitMappingsAndRunAnalysis(
         SourceProductionContext spc,
-        ((((EquatableArray<EndpointDescriptor> Endpoints, EquatableArray<JsonContextInfo> JsonContexts),
-            bool GenerateJsonContext),
-            bool PublishAot),
-            int MaxResultsUnionArity) data)
+        in EmitContext ctx)
     {
-        var ((((endpoints, jsonContexts), generateJsonContext), publishAot), maxResultsUnionArity) = data;
-        var endpointArray = Helpers.AsArrayOrEmpty(endpoints);
-        var jsonContextArray = Helpers.AsArrayOrEmpty(jsonContexts);
+        var endpointArray = Helpers.AsArrayOrEmpty(ctx.Endpoints);
+        var jsonContextArray = Helpers.AsArrayOrEmpty(ctx.JsonContexts);
 
         ReportDuplicateRoutes(spc, endpointArray);
         ReportVersioningInconsistencies(spc, endpointArray);
 
         if (!endpointArray.IsDefaultOrEmpty)
         {
-            EmitEndpoints(spc, endpointArray, jsonContextArray, maxResultsUnionArity, generateJsonContext);
-            AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray, publishAot);
-            AnalyzeUnionTypeArity(spc, endpointArray, maxResultsUnionArity);
+            EmitEndpoints(spc, endpointArray, jsonContextArray, ctx.MaxResultsUnionArity, ctx.GenerateJsonContext,
+                ctx.HasValidationResolverSupport);
+            AnalyzeJsonContextCoverage(spc, endpointArray, jsonContextArray, ctx.PublishAot);
+            AnalyzeUnionTypeArity(spc, endpointArray, ctx.MaxResultsUnionArity);
         }
     }
 
@@ -373,8 +378,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
         var attrName = attrClass.Name;
 
-        var (httpMethod, pattern) = ExtractHttpMethodAndPattern(attr, attrName);
-        if (httpMethod is null)
+        var (verb, pattern, customMethod) = ExtractHttpMethodAndPattern(attr, attrName);
+        if (verb is null)
         {
             return DiagnosticFlow.Fail<EndpointDescriptor>();
         }
@@ -397,7 +402,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.Method,
             routeParamNames,
             errorOrContext,
-            httpMethod);
+            verb.Value);
         if (!bindingFlow.IsSuccess)
         {
             return DiagnosticFlow.Fail<EndpointDescriptor>(bindingFlow.Diagnostics);
@@ -443,7 +448,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var metadata = ExtractMetadata(analysis.Method);
 
         var descriptor = new EndpointDescriptor(
-            httpMethod,
+            verb.Value,
             pattern,
             successTypeFqn,
             analysis.ReturnInfo.Kind,
@@ -461,7 +466,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.Middleware,
             versioning,
             routeGroup,
-            metadata);
+            metadata,
+            customMethod);
 
         var flow = DiagnosticFlow.Ok(descriptor);
         foreach (var diag in builder)
@@ -470,23 +476,36 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         return flow;
     }
 
-    private static (string? HttpMethod, string Pattern) ExtractHttpMethodAndPattern(
+    private static (HttpVerb? Verb, string Pattern, string? CustomMethod) ExtractHttpMethodAndPattern(
         AttributeData attr,
         string attrName)
     {
-        if (Helpers.TryGetHttpMethod(attrName, attr.ConstructorArguments) is not { } httpMethod)
+        var verb = HttpVerbExtensions.TryParseFromAttribute(attrName, attr.ConstructorArguments);
+
+        // For ErrorOrEndpointAttribute with unrecognized methods (e.g., "CONNECT", "PROPFIND"),
+        // store the raw method string so we can emit MapMethods with it
+        string? customMethod = null;
+        var isErrorOrEndpoint = attrName.Contains("ErrorOrEndpoint");
+        if (verb is null && isErrorOrEndpoint &&
+            attr.ConstructorArguments is [{ Value: string rawMethod }, ..])
         {
-            return (null, "/");
+            customMethod = rawMethod.ToUpperInvariant();
+            verb = HttpVerb.Get; // placeholder — MapMethods is used when CustomHttpMethod is set
+        }
+
+        if (verb is null)
+        {
+            return (null, "/", null);
         }
 
         // Extract pattern - index differs for ErrorOrEndpoint (has httpMethod arg first)
-        var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
+        var patternIndex = isErrorOrEndpoint ? 1 : 0;
         var pattern = attr.ConstructorArguments.Length > patternIndex &&
                       attr.ConstructorArguments[patternIndex].Value is string p
             ? p
             : "/";
 
-        return (httpMethod, pattern);
+        return (verb, pattern, customMethod);
     }
 
     /// <summary>
@@ -513,6 +532,17 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     }
 
     /// <summary>
+    ///     Flattened context for the combined Roslyn pipeline inputs to <see cref="EmitMappingsAndRunAnalysis" />.
+    /// </summary>
+    private readonly record struct EmitContext(
+        EquatableArray<EndpointDescriptor> Endpoints,
+        EquatableArray<JsonContextInfo> JsonContexts,
+        bool GenerateJsonContext,
+        bool PublishAot,
+        int MaxResultsUnionArity,
+        bool HasValidationResolverSupport);
+
+    /// <summary>
     ///     Small focused helpers for common pipeline operations.
     /// </summary>
     private static class Helpers
@@ -523,24 +553,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         public static ImmutableArray<T> AsArrayOrEmpty<T>(EquatableArray<T> array) where T : IEquatable<T>
         {
             return array.IsDefaultOrEmpty ? ImmutableArray<T>.Empty : array.AsImmutableArray();
-        }
-
-        /// <summary>
-        ///     Maps attribute name to HTTP method, returning null for unrecognized attributes.
-        /// </summary>
-        public static string? TryGetHttpMethod(string attrName, ImmutableArray<TypedConstant> args)
-        {
-            return attrName switch
-            {
-                "GetAttribute" or "Get" => WellKnownTypes.HttpMethod.Get,
-                "PostAttribute" or "Post" => WellKnownTypes.HttpMethod.Post,
-                "PutAttribute" or "Put" => WellKnownTypes.HttpMethod.Put,
-                "DeleteAttribute" or "Delete" => WellKnownTypes.HttpMethod.Delete,
-                "PatchAttribute" or "Patch" => WellKnownTypes.HttpMethod.Patch,
-                "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when args is [{ Value: string m }, ..] => m
-                    .ToUpperInvariant(),
-                _ => null
-            };
         }
 
         /// <summary>

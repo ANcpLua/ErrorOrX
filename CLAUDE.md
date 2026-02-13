@@ -226,8 +226,10 @@ tests/
 
 **Search for existing implementations first.** Common duplication areas:
 
-| Concept          | Symbol-based API                             | String-based API                             |
-|------------------|----------------------------------------------|----------------------------------------------|
-| Unwrap nullable  | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `TypeNameHelper.UnwrapNullable(string)`      |
-| Type comparison  | Roslyn `ITypeSymbol.Equals`                  | `TypeNameHelper.TypeNamesMatch()`            |
-| Route parameters | -                                            | `RouteValidator.BuildRouteParameterLookup()` |
+| Concept            | Owner                                        | Do NOT duplicate in                          |
+|--------------------|----------------------------------------------|----------------------------------------------|
+| Unwrap nullable    | `ErrorOrContext.UnwrapNullable(ITypeSymbol)` | `TypeNameHelper.UnwrapNullable(string)`      |
+| Type comparison    | Roslyn `ITypeSymbol.Equals`                  | `TypeNameHelper.TypeNamesMatch()`            |
+| Route parameters   | -                                            | `RouteValidator.BuildRouteParameterLookup()` |
+| Param binding emit | `BindingCodeEmitter`                         | Emitter.cs (call directly, no wrappers)      |
+| Wrap return exprs  | `InvokerContext.WrapReturn()`                | Local functions in emit methods              |

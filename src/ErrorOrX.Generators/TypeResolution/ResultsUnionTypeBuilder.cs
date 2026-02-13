@@ -137,7 +137,7 @@ internal static class ResultsUnionTypeBuilder
         bool hasBodyBinding,
         int maxArity = DefaultMaxArity,
         bool isAcceptedResponse = false,
-        MiddlewareInfo middleware = default,
+        in MiddlewareInfo middleware = default,
         bool hasParameterValidation = false)
     {
         // Use list of (StatusCode, TypeFqn) tuples for proper ordering
@@ -193,8 +193,8 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private static void AddMiddlewareOutcomes(
         in MiddlewareInfo middleware,
-        ICollection<(int Status, string TypeFqn)> unionEntries,
-        ISet<int> includedStatuses)
+        List<(int Status, string TypeFqn)> unionEntries,
+        HashSet<int> includedStatuses)
     {
         // [Authorize] adds 401 Unauthorized and 403 Forbidden
         if (middleware is { RequiresAuthorization: true, AllowAnonymous: false })
@@ -230,8 +230,8 @@ internal static class ResultsUnionTypeBuilder
         bool isAcceptedResponse,
         bool hasBodyBinding,
         bool hasValidationError,
-        ICollection<(int Status, string TypeFqn)> unionEntries,
-        ISet<int> includedStatuses)
+        List<(int Status, string TypeFqn)> unionEntries,
+        HashSet<int> includedStatuses)
     {
         var successInfo = GetSuccessResponseInfo(successTypeFqn, successKind, isAcceptedResponse);
         unionEntries.Add((successInfo.StatusCode, successInfo.ResultTypeFqn));
@@ -352,7 +352,7 @@ internal static class ResultsUnionTypeBuilder
 
     private static bool AddDeclaredErrorOutcomes(
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
-        ICollection<int> includedStatuses)
+        HashSet<int> includedStatuses)
     {
         if (declaredProducesErrors.IsDefaultOrEmpty)
         {
@@ -373,7 +373,7 @@ internal static class ResultsUnionTypeBuilder
     private static UnionTypeResult BuildFallbackResult(
         EquatableArray<string> inferredErrorTypeNames,
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
-        MiddlewareInfo middleware = default,
+        in MiddlewareInfo middleware = default,
         bool hasValidationError = false)
     {
         var allStatuses = new HashSet<int>
@@ -397,7 +397,7 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private static void CollectMiddlewareStatuses(
         in MiddlewareInfo middleware,
-        ISet<int> allStatuses)
+        HashSet<int> allStatuses)
     {
         if (middleware is { RequiresAuthorization: true, AllowAnonymous: false })
         {
@@ -416,7 +416,7 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private static void CollectInferredErrorStatuses(
         EquatableArray<string> inferredErrorTypeNames,
-        ISet<int> allStatuses)
+        HashSet<int> allStatuses)
     {
         if (inferredErrorTypeNames.IsDefaultOrEmpty)
         {
@@ -433,7 +433,7 @@ internal static class ResultsUnionTypeBuilder
     /// </summary>
     private static void CollectDeclaredErrorStatuses(
         EquatableArray<ProducesErrorInfo> declaredProducesErrors,
-        ISet<int> allStatuses)
+        HashSet<int> allStatuses)
     {
         if (declaredProducesErrors.IsDefaultOrEmpty)
         {

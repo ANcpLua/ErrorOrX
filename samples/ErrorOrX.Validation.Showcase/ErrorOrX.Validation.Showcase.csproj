@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <Import Project="../../src/ErrorOrX.Generators/build/ErrorOrX.Generators.props"/>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>ErrorOrX.Validation.Showcase</RootNamespace>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+        <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="ErrorOrGenerateJsonContext"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="ErrorOr"/>
+        <Using Include="ErrorOrX.Validation.Showcase"/>
+        <Using Include="ErrorOrX.Validation.Showcase.Models"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../src/ErrorOrX/ErrorOrX.csproj"/>
+        <ProjectReference Include="../../src/ErrorOrX.Generators/ErrorOrX.Generators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="../ErrorOrX.Validation.Showcase.Models/ErrorOrX.Validation.Showcase.Models.csproj"/>
+    </ItemGroup>
+
+</Project>

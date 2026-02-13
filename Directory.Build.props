@@ -3,18 +3,14 @@
         <DirectoryBuildPropsImported>true</DirectoryBuildPropsImported>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)version.props"/>
-
-    <PropertyGroup>
-        <ANcpLuaRoslynUtilitiesVersion>1.31.0</ANcpLuaRoslynUtilitiesVersion>
-    </PropertyGroup>
-
     <PropertyGroup>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Deterministic>true</Deterministic>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <Authors>ANcpLua</Authors>
         <Copyright>Copyright (c) 2025 Alexander Nachtmann</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

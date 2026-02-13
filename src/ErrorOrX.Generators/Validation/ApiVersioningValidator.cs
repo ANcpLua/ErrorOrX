@@ -16,7 +16,8 @@ internal static class ApiVersioningValidator
     // Invalid: "v1", "v2.0", "1.0.0" (semver), "version1", empty
     private static readonly Regex ValidVersionPattern = new(
         @"^(\d+)(?:\.(\d+))?(?:-[a-zA-Z0-9.]+)?$",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+        TimeSpan.FromSeconds(1));
 
     // Versioning attribute names for EOE029 detection (without type resolution)
     private static readonly string[] VersioningAttributeNames =
@@ -40,7 +41,7 @@ internal static class ApiVersioningValidator
     /// <returns>Collection of diagnostics found.</returns>
     public static ImmutableArray<DiagnosticInfo> Validate(
         string methodName,
-        VersioningInfo versioning,
+        in VersioningInfo versioning,
         ImmutableArray<string> rawClassVersions,
         ImmutableArray<string> rawMethodVersions,
         Location location,
@@ -75,11 +76,11 @@ internal static class ApiVersioningValidator
     /// </summary>
     private static void ValidateVersionNeutralWithMappings(
         string methodName,
-        VersioningInfo versioning,
+        in VersioningInfo versioning,
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        if (versioning.IsVersionNeutral && !versioning.MappedVersions.IsDefaultOrEmpty)
+        if (versioning is { IsVersionNeutral: true, MappedVersions.IsDefaultOrEmpty: false })
         {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.VersionNeutralWithMappings,
@@ -93,7 +94,7 @@ internal static class ApiVersioningValidator
     /// </summary>
     private static void ValidateMappedVersionsDeclared(
         string methodName,
-        VersioningInfo versioning,
+        in VersioningInfo versioning,
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
@@ -259,7 +260,7 @@ internal static class ApiVersioningValidator
     {
         var result = version.MinorVersion.HasValue
             ? $"{version.MajorVersion}.{version.MinorVersion}"
-            : version.MajorVersion.ToString();
+            : version.MajorVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         if (!string.IsNullOrEmpty(version.Status))
         {

@@ -176,6 +176,7 @@ public readonly record struct Error
 
     private static bool CompareMetadata(
         FrozenDictionary<string, object> metadata,
+        // ReSharper disable once SuggestBaseTypeForParameter
         FrozenDictionary<string, object> otherMetadata)
     {
         if (ReferenceEquals(metadata, otherMetadata))

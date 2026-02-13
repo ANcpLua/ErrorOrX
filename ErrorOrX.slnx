@@ -23,6 +23,8 @@
     <Folder Name="/samples/">
         <Project Path="samples/DiagnosticsDemos/DiagnosticsDemos.csproj"/>
         <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj"/>
+        <Project Path="samples/ErrorOrX.Validation.Showcase.Models/ErrorOrX.Validation.Showcase.Models.csproj"/>
+        <Project Path="samples/ErrorOrX.Validation.Showcase/ErrorOrX.Validation.Showcase.csproj"/>
     </Folder>
 
     <!-- Tests -->

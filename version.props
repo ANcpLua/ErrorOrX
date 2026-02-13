@@ -2,7 +2,7 @@
     <!-- Centralized semantic version properties -->
     <PropertyGroup>
         <!-- Major.Minor.Patch -->
-        <VersionPrefix>3.5.1</VersionPrefix>
+        <VersionPrefix>3.6.0</VersionPrefix>
 
         <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
         <VersionSuffix></VersionSuffix>
@@ -16,5 +16,29 @@
         <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
         <InformationalVersion>$(Version)</InformationalVersion>
+    </PropertyGroup>
+
+    <!-- Dependency versions -->
+    <PropertyGroup>
+        <MeziantouAnalyzerVersion>2.0.299</MeziantouAnalyzerVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.33.0</ANcpLuaRoslynUtilitiesVersion>
+        <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0</MicrosoftCodeAnalysisAnalyzersVersion>
+        <MicrosoftCodeAnalysisCSharpVersion>5.0.0</MicrosoftCodeAnalysisCSharpVersion>
+        <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
+        <MicrosoftSbomTargetsVersion>4.1.5</MicrosoftSbomTargetsVersion>
+        <ErrorProneNETCoreAnalyzersVersion>0.8.2-beta.1</ErrorProneNETCoreAnalyzersVersion>
+        <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
+        <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
+        <PolySharpVersion>1.15.0</PolySharpVersion>
+        <MicrosoftSourceLinkGitHubVersion>10.0.103</MicrosoftSourceLinkGitHubVersion>
+        <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
+        <VerifyXunitV3Version>31.12.5</VerifyXunitV3Version>
+        <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
+        <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
+        <AwesomeAssertionsVersion>9.3.0</AwesomeAssertionsVersion>
+        <MicrosoftAspNetCoreOpenApiVersion>10.0.3</MicrosoftAspNetCoreOpenApiVersion>
+        <MicrosoftAspNetCoreMvcTestingVersion>10.0.3</MicrosoftAspNetCoreMvcTestingVersion>
+        <MicrosoftAspNetCoreTestHostVersion>10.0.3</MicrosoftAspNetCoreTestHostVersion>
+        <AspVersioningHttpVersion>8.1.1</AspVersioningHttpVersion>
     </PropertyGroup>
 </Project>

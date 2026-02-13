@@ -19,7 +19,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableHashSet<string> routeParameters,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod)
+        HttpVerb httpVerb)
     {
         if (method.Parameters.Length is 0)
         {
@@ -42,7 +42,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterBindingResult.Invalid;
         }
 
-        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpMethod);
+        return BuildEndpointParameters(metas, routeParameters, method, diagnostics, context, httpVerb);
     }
 
     private static ParameterMeta[] BuildParameterMetas(
@@ -80,6 +80,10 @@ public sealed partial class ErrorOrEndpointGenerator
             ? ExtractKeyFromKeyedServiceAttribute(parameter)
             : null;
 
+        var validatableProperties = flags.HasFlag(ParameterFlags.RequiresValidation)
+            ? context.CollectValidatableProperties(type)
+            : default;
+
         return new ParameterMeta(
             parameter,
             parameter.Name,
@@ -91,7 +95,8 @@ public sealed partial class ErrorOrEndpointGenerator
             boundName,
             itemType?.GetFullyQualifiedName(),
             itemPrimitiveKind,
-            DetectCustomBinding(type, context));
+            DetectCustomBinding(type, context),
+            validatableProperties);
     }
 
     private static ParameterFlags BuildFlags(IParameterSymbol parameter, ITypeSymbol type, ErrorOrContext context)
@@ -222,19 +227,19 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static ParameterBindingResult BuildEndpointParameters(
-        IReadOnlyCollection<ParameterMeta> metas,
+        ParameterMeta[] metas,
         ImmutableHashSet<string> routeParameters,
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod)
+        HttpVerb httpVerb)
     {
-        var builder = ImmutableArray.CreateBuilder<EndpointParameter>(metas.Count);
+        var builder = ImmutableArray.CreateBuilder<EndpointParameter>(metas.Length);
         var isValid = true;
 
         foreach (var meta in metas)
         {
-            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpMethod);
+            var result = ClassifyParameter(in meta, routeParameters, method, diagnostics, context, httpVerb);
             if (result.IsError)
             {
                 isValid = false;
@@ -255,18 +260,19 @@ public sealed partial class ErrorOrEndpointGenerator
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod)
+        HttpVerb httpVerb)
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
         {
-            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpMethod);
+            return ClassifyAsParameters(in meta, routeParameters, method, diagnostics, context, httpVerb);
         }
 
         if (meta.HasFromBody)
         {
             var behavior = DetectEmptyBodyBehavior(meta.Symbol);
-            return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior);
+            return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior,
+                validatableProperties: meta.ValidatableProperties);
         }
 
         if (meta.HasFromForm)
@@ -369,7 +375,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Smart inference based on HTTP method and type analysis
-        return InferParameterSource(in meta, httpMethod, method, diagnostics, context);
+        return InferParameterSource(in meta, httpVerb, method, diagnostics, context);
     }
 
     /// <summary>
@@ -381,7 +387,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ParameterClassificationResult InferParameterSource(
         in ParameterMeta meta,
-        string httpMethod,
+        HttpVerb httpVerb,
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context)
@@ -400,10 +406,11 @@ public sealed partial class ErrorOrEndpointGenerator
         if (IsComplexType(type, context))
         {
             // POST, PUT, PATCH with complex type → Body
-            if (httpMethod is "POST" or "PUT" or "PATCH")
+            if (!httpVerb.IsBodyless())
             {
                 var behavior = DetectEmptyBodyBehavior(meta.Symbol);
-                return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior);
+                return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: behavior,
+                    validatableProperties: meta.ValidatableProperties);
             }
 
             // Bodyless/custom methods: do not infer body; warn for DTO-like types.
@@ -412,7 +419,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 method.Locations.FirstOrDefault() ?? Location.None,
                 meta.Name,
                 meta.TypeFqn,
-                httpMethod));
+                httpVerb.ToHttpString()));
 
             return ParameterSuccess(in meta, ParameterSource.Service);
         }
@@ -662,7 +669,8 @@ public sealed partial class ErrorOrEndpointGenerator
             null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
-            meta.RequiresValidation));
+            meta.RequiresValidation,
+            ValidatableProperties: meta.ValidatableProperties));
     }
 
     /// <summary>
@@ -674,7 +682,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
         ErrorOrContext context,
-        string httpMethod)
+        HttpVerb httpVerb)
     {
         // EOE017: [AsParameters] cannot be nullable
         if (meta.IsNullable)
@@ -720,7 +728,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 return ParameterClassificationResult.Error;
             }
 
-            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpMethod);
+            var result = ClassifyParameter(in childMeta, routeParameters, method, diagnostics, context, httpVerb);
 
             if (result.IsError)
             {
@@ -741,7 +749,8 @@ public sealed partial class ErrorOrEndpointGenerator
             null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
-            meta.RequiresValidation));
+            meta.RequiresValidation,
+            ValidatableProperties: meta.ValidatableProperties));
     }
 
     private static ParameterClassificationResult ParameterSuccess(
@@ -753,7 +762,8 @@ public sealed partial class ErrorOrEndpointGenerator
         string? keyedServiceKey = null,
         string? formName = null,
         CustomBindingMethod customBinding = CustomBindingMethod.None,
-        EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default)
+        EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
+        EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
     {
         return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
@@ -767,7 +777,8 @@ public sealed partial class ErrorOrEndpointGenerator
             default,
             customBinding,
             meta.RequiresValidation,
-            emptyBodyBehavior));
+            emptyBodyBehavior,
+            validatableProperties));
     }
 
     private static EmptyBodyBehavior DetectEmptyBodyBehavior(ISymbol parameter)
@@ -887,7 +898,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member, ErrorOrContext context)
     {
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
-            !IsTaskLike(method.ReturnType, context) || method.Parameters.Length < 1 ||
+            !context.Awaitable.IsTaskLike(method.ReturnType) || method.Parameters.Length < 1 ||
             !context.IsHttpContext(method.Parameters[0].Type))
         {
             return CustomBindingMethod.None;
@@ -899,20 +910,6 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         return CustomBindingMethod.BindAsync;
-    }
-
-    private static bool IsTaskLike(ITypeSymbol type, ErrorOrContext context)
-    {
-        if (type is not INamedTypeSymbol named)
-        {
-            return false;
-        }
-
-        var constructed = named.ConstructedFrom;
-
-        return (context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT)) ||
-               (context.ValueTaskOfT is not null &&
-                constructed.IsEqualTo(context.ValueTaskOfT));
     }
 
     private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -1047,7 +1044,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         var val = attr.ConstructorArguments[0].Value;
-        return val switch { string s => $"\"{s}\"", _ => val?.ToString() };
+        return val switch { string s => $"\"{s}\"", null => null, _ => val.ToString() };
     }
 
     private static bool HasParameterAttribute(ISymbol parameter, INamedTypeSymbol? attributeSymbol,
@@ -1114,11 +1111,11 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var syntaxText = syntax.ToString();
             var nameMatch = Regex.Match(syntaxText, """
-                                                    Name\s*=\s*"([^"]+)"
-                                                    """, RegexOptions.IgnoreCase);
+                                                    Name\s*=\s*"(?<val>[^"]+)"
+                                                    """, RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
             if (nameMatch.Success)
             {
-                return nameMatch.Groups[1].Value;
+                return nameMatch.Groups["val"].Value;
             }
         }
 

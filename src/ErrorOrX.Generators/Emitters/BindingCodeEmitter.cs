@@ -10,26 +10,25 @@ internal static class BindingCodeEmitter
     internal static bool EmitParameterBinding(StringBuilder code, in EndpointParameter param, string paramName,
         string bindFailFn)
     {
-        return param.Source switch
-        {
-            var s when s == ParameterSource.Route => EmitRouteBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.Query => EmitQueryBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.Header => EmitHeaderBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.Body => EmitBodyBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.Service => EmitServiceBinding(code, in param, paramName),
-            var s when s == ParameterSource.KeyedService => EmitKeyedServiceBinding(code, in param, paramName),
-            var s when s == ParameterSource.HttpContext => EmitHttpContextBinding(code, paramName),
-            var s when s == ParameterSource.CancellationToken => EmitCancellationTokenBinding(code, paramName),
-            var s when s == ParameterSource.Stream => EmitStreamBinding(code, paramName),
-            var s when s == ParameterSource.PipeReader => EmitPipeReaderBinding(code, paramName),
-            var s when s == ParameterSource.FormFile => EmitFormFileBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.FormFiles => EmitFormFilesBinding(code, paramName),
-            var s when s == ParameterSource.FormCollection => EmitFormCollectionBinding(code, paramName),
-            var s when s == ParameterSource.Form => EmitFormBinding(code, in param, paramName, bindFailFn),
-            var s when s == ParameterSource.AsParameters => EmitAsParametersBinding(code, in param, paramName,
-                bindFailFn),
-            _ => false
-        };
+        var source = param.Source;
+
+        if (source == ParameterSource.Route) return EmitRouteBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.Query) return EmitQueryBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.Header) return EmitHeaderBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.Body) return EmitBodyBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.Service) return EmitServiceBinding(code, in param, paramName);
+        if (source == ParameterSource.KeyedService) return EmitKeyedServiceBinding(code, in param, paramName);
+        if (source == ParameterSource.HttpContext) return EmitHttpContextBinding(code, paramName);
+        if (source == ParameterSource.CancellationToken) return EmitCancellationTokenBinding(code, paramName);
+        if (source == ParameterSource.Stream) return EmitStreamBinding(code, paramName);
+        if (source == ParameterSource.PipeReader) return EmitPipeReaderBinding(code, paramName);
+        if (source == ParameterSource.FormFile) return EmitFormFileBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.FormFiles) return EmitFormFilesBinding(code, paramName);
+        if (source == ParameterSource.FormCollection) return EmitFormCollectionBinding(code, paramName);
+        if (source == ParameterSource.Form) return EmitFormBinding(code, in param, paramName, bindFailFn);
+        if (source == ParameterSource.AsParameters) return EmitAsParametersBinding(code, in param, paramName, bindFailFn);
+
+        throw new ArgumentOutOfRangeException(nameof(param), $"Unknown parameter source: {source}");
     }
 
     internal static bool EmitServiceBinding(StringBuilder code, in EndpointParameter param, string paramName)
@@ -411,21 +410,23 @@ internal static class BindingCodeEmitter
 
     internal static string BuildArgumentExpression(in EndpointParameter param, string paramName)
     {
-        return param.Source switch
-        {
-            var s when s == ParameterSource.Body && !param.IsNullable => paramName + "!",
-            var s when s == ParameterSource.Route && param is { IsNullable: false, IsNonNullableValueType: false } =>
-                paramName + "!",
-            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: true } =>
-                paramName + ".Value",
-            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: true } =>
-                paramName + ".Value",
-            var s when s == ParameterSource.Query && param is { IsNullable: false, IsNonNullableValueType: false } =>
-                paramName + "!",
-            var s when s == ParameterSource.Header && param is { IsNullable: false, IsNonNullableValueType: false } =>
-                paramName + "!",
-            _ => paramName
-        };
+        var source = param.Source;
+
+        if (source == ParameterSource.Body && !param.IsNullable)
+            return paramName + "!";
+
+        if (source == ParameterSource.Route && param is { IsNullable: false, IsNonNullableValueType: false })
+            return paramName + "!";
+
+        if ((source == ParameterSource.Query || source == ParameterSource.Header)
+            && param is { IsNullable: false, IsNonNullableValueType: true })
+            return paramName + ".Value";
+
+        if ((source == ParameterSource.Query || source == ParameterSource.Header)
+            && param is { IsNullable: false, IsNonNullableValueType: false })
+            return paramName + "!";
+
+        return paramName;
     }
 
     internal static string GetTryParseExpression(string typeFqn, string rawName, string outputName,

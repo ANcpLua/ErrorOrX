@@ -129,6 +129,7 @@ internal static class EndpointMetadataEmitter
 
     /// <summary>
     ///     Emits middleware fluent calls based on BCL attributes detected on the endpoint.
+    ///     Dispatches to per-concern methods for maintainability.
     /// </summary>
     private static void EmitMiddlewareCalls(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
@@ -137,7 +138,17 @@ internal static class EndpointMetadataEmitter
             return;
         }
 
-        // Authorization: [Authorize] / [Authorize("Policy")] / [AllowAnonymous]
+        EmitAuthMiddleware(code, in middleware, indent);
+        EmitRateLimitingMiddleware(code, in middleware, indent);
+        EmitOutputCacheMiddleware(code, in middleware, indent);
+        EmitCorsMiddleware(code, in middleware, indent);
+    }
+
+    /// <summary>
+    ///     Emits authorization middleware: [Authorize] / [Authorize("Policy")] / [AllowAnonymous].
+    /// </summary>
+    private static void EmitAuthMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
+    {
         if (middleware.AllowAnonymous)
         {
             code.AppendLine($"{indent}.AllowAnonymous()");
@@ -159,8 +170,13 @@ internal static class EndpointMetadataEmitter
                     $"{indent}.RequireAuthorization({string.Join(", ", policies.Select(static p => $"\"{p}\""))})");
             }
         }
+    }
 
-        // Rate Limiting: [EnableRateLimiting("policy")] / [EnableRateLimiting] / [DisableRateLimiting]
+    /// <summary>
+    ///     Emits rate limiting middleware: [EnableRateLimiting("policy")] / [DisableRateLimiting].
+    /// </summary>
+    private static void EmitRateLimitingMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
+    {
         if (middleware.DisableRateLimiting)
         {
             code.AppendLine($"{indent}.DisableRateLimiting()");
@@ -171,26 +187,38 @@ internal static class EndpointMetadataEmitter
                 ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
                 : $"{indent}.RequireRateLimiting()");
         }
+    }
 
-        // Output Caching: [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")]
-        if (middleware.EnableOutputCache)
+    /// <summary>
+    ///     Emits output cache middleware: [OutputCache] / [OutputCache(Duration = 60)] / [OutputCache(PolicyName = "x")].
+    /// </summary>
+    private static void EmitOutputCacheMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
+    {
+        if (!middleware.EnableOutputCache)
         {
-            if (middleware.OutputCachePolicy is not null)
-            {
-                code.AppendLine($"{indent}.CacheOutput(\"{middleware.OutputCachePolicy}\")");
-            }
-            else if (middleware.OutputCacheDuration is { } duration)
-            {
-                code.AppendLine(
-                    $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
-            }
-            else
-            {
-                code.AppendLine($"{indent}.CacheOutput()");
-            }
+            return;
         }
 
-        // CORS: [EnableCors("policy")] / [EnableCors] / [DisableCors]
+        if (middleware.OutputCachePolicy is not null)
+        {
+            code.AppendLine($"{indent}.CacheOutput(\"{middleware.OutputCachePolicy}\")");
+        }
+        else if (middleware.OutputCacheDuration is { } duration)
+        {
+            code.AppendLine(
+                $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
+        }
+        else
+        {
+            code.AppendLine($"{indent}.CacheOutput()");
+        }
+    }
+
+    /// <summary>
+    ///     Emits CORS middleware: [EnableCors("policy")] / [EnableCors] / [DisableCors].
+    /// </summary>
+    private static void EmitCorsMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
+    {
         if (middleware.DisableCors)
         {
             code.AppendLine($"{indent}.DisableCors()");

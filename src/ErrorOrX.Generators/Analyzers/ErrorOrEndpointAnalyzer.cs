@@ -125,8 +125,14 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             var errorOrContext = new ErrorOrContext(context.Compilation);
 
+            var verb = HttpVerbExtensions.ParseMethodString(httpMethod);
+            if (verb is null)
+            {
+                return;
+            }
+
             var bindingFlow =
-                RouteBindingHelper.BindRouteParameters(method, routeParamNames, errorOrContext, httpMethod);
+                RouteBindingHelper.BindRouteParameters(method, routeParamNames, errorOrContext, verb.Value);
             if (bindingFlow.IsSuccess)
             {
                 var bindingAnalysis = bindingFlow.ValueOrDefault();

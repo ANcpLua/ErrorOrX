@@ -4,6 +4,60 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-02-13
+
+### Added
+
+- **HttpVerb enum**: Replaced string-based HTTP method comparisons throughout the core generator pipeline with a
+  strongly-typed `HttpVerb` enum, providing compile-time exhaustiveness checks and eliminating string comparison bugs.
+
+- **EmitContext record struct**: Flattened deeply nested Roslyn pipeline tuples into a named `EmitContext` record struct,
+  improving readability of `RegisterSourceOutput` callbacks.
+
+- **MapCallEmitter**: Extracted shared map call emission helpers (`EmitMapCallStart`/`EmitMapCallEnd`) used by both
+  grouped and ungrouped endpoint emission, eliminating code duplication.
+
+- **ValidationResolverEmitter**: New emitter for validation resolver support with DataAnnotations integration.
+
+- **Validation showcase sample**: Added `ErrorOrX.Validation.Showcase` sample project demonstrating validation patterns.
+
+### Changed
+
+- **Generic CombineAll**: Replaced hand-written `CombineSix`/`CombineNine` provider combiners with a generic
+  `CombineAll<T>(params IncrementalValuesProvider<T>[])` using pairwise loop (163 lines → 47 lines).
+
+- **Per-concern middleware emission**: Split monolithic `EmitMiddlewareCalls` into 4 focused per-concern methods
+  (`EmitAuthorizationMiddleware`, `EmitRateLimitingMiddleware`, `EmitOutputCacheMiddleware`, `EmitCorsMiddleware`).
+
+- **Pure `CollectSerializableTypes`**: Extracted serializable type collection as a pure method from the analyzer.
+
+- **Exhaustive switch expressions**: Added `ArgumentOutOfRangeException` discard arms to all `ParameterSource` and
+  `HttpVerb` switch expressions for compile-time safety.
+
+- **`in` parameter optimization**: Added `in` modifier to 5 `MiddlewareInfo` and `VersioningInfo` readonly record struct
+  parameters to avoid unnecessary copies.
+
+- **Updated dependencies**: ANcpLua.Roslyn.Utilities 1.31.0 → 1.33.0.
+
+## [3.5.0] - 2026-02-08
+
+### Changed
+
+- **Emitter cohesion refactoring**: Improved expressiveness and removed incoherent patterns in
+  `ErrorOrEndpointGenerator.Emitter.cs`:
+  - Removed passthrough wrappers (`EmitParameterBinding`, `BuildArgumentExpression`) that added indirection without
+    logic — callers now use `BindingCodeEmitter` directly
+  - Unified `WrapReturn` — eliminated duplicate local function in `EmitUnionTypeErrorHandling` by threading
+    `InvokerContext` through `EmitValidationHandling` and `EmitErrorTypeSwitch`, also removing `Func<string, string>`
+    delegate allocations
+  - Collapsed `GetSuccessFactoryWithLocation` from 4 sequential guard clauses into a single positive condition
+  - Simplified `HasValidatableTypes` from manual nested loop to `Any()`/`Any()` LINQ expression
+  - Simplified `SortEndpoints` from manual array copy + `Array.Sort` to idiomatic `OrderBy`/`ThenBy` chain
+
+- **Nullable suppression fix**: Replaced `constant.Value.ToString()!` in `ErrorOrContext.TypedConstantToLiteral` with
+  `Convert.ToString(constant.Value, CultureInfo.InvariantCulture) ?? "null"` — removes hidden nullable assumption and
+  uses `InvariantCulture` consistently with adjacent numeric arms.
+
 ## [3.4.0] - 2026-02-07
 
 ### Changed

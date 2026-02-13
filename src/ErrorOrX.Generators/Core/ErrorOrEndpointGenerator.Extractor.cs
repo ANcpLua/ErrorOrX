@@ -18,7 +18,9 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
     {
-        var (unwrapped, isAsync) = UnwrapAsyncType(returnType, context);
+        var resultType = context.Awaitable.GetTaskResultType(returnType);
+        var unwrapped = resultType ?? returnType;
+        var isAsync = resultType is not null;
 
         if (!IsErrorOrType(unwrapped, context, out var errorOrType))
         {
@@ -177,25 +179,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
         dataType = null;
         return false;
-    }
-
-    private static (ITypeSymbol Type, bool IsAsync) UnwrapAsyncType(ITypeSymbol type, ErrorOrContext context)
-    {
-        if (type is not INamedTypeSymbol { IsGenericType: true } named)
-        {
-            return (type, false);
-        }
-
-        var constructed = named.ConstructedFrom;
-
-        if ((context.TaskOfT is not null && constructed.IsEqualTo(context.TaskOfT)) ||
-            (context.ValueTaskOfT is not null &&
-             constructed.IsEqualTo(context.ValueTaskOfT)))
-        {
-            return (named.TypeArguments[0], true);
-        }
-
-        return (type, false);
     }
 
     private static bool IsErrorOrType(
@@ -533,7 +516,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
     {
         // Reuse existing helpers - unwrap Task/ValueTask, then check for ErrorOr<T>
-        var (unwrapped, _) = UnwrapAsyncType(method.ReturnType, context);
+        var unwrapped = context.Awaitable.GetTaskResultType(method.ReturnType) ?? method.ReturnType;
         return IsErrorOrType(unwrapped, context, out _);
     }
 
@@ -686,7 +669,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return true;
     }
 
-    private static EquatableArray<string> ToSortedErrorArray(ICollection<string> set)
+    private static EquatableArray<string> ToSortedErrorArray(HashSet<string> set)
     {
         if (set.Count is 0)
         {
@@ -893,7 +876,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void ExtractVersioningFromSymbol(
         ISymbol symbol,
         ErrorOrContext context,
-        ICollection<ApiVersionInfo> supportedVersions,
+        List<ApiVersionInfo> supportedVersions,
         ref bool isVersionNeutral)
     {
         foreach (var attr in symbol.GetAttributes())
@@ -927,7 +910,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void ExtractMappedVersions(
         ISymbol method,
         ErrorOrContext context,
-        ICollection<ApiVersionInfo> mappedVersions)
+        List<ApiVersionInfo> mappedVersions)
     {
         foreach (var attr in method.GetAttributes())
         {
