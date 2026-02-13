@@ -20,7 +20,7 @@
 
     <!-- Dependency versions -->
     <PropertyGroup>
-        <ANcpLuaAnalyzersVersion>1.14.0</ANcpLuaAnalyzersVersion>
+        <ANcpLuaAnalyzersVersion>1.15.0</ANcpLuaAnalyzersVersion>
         <MeziantouAnalyzerVersion>2.0.299</MeziantouAnalyzerVersion>
         <ANcpLuaRoslynUtilitiesVersion>1.33.0</ANcpLuaRoslynUtilitiesVersion>
         <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0</MicrosoftCodeAnalysisAnalyzersVersion>
