@@ -37,18 +37,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
-        <PackageReference Include="ANcpLua.Roslyn.Utilities" PrivateAssets="all" GeneratePathProperty="true"/>
+        <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" PrivateAssets="all"/>
     </ItemGroup>
-
-    <PropertyGroup>
-        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-    </PropertyGroup>
-
-    <Target Name="GetDependencyTargetPaths">
-        <ItemGroup>
-            <TargetPathWithTargetPlatformMoniker Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll" IncludeRuntimeDependency="false"/>
-        </ItemGroup>
-    </Target>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
@@ -57,6 +47,6 @@
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-        <NuspecProperties>version=$(Version);nugetRoot=$(NuGetPackageRoot);roslynUtilsVersion=$(ANcpLuaRoslynUtilitiesVersion)</NuspecProperties>
+        <NuspecProperties>version=$(Version)</NuspecProperties>
     </PropertyGroup>
 </Project>

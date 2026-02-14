@@ -23,9 +23,6 @@
     </metadata>
     <files>
         <file src="bin/Release/netstandard2.0/ErrorOrX.Generators.dll" target="analyzers/dotnet/cs/"/>
-        <file
-            src="$nugetRoot$ancplua.roslyn.utilities/$roslynUtilsVersion$/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"
-            target="analyzers/dotnet/cs/"/>
         <file src="build/ErrorOrX.Generators.props" target="build/"/>
         <file src="../../README.md" target=""/>
     </files>

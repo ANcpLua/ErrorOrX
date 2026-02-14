@@ -758,7 +758,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return current with
             {
                 Enabled = true,
-                Policy = policy
+                Policy = policy,
             };
         }
 

@@ -15,12 +15,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Ensure PackageVersion is defined for CPM -->
-        <PackageVersion Update="ANcpLua.Analyzers" Version="1.13.0"/>
-        <PackageVersion Include="ANcpLua.Analyzers" Version="1.13.0" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'ANcpLua.Analyzers'))' == ''"/>
-        <PackageVersion Include="Meziantou.Analyzer" Version="$(MeziantouAnalyzerVersion)"/>
-        <!-- JonSkeet: SDK adds it for some projects, so use Update + conditional Include -->
-        <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6"/>
-        <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="1.0.0-beta.6" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
+        <!-- SDK-injected packages: Update overrides SDK version, conditional Include adds for non-SDK projects.
+             Cannot live in Directory.Packages.props because ANcpLua.NET.Sdk also injects these (NU1506). -->
+        <PackageVersion Update="ANcpLua.Analyzers" Version="$(ANcpLuaAnalyzersVersion)"/>
+        <PackageVersion Include="ANcpLua.Analyzers" Version="$(ANcpLuaAnalyzersVersion)" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'ANcpLua.Analyzers'))' == ''"/>
+        <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)"/>
+        <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
     </ItemGroup>
 </Project>

@@ -9,7 +9,9 @@
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(MicrosoftCodeAnalysisCSharpVersion)"/>
         <PackageVersion Include="ANcpLua.Roslyn.Utilities" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
+        <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
         <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
+
         <PackageVersion Update="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="$(MicrosoftCodeAnalysisBannedApiAnalyzersVersion)"/>
         <PackageVersion Update="Microsoft.Sbom.Targets" Version="$(MicrosoftSbomTargetsVersion)"/>
         <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="$(ErrorProneNETCoreAnalyzersVersion)"/>
@@ -17,7 +19,9 @@
         <PackageVersion Include="Roslynator.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
         <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
         <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
-        <PackageVersion Include="PolySharp" Version="$(PolySharpVersion)"/>
+        <!-- ANcpLua.Analyzers and JonSkeet.RoslynAnalyzers: defined via Update+conditional Include
+             in Directory.Build.targets because ANcpLua.NET.Sdk also injects them (NU1506 if duplicated here) -->
+        <PackageVersion Include="Meziantou.Analyzer" Version="$(MeziantouAnalyzerVersion)"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)"/>
         <PackageVersion Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)"/>
         <PackageVersion Include="Verify.XunitV3" Version="$(VerifyXunitV3Version)"/>

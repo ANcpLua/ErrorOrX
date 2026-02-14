@@ -350,11 +350,7 @@ internal sealed class ErrorOrContext
     {
         if (a.IsDefaultOrEmpty) return b;
         if (b.IsDefaultOrEmpty) return a;
-
-        var merged = ImmutableArray.CreateBuilder<ValidatableAttributeInfo>(a.Length + b.Length);
-        merged.AddRange(a.AsImmutableArray());
-        merged.AddRange(b.AsImmutableArray());
-        return new EquatableArray<ValidatableAttributeInfo>(merged.ToImmutable());
+        return new EquatableArray<ValidatableAttributeInfo>([.. a.AsImmutableArray(), .. b.AsImmutableArray()]);
     }
 
     private EquatableArray<ValidatableAttributeInfo> CollectValidationAttributes(ISymbol property)

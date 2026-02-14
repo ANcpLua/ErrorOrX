@@ -10,7 +10,6 @@
         <PackageReference Include="AwesomeAssertions"/>
         <PackageReference Include="Verify.XunitV3"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
-        <PackageReference Include="ANcpLua.Roslyn.Utilities" GeneratePathProperty="true" PrivateAssets="all"/>
         <PackageReference Include="ANcpLua.Roslyn.Utilities.Testing"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
         <PackageReference Include="Asp.Versioning.Http"/>
@@ -24,10 +23,6 @@
     </ItemGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Analyzer Include="$(PkgANcpLua_Roslyn_Utilities)/lib/netstandard2.0/ANcpLua.Roslyn.Utilities.dll"/>
     </ItemGroup>
 
     <ItemGroup>
