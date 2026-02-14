@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -67,7 +69,7 @@ internal static class HttpVerbExtensions
     /// <summary>
     ///     Parses an attribute name to HttpVerb, returning null for unrecognized attributes.
     /// </summary>
-    public static HttpVerb? TryParseFromAttribute(string attrName, ImmutableArray<Microsoft.CodeAnalysis.TypedConstant> args)
+    public static HttpVerb? TryParseFromAttribute(string attrName, ImmutableArray<TypedConstant> args)
     {
         return attrName switch
         {

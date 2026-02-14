@@ -31,7 +31,8 @@ All notable changes to this project are documented in this file.
 - **HttpVerb enum**: Replaced string-based HTTP method comparisons throughout the core generator pipeline with a
   strongly-typed `HttpVerb` enum, providing compile-time exhaustiveness checks and eliminating string comparison bugs.
 
-- **EmitContext record struct**: Flattened deeply nested Roslyn pipeline tuples into a named `EmitContext` record struct,
+- **EmitContext record struct**: Flattened deeply nested Roslyn pipeline tuples into a named `EmitContext` record
+  struct,
   improving readability of `RegisterSourceOutput` callbacks.
 
 - **MapCallEmitter**: Extracted shared map call emission helpers (`EmitMapCallStart`/`EmitMapCallEnd`) used by both
@@ -65,14 +66,14 @@ All notable changes to this project are documented in this file.
 
 - **Emitter cohesion refactoring**: Improved expressiveness and removed incoherent patterns in
   `ErrorOrEndpointGenerator.Emitter.cs`:
-  - Removed passthrough wrappers (`EmitParameterBinding`, `BuildArgumentExpression`) that added indirection without
-    logic — callers now use `BindingCodeEmitter` directly
-  - Unified `WrapReturn` — eliminated duplicate local function in `EmitUnionTypeErrorHandling` by threading
-    `InvokerContext` through `EmitValidationHandling` and `EmitErrorTypeSwitch`, also removing `Func<string, string>`
-    delegate allocations
-  - Collapsed `GetSuccessFactoryWithLocation` from 4 sequential guard clauses into a single positive condition
-  - Simplified `HasValidatableTypes` from manual nested loop to `Any()`/`Any()` LINQ expression
-  - Simplified `SortEndpoints` from manual array copy + `Array.Sort` to idiomatic `OrderBy`/`ThenBy` chain
+    - Removed passthrough wrappers (`EmitParameterBinding`, `BuildArgumentExpression`) that added indirection without
+      logic — callers now use `BindingCodeEmitter` directly
+    - Unified `WrapReturn` — eliminated duplicate local function in `EmitUnionTypeErrorHandling` by threading
+      `InvokerContext` through `EmitValidationHandling` and `EmitErrorTypeSwitch`, also removing `Func<string, string>`
+      delegate allocations
+    - Collapsed `GetSuccessFactoryWithLocation` from 4 sequential guard clauses into a single positive condition
+    - Simplified `HasValidatableTypes` from manual nested loop to `Any()`/`Any()` LINQ expression
+    - Simplified `SortEndpoints` from manual array copy + `Array.Sort` to idiomatic `OrderBy`/`ThenBy` chain
 
 - **Nullable suppression fix**: Replaced `constant.Value.ToString()!` in `ErrorOrContext.TypedConstantToLiteral` with
   `Convert.ToString(constant.Value, CultureInfo.InvariantCulture) ?? "null"` — removes hidden nullable assumption and
@@ -102,9 +103,9 @@ All notable changes to this project are documented in this file.
 ### Removed
 
 - **tools/ directory**: Removed internal DiagnosticsAlignment tooling
-  - `DiagnosticsAlignment.Analyzers` was orphaned (not referenced by any project)
-  - `DiagnosticsAlignment.Host` was dead code (empty class with unused AdditionalFiles)
-  - `DiagnosticsAlignment.Tool` functionality moved to ANcpLua.Analyzers
+    - `DiagnosticsAlignment.Analyzers` was orphaned (not referenced by any project)
+    - `DiagnosticsAlignment.Host` was dead code (empty class with unused AdditionalFiles)
+    - `DiagnosticsAlignment.Tool` functionality moved to ANcpLua.Analyzers
 
 ### Fixed
 
@@ -140,9 +141,11 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- **BugRegressionTests**: New test class with regression tests for BUG-001 through BUG-005 to prevent future regressions.
+- **BugRegressionTests**: New test class with regression tests for BUG-001 through BUG-005 to prevent future
+  regressions.
 
-- **DiagnosticTests**: Comprehensive test class covering 26 diagnostic scenarios including EOE003 (route parameter not bound),
+- **DiagnosticTests**: Comprehensive test class covering 26 diagnostic scenarios including EOE003 (route parameter not
+  bound),
   EOE005 (invalid route pattern), EOE006 (multiple body sources), EOE011-EOE016 (invalid binding types), EOE017-EOE021
   (type restrictions), EOE023 (constraint mismatch), EOE025 (ambiguous binding), and EOE032 (unknown error factory).
   Increases diagnostic test coverage from 6/32 to 32/32.
@@ -151,7 +154,10 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
-- **Package installation issue**: Removed `developmentDependency=true` from `.nuspec` to prevent NuGet from automatically adding `PrivateAssets=all` when installing via `dotnet add package`. Added MSBuild target in `.props` that explicitly adds ErrorOrX reference with `PrivateAssets=none` if not already present. Users no longer need to manually edit `.csproj` after installation.
+- **Package installation issue**: Removed `developmentDependency=true` from `.nuspec` to prevent NuGet from
+  automatically adding `PrivateAssets=all` when installing via `dotnet add package`. Added MSBuild target in `.props`
+  that explicitly adds ErrorOrX reference with `PrivateAssets=none` if not already present. Users no longer need to
+  manually edit `.csproj` after installation.
 
 ## [3.0.0] - 2026-01-25
 
@@ -509,7 +515,7 @@ ErrorMapping.AllErrorTypes        // Deterministic iteration
   middleware attributes:
 
   | Attribute                         | Emitted Call                                            |
-    |-----------------------------------|---------------------------------------------------------|
+      |-----------------------------------|---------------------------------------------------------|
   | `[Authorize]`                     | `.RequireAuthorization()`                               |
   | `[Authorize("Policy")]`           | `.RequireAuthorization("Policy")`                       |
   | `[AllowAnonymous]`                | `.AllowAnonymous()`                                     |

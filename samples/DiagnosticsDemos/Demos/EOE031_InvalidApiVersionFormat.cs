@@ -30,12 +30,12 @@ namespace DiagnosticsDemos.Demos;
 // FIXED: Valid version formats
 // -------------------------------------------------------------------------
 /// <summary>
-/// EOE031: Invalid API version format — [ApiVersion] has invalid format; use "major.minor" or just "major".
+///     EOE031: Invalid API version format — [ApiVersion] has invalid format; use "major.minor" or just "major".
 /// </summary>
 /// <remarks>
-/// Valid formats: "1.0", "2.0", "1.1" (major.minor), "1", "2", "3" (major only),
-/// "1.0-beta", "2.0-alpha" (with status suffix).
-/// Invalid formats: "v1" (v prefix not allowed), "1.0.0" (semver with patch not allowed).
+///     Valid formats: "1.0", "2.0", "1.1" (major.minor), "1", "2", "3" (major only),
+///     "1.0-beta", "2.0-alpha" (with status suffix).
+///     Invalid formats: "v1" (v prefix not allowed), "1.0.0" (semver with patch not allowed).
 /// </remarks>
 [ApiVersion("1.0")] // Major.Minor
 [ApiVersion("2.0")]

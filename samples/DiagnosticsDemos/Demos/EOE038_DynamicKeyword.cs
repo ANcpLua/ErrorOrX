@@ -1,13 +1,13 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE038: 'dynamic' is not AOT-safe — The 'dynamic' keyword uses runtime binding,
-/// which is not supported in NativeAOT.
+///     EOE038: 'dynamic' is not AOT-safe — The 'dynamic' keyword uses runtime binding,
+///     which is not supported in NativeAOT.
 /// </summary>
 /// <remarks>
-/// The 'dynamic' keyword defers type resolution to runtime using the
-/// Dynamic Language Runtime (DLR). This requires runtime code generation
-/// and reflection, neither of which are available in AOT-compiled apps.
+///     The 'dynamic' keyword defers type resolution to runtime using the
+///     Dynamic Language Runtime (DLR). This requires runtime code generation
+///     and reflection, neither of which are available in AOT-compiled apps.
 /// </remarks>
 public static class EOE038_DynamicKeyword
 {
@@ -103,7 +103,7 @@ public static class EOE038_DynamicKeyword
     }
 }
 
-public record TypedData(string Name, int Value);
+public sealed record TypedData(string Name, int Value);
 
 public class FlexibleData
 {

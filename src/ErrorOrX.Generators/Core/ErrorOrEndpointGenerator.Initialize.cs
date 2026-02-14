@@ -255,9 +255,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         CancellationToken ct)
     {
         if (ctx.TargetSymbol is not IMethodSymbol method || ctx.Attributes.IsDefaultOrEmpty)
-        {
             return Helpers.EmptyEndpointFlow();
-        }
 
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
@@ -271,29 +269,23 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
                 // EOE015: Anonymous return type
                 if (returnInfo.IsAnonymousType)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
-                }
 
                 // EOE018: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
                             returnInfo.InaccessibleTypeName ?? "unknown",
                             m.Name,
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
-                }
 
                 // EOE019: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
                             m.Name,
                             returnInfo.TypeParameterName ?? "T"));
-                }
 
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))
@@ -307,9 +299,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
 
                 // EOE033: Validate PascalCase naming convention
                 if (NamingValidator.ValidatePascalCase(m.Name, location) is { } namingDiagnostic)
-                {
                     builder.Add(namingDiagnostic);
-                }
 
                 // Extract method-level attributes first (needed for interface call detection)
                 var producesErrors = ExtractProducesErrorAttributes(m, errorOrContext);
@@ -343,20 +333,14 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var flows = ImmutableArray.CreateBuilder<DiagnosticFlow<EndpointDescriptor>>(ctx.Attributes.Length);
         foreach (var attr in ctx.Attributes)
         {
-            if (attr is null)
-            {
-                continue;
-            }
+            if (attr is null) continue;
 
             var flow = methodAnalysisFlow.Then(analysis =>
                 ProcessAttributeFlow(in analysis, attr, errorOrContext, ct));
             flows.Add(flow);
         }
 
-        if (flows.Count is 0)
-        {
-            return Helpers.EmptyEndpointFlow();
-        }
+        if (flows.Count is 0) return Helpers.EmptyEndpointFlow();
 
         return DiagnosticFlow.Collect(flows.ToImmutable())
             .Select(static endpoints => new EquatableArray<EndpointDescriptor>(endpoints));
@@ -370,24 +354,16 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        if (attr.AttributeClass is not { } attrClass)
-        {
-            return DiagnosticFlow.Fail<EndpointDescriptor>();
-        }
+        if (attr.AttributeClass is not { } attrClass) return DiagnosticFlow.Fail<EndpointDescriptor>();
 
         var attrName = attrClass.Name;
 
         var (verb, pattern, customMethod) = ExtractHttpMethodAndPattern(attr, attrName);
-        if (verb is null)
-        {
-            return DiagnosticFlow.Fail<EndpointDescriptor>();
-        }
+        if (verb is null) return DiagnosticFlow.Fail<EndpointDescriptor>();
 
         // Guard: SuccessTypeFqn validated in upstream .Then() but compiler doesn't know
         if (analysis.ReturnInfo.SuccessTypeFqn is not { } successTypeFqn)
-        {
             return DiagnosticFlow.Fail<EndpointDescriptor>();
-        }
 
         var builder = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 
@@ -402,10 +378,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             routeParamNames,
             errorOrContext,
             verb.Value);
-        if (!bindingFlow.IsSuccess)
-        {
-            return DiagnosticFlow.Fail<EndpointDescriptor>(bindingFlow.Diagnostics);
-        }
+        if (!bindingFlow.IsSuccess) return DiagnosticFlow.Fail<EndpointDescriptor>(bindingFlow.Diagnostics);
 
         builder.AddRange(bindingFlow.Diagnostics.AsImmutableArray());
         var bindingAnalysis = bindingFlow.ValueOrDefault();
@@ -455,11 +428,13 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             analysis.Method.ContainingType?.GetFullyQualifiedName() ?? "Unknown",
             analysis.Method.Name,
             bindingAnalysis.Parameters,
-            analysis.InferredErrorTypeNames,
-            analysis.InferredCustomErrors,
-            analysis.ProducesErrors,
-            analysis.ReturnInfo.IsSse,
-            analysis.ReturnInfo.SseItemTypeFqn,
+            new ErrorInferenceInfo(
+                analysis.InferredErrorTypeNames,
+                analysis.InferredCustomErrors,
+                analysis.ProducesErrors),
+            new SseInfo(
+                analysis.ReturnInfo.IsSse,
+                analysis.ReturnInfo.SseItemTypeFqn),
             analysis.IsAcceptedResponse,
             analysis.ReturnInfo.IdPropertyName,
             analysis.Middleware,
@@ -492,10 +467,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             verb = HttpVerb.Get; // placeholder — MapMethods is used when CustomHttpMethod is set
         }
 
-        if (verb is null)
-        {
-            return (null, "/", null);
-        }
+        if (verb is null) return (null, "/", null);
 
         // Extract pattern - index differs for ErrorOrEndpoint (has httpMethod arg first)
         var patternIndex = isErrorOrEndpoint ? 1 : 0;

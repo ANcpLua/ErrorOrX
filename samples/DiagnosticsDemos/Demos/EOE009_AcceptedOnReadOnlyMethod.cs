@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE009: [AcceptedResponse] on read-only method — [AcceptedResponse] on GET/DELETE is semantically unusual.
+///     EOE009: [AcceptedResponse] on read-only method — [AcceptedResponse] on GET/DELETE is semantically unusual.
 /// </summary>
 /// <remarks>
-/// HTTP 202 Accepted indicates that a request has been accepted for processing
-/// but the processing has not been completed. This is typically used for
-/// async POST/PUT operations, not read operations.
+///     HTTP 202 Accepted indicates that a request has been accepted for processing
+///     but the processing has not been completed. This is typically used for
+///     async POST/PUT operations, not read operations.
 /// </remarks>
 public static class EOE009_AcceptedOnReadOnlyMethod
 {
@@ -67,10 +67,10 @@ public static class EOE009_AcceptedOnReadOnlyMethod
     // -------------------------------------------------------------------------
     // FIXED: Use [AcceptedResponse] with POST for async operations
     // -------------------------------------------------------------------------
-    public record ImportRequest(string Url);
+    public sealed record ImportRequest(string Url);
 
     // -------------------------------------------------------------------------
     // FIXED: Use [AcceptedResponse] with PUT for long-running updates
     // -------------------------------------------------------------------------
-    public record BatchUpdateRequest(List<int> Ids, string NewStatus);
+    public sealed record BatchUpdateRequest(List<int> Ids, string NewStatus);
 }

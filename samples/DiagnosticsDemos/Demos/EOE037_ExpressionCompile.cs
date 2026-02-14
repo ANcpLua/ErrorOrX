@@ -1,13 +1,13 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE037: Expression.Compile is not AOT-safe — Expression.Compile() generates code at runtime,
-/// which is not supported in NativeAOT.
+///     EOE037: Expression.Compile is not AOT-safe — Expression.Compile() generates code at runtime,
+///     which is not supported in NativeAOT.
 /// </summary>
 /// <remarks>
-/// Expression trees are a powerful feature for building dynamic queries
-/// and delegates, but Compile() requires runtime code generation which
-/// is not available in AOT-compiled applications.
+///     Expression trees are a powerful feature for building dynamic queries
+///     and delegates, but Compile() requires runtime code generation which
+///     is not available in AOT-compiled applications.
 /// </remarks>
 public static class EOE037_ExpressionCompile
 {
@@ -63,14 +63,9 @@ public static class EOE037_ExpressionCompile
         var items = GetSampleItems();
 
         if (!string.IsNullOrEmpty(name))
-        {
             items = items.Where(x => x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
 
-        if (minValue.HasValue)
-        {
-            items = items.Where(x => x.Value >= minValue.Value).ToList();
-        }
+        if (minValue.HasValue) items = items.Where(x => x.Value >= minValue.Value).ToList();
 
         return items;
     }
@@ -115,19 +110,11 @@ public class SearchSpec
     public IEnumerable<DataItem> Apply(IEnumerable<DataItem> items)
     {
         if (!string.IsNullOrEmpty(Name))
-        {
             items = items.Where(x => x.Name.Contains(Name, StringComparison.OrdinalIgnoreCase));
-        }
 
-        if (MinValue.HasValue)
-        {
-            items = items.Where(x => x.Value >= MinValue.Value);
-        }
+        if (MinValue.HasValue) items = items.Where(x => x.Value >= MinValue.Value);
 
-        if (MaxValue.HasValue)
-        {
-            items = items.Where(x => x.Value <= MaxValue.Value);
-        }
+        if (MaxValue.HasValue) items = items.Where(x => x.Value <= MaxValue.Value);
 
         return items;
     }

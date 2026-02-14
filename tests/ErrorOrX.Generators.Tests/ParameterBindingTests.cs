@@ -657,5 +657,4 @@ public class ParameterBindingTests : GeneratorTestBase
     }
 
     #endregion
-
 }

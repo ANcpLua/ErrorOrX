@@ -30,15 +30,15 @@ public class PublicConstructorParams
 }
 
 // Valid: Primary constructor record (parameters match property names)
-public record RecordParams(string? Query, int Page = 1);
+public sealed record RecordParams(string? Query, int Page = 1);
 
 /// <summary>
-/// EOE013: [AsParameters] type has no constructor — [AsParameters] type has no accessible constructor.
+///     EOE013: [AsParameters] type has no constructor — [AsParameters] type has no accessible constructor.
 /// </summary>
 /// <remarks>
-/// The model binder needs to instantiate the [AsParameters] type, which requires
-/// a public parameterless constructor, or a constructor where all parameters
-/// can be bound from the request.
+///     The model binder needs to instantiate the [AsParameters] type, which requires
+///     a public parameterless constructor, or a constructor where all parameters
+///     can be bound from the request.
 /// </remarks>
 public static class EOE013_AsParametersNoConstructor
 {
@@ -93,7 +93,7 @@ public static class EOE013_AsParametersNoConstructor
     // -------------------------------------------------------------------------
     // TIP: Records with default values work well
     // -------------------------------------------------------------------------
-    public record PaginationParams(
+    public sealed record PaginationParams(
         string? Query = null,
         int Page = 1,
         int PageSize = 10,

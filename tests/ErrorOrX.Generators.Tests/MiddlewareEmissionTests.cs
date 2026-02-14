@@ -7,6 +7,38 @@ namespace ErrorOrX.Generators.Tests;
 /// </summary>
 public class MiddlewareEmissionTests : GeneratorTestBase
 {
+    #region Combined Middleware
+
+    [Fact]
+    public async Task Multiple_Middleware_Attributes_All_Emit()
+    {
+        const string Source = """
+                              using ErrorOr;
+                              using Microsoft.AspNetCore.Authorization;
+                              using Microsoft.AspNetCore.RateLimiting;
+                              using Microsoft.AspNetCore.OutputCaching;
+
+                              public static class Api
+                              {
+                                  [Get("/api")]
+                                  [Authorize("ApiPolicy")]
+                                  [EnableRateLimiting("standard")]
+                                  [OutputCache(PolicyName = "ApiCache")]
+                                  public static ErrorOr<string> GetData() => "data";
+                              }
+                              """;
+
+        using var result = await RunAsync(Source);
+
+        result.Diagnostics.Should().BeEmpty();
+        var generated = result.Files.First(static f => f.HintName == "ErrorOrEndpointMappings.cs").Content;
+        generated.Should().Contain(".RequireAuthorization(\"ApiPolicy\")");
+        generated.Should().Contain(".RequireRateLimiting(\"standard\")");
+        generated.Should().Contain(".CacheOutput(\"ApiCache\")");
+    }
+
+    #endregion
+
     #region Authorization Middleware
 
     [Fact]
@@ -414,38 +446,6 @@ public class MiddlewareEmissionTests : GeneratorTestBase
         var generated = result.Files.First(static f => f.HintName == "ErrorOrEndpointMappings.cs").Content;
         // DisableCors should be emitted
         generated.Should().Match("*Cors*");
-    }
-
-    #endregion
-
-    #region Combined Middleware
-
-    [Fact]
-    public async Task Multiple_Middleware_Attributes_All_Emit()
-    {
-        const string Source = """
-                              using ErrorOr;
-                              using Microsoft.AspNetCore.Authorization;
-                              using Microsoft.AspNetCore.RateLimiting;
-                              using Microsoft.AspNetCore.OutputCaching;
-
-                              public static class Api
-                              {
-                                  [Get("/api")]
-                                  [Authorize("ApiPolicy")]
-                                  [EnableRateLimiting("standard")]
-                                  [OutputCache(PolicyName = "ApiCache")]
-                                  public static ErrorOr<string> GetData() => "data";
-                              }
-                              """;
-
-        using var result = await RunAsync(Source);
-
-        result.Diagnostics.Should().BeEmpty();
-        var generated = result.Files.First(static f => f.HintName == "ErrorOrEndpointMappings.cs").Content;
-        generated.Should().Contain(".RequireAuthorization(\"ApiPolicy\")");
-        generated.Should().Contain(".RequireRateLimiting(\"standard\")");
-        generated.Should().Contain(".CacheOutput(\"ApiCache\")");
     }
 
     #endregion

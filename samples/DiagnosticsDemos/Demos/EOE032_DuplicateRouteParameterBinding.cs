@@ -1,11 +1,11 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE032: Duplicate route parameter binding — Multiple method parameters bind to the same route parameter name.
+///     EOE032: Duplicate route parameter binding — Multiple method parameters bind to the same route parameter name.
 /// </summary>
 /// <remarks>
-/// When two parameters have the same name (case-insensitive) and both could
-/// bind to a route parameter, only the first one is used.
+///     When two parameters have the same name (case-insensitive) and both could
+///     bind to a route parameter, only the first one is used.
 /// </remarks>
 public static class EOE032_DuplicateRouteParameterBinding
 {

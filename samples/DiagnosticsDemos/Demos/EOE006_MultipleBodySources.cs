@@ -1,13 +1,13 @@
 namespace DiagnosticsDemos.Demos;
 
-public record CreateRequest(string Name);
+public sealed record CreateRequest(string Name);
 
 /// <summary>
-/// EOE006: Multiple body sources — Endpoint has multiple body sources (FromBody, FromForm, Stream, PipeReader);
-/// only one is allowed per endpoint.
+///     EOE006: Multiple body sources — Endpoint has multiple body sources (FromBody, FromForm, Stream, PipeReader);
+///     only one is allowed per endpoint.
 /// </summary>
 /// <remarks>
-/// HTTP requests can only have one body, so an endpoint cannot read it multiple ways.
+///     HTTP requests can only have one body, so an endpoint cannot read it multiple ways.
 /// </remarks>
 public static class EOE006_MultipleBodySources
 {

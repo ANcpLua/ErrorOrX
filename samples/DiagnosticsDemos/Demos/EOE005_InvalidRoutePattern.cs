@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE005: Invalid route pattern — Route pattern syntax is invalid.
+///     EOE005: Invalid route pattern — Route pattern syntax is invalid.
 /// </summary>
 /// <remarks>
-/// Route patterns must follow ASP.NET Core routing conventions:
-/// parameters use {name} or {name:constraint} syntax, braces must be balanced,
-/// and parameter names cannot be empty.
+///     Route patterns must follow ASP.NET Core routing conventions:
+///     parameters use {name} or {name:constraint} syntax, braces must be balanced,
+///     and parameter names cannot be empty.
 /// </remarks>
 public static class EOE005_InvalidRoutePattern
 {

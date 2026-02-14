@@ -45,10 +45,7 @@ public sealed class OrderService : IOrderService
     public Order? Update(Guid id, UpdateOrderRequest request)
     {
         var index = _orders.FindIndex(o => o.Id == id);
-        if (index < 0)
-        {
-            return null;
-        }
+        if (index < 0) return null;
 
         var existing = _orders[index];
         var updated = existing with

@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE004: Duplicate route — Same route + HTTP method registered by multiple handlers.
+///     EOE004: Duplicate route — Same route + HTTP method registered by multiple handlers.
 /// </summary>
 /// <remarks>
-/// Each combination of HTTP method and route pattern must be unique.
-/// This diagnostic is reported by the generator (not the analyzer) because
-/// it requires cross-file analysis.
+///     Each combination of HTTP method and route pattern must be unique.
+///     This diagnostic is reported by the generator (not the analyzer) because
+///     it requires cross-file analysis.
 /// </remarks>
 public static class EOE004_DuplicateRoute
 {

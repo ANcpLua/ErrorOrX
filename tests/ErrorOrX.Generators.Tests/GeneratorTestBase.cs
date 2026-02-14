@@ -13,6 +13,8 @@ namespace ErrorOrX.Generators.Tests;
 
 public abstract class GeneratorTestBase
 {
+    private const string AttributesHintName = "ErrorOrEndpointAttributes.Mappings.g.cs";
+
     private static readonly Type[] RequiredTypes =
     [
         typeof(HttpContext),
@@ -79,8 +81,6 @@ public abstract class GeneratorTestBase
         using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypesWithoutVersioning);
         return await Test<ErrorOrEndpointGenerator>.Run(source, TestContext.Current.CancellationToken);
     }
-
-    private const string AttributesHintName = "ErrorOrEndpointAttributes.Mappings.g.cs";
 
     /// <summary>
     ///     Runs the generator and verifies output using Verify snapshots.

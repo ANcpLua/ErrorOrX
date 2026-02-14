@@ -19,33 +19,27 @@ namespace DiagnosticsDemos.Demos;
 internal partial class CompleteJsonContext : JsonSerializerContext;
 
 /// <summary>
-/// EOE041: JsonSerializerContext missing error types — Custom JsonSerializerContext must include
-/// ProblemDetails and HttpValidationProblemDetails for error response serialization.
+///     EOE041: JsonSerializerContext missing error types — Custom JsonSerializerContext must include
+///     ProblemDetails and HttpValidationProblemDetails for error response serialization.
 /// </summary>
 /// <remarks>
-/// ErrorOrX converts ErrorOr errors to ProblemDetails responses.
-/// Without these types in your context, error serialization will fail.
+///     ErrorOrX converts ErrorOr errors to ProblemDetails responses.
+///     Without these types in your context, error serialization will fail.
 /// </remarks>
 public static class EOE041_JsonContextMissingProblemDetails
 {
     [Get("/api/eoe041/item/{id}")]
     public static ErrorOr<Eoe041Response> GetItem(int id)
     {
-        if (id <= 0)
-        {
-            return Error.Validation("Id.Invalid", "Id must be positive");
-        }
+        if (id <= 0) return Error.Validation("Id.Invalid", "Id must be positive");
 
-        if (id == 404)
-        {
-            return Error.NotFound("Item.NotFound", $"Item {id} not found");
-        }
+        if (id == 404) return Error.NotFound("Item.NotFound", $"Item {id} not found");
 
         return new Eoe041Response(id, $"Item {id}");
     }
 }
 
-public record Eoe041Response(int Id, string Name);
+public sealed record Eoe041Response(int Id, string Name);
 
 // -------------------------------------------------------------------------
 // TIP: Complete JsonSerializerContext for ErrorOrX

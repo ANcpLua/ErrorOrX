@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE001: Invalid return type — Handler method must return ErrorOr&lt;T&gt;, Task&lt;ErrorOr&lt;T&gt;&gt;,
-/// or ValueTask&lt;ErrorOr&lt;T&gt;&gt;.
+///     EOE001: Invalid return type — Handler method must return ErrorOr&lt;T&gt;, Task&lt;ErrorOr&lt;T&gt;&gt;,
+///     or ValueTask&lt;ErrorOr&lt;T&gt;&gt;.
 /// </summary>
 /// <remarks>
-/// The ErrorOrX generator requires endpoints to return one of these types so it can
-/// properly generate the error handling and result mapping code.
+///     The ErrorOrX generator requires endpoints to return one of these types so it can
+///     properly generate the error handling and result mapping code.
 /// </remarks>
 public static class EOE001_InvalidReturnType
 {
@@ -33,8 +33,6 @@ public static class EOE001_InvalidReturnType
     public static ErrorOr<string> GetValidSync()
     {
         return "valid response";
-
-
     }
 
     // -------------------------------------------------------------------------

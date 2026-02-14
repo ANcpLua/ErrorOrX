@@ -3,13 +3,13 @@ using System.ComponentModel.DataAnnotations;
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE039: DataAnnotations validation uses reflection — Parameters with validation attributes
-/// (e.g. [Required], [StringLength]) trigger Validator.TryValidateObject which uses reflection internally.
+///     EOE039: DataAnnotations validation uses reflection — Parameters with validation attributes
+///     (e.g. [Required], [StringLength]) trigger Validator.TryValidateObject which uses reflection internally.
 /// </summary>
 /// <remarks>
-/// This may cause trim warnings when publishing with Native AOT.
-/// Consider using FluentValidation with source generators or manual validation.
-/// Severity: Info (validation works, but generates trim warnings).
+///     This may cause trim warnings when publishing with Native AOT.
+///     Consider using FluentValidation with source generators or manual validation.
+///     Severity: Info (validation works, but generates trim warnings).
 /// </remarks>
 public static class EOE039_ValidationUsesReflection
 {
@@ -46,27 +46,22 @@ public static class EOE039_ValidationUsesReflection
     public static ErrorOr<TodoItem> CreateWithManualValidation(SimpleTodoRequest request)
     {
         // Manual validation - fully AOT compatible
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return Error.Validation("Title.Required", "Title is required");
-        }
+        if (string.IsNullOrWhiteSpace(request.Title)) return Error.Validation("Title.Required", "Title is required");
 
         if (request.Title.Length > 100)
-        {
             return Error.Validation("Title.TooLong", "Title must be 100 characters or less");
-        }
 
         return new TodoItem(1, request.Title, request.Description);
     }
 }
 
 // Request with validation attributes (triggers EOE039)
-public record CreateTodoRequest(
+public sealed record CreateTodoRequest(
     [Required] [StringLength(100)] string Title,
     string? Description);
 
 // Request with multiple validation attributes (triggers EOE039)
-public record RegisterRequest(
+public sealed record RegisterRequest(
     [Required] [EmailAddress] string Email,
     [Required]
     [StringLength(50, MinimumLength = 2)]
@@ -74,11 +69,11 @@ public record RegisterRequest(
     [Required] [MinLength(8)] string Password);
 
 // Simple request without validation (no warning)
-public record SimpleTodoRequest(string Title, string? Description);
+public sealed record SimpleTodoRequest(string Title, string? Description);
 
-public record TodoItem(int Id, string Title, string? Description);
+public sealed record TodoItem(int Id, string Title, string? Description);
 
-public record UserResponse(string Email, string Name);
+public sealed record UserResponse(string Email, string Name);
 
 // -------------------------------------------------------------------------
 // TIP: AOT-safe validation alternatives

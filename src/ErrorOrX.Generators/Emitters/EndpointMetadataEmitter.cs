@@ -50,15 +50,11 @@ internal static class EndpointMetadataEmitter
             .FirstOrDefault(static p => p.Source == ParameterSource.Body);
 
         if (bodyParam.Name is not null)
-        {
             code.AppendLine(
                 $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
-        }
         else if (ep.HasFormParams)
-        {
             code.AppendLine(
                 $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
-        }
     }
 
     /// <summary>
@@ -68,7 +64,7 @@ internal static class EndpointMetadataEmitter
     private static void EmitProducesMetadata(StringBuilder code, in EndpointDescriptor ep, string indent, int maxArity)
     {
         // SSE endpoints have special content type
-        if (ep.IsSse)
+        if (ep.Sse.IsSse)
         {
             code.AppendLine(
                 $"{indent}.WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}(200, null, new[] {{ \"text/event-stream\" }}))");
@@ -85,9 +81,9 @@ internal static class EndpointMetadataEmitter
         var unionResult = ResultsUnionTypeBuilder.ComputeReturnType(
             ep.SuccessTypeFqn,
             ep.SuccessKind,
-            ep.InferredErrorTypeNames,
-            ep.InferredCustomErrors,
-            ep.DeclaredProducesErrors,
+            ep.ErrorInference.InferredErrorTypeNames,
+            ep.ErrorInference.InferredCustomErrors,
+            ep.ErrorInference.DeclaredProducesErrors,
             hasBodyBinding,
             maxArity,
             ep.IsAcceptedResponse,
@@ -105,13 +101,11 @@ internal static class EndpointMetadataEmitter
         // Error responses
         foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                      .OrderBy(static x => x))
-        {
             EmitProducesMetadataLine(code, indent, statusCode,
                 statusCode == 400
                     ? WellKnownTypes.Fqn.HttpValidationProblemDetails
                     : WellKnownTypes.Fqn.ProblemDetails,
                 WellKnownTypes.Constants.ContentTypeProblemJson);
-        }
     }
 
     /// <summary>
@@ -131,10 +125,7 @@ internal static class EndpointMetadataEmitter
     /// </summary>
     private static void EmitMiddlewareCalls(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
-        if (!middleware.HasAny)
-        {
-            return;
-        }
+        if (!middleware.HasAny) return;
 
         EmitAuthMiddleware(code, in middleware, indent);
         EmitRateLimitingMiddleware(code, in middleware, indent);
@@ -155,18 +146,12 @@ internal static class EndpointMetadataEmitter
         {
             var policies = middleware.AuthorizationPolicies.AsImmutableArray();
             if (policies.IsDefaultOrEmpty)
-            {
                 code.AppendLine($"{indent}.RequireAuthorization()");
-            }
             else if (policies.Length == 1)
-            {
                 code.AppendLine($"{indent}.RequireAuthorization(\"{policies[0]}\")");
-            }
             else
-            {
                 code.AppendLine(
                     $"{indent}.RequireAuthorization({string.Join(", ", policies.Select(static p => $"\"{p}\""))})");
-            }
         }
     }
 
@@ -176,15 +161,11 @@ internal static class EndpointMetadataEmitter
     private static void EmitRateLimitingMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
         if (middleware.DisableRateLimiting)
-        {
             code.AppendLine($"{indent}.DisableRateLimiting()");
-        }
         else if (middleware.EnableRateLimiting)
-        {
             code.AppendLine(middleware.RateLimitingPolicy is not null
                 ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
                 : $"{indent}.RequireRateLimiting()");
-        }
     }
 
     /// <summary>
@@ -192,24 +173,15 @@ internal static class EndpointMetadataEmitter
     /// </summary>
     private static void EmitOutputCacheMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
-        if (!middleware.EnableOutputCache)
-        {
-            return;
-        }
+        if (!middleware.EnableOutputCache) return;
 
         if (middleware.OutputCachePolicy is not null)
-        {
             code.AppendLine($"{indent}.CacheOutput(\"{middleware.OutputCachePolicy}\")");
-        }
         else if (middleware.OutputCacheDuration is { } duration)
-        {
             code.AppendLine(
                 $"{indent}.CacheOutput(p => p.Expire(global::System.TimeSpan.FromSeconds({duration})))");
-        }
         else
-        {
             code.AppendLine($"{indent}.CacheOutput()");
-        }
     }
 
     /// <summary>
@@ -218,15 +190,11 @@ internal static class EndpointMetadataEmitter
     private static void EmitCorsMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
         if (middleware.DisableCors)
-        {
             code.AppendLine($"{indent}.DisableCors()");
-        }
         else if (middleware.EnableCors)
-        {
             code.AppendLine(middleware.CorsPolicy is not null
                 ? $"{indent}.RequireCors(\"{middleware.CorsPolicy}\")"
                 : $"{indent}.RequireCors()");
-        }
     }
 
     /// <summary>
@@ -235,10 +203,7 @@ internal static class EndpointMetadataEmitter
     /// </summary>
     private static void EmitDeprecationMetadata(StringBuilder code, in EndpointDescriptor ep, string indent)
     {
-        if (!ep.HasMetadata(MetadataKeys.Deprecated))
-        {
-            return;
-        }
+        if (!ep.HasMetadata(MetadataKeys.Deprecated)) return;
 
         var message = ep.GetMetadata(MetadataKeys.DeprecatedMessage);
         if (message is not null)

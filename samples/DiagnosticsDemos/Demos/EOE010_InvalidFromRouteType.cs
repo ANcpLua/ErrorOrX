@@ -37,11 +37,11 @@ public readonly struct CustomId
 }
 
 /// <summary>
-/// EOE010: Invalid [FromRoute] type — [FromRoute] parameter type is not a supported primitive and has no TryParse.
+///     EOE010: Invalid [FromRoute] type — [FromRoute] parameter type is not a supported primitive and has no TryParse.
 /// </summary>
 /// <remarks>
-/// Route parameters must be parseable from the URL string. This means they must be
-/// primitive types (int, string, Guid, etc.) or types with a static TryParse method.
+///     Route parameters must be parseable from the URL string. This means they must be
+///     primitive types (int, string, Guid, etc.) or types with a static TryParse method.
 /// </remarks>
 public static class EOE010_InvalidFromRouteType
 {

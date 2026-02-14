@@ -108,17 +108,11 @@ public static class AdvancedErrorHandlingApi
     {
         // Get source todo
         var sourceResult = await svc.GetByIdAsync(sourceId, ct);
-        if (sourceResult.IsError)
-        {
-            return sourceResult.Errors.ToArray();
-        }
+        if (sourceResult.IsError) return sourceResult.Errors.ToArray();
 
         // Get target todo
         var targetResult = await svc.GetByIdAsync(targetId, ct);
-        if (targetResult.IsError)
-        {
-            return targetResult.Errors.ToArray();
-        }
+        if (targetResult.IsError) return targetResult.Errors.ToArray();
 
         // Update target with source title
         var updateRequest = new UpdateTodoRequest(
@@ -151,10 +145,7 @@ public static class AdvancedErrorHandlingApi
         foreach (var request in requests)
         {
             var result = await svc.CreateAsync(request, ct);
-            if (result.IsError)
-            {
-                return result.Errors.ToArray();
-            }
+            if (result.IsError) return result.Errors.ToArray();
 
             todos.Add(result.Value);
         }
@@ -186,10 +177,7 @@ public static class AdvancedErrorHandlingApi
 
     private static ErrorOr<Success> ValidateTitle(string title)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return Error.Validation("Todo.TitleEmpty", "Title cannot be empty");
-        }
+        if (string.IsNullOrWhiteSpace(title)) return Error.Validation("Todo.TitleEmpty", "Title cannot be empty");
 
         return title.Length switch
         {

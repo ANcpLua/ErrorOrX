@@ -1,10 +1,12 @@
 # ErrorOrX.Integration.Tests
 
-Integration tests verifying ErrorOrX-generated endpoints behave identically to native ASP.NET Core Minimal APIs. Target: `net10.0`.
+Integration tests verifying ErrorOrX-generated endpoints behave identically to native ASP.NET Core Minimal APIs. Target:
+`net10.0`.
 
 ## Purpose
 
 These tests ensure **behavioral parity** between:
+
 - ErrorOrX-generated endpoints (`MapErrorOrEndpoints()`)
 - Native ASP.NET Core Minimal API endpoints
 
@@ -19,41 +21,41 @@ dotnet test --project tests/ErrorOrX.Integration.Tests -v normal
 
 ## Test Infrastructure
 
-| File | Purpose |
-|------|---------|
-| `IntegrationTestAppFactory.cs` | `WebApplicationFactory<T>` setup |
-| `IntegrationTestApp.cs` | Test app configuration and endpoints |
-| `IntegrationTestBase.cs` | Base class with `HttpClient` via `IClassFixture` |
+| File                           | Purpose                                          |
+|--------------------------------|--------------------------------------------------|
+| `IntegrationTestAppFactory.cs` | `WebApplicationFactory<T>` setup                 |
+| `IntegrationTestApp.cs`        | Test app configuration and endpoints             |
+| `IntegrationTestBase.cs`       | Base class with `HttpClient` via `IClassFixture` |
 
 ## Test Categories
 
 ### Parameter Binding Parity
 
-| Test | Verifies |
-|------|----------|
+| Test                   | Verifies                      |
+|------------------------|-------------------------------|
 | Missing required query | Required query missing -> 400 |
-| Query parse failure | `?id=bad` -> 400 |
-| Route mismatch | Non-existent route -> 404 |
+| Query parse failure    | `?id=bad` -> 400              |
+| Route mismatch         | Non-existent route -> 404     |
 
 ### Content-Type Handling
 
-| Test | Verifies |
-|------|----------|
-| Body wrong Content-Type | JSON body wrong type -> 415 |
+| Test                    | Verifies                       |
+|-------------------------|--------------------------------|
+| Body wrong Content-Type | JSON body wrong type -> 415    |
 | Form wrong Content-Type | Form binding wrong type -> 415 |
 
 ### Success Responses
 
-| Test | Verifies |
-|------|----------|
-| GET returns T | `ErrorOr<T>` success -> 200 |
+| Test           | Verifies                    |
+|----------------|-----------------------------|
+| GET returns T  | `ErrorOr<T>` success -> 200 |
 | POST returns T | `ErrorOr<T>` success -> 200 |
-| Created marker | `ErrorOr<Created>` -> 201 |
+| Created marker | `ErrorOr<Created>` -> 201   |
 
 ### Middleware Integration
 
-| Test | Verifies |
-|------|----------|
+| Test                     | Verifies                                 |
+|--------------------------|------------------------------------------|
 | Cookie auth API endpoint | `[Authorize]` returns 401 (not redirect) |
 
 ## Test Endpoints
@@ -93,8 +95,8 @@ public async Task Descriptive_Test_Name()
 
 ## Dependencies
 
-| Package | Purpose |
-|---------|---------|
+| Package                          | Purpose               |
+|----------------------------------|-----------------------|
 | Microsoft.AspNetCore.Mvc.Testing | WebApplicationFactory |
-| xunit.v3.mtp-v2 | xUnit v3 with MTP |
-| AwesomeAssertions | Fluent assertions |
+| xunit.v3.mtp-v2                  | xUnit v3 with MTP     |
+| AwesomeAssertions                | Fluent assertions     |

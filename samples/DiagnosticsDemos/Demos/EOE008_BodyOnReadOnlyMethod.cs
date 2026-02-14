@@ -1,13 +1,14 @@
 namespace DiagnosticsDemos.Demos;
 
-public record SearchCriteria(string Query, int Page);
+public sealed record SearchCriteria(string Query, int Page);
 
 /// <summary>
-/// EOE008: Body on read-only HTTP method — GET, HEAD, DELETE, OPTIONS should not have request bodies per HTTP semantics.
+///     EOE008: Body on read-only HTTP method — GET, HEAD, DELETE, OPTIONS should not have request bodies per HTTP
+///     semantics.
 /// </summary>
 /// <remarks>
-/// While technically possible, using request bodies with these methods is discouraged
-/// as some proxies and clients may strip or ignore them. This is a warning, not an error.
+///     While technically possible, using request bodies with these methods is discouraged
+///     as some proxies and clients may strip or ignore them. This is a warning, not an error.
 /// </remarks>
 public static class EOE008_BodyOnReadOnlyMethod
 {
@@ -77,5 +78,5 @@ public static class EOE008_BodyOnReadOnlyMethod
     // -------------------------------------------------------------------------
     // FIXED: Use [AsParameters] for complex query objects on GET
     // -------------------------------------------------------------------------
-    public record SearchParams(string Query, int Page, int PageSize);
+    public sealed record SearchParams(string Query, int Page, int PageSize);
 }

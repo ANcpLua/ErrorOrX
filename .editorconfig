@@ -21,15 +21,15 @@ dotnet_diagnostic.CA1062.severity = none
 dotnet_diagnostic.CA1308.severity = none
 
 # Meziantou — suppress opinionated style rules
-dotnet_diagnostic.MA0002.severity = none  # StringBuilder — generator code uses IndentedTextWriter
-dotnet_diagnostic.MA0006.severity = none  # string.Equals — string == is ordinal, explicit enough
-dotnet_diagnostic.MA0008.severity = none  # StructLayoutAttribute — unnecessary for managed types
-dotnet_diagnostic.MA0011.severity = none  # IFormatProvider on TryParse — netstandard2.0 is fine
-dotnet_diagnostic.MA0048.severity = none  # File name must match type — partial classes + DTOs are intentional
-dotnet_diagnostic.MA0049.severity = none  # Type name ≠ namespace — ErrorOr in ErrorOrX is by design
-dotnet_diagnostic.MA0004.severity = none  # ConfigureAwait — ASP.NET Core has no SynchronizationContext
-dotnet_diagnostic.MA0016.severity = none  # Collection abstraction — contradicts CA1859 (use concrete types)
-dotnet_diagnostic.MA0051.severity = none  # Method too long — source generators have legitimate long methods
+dotnet_diagnostic.MA0002.severity = none # StringBuilder — generator code uses IndentedTextWriter
+dotnet_diagnostic.MA0006.severity = none # string.Equals — string == is ordinal, explicit enough
+dotnet_diagnostic.MA0008.severity = none # StructLayoutAttribute — unnecessary for managed types
+dotnet_diagnostic.MA0011.severity = none # IFormatProvider on TryParse — netstandard2.0 is fine
+dotnet_diagnostic.MA0048.severity = none # File name must match type — partial classes + DTOs are intentional
+dotnet_diagnostic.MA0049.severity = none # Type name ≠ namespace — ErrorOr in ErrorOrX is by design
+dotnet_diagnostic.MA0004.severity = none # ConfigureAwait — ASP.NET Core has no SynchronizationContext
+dotnet_diagnostic.MA0016.severity = none # Collection abstraction — contradicts CA1859 (use concrete types)
+dotnet_diagnostic.MA0051.severity = none # Method too long — source generators have legitimate long methods
 
 # ============================================================================
 # IDE Suggestion-Level Rules Rationale
@@ -88,9 +88,9 @@ resharper_suggest_base_type_for_parameter_highlighting = none
 # The namespace intentionally does not match the folder structure.
 [**/ErrorOrX.Generators/Polyfills.cs]
 dotnet_diagnostic.IDE0130.severity = none
-dotnet_diagnostic.CA1019.severity = none  # Polyfill attribute constructor — intentional design
-dotnet_diagnostic.CA1305.severity = none  # uint.ToString() — no locale dependence
-dotnet_diagnostic.CA1812.severity = none  # IsExternalInit — compiler-reserved type
+dotnet_diagnostic.CA1019.severity = none # Polyfill attribute constructor — intentional design
+dotnet_diagnostic.CA1305.severity = none # uint.ToString() — no locale dependence
+dotnet_diagnostic.CA1812.severity = none # IsExternalInit — compiler-reserved type
 
 # Extractor.cs: AL0029 flags foreach-over-GetAttributes() loops, suggesting
 # HasAttribute() instead. These loops legitimately need to extract constructor

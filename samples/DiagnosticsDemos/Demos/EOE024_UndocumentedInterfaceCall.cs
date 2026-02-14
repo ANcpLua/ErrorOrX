@@ -17,17 +17,17 @@ public interface IDocumentedRepository
     ErrorOr<Eoe024TodoItem> GetById(int id);
 }
 
-public record Eoe024TodoItem(int Id, string Title);
+public sealed record Eoe024TodoItem(int Id, string Title);
 
 /// <summary>
-/// EOE024: Undocumented interface call — Endpoint calls interface/abstract method returning ErrorOr
-/// without error documentation.
+///     EOE024: Undocumented interface call — Endpoint calls interface/abstract method returning ErrorOr
+///     without error documentation.
 /// </summary>
 /// <remarks>
-/// When an endpoint delegates to an interface method that returns ErrorOr&lt;T&gt;,
-/// the generator cannot infer what errors might be returned. You must document
-/// potential errors using [ProducesError] on the endpoint or [ReturnsError] on
-/// the interface method.
+///     When an endpoint delegates to an interface method that returns ErrorOr&lt;T&gt;,
+///     the generator cannot infer what errors might be returned. You must document
+///     potential errors using [ProducesError] on the endpoint or [ReturnsError] on
+///     the interface method.
 /// </remarks>
 public static class EOE024_UndocumentedInterfaceCall
 {
@@ -95,15 +95,9 @@ public static class EOE024_UndocumentedInterfaceCall
     public static ErrorOr<Eoe024TodoItem> GetTodoInline(int id)
     {
         // All error paths are visible to the generator
-        if (id <= 0)
-        {
-            return Error.Validation("Todo.InvalidId", "ID must be positive");
-        }
+        if (id <= 0) return Error.Validation("Todo.InvalidId", "ID must be positive");
 
-        if (id > 1000)
-        {
-            return Error.NotFound("Todo.NotFound", $"Todo {id} not found");
-        }
+        if (id > 1000) return Error.NotFound("Todo.NotFound", $"Todo {id} not found");
 
         return new Eoe024TodoItem(id, $"Todo {id}");
     }

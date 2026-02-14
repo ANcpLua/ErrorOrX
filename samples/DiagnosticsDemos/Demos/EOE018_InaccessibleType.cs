@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE018: Inaccessible type in endpoint — Private or protected types cannot be used in endpoint signatures
-/// because generated code cannot access them.
+///     EOE018: Inaccessible type in endpoint — Private or protected types cannot be used in endpoint signatures
+///     because generated code cannot access them.
 /// </summary>
 /// <remarks>
-/// The source generator creates code in a different class/namespace that needs
-/// to access your types. Private and protected types are not accessible.
+///     The source generator creates code in a different class/namespace that needs
+///     to access your types. Private and protected types are not accessible.
 /// </remarks>
 public static class EOE018_InaccessibleType
 {
@@ -68,7 +68,7 @@ public class PublicData
     public string Value { get; set; } = string.Empty;
 }
 
-public record PublicRequest(string Name);
+public sealed record PublicRequest(string Name);
 
 // -------------------------------------------------------------------------
 // Internal types work within the same assembly

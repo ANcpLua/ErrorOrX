@@ -16,12 +16,12 @@ namespace DiagnosticsDemos.Demos;
 internal partial class GoodJsonContext : JsonSerializerContext;
 
 /// <summary>
-/// EOE040: JsonSerializerContext missing CamelCase — Custom JsonSerializerContext should configure
-/// PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility.
+///     EOE040: JsonSerializerContext missing CamelCase — Custom JsonSerializerContext should configure
+///     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility.
 /// </summary>
 /// <remarks>
-/// ASP.NET Core defaults to camelCase for JSON property names.
-/// Mismatched casing can cause serialization/deserialization issues.
+///     ASP.NET Core defaults to camelCase for JSON property names.
+///     Mismatched casing can cause serialization/deserialization issues.
 /// </remarks>
 public static class EOE040_JsonContextMissingCamelCase
 {
@@ -32,7 +32,7 @@ public static class EOE040_JsonContextMissingCamelCase
     }
 }
 
-public record Eoe040Response(string Message, int Value);
+public sealed record Eoe040Response(string Message, int Value);
 
 // -------------------------------------------------------------------------
 // TIP: Recommended JsonSerializerContext configuration

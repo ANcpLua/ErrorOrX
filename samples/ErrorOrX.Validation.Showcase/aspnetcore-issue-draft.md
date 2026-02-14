@@ -3,6 +3,7 @@
 ## Summary
 
 The `ValidationsGenerator` cannot discover validatable types when:
+
 1. DTOs live in a referenced assembly (not the host)
 2. Endpoint mapping uses generic extension methods (e.g., `app.MapCommand<TRequest>()`)
 
@@ -11,6 +12,7 @@ This forces users into three compounding workarounds that shouldn't be necessary
 ## Reproduction
 
 **Assembly A** — DTOs:
+
 ```csharp
 // MyApp.Models/CreateItemRequest.cs
 public sealed record CreateItemRequest(
@@ -19,6 +21,7 @@ public sealed record CreateItemRequest(
 ```
 
 **Assembly B** — Endpoints:
+
 ```csharp
 // MyApp.Api/ItemApi.cs
 public static class ItemApi
@@ -31,6 +34,7 @@ public static class ItemApi
 ```
 
 **Host**:
+
 ```csharp
 builder.Services.AddValidation();
 app.MapItemEndpoints();
@@ -41,6 +45,7 @@ app.MapItemEndpoints();
 ### Making it work requires all three workarounds simultaneously
 
 **Workaround 1** — Fake trigger method in the DTO assembly (forces generator to run):
+
 ```csharp
 // MyApp.Models/ValidationCodegenTrigger.cs
 internal static class ValidationCodegenTrigger
@@ -52,12 +57,14 @@ internal static class ValidationCodegenTrigger
 ```
 
 **Workaround 2** — `[ValidatableType]` on every DTO (forces type discovery):
+
 ```csharp
 [ValidatableType]
 public sealed record CreateItemRequest(...);
 ```
 
 **Workaround 3** — Reflection-based resolver aggregation in the host:
+
 ```csharp
 #pragma warning disable ASP0029
 builder.Services.AddValidation(options =>
@@ -82,7 +89,9 @@ Two independent failures in the generator pipeline:
 
 ### 1. Type discovery only sees the current assembly's handler signatures
 
-`TypesParser.cs` resolves types from the handler delegate's formal parameters. When the delegate is in a different assembly, or when the mapping goes through a generic extension method like `MapCommand<TRequest>()`, the generator sees `ITypeParameterSymbol` (not the concrete type) and skips it because type parameters have `NotApplicable` accessibility:
+`TypesParser.cs` resolves types from the handler delegate's formal parameters. When the delegate is in a different
+assembly, or when the mapping goes through a generic extension method like `MapCommand<TRequest>()`, the generator sees
+`ITypeParameterSymbol` (not the concrete type) and skips it because type parameters have `NotApplicable` accessibility:
 
 ```csharp
 // TypesParser.cs:78-81
@@ -94,17 +103,23 @@ if (typeSymbol.DeclaredAccessibility is not Accessibility.Public)
 
 ### 2. Generator activation requires `AddValidation()` in each assembly
 
-The `ValidationsGenerator` only emits an `IValidatableInfoResolver` for assemblies that contain an `AddValidation()` invocation. Feature assemblies that only define DTOs and endpoints never trigger generation — there is no resolver to discover, even with reflection.
+The `ValidationsGenerator` only emits an `IValidatableInfoResolver` for assemblies that contain an `AddValidation()`
+invocation. Feature assemblies that only define DTOs and endpoints never trigger generation — there is no resolver to
+discover, even with reflection.
 
 ## Evidence this is solvable
 
-The [ErrorOrX](https://github.com/AncpLua/ErrorOrX) source generator handles this exact scenario without any workarounds. Its architecture:
+The [ErrorOrX](https://github.com/AncpLua/ErrorOrX) source generator handles this exact scenario without any
+workarounds. Its architecture:
 
-1. **Discovers types from user method signatures**, not from endpoint delegate resolution. When a user writes `Create(CreateOrderRequest request, ...)`, the generator sees `CreateOrderRequest` as a concrete type — regardless of which assembly it lives in.
+1. **Discovers types from user method signatures**, not from endpoint delegate resolution. When a user writes
+   `Create(CreateOrderRequest request, ...)`, the generator sees `CreateOrderRequest` as a concrete type — regardless of
+   which assembly it lives in.
 
 2. **Emits a single resolver** per compilation. No duplicate hint names, no per-assembly activation requirement.
 
 3. **Cross-assembly just works**:
+
 ```
 MyApp.Models/                    ← DTOs with [Required], [Range], etc.
   CreateOrderRequest.cs
@@ -136,18 +151,24 @@ if (typeSymbol is ITypeParameterSymbol typeParam)
 ### For per-assembly activation
 
 Consider one of:
-- **Option A**: Run the generator for any assembly containing types with `[ValidatableType]` or `DataAnnotations` attributes, without requiring an `AddValidation()` call
-- **Option B**: Have the host's `AddValidation()` interceptor automatically discover and register resolvers from referenced assemblies
+
+- **Option A**: Run the generator for any assembly containing types with `[ValidatableType]` or `DataAnnotations`
+  attributes, without requiring an `AddValidation()` call
+- **Option B**: Have the host's `AddValidation()` interceptor automatically discover and register resolvers from
+  referenced assemblies
 
 ## Community impact
 
 - [Stack Overflow: Built-in validation support for Minimal APIs](https://stackoverflow.com/q/79843261) (291 views)
-- [Stack Overflow: Validation stops working when endpoint mapping is in different assembly](https://stackoverflow.com/q/79855653) (159 views)
-- [#61971](https://github.com/dotnet/aspnetcore/issues/61971) — Duplicate hint name (fixed, but symptom of multi-emission)
+- [Stack Overflow: Validation stops working when endpoint mapping is in different assembly](https://stackoverflow.com/q/79855653) (
+  159 views)
+- [#61971](https://github.com/dotnet/aspnetcore/issues/61971) — Duplicate hint name (fixed, but symptom of
+  multi-emission)
 - [#61388](https://github.com/dotnet/aspnetcore/issues/61388) — Generic type validation failures (fixed for some cases)
 - [#62757](https://github.com/dotnet/aspnetcore/issues/62757) — Inaccessibility errors (fixed by skipping private types)
 
-The closed issues fixed crashes but not the underlying discovery gap. Cross-assembly validation still requires all three workarounds.
+The closed issues fixed crashes but not the underlying discovery gap. Cross-assembly validation still requires all three
+workarounds.
 
 ## Environment
 

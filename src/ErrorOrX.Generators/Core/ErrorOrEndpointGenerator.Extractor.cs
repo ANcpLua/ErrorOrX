@@ -21,24 +21,18 @@ public sealed partial class ErrorOrEndpointGenerator
         var isAsync = resultType is not null;
 
         if (!IsErrorOrType(unwrapped, context, out var errorOrType))
-        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload);
-        }
 
         var innerType = errorOrType.TypeArguments[0];
 
         // EOE015: Anonymous types cannot be serialized
         if (innerType.IsAnonymousType)
-        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, true);
-        }
 
         // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
-        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
-        }
 
         switch (innerType)
         {
@@ -49,35 +43,27 @@ public sealed partial class ErrorOrEndpointGenerator
             // Also check if the inner type contains type parameters (e.g., List<T>)
             case INamedTypeSymbol namedInner when
                 namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol):
-                {
-                    var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
-                    return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                        null, null, true, firstTypeParam.Name);
-                }
+            {
+                var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
+                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
+                    null, null, true, firstTypeParam.Name);
+            }
         }
 
         var kind = SuccessKind.Payload;
 
         if (context.SuccessMarker is not null &&
             innerType.IsEqualTo(context.SuccessMarker))
-        {
             kind = SuccessKind.Success;
-        }
         else if (context.CreatedMarker is not null &&
-                         innerType.IsEqualTo(context.CreatedMarker))
-        {
+                 innerType.IsEqualTo(context.CreatedMarker))
             kind = SuccessKind.Created;
-        }
         else if (context.UpdatedMarker is not null &&
-                         innerType.IsEqualTo(context.UpdatedMarker))
-        {
+                 innerType.IsEqualTo(context.UpdatedMarker))
             kind = SuccessKind.Updated;
-        }
         else if (context.DeletedMarker is not null &&
-                         innerType.IsEqualTo(context.DeletedMarker))
-        {
+                 innerType.IsEqualTo(context.DeletedMarker))
             kind = SuccessKind.Deleted;
-        }
 
         if (TryUnwrapAsyncEnumerable(innerType, context, out var elementType))
         {
@@ -108,15 +94,11 @@ public sealed partial class ErrorOrEndpointGenerator
     private static string? DetectIdProperty(ITypeSymbol type)
     {
         // Skip marker types and primitives
-        if (type.SpecialType != SpecialType.None)
-        {
-            return null;
-        }
+        if (type.SpecialType != SpecialType.None) return null;
 
         string? bestMatch = null;
 
         for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
-        {
             foreach (var member in current.GetMembers())
             {
                 // Pattern-as-spec: public readable property
@@ -124,23 +106,14 @@ public sealed partial class ErrorOrEndpointGenerator
                     {
                         DeclaredAccessibility: Accessibility.Public, GetMethod: not null
                     } property)
-                {
                     continue;
-                }
 
                 // Exact match "Id" is preferred - return immediately
-                if (property.Name == "Id")
-                {
-                    return "Id";
-                }
+                if (property.Name == "Id") return "Id";
 
                 // Case-insensitive match for fallback
-                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase))
-                {
-                    bestMatch ??= property.Name;
-                }
+                if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase)) bestMatch ??= property.Name;
             }
-        }
 
         return bestMatch;
     }
@@ -204,10 +177,7 @@ public sealed partial class ErrorOrEndpointGenerator
             ImmutableArray<DiagnosticInfo>.Builder diagnostics,
             bool hasExplicitProducesError)
     {
-        if (GetMethodBody(method) is not { } body)
-        {
-            return (default, default);
-        }
+        if (GetMethodBody(method) is not { } body) return (default, default);
 
         var methodName = method.Name;
         var (errorTypeNames, customErrors) = CollectErrorTypes(ctx.SemanticModel, body, context, diagnostics,
@@ -223,14 +193,10 @@ public sealed partial class ErrorOrEndpointGenerator
         var results = new List<ProducesErrorInfo>();
 
         foreach (var attr in method.GetAttributes())
-        {
             if (context.ProducesErrorAttribute is not null &&
                 attr.AttributeClass?.IsEqualTo(context.ProducesErrorAttribute) == true &&
                 attr.ConstructorArguments is [{ Value: int statusCode }, ..])
-            {
                 results.Add(new ProducesErrorInfo(statusCode));
-            }
-        }
 
         return results.Count > 0
             ? new EquatableArray<ProducesErrorInfo>([.. results])
@@ -250,10 +216,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static SyntaxNode? GetMethodBody(ISymbol method)
     {
         var refs = method.DeclaringSyntaxReferences;
-        if (refs.IsDefaultOrEmpty || refs.Length is 0)
-        {
-            return null;
-        }
+        if (refs.IsDefaultOrEmpty || refs.Length is 0) return null;
 
         var syntax = refs[0].GetSyntax();
         return syntax switch
@@ -294,10 +257,8 @@ public sealed partial class ErrorOrEndpointGenerator
         bool hasExplicitProducesError)
     {
         foreach (var child in node.DescendantNodes())
-        {
             ProcessNode(semanticModel, child, errorTypeNames, customErrors, visitedSymbols, seenCustomCodes, context,
                 diagnostics, endpointMethodName, hasExplicitProducesError);
-        }
     }
 
     private static void ProcessNode(
@@ -320,9 +281,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 seenCustomCodes,
                 context,
                 diagnostics))
-        {
             return;
-        }
 
         // Check for interface/abstract method calls that return ErrorOr
         if (TryDetectUndocumentedInterfaceCall(
@@ -335,24 +294,17 @@ public sealed partial class ErrorOrEndpointGenerator
                 errorTypeNames,
                 customErrors,
                 seenCustomCodes))
-        {
             return;
-        }
 
-        if (!TryGetReferencedSymbol(semanticModel, child, visitedSymbols, out var symbol))
-        {
-            return;
-        }
+        if (!TryGetReferencedSymbol(semanticModel, child, visitedSymbols, out var symbol)) return;
 
         foreach (var reference in symbol.DeclaringSyntaxReferences)
         {
             var bodyToScan = GetBodyToScan(reference.GetSyntax());
             if (bodyToScan is not null)
-            {
                 CollectErrorTypesRecursive(semanticModel, bodyToScan, errorTypeNames, customErrors,
                     visitedSymbols, seenCustomCodes, context, diagnostics, endpointMethodName,
                     hasExplicitProducesError);
-            }
         }
     }
 
@@ -373,22 +325,13 @@ public sealed partial class ErrorOrEndpointGenerator
         ISet<string> seenCustomCodes)
     {
         // Only check invocation expressions
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return false;
-        }
+        if (node is not InvocationExpressionSyntax invocation) return false;
 
         var symbolInfo = semanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
-        {
-            return false;
-        }
+        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol) return false;
 
         // Check if method returns ErrorOr<T>
-        if (!ReturnsErrorOr(methodSymbol, context))
-        {
-            return false;
-        }
+        if (!ReturnsErrorOr(methodSymbol, context)) return false;
 
         // Check if it's an interface or abstract method (no implementation to scan)
         var containingType = methodSymbol.ContainingType;
@@ -396,25 +339,16 @@ public sealed partial class ErrorOrEndpointGenerator
                                     methodSymbol.IsAbstract ||
                                     methodSymbol.IsVirtual;
 
-        if (!isInterfaceOrAbstract)
-        {
-            return false;
-        }
+        if (!isInterfaceOrAbstract) return false;
 
         // Try to extract [ReturnsError] attributes from the interface method
         var hasReturnsError = TryExtractReturnsErrorAttributes(
             methodSymbol, context, errorTypeNames, customErrors, seenCustomCodes);
 
-        if (hasReturnsError)
-        {
-            return true; // Successfully extracted errors from interface
-        }
+        if (hasReturnsError) return true; // Successfully extracted errors from interface
 
         // If endpoint already has [ProducesError] attributes, assume developer knows what they're doing
-        if (hasExplicitProducesError)
-        {
-            return true; // No error, endpoint is explicitly documented
-        }
+        if (hasExplicitProducesError) return true; // No error, endpoint is explicitly documented
 
         // FAIL LOUD: Interface call without documentation
         var methodDisplayName = $"{containingType?.Name ?? "?"}.{methodSymbol.Name}";
@@ -438,52 +372,34 @@ public sealed partial class ErrorOrEndpointGenerator
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes)
     {
-        if (context.ReturnsErrorAttribute is null)
-        {
-            return false;
-        }
+        if (context.ReturnsErrorAttribute is null) return false;
 
         var foundAny = false;
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass?.IsEqualTo(context.ReturnsErrorAttribute) != true)
-            {
-                continue;
-            }
+            if (attr.AttributeClass?.IsEqualTo(context.ReturnsErrorAttribute) != true) continue;
 
             var args = attr.ConstructorArguments;
-            if (args.Length < 2)
-            {
-                continue;
-            }
+            if (args.Length < 2) continue;
 
             // Distinguish constructors by the first argument's type:
             // 1. ReturnsErrorAttribute(ErrorType errorType, string errorCode) — args[0].Type is enum
             // 2. ReturnsErrorAttribute(int statusCode, string errorCode) — args[0].Type is int
-            if (args[0].Value is not int intValue || args[1].Value is not string errorCode)
-            {
-                continue;
-            }
+            if (args[0].Value is not int intValue || args[1].Value is not string errorCode) continue;
 
             if (args[0].Type is INamedTypeSymbol { TypeKind: TypeKind.Enum })
             {
                 // Standard ErrorType — map enum int value to string name
                 var errorTypeName = MapEnumValueToName(intValue);
-                if (errorTypeName is not null)
-                {
-                    errorTypeNames.Add(errorTypeName);
-                }
+                if (errorTypeName is not null) errorTypeNames.Add(errorTypeName);
 
                 foundAny = true;
             }
             else
             {
                 // Custom error with explicit HTTP status code
-                if (seenCustomCodes.Add(errorCode))
-                {
-                    customErrors.Add(new CustomErrorInfo(errorCode));
-                }
+                if (seenCustomCodes.Add(errorCode)) customErrors.Add(new CustomErrorInfo(errorCode));
 
                 foundAny = true;
             }
@@ -528,9 +444,7 @@ public sealed partial class ErrorOrEndpointGenerator
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (!IsErrorFactoryInvocation(semanticModel, node, context, out var factoryName, out var invocation))
-        {
             return false;
-        }
 
         // Validate and return the factory name if it's a known ErrorType
         if (ErrorMapping.IsKnownErrorType(factoryName))
@@ -542,10 +456,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (factoryName == "Custom" && invocation is not null)
         {
             var customInfo = ExtractCustomErrorInfo(semanticModel, invocation);
-            if (customInfo is { } info && seenCustomCodes.Add(info.ErrorCode))
-            {
-                customErrors.Add(info);
-            }
+            if (customInfo is { } info && seenCustomCodes.Add(info.ErrorCode)) customErrors.Add(info);
 
             return true;
         }
@@ -599,10 +510,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Error.Custom(int type, string code, string description, Dictionary<string, object>? metadata = null)
         // The 'code' parameter (second arg) is what we want for deduplication
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count < 2)
-        {
-            return null;
-        }
+        if (args.Count < 2) return null;
 
         // Try to extract the 'code' (second argument)
         var codeArg = args[1].Expression;
@@ -611,19 +519,11 @@ public sealed partial class ErrorOrEndpointGenerator
         // Try constant folding
         var constantValue = semanticModel.GetConstantValue(codeArg);
         if (constantValue is { HasValue: true, Value: string codeStr })
-        {
             errorCode = codeStr;
-        }
-        else if (codeArg is LiteralExpressionSyntax { Token.Value: string literalStr })
-        {
-            errorCode = literalStr;
-        }
+        else if (codeArg is LiteralExpressionSyntax { Token.Value: string literalStr }) errorCode = literalStr;
 
         // Pattern matching establishes non-null for compiler
-        if (errorCode is not { Length: > 0 } code)
-        {
-            return null;
-        }
+        if (errorCode is not { Length: > 0 } code) return null;
 
         return new CustomErrorInfo(code);
     }
@@ -638,10 +538,7 @@ public sealed partial class ErrorOrEndpointGenerator
         factoryName = string.Empty;
         invocation = null;
 
-        if (node is not InvocationExpressionSyntax inv)
-        {
-            return false;
-        }
+        if (node is not InvocationExpressionSyntax inv) return false;
 
         invocation = inv;
 
@@ -659,9 +556,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
         if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol || context.Error is null ||
             !symbol.ContainingType.IsEqualTo(context.Error))
-        {
             return false;
-        }
 
         factoryName = symbol.Name;
         return true;
@@ -669,10 +564,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static EquatableArray<string> ToSortedErrorArray(HashSet<string> set)
     {
-        if (set.Count is 0)
-        {
-            return default;
-        }
+        if (set.Count is 0) return default;
 
         var array = set.ToArray();
         Array.Sort(array, StringComparer.Ordinal);
@@ -693,10 +585,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             auth = TryExtractAuth(attr, attrClass, context, auth);
             rateLimit = TryExtractRateLimit(attr, attrClass, context, rateLimit);
@@ -736,12 +625,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.AllowAnonymousAttribute is not null &&
             attrClass.IsEqualTo(context.AllowAnonymousAttribute))
-        {
             return current with
             {
                 AllowAnonymous = true
             };
-        }
 
         return current;
     }
@@ -756,18 +643,16 @@ public sealed partial class ErrorOrEndpointGenerator
             return current with
             {
                 Enabled = true,
-                Policy = policy,
+                Policy = policy
             };
         }
 
         if (context.DisableRateLimitingAttribute is not null &&
             attrClass.IsEqualTo(context.DisableRateLimitingAttribute))
-        {
             return current with
             {
                 Disabled = true
             };
-        }
 
         return current;
     }
@@ -777,9 +662,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (context.OutputCacheAttribute is null ||
             !attrClass.IsEqualTo(context.OutputCacheAttribute))
-        {
             return current;
-        }
 
         var result = current with
         {
@@ -788,20 +671,16 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var namedArg in attr.NamedArguments)
         {
             if (namedArg is { Key: "PolicyName", Value.Value: string policy })
-            {
                 result = result with
                 {
                     Policy = policy
                 };
-            }
 
             if (namedArg is { Key: "Duration", Value.Value: int duration })
-            {
                 result = result with
                 {
                     Duration = duration
                 };
-            }
         }
 
         return result;
@@ -823,12 +702,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (context.DisableCorsAttribute is not null &&
             attrClass.IsEqualTo(context.DisableCorsAttribute))
-        {
             return current with
             {
                 Disabled = true
             };
-        }
 
         return current;
     }
@@ -840,10 +717,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static VersioningInfo ExtractVersioningAttributes(ISymbol method, ErrorOrContext context)
     {
         // If Asp.Versioning is not referenced, return empty
-        if (!context.HasApiVersioningSupport)
-        {
-            return default;
-        }
+        if (!context.HasApiVersioningSupport) return default;
 
         var supportedVersions = new List<ApiVersionInfo>();
         var mappedVersions = new List<ApiVersionInfo>();
@@ -851,9 +725,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Extract from containing type first (class-level versioning)
         if (method.ContainingType is { } containingType)
-        {
             ExtractVersioningFromSymbol(containingType, context, supportedVersions, ref isVersionNeutral);
-        }
 
         // Extract from method (method-level overrides or additions)
         ExtractVersioningFromSymbol(method, context, supportedVersions, ref isVersionNeutral);
@@ -879,10 +751,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         foreach (var attr in symbol.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             // Check for [ApiVersionNeutral]
             if (context.ApiVersionNeutralAttribute is not null &&
@@ -897,10 +766,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 attrClass.IsEqualTo(context.ApiVersionAttribute))
             {
                 var versionInfo = ParseApiVersionAttribute(attr);
-                if (versionInfo.HasValue)
-                {
-                    supportedVersions.Add(versionInfo.Value);
-                }
+                if (versionInfo.HasValue) supportedVersions.Add(versionInfo.Value);
             }
         }
     }
@@ -912,20 +778,14 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             // Check for [MapToApiVersion(...)]
             if (context.MapToApiVersionAttribute is not null &&
                 attrClass.IsEqualTo(context.MapToApiVersionAttribute))
             {
                 var versionInfo = ParseApiVersionAttribute(attr);
-                if (versionInfo.HasValue)
-                {
-                    mappedVersions.Add(versionInfo.Value);
-                }
+                if (versionInfo.HasValue) mappedVersions.Add(versionInfo.Value);
             }
         }
     }
@@ -941,10 +801,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var args = attr.ConstructorArguments;
 
-        if (args.Length is 0)
-        {
-            return null;
-        }
+        if (args.Length is 0) return null;
 
         // Check for Deprecated named argument
         var isDeprecated = attr.NamedArguments
@@ -964,11 +821,11 @@ public sealed partial class ErrorOrEndpointGenerator
                 return new ApiVersionInfo(major, minor, null, isDeprecated);
             // ApiVersion(double version) - e.g., 1.0
             case [{ Value: double doubleVersion }]:
-                {
-                    var majorPart = (int)doubleVersion;
-                    var minorPart = (int)((doubleVersion - majorPart) * 10);
-                    return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
-                }
+            {
+                var majorPart = (int)doubleVersion;
+                var minorPart = (int)((doubleVersion - majorPart) * 10);
+                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
+            }
             default:
                 return null;
         }
@@ -979,10 +836,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ApiVersionInfo? ParseVersionString(string versionString, bool isDeprecated)
     {
-        if (string.IsNullOrWhiteSpace(versionString))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(versionString)) return null;
 
         // Handle status suffix (e.g., "1.0-beta")
         string? status = null;
@@ -996,16 +850,10 @@ public sealed partial class ErrorOrEndpointGenerator
         // Parse major.minor
         var parts = versionString.Split('.');
 
-        if (!int.TryParse(parts[0], out var major))
-        {
-            return null;
-        }
+        if (!int.TryParse(parts[0], out var major)) return null;
 
         int? minor = null;
-        if (parts.Length > 1 && int.TryParse(parts[1], out var minorValue))
-        {
-            minor = minorValue;
-        }
+        if (parts.Length > 1 && int.TryParse(parts[1], out var minorValue)) minor = minorValue;
 
         return new ApiVersionInfo(major, minor, status, isDeprecated);
     }
@@ -1017,25 +865,18 @@ public sealed partial class ErrorOrEndpointGenerator
     private static ImmutableArray<string> ExtractRawClassVersionStrings(ISymbol method, ErrorOrContext context)
     {
         if (!context.HasApiVersioningSupport || method.ContainingType is not { } containingType)
-        {
             return ImmutableArray<string>.Empty;
-        }
 
         var versions = ImmutableArray.CreateBuilder<string>();
 
         foreach (var attr in containingType.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             if (context.ApiVersionAttribute is not null &&
                 attrClass.IsEqualTo(context.ApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
-            {
                 versions.Add(versionString);
-            }
         }
 
         return versions.ToImmutable();
@@ -1047,26 +888,18 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ImmutableArray<string> ExtractRawMethodVersionStrings(ISymbol method, ErrorOrContext context)
     {
-        if (!context.HasApiVersioningSupport)
-        {
-            return ImmutableArray<string>.Empty;
-        }
+        if (!context.HasApiVersioningSupport) return ImmutableArray<string>.Empty;
 
         var versions = ImmutableArray.CreateBuilder<string>();
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             if (context.MapToApiVersionAttribute is not null &&
                 attrClass.IsEqualTo(context.MapToApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
-            {
                 versions.Add(versionString);
-            }
         }
 
         return versions.ToImmutable();
@@ -1079,51 +912,32 @@ public sealed partial class ErrorOrEndpointGenerator
     private static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method, ErrorOrContext context)
     {
         // RouteGroup is only applied at class level
-        if (method.ContainingType is not { } containingType)
-        {
-            return default;
-        }
+        if (method.ContainingType is not { } containingType) return default;
 
         // If RouteGroupAttribute is not yet emitted/available, return default
-        if (context.RouteGroupAttribute is null)
-        {
-            return default;
-        }
+        if (context.RouteGroupAttribute is null) return default;
 
         var attrs = containingType.GetAttributes();
         foreach (var attr in attrs)
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
-            if (!attrClass.IsEqualTo(context.RouteGroupAttribute))
-            {
-                continue;
-            }
+            if (!attrClass.IsEqualTo(context.RouteGroupAttribute)) continue;
 
             // [RouteGroup(string path)]
             // Optional: ApiName named argument
             var args = attr.ConstructorArguments;
-            if (args is not [{ Value: string groupPath }])
-            {
-                continue;
-            }
+            if (args is not [{ Value: string groupPath }]) continue;
 
             // Extract optional ApiName from named arguments
             string? apiName = null;
             foreach (var namedArg in attr.NamedArguments)
-            {
                 if (namedArg is
                     {
                         Key: "ApiName",
                         Value.Value: string name
                     })
-                {
                     apiName = name;
-                }
-            }
 
             return new RouteGroupInfo(groupPath, apiName);
         }
@@ -1140,24 +954,19 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass is not { } attrClass)
-            {
-                continue;
-            }
+            if (attr.AttributeClass is not { } attrClass) continue;
 
             switch (attrClass.Name)
             {
                 // [Obsolete] → deprecated metadata
                 case "ObsoleteAttribute":
-                    {
-                        metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
-                        if (attr.ConstructorArguments is [{ Value: string msg }, ..])
-                        {
-                            metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
-                        }
+                {
+                    metadata.Add(new MetadataEntry(MetadataKeys.Deprecated, "true"));
+                    if (attr.ConstructorArguments is [{ Value: string msg }, ..])
+                        metadata.Add(new MetadataEntry(MetadataKeys.DeprecatedMessage, msg));
 
-                        continue;
-                    }
+                    continue;
+                }
                 // [EndpointMetadata(key, value)]
                 case "EndpointMetadataAttribute" when
                     attr.ConstructorArguments is [{ Value: string key }, { Value: string value }]:

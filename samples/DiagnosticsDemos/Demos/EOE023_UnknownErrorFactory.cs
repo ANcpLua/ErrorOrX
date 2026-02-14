@@ -1,13 +1,13 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE023: Unknown error factory — Error factory method is not a known ErrorType.
+///     EOE023: Unknown error factory — Error factory method is not a known ErrorType.
 /// </summary>
 /// <remarks>
-/// The generator recognizes Error.Failure, Error.Unexpected, Error.Validation,
-/// Error.Conflict, Error.NotFound, Error.Unauthorized, and Error.Forbidden.
-/// Error.Custom() creates errors with custom types that may not map to
-/// standard HTTP status codes, so a warning is issued.
+///     The generator recognizes Error.Failure, Error.Unexpected, Error.Validation,
+///     Error.Conflict, Error.NotFound, Error.Unauthorized, and Error.Forbidden.
+///     Error.Custom() creates errors with custom types that may not map to
+///     standard HTTP status codes, so a warning is issued.
 /// </remarks>
 public static class EOE023_UnknownErrorFactory
 {
@@ -43,15 +43,9 @@ public static class EOE023_UnknownErrorFactory
     [Get("/api/eoe023/items/{id}")]
     public static ErrorOr<string> GetItem(int id)
     {
-        if (id < 0)
-        {
-            return Error.Validation("Item.InvalidId", "ID cannot be negative");
-        }
+        if (id < 0) return Error.Validation("Item.InvalidId", "ID cannot be negative");
 
-        if (id == 0)
-        {
-            return Error.NotFound("Item.NotFound", "Item not found");
-        }
+        if (id == 0) return Error.NotFound("Item.NotFound", "Item not found");
 
         return $"Item {id}";
     }
@@ -60,16 +54,11 @@ public static class EOE023_UnknownErrorFactory
     public static ErrorOr<string> CreateItem([FromBody] CreateRequest request)
     {
         // Input validation -> Validation
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Error.Validation("Item.NameRequired", "Name is required");
-        }
+        if (string.IsNullOrWhiteSpace(request.Name)) return Error.Validation("Item.NameRequired", "Name is required");
 
         // Duplicate check -> Conflict
         if (request.Email == "existing@example.com")
-        {
             return Error.Conflict("Item.EmailExists", "Email already registered");
-        }
 
         return $"Created: {request.Name}";
     }
@@ -78,22 +67,13 @@ public static class EOE023_UnknownErrorFactory
     public static ErrorOr<Deleted> DeleteItem(int id, [FromHeader(Name = "X-User-Id")] string? userId)
     {
         // Authentication check -> Unauthorized
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Error.Unauthorized("Auth.Required", "Authentication required");
-        }
+        if (string.IsNullOrEmpty(userId)) return Error.Unauthorized("Auth.Required", "Authentication required");
 
         // Authorization check -> Forbidden
-        if (userId != "admin")
-        {
-            return Error.Forbidden("Auth.AdminOnly", "Admin access required");
-        }
+        if (userId != "admin") return Error.Forbidden("Auth.AdminOnly", "Admin access required");
 
         // Resource check -> NotFound
-        if (id > 1000)
-        {
-            return Error.NotFound("Item.NotFound", $"Item {id} not found");
-        }
+        if (id > 1000) return Error.NotFound("Item.NotFound", $"Item {id} not found");
 
         return Result.Deleted;
     }
@@ -101,7 +81,7 @@ public static class EOE023_UnknownErrorFactory
     // -------------------------------------------------------------------------
     // FIXED: Use standard error types for common scenarios
     // -------------------------------------------------------------------------
-    public record CreateRequest(string Name, string Email);
+    public sealed record CreateRequest(string Name, string Email);
 
     // -------------------------------------------------------------------------
     // Known ErrorType to HTTP status mapping:

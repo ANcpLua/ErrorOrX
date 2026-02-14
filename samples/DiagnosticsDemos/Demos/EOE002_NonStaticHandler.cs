@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE002: Handler must be static — Handler methods must be static for source generation.
+///     EOE002: Handler must be static — Handler methods must be static for source generation.
 /// </summary>
 /// <remarks>
-/// The ErrorOrX generator creates static method references at compile time.
-/// Instance methods cannot be used because the generator has no way to obtain
-/// or manage instance lifecycles.
+///     The ErrorOrX generator creates static method references at compile time.
+///     Instance methods cannot be used because the generator has no way to obtain
+///     or manage instance lifecycles.
 /// </remarks>
 public class EOE002_NonStaticHandler
 {

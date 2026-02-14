@@ -24,15 +24,9 @@ internal static class IncrementalProviderExtensions
                 .Select(static (pair, _) =>
                 {
                     var (left, right) = pair;
-                    if (right.IsDefaultOrEmpty)
-                    {
-                        return left;
-                    }
+                    if (right.IsDefaultOrEmpty) return left;
 
-                    if (left.IsDefaultOrEmpty)
-                    {
-                        return right;
-                    }
+                    if (left.IsDefaultOrEmpty) return right;
 
                     return new EquatableArray<T>([.. left.AsImmutableArray(), .. right.AsImmutableArray()]);
                 });

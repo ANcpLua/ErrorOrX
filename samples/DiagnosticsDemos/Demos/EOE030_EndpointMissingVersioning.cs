@@ -59,12 +59,12 @@ public static class NeutralApi
 // FIXED: Add [ApiVersion] to include in versioning scheme
 // -------------------------------------------------------------------------
 /// <summary>
-/// EOE030: Endpoint missing versioning — Endpoint has no [ApiVersion] attribute but other endpoints
-/// in the project use versioning.
+///     EOE030: Endpoint missing versioning — Endpoint has no [ApiVersion] attribute but other endpoints
+///     in the project use versioning.
 /// </summary>
 /// <remarks>
-/// This is an informational diagnostic to ensure consistency across your API.
-/// Consider adding version information or marking as [ApiVersionNeutral].
+///     This is an informational diagnostic to ensure consistency across your API.
+///     Consider adding version information or marking as [ApiVersionNeutral].
 /// </remarks>
 [ApiVersion("1.0")]
 [ApiVersion("2.0")]

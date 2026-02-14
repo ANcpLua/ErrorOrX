@@ -81,18 +81,12 @@ internal static class RouteValidator
     /// </summary>
     public static ImmutableArray<RouteParameterInfo> ExtractRouteParameters(string pattern)
     {
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return ImmutableArray<RouteParameterInfo>.Empty;
-        }
+        if (string.IsNullOrWhiteSpace(pattern)) return ImmutableArray<RouteParameterInfo>.Empty;
 
         var cleanPattern = pattern.Replace("{{", "").Replace("}}", "");
 
         var matches = SRouteParameterRegexInstance.Matches(cleanPattern);
-        if (matches.Count is 0)
-        {
-            return ImmutableArray<RouteParameterInfo>.Empty;
-        }
+        if (matches.Count is 0) return ImmutableArray<RouteParameterInfo>.Empty;
 
         var builder = ImmutableArray.CreateBuilder<RouteParameterInfo>(matches.Count);
 
@@ -142,38 +136,30 @@ internal static class RouteValidator
 
         var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
         if (escapedStripped.Contains("{}"))
-        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
                 location,
                 pattern,
                 "Route contains empty parameter '{}'. Parameter names are required."));
-        }
 
         var openCount = escapedStripped.Count(static c => c == '{');
         var closeCount = escapedStripped.Count(static c => c == '}');
         if (openCount != closeCount)
-        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
                 location,
                 pattern,
                 $"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'"));
-        }
 
         var routeParams = ExtractRouteParameters(pattern);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var param in routeParams)
-        {
             if (!seen.Add(param.Name))
-            {
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.InvalidRoutePattern,
                     location,
                     pattern,
                     $"Route contains duplicate parameter '{{{param.Name}}}'"));
-            }
-        }
 
         return diagnostics.ToImmutable();
     }
@@ -192,24 +178,16 @@ internal static class RouteValidator
 
         var boundRouteNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var mp in methodParams)
-        {
             if (mp.BoundRouteName is not null)
-            {
                 boundRouteNames.Add(mp.BoundRouteName);
-            }
-        }
 
         foreach (var rp in routeParams)
-        {
             if (!boundRouteNames.Contains(rp.Name))
-            {
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.RouteParameterNotBound,
                     location,
                     pattern,
                     rp.Name));
-            }
-        }
 
         return diagnostics.ToImmutable();
     }
@@ -266,28 +244,21 @@ internal static class RouteValidator
 
         foreach (var param in methodParams)
         {
-            if (requireTypeFqn && param.TypeFqn is null)
-            {
-                continue;
-            }
+            if (requireTypeFqn && param.TypeFqn is null) continue;
 
             var routeName = param.BoundRouteName ?? param.Name;
 
             // First parameter wins for deterministic behavior
             if (lookup.TryGetValue(routeName, out var existingParam))
                 // Report EOE032 for duplicate route parameter binding
-            {
                 diagnostics?.Add(DiagnosticInfo.Create(
                     Descriptors.DuplicateRouteParameterBinding,
                     location,
                     routeName,
                     existingParam.Name,
                     param.Name));
-            }
             else
-            {
                 lookup[routeName] = param;
-            }
         }
 
         return lookup;
@@ -301,14 +272,9 @@ internal static class RouteValidator
     {
         if (!TryGetConstraintContext(routeParam, methodParamsByRouteName, out var methodParam, out var typeFqn,
                 out var constraint))
-        {
             return;
-        }
 
-        if (FormatOnlyConstraints.Contains(constraint))
-        {
-            return;
-        }
+        if (FormatOnlyConstraints.Contains(constraint)) return;
 
         if (routeParam.IsCatchAll)
         {
@@ -316,16 +282,11 @@ internal static class RouteValidator
             return;
         }
 
-        if (!ConstraintToTypes.TryGetValue(constraint, out var expectedTypes))
-        {
-            return; // Unknown constraint - skip validation (could be custom)
-        }
+        if (!ConstraintToTypes.TryGetValue(constraint,
+                out var expectedTypes)) return; // Unknown constraint - skip validation (could be custom)
 
         var actualTypeFqn = typeFqn.UnwrapNullable(routeParam.IsOptional || methodParam.IsNullable);
-        if (MatchesExpectedType(actualTypeFqn, expectedTypes))
-        {
-            return;
-        }
+        if (MatchesExpectedType(actualTypeFqn, expectedTypes)) return;
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
@@ -348,20 +309,11 @@ internal static class RouteValidator
         typeFqn = string.Empty;
         constraint = string.Empty;
 
-        if (routeParam.Constraint is null)
-        {
-            return false;
-        }
+        if (routeParam.Constraint is null) return false;
 
-        if (!methodParamsByRouteName.TryGetValue(routeParam.Name, out var mp))
-        {
-            return false;
-        }
+        if (!methodParamsByRouteName.TryGetValue(routeParam.Name, out var mp)) return false;
 
-        if (mp.TypeFqn is null)
-        {
-            return false;
-        }
+        if (mp.TypeFqn is null) return false;
 
         methodParam = mp;
         typeFqn = mp.TypeFqn;
@@ -376,10 +328,7 @@ internal static class RouteValidator
         Location location,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        if (typeFqn.IsStringType())
-        {
-            return;
-        }
+        if (typeFqn.IsStringType()) return;
 
         diagnostics.Add(DiagnosticInfo.Create(
             Descriptors.RouteConstraintTypeMismatch,
@@ -397,21 +346,13 @@ internal static class RouteValidator
 
         foreach (var expected in expectedTypes)
         {
-            if (string.Equals(normalizedActual, expected, StringComparison.Ordinal))
-            {
-                return true;
-            }
+            if (string.Equals(normalizedActual, expected, StringComparison.Ordinal)) return true;
 
-            if (normalizedActual.EndsWithOrdinal("." + expected))
-            {
-                return true;
-            }
+            if (normalizedActual.EndsWithOrdinal("." + expected)) return true;
 
             var aliasedActual = normalizedActual.GetCSharpKeyword();
             if (aliasedActual is not null && string.Equals(aliasedActual, expected, StringComparison.Ordinal))
-            {
                 return true;
-            }
         }
 
         return false;
@@ -422,10 +363,7 @@ internal static class RouteValidator
     /// </summary>
     public static ImmutableArray<Diagnostic> DetectDuplicateRoutes(ImmutableArray<EndpointDescriptor> endpoints)
     {
-        if (endpoints.IsDefaultOrEmpty || endpoints.Length < 2)
-        {
-            return ImmutableArray<Diagnostic>.Empty;
-        }
+        if (endpoints.IsDefaultOrEmpty || endpoints.Length < 2) return ImmutableArray<Diagnostic>.Empty;
 
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
         var routeMap = new Dictionary<string, EndpointDescriptor>(StringComparer.OrdinalIgnoreCase);
@@ -435,7 +373,6 @@ internal static class RouteValidator
             var normalizedKey = CanonicalizeRoute(ep.HttpMethod, ep.Pattern);
 
             if (routeMap.TryGetValue(normalizedKey, out var existing))
-            {
                 diagnostics.Add(Diagnostic.Create(
                     Descriptors.DuplicateRoute,
                     Location.None,
@@ -443,11 +380,8 @@ internal static class RouteValidator
                     ep.Pattern,
                     existing.HandlerContainingTypeFqn.ExtractShortTypeName(),
                     existing.HandlerMethodName));
-            }
             else
-            {
                 routeMap[normalizedKey] = ep;
-            }
         }
 
         return diagnostics.ToImmutable();
@@ -462,15 +396,9 @@ internal static class RouteValidator
         var method = httpMethod.ToUpperInvariant();
 
         var p = pattern.Trim();
-        if (!p.StartsWithOrdinal("/"))
-        {
-            p = "/" + p;
-        }
+        if (!p.StartsWithOrdinal("/")) p = "/" + p;
 
-        if (p.Length > 1 && p.EndsWithOrdinal("/"))
-        {
-            p = p[..^1];
-        }
+        if (p.Length > 1 && p.EndsWithOrdinal("/")) p = p[..^1];
 
         var segments = p.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
         var result = new List<string>(segments.Length + 1)
@@ -495,10 +423,7 @@ internal static class RouteValidator
                     foreach (Match cm in cMatches)
                     {
                         var cName = cm.Groups["name"].Value.ToLowerInvariant();
-                        if (ConstraintToTypes.ContainsKey(cName))
-                        {
-                            cList.Add(cName);
-                        }
+                        if (ConstraintToTypes.ContainsKey(cName)) cList.Add(cName);
                     }
                 }
 

@@ -1,4 +1,6 @@
 using System.Net;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ErrorOrX.Integration.Tests;
 
@@ -6,7 +8,8 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
 {
     public MinimalApiParityTests(IntegrationTestAppFactory factory)
         : base(factory)
-    { }
+    {
+    }
 
     [Fact]
     public async Task Missing_Required_Query_Returns_400()
@@ -16,7 +19,7 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>(ct);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(ct);
         problem.Should().NotBeNull();
         problem.Status.Should().Be(400);
     }
@@ -38,7 +41,7 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
     [Fact]
     public async Task Body_Wrong_ContentType_Returns_415()
     {
-        using var content = new StringContent("not-json", System.Text.Encoding.UTF8, "text/plain");
+        using var content = new StringContent("not-json", Encoding.UTF8, "text/plain");
         var response = await Client.PostAsync("/parity/body-json", content, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
@@ -47,7 +50,7 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
     [Fact]
     public async Task Form_Wrong_ContentType_Returns_415()
     {
-        using var content = new StringContent("not-form", System.Text.Encoding.UTF8, "application/json");
+        using var content = new StringContent("not-form", Encoding.UTF8, "application/json");
         var response = await Client.PostAsync("/parity/form", content, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);

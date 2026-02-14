@@ -1,13 +1,15 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE035: Type.GetType is not AOT-safe — Type.GetType(string) with dynamic type names is not AOT-compatible
-/// because types may be trimmed and unavailable at runtime.
+///     EOE035: Type.GetType is not AOT-safe — Type.GetType(string) with dynamic type names is not AOT-compatible
+///     because types may be trimmed and unavailable at runtime.
 /// </summary>
 /// <remarks>
-/// String literal calls like Type.GetType("System.String") are safe and analyzable.
-/// Dynamic type names from parameters or case-insensitive searches are unsafe.
-/// See: https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic
+///     String literal calls like Type.GetType("System.String") are safe and analyzable.
+///     Dynamic type names from parameters or case-insensitive searches are unsafe.
+///     See: https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic
 /// </remarks>
 public static class EOE035_TypeGetType
 {
@@ -77,9 +79,7 @@ public static class EOE035_TypeGetType
     public static ErrorOr<string> GetFromRegistry([FromQuery] string key)
     {
         if (!TypeRegistry.TryGetType(key, out var type))
-        {
             return Error.NotFound("Type.NotFound", $"Type '{key}' not registered");
-        }
 
         return $"Type: {type.FullName}";
     }
@@ -118,7 +118,7 @@ public static class TypeRegistry
         ["datetime"] = typeof(DateTime)
     };
 
-    public static bool TryGetType(string key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Type? type)
+    public static bool TryGetType(string key, [NotNullWhen(true)] out Type? type)
     {
         return _types.TryGetValue(key, out type);
     }

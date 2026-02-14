@@ -129,21 +129,35 @@ internal readonly record struct EndpointParameter(
 
 /// <summary>
 ///     Raw metadata extracted from a method parameter for binding classification.
+///     Not a record struct: contains IParameterSymbol which uses reference equality.
 /// </summary>
-internal readonly record struct ParameterMeta(
-    IParameterSymbol Symbol,
-    string Name,
-    string TypeFqn,
-    RoutePrimitiveKind? RouteKind,
-    ParameterFlags Flags,
-    SpecialParameterKind SpecialKind,
-    string? ServiceKey,
-    string BoundName,
-    string? CollectionItemTypeFqn,
-    RoutePrimitiveKind? CollectionItemPrimitiveKind,
-    CustomBindingMethod CustomBinding,
-    EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties = default)
+internal readonly struct ParameterMeta(
+    IParameterSymbol symbol,
+    string name,
+    string typeFqn,
+    RoutePrimitiveKind? routeKind,
+    ParameterFlags flags,
+    SpecialParameterKind specialKind,
+    string? serviceKey,
+    string boundName,
+    string? collectionItemTypeFqn,
+    RoutePrimitiveKind? collectionItemPrimitiveKind,
+    CustomBindingMethod customBinding,
+    EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
 {
+    public IParameterSymbol Symbol { get; } = symbol;
+    public string Name { get; } = name;
+    public string TypeFqn { get; } = typeFqn;
+    public RoutePrimitiveKind? RouteKind { get; } = routeKind;
+    public ParameterFlags Flags { get; } = flags;
+    public SpecialParameterKind SpecialKind { get; } = specialKind;
+    public string? ServiceKey { get; } = serviceKey;
+    public string BoundName { get; } = boundName;
+    public string? CollectionItemTypeFqn { get; } = collectionItemTypeFqn;
+    public RoutePrimitiveKind? CollectionItemPrimitiveKind { get; } = collectionItemPrimitiveKind;
+    public CustomBindingMethod CustomBinding { get; } = customBinding;
+    public EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties { get; } = validatableProperties;
+
     public bool HasFromBody => Flags.HasFlag(ParameterFlags.FromBody);
     public bool HasFromRoute => Flags.HasFlag(ParameterFlags.FromRoute);
     public bool HasFromQuery => Flags.HasFlag(ParameterFlags.FromQuery);
@@ -169,21 +183,6 @@ internal readonly record struct ParameterMeta(
         ParameterFlags.FromBody | ParameterFlags.FromRoute | ParameterFlags.FromQuery |
         ParameterFlags.FromHeader | ParameterFlags.FromForm | ParameterFlags.FromServices |
         ParameterFlags.FromKeyedServices | ParameterFlags.AsParameters)) != ParameterFlags.None;
-
-    /// <summary>Gets the keyed service key (legacy alias for ServiceKey).</summary>
-    public string? KeyedServiceKey => ServiceKey;
-
-    /// <summary>Gets bound name for route context.</summary>
-    public string RouteName => BoundName;
-
-    /// <summary>Gets bound name for query context.</summary>
-    public string QueryName => BoundName;
-
-    /// <summary>Gets bound name for header context.</summary>
-    public string HeaderName => BoundName;
-
-    /// <summary>Gets bound name for form context.</summary>
-    public string FormName => BoundName;
 }
 
 /// <summary>
@@ -217,15 +216,40 @@ internal readonly record struct ErrorOrReturnTypeInfo(
 
 /// <summary>
 ///     Pre-computed method-level analysis shared across multiple HTTP method attributes.
+///     Not a record struct: contains IMethodSymbol which uses reference equality.
 /// </summary>
-internal readonly record struct MethodAnalysis(
-    IMethodSymbol Method,
-    ErrorOrReturnTypeInfo ReturnInfo,
+internal readonly struct MethodAnalysis(
+    IMethodSymbol method,
+    ErrorOrReturnTypeInfo returnInfo,
+    EquatableArray<string> inferredErrorTypeNames,
+    EquatableArray<CustomErrorInfo> inferredCustomErrors,
+    EquatableArray<ProducesErrorInfo> producesErrors,
+    bool isAcceptedResponse,
+    MiddlewareInfo middleware)
+{
+    public IMethodSymbol Method { get; } = method;
+    public ErrorOrReturnTypeInfo ReturnInfo { get; } = returnInfo;
+    public EquatableArray<string> InferredErrorTypeNames { get; } = inferredErrorTypeNames;
+    public EquatableArray<CustomErrorInfo> InferredCustomErrors { get; } = inferredCustomErrors;
+    public EquatableArray<ProducesErrorInfo> ProducesErrors { get; } = producesErrors;
+    public bool IsAcceptedResponse { get; } = isAcceptedResponse;
+    public MiddlewareInfo Middleware { get; } = middleware;
+}
+
+/// <summary>
+///     SSE (Server-Sent Events) configuration for an endpoint.
+/// </summary>
+internal readonly record struct SseInfo(
+    bool IsSse,
+    string? SseItemTypeFqn);
+
+/// <summary>
+///     Error inference results for an endpoint.
+/// </summary>
+internal readonly record struct ErrorInferenceInfo(
     EquatableArray<string> InferredErrorTypeNames,
     EquatableArray<CustomErrorInfo> InferredCustomErrors,
-    EquatableArray<ProducesErrorInfo> ProducesErrors,
-    bool IsAcceptedResponse,
-    MiddlewareInfo Middleware);
+    EquatableArray<ProducesErrorInfo> DeclaredProducesErrors);
 
 /// <summary>
 ///     Complete descriptor for an ErrorOr endpoint used for code generation.
@@ -239,11 +263,8 @@ internal readonly record struct EndpointDescriptor(
     string HandlerContainingTypeFqn,
     string HandlerMethodName,
     EquatableArray<EndpointParameter> HandlerParameters,
-    EquatableArray<string> InferredErrorTypeNames,
-    EquatableArray<CustomErrorInfo> InferredCustomErrors,
-    EquatableArray<ProducesErrorInfo> DeclaredProducesErrors,
-    bool IsSse = false,
-    string? SseItemTypeFqn = null,
+    ErrorInferenceInfo ErrorInference,
+    SseInfo Sse = default,
     bool IsAcceptedResponse = false,
     string? LocationIdPropertyName = null,
     MiddlewareInfo Middleware = default,
@@ -263,12 +284,8 @@ internal readonly record struct EndpointDescriptor(
         get
         {
             foreach (var p in HandlerParameters.AsImmutableArray())
-            {
                 if (p.Source == ParameterSource.Body)
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -282,12 +299,8 @@ internal readonly record struct EndpointDescriptor(
         get
         {
             foreach (var p in HandlerParameters.AsImmutableArray())
-            {
-                if (p.Source.IsFormRelated)
-                {
+                if (p.Source.IsFormRelated())
                     return true;
-                }
-            }
 
             return false;
         }
@@ -302,12 +315,8 @@ internal readonly record struct EndpointDescriptor(
         get
         {
             foreach (var p in HandlerParameters.AsImmutableArray())
-            {
-                if (p.Source == ParameterSource.Body || p.Source.IsFormRelated)
-                {
+                if (p.Source == ParameterSource.Body || p.Source.IsFormRelated())
                     return true;
-                }
-            }
 
             return false;
         }
@@ -321,12 +330,8 @@ internal readonly record struct EndpointDescriptor(
         get
         {
             foreach (var p in HandlerParameters.AsImmutableArray())
-            {
                 if (p.CustomBinding is CustomBindingMethod.BindAsync or CustomBindingMethod.BindAsyncWithParam)
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -340,12 +345,8 @@ internal readonly record struct EndpointDescriptor(
         get
         {
             foreach (var p in HandlerParameters.AsImmutableArray())
-            {
                 if (p.RequiresValidation)
-                {
                     return true;
-                }
-            }
 
             return false;
         }
@@ -355,12 +356,8 @@ internal readonly record struct EndpointDescriptor(
     public string? GetMetadata(string key)
     {
         foreach (var entry in Metadata.AsImmutableArray())
-        {
             if (entry.Key == key)
-            {
                 return entry.Value;
-            }
-        }
 
         return null;
     }
@@ -369,12 +366,8 @@ internal readonly record struct EndpointDescriptor(
     public bool HasMetadata(string key)
     {
         foreach (var entry in Metadata.AsImmutableArray())
-        {
             if (entry.Key == key)
-            {
                 return true;
-            }
-        }
 
         return false;
     }
@@ -443,10 +436,10 @@ internal readonly record struct RouteMethodParameterInfo(
 /// <summary>
 ///     Result of parameter binding analysis.
 /// </summary>
-internal readonly record struct ParameterBindingResult(bool IsValid, ImmutableArray<EndpointParameter> Parameters)
+internal readonly record struct ParameterBindingResult(bool IsValid, EquatableArray<EndpointParameter> Parameters)
 {
-    public static readonly ParameterBindingResult Empty = new(true, ImmutableArray<EndpointParameter>.Empty);
-    public static readonly ParameterBindingResult Invalid = new(false, ImmutableArray<EndpointParameter>.Empty);
+    public static readonly ParameterBindingResult Empty = new(true, default);
+    public static readonly ParameterBindingResult Invalid = new(false, default);
 }
 
 /// <summary>
@@ -538,9 +531,6 @@ internal readonly record struct RouteGroupInfo(
     public bool HasRouteGroup => GroupPath is not null;
 }
 
-/// <summary>
-///     Represents a validation attribute extracted from a property for the IValidatableInfoResolver emitter.
-/// </summary>
 /// <summary>
 ///     A named argument literal for a validation attribute (e.g., MinimumLength = 1).
 /// </summary>

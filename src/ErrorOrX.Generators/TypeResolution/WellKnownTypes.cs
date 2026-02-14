@@ -151,13 +151,18 @@ internal static class WellKnownTypes
         public const string Validator = "global::System.ComponentModel.DataAnnotations.Validator";
         public const string ValidationContext = "global::System.ComponentModel.DataAnnotations.ValidationContext";
         public const string ValidationResult = "global::System.ComponentModel.DataAnnotations.ValidationResult";
-        public const string ValidationAttributeType = "global::System.ComponentModel.DataAnnotations.ValidationAttribute";
+
+        public const string ValidationAttributeType =
+            "global::System.ComponentModel.DataAnnotations.ValidationAttribute";
 
         public const string ValidatableInfoResolver =
             "global::Microsoft.Extensions.Validation.IValidatableInfoResolver";
 
         public const string ValidatableTypeInfoBase = "global::Microsoft.Extensions.Validation.ValidatableTypeInfo";
-        public const string ValidatablePropertyInfoBase = "global::Microsoft.Extensions.Validation.ValidatablePropertyInfo";
+
+        public const string ValidatablePropertyInfoBase =
+            "global::Microsoft.Extensions.Validation.ValidatablePropertyInfo";
+
         public const string IValidatableInfo = "global::Microsoft.Extensions.Validation.IValidatableInfo";
         public const string ValidationOptions = "global::Microsoft.Extensions.Validation.ValidationOptions";
 

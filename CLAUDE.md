@@ -88,7 +88,8 @@ private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core
 }
 ```
 
-**Why**: Without `(Delegate)` cast, `Func<HttpContext, Task<T>>` matches `RequestDelegate` — endpoints become invisible to OpenAPI. The cast forces `RequestDelegateFactory` to process the delegate, enabling typed return inspection.
+**Why**: Without `(Delegate)` cast, `Func<HttpContext, Task<T>>` matches `RequestDelegate` — endpoints become invisible
+to OpenAPI. The cast forces `RequestDelegateFactory` to process the delegate, enabling typed return inspection.
 
 ### Middleware Emission
 

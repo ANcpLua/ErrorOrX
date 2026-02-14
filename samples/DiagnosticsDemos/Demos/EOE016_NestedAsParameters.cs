@@ -29,11 +29,11 @@ public class FlattenedParams
 }
 
 /// <summary>
-/// EOE016: Nested [AsParameters] not supported — [AsParameters] types cannot contain nested [AsParameters] properties.
+///     EOE016: Nested [AsParameters] not supported — [AsParameters] types cannot contain nested [AsParameters] properties.
 /// </summary>
 /// <remarks>
-/// The model binder cannot recursively expand nested [AsParameters] types.
-/// Flatten your parameter types or use separate parameters.
+///     The model binder cannot recursively expand nested [AsParameters] types.
+///     Flatten your parameter types or use separate parameters.
 /// </remarks>
 public static class EOE016_NestedAsParameters
 {
@@ -96,7 +96,7 @@ public static class EOE016_NestedAsParameters
     // -------------------------------------------------------------------------
     // TIP: Records make flattened params easy to define
     // -------------------------------------------------------------------------
-    public record SearchParams(
+    public sealed record SearchParams(
         string? Query = null,
         int Page = 1,
         int PageSize = 10,

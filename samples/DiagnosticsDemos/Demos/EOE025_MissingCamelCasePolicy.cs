@@ -1,6 +1,6 @@
 namespace DiagnosticsDemos.Demos.Eoe025;
 
-public record PersonResponse(int Id, string FirstName, string LastName);
+public sealed record PersonResponse(int Id, string FirstName, string LastName);
 
 // -------------------------------------------------------------------------
 // TRIGGERS EOE025: JsonSerializerContext without CamelCase policy
@@ -21,12 +21,12 @@ internal partial class EOE025JsonContext : JsonSerializerContext
 }
 
 /// <summary>
-/// EOE025: Missing CamelCase policy — JsonSerializerContext is missing CamelCase property naming policy.
+///     EOE025: Missing CamelCase policy — JsonSerializerContext is missing CamelCase property naming policy.
 /// </summary>
 /// <remarks>
-/// Web APIs typically use camelCase for JSON properties (firstName, lastName).
-/// C# uses PascalCase (FirstName, LastName). Without a naming policy,
-/// your JSON will use PascalCase which is unusual for web APIs.
+///     Web APIs typically use camelCase for JSON properties (firstName, lastName).
+///     C# uses PascalCase (FirstName, LastName). Without a naming policy,
+///     your JSON will use PascalCase which is unusual for web APIs.
 /// </remarks>
 public static class EOE025_MissingCamelCasePolicy
 {

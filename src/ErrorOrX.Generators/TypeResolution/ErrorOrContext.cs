@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
 
-internal sealed class ErrorOrContext
+internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 {
     public ErrorOrContext(Compilation compilation)
     {
@@ -174,6 +174,88 @@ internal sealed class ErrorOrContext
     public INamedTypeSymbol? AsParameters => AsParametersAttribute;
 
     /// <summary>
+    ///     Packs null-presence of all INamedTypeSymbol fields into a bitmask.
+    ///     Bit N is set when the corresponding field is non-null.
+    ///     AwaitableContext is excluded (resolves Task/ValueTask which are always present and stable).
+    /// </summary>
+    private long GetNullPresenceBitmask()
+    {
+        long mask = 0;
+        if (FromBodyAttribute is not null) mask |= 1L << 0;
+        if (FromServicesAttribute is not null) mask |= 1L << 1;
+        if (FromRouteAttribute is not null) mask |= 1L << 2;
+        if (FromQueryAttribute is not null) mask |= 1L << 3;
+        if (FromHeaderAttribute is not null) mask |= 1L << 4;
+        if (FromFormAttribute is not null) mask |= 1L << 5;
+        if (ProducesErrorAttribute is not null) mask |= 1L << 6;
+        if (AcceptedResponseAttribute is not null) mask |= 1L << 7;
+        if (ReturnsErrorAttribute is not null) mask |= 1L << 8;
+        if (ErrorOrOfT is not null) mask |= 1L << 9;
+        if (Error is not null) mask |= 1L << 10;
+        if (FromKeyedServicesAttribute is not null) mask |= 1L << 11;
+        if (AsParametersAttribute is not null) mask |= 1L << 12;
+        if (FormFileCollection is not null) mask |= 1L << 13;
+        if (FormCollection is not null) mask |= 1L << 14;
+        if (FormFile is not null) mask |= 1L << 15;
+        if (HttpContext is not null) mask |= 1L << 16;
+        if (BindableFromHttpContext is not null) mask |= 1L << 17;
+        if (ParameterInfo is not null) mask |= 1L << 18;
+        if (SseItemOfT is not null) mask |= 1L << 19;
+        if (CancellationToken is not null) mask |= 1L << 20;
+        if (SuccessMarker is not null) mask |= 1L << 21;
+        if (CreatedMarker is not null) mask |= 1L << 22;
+        if (UpdatedMarker is not null) mask |= 1L << 23;
+        if (DeletedMarker is not null) mask |= 1L << 24;
+        if (ListOfT is not null) mask |= 1L << 25;
+        if (IListOfT is not null) mask |= 1L << 26;
+        if (IEnumerableOfT is not null) mask |= 1L << 27;
+        if (IAsyncEnumerableOfT is not null) mask |= 1L << 28;
+        if (IReadOnlyListOfT is not null) mask |= 1L << 29;
+        if (ICollectionOfT is not null) mask |= 1L << 30;
+        if (HashSetOfT is not null) mask |= 1L << 31;
+        if (Guid is not null) mask |= 1L << 32;
+        if (DateTime is not null) mask |= 1L << 33;
+        if (DateTimeOffset is not null) mask |= 1L << 34;
+        if (DateOnly is not null) mask |= 1L << 35;
+        if (TimeOnly is not null) mask |= 1L << 36;
+        if (TimeSpan is not null) mask |= 1L << 37;
+        if (ReadOnlySpanOfT is not null) mask |= 1L << 38;
+        if (IFormatProvider is not null) mask |= 1L << 39;
+        if (Stream is not null) mask |= 1L << 40;
+        if (PipeReader is not null) mask |= 1L << 41;
+        if (AuthorizeAttribute is not null) mask |= 1L << 42;
+        if (AllowAnonymousAttribute is not null) mask |= 1L << 43;
+        if (EnableRateLimitingAttribute is not null) mask |= 1L << 44;
+        if (DisableRateLimitingAttribute is not null) mask |= 1L << 45;
+        if (OutputCacheAttribute is not null) mask |= 1L << 46;
+        if (EnableCorsAttribute is not null) mask |= 1L << 47;
+        if (DisableCorsAttribute is not null) mask |= 1L << 48;
+        if (ValidationAttribute is not null) mask |= 1L << 49;
+        if (IValidatableObject is not null) mask |= 1L << 50;
+        if (IValidatableInfoResolverSymbol is not null) mask |= 1L << 51;
+        if (ApiVersionAttribute is not null) mask |= 1L << 52;
+        if (ApiVersionNeutralAttribute is not null) mask |= 1L << 53;
+        if (MapToApiVersionAttribute is not null) mask |= 1L << 54;
+        if (RouteGroupAttribute is not null) mask |= 1L << 55;
+        return mask;
+    }
+
+    public bool Equals(ErrorOrContext? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return GetNullPresenceBitmask() == other.GetNullPresenceBitmask();
+    }
+
+    public override bool Equals(object? obj) => Equals(obj as ErrorOrContext);
+
+    public override int GetHashCode()
+    {
+        var mask = GetNullPresenceBitmask();
+        return unchecked((int)(mask ^ (mask >> 32)));
+    }
+
+    /// <summary>
     ///     Creates an incremental provider that resolves ErrorOrContext once per compilation.
     ///     This avoids the N+1 performance issue where ErrorOrContext was created N times
     ///     (once per endpoint), causing 90+ symbol lookups per endpoint.
@@ -194,45 +276,29 @@ internal sealed class ErrorOrContext
     /// </summary>
     public bool RequiresValidation(ITypeSymbol? type)
     {
-        if (type is null || ValidationAttribute is null)
-        {
-            return false;
-        }
+        if (type is null || ValidationAttribute is null) return false;
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
-        {
             return false;
-        }
 
         if (IValidatableObject is not null &&
             type.AllInterfaces.Any(i => i.IsEqualTo(IValidatableObject)))
-        {
             return true;
-        }
 
         var current = type;
         while (current is INamedTypeSymbol namedType)
         {
             foreach (var member in namedType.GetMembers())
             {
-                if (member is not IPropertySymbol property)
-                {
-                    continue;
-                }
+                if (member is not IPropertySymbol property) continue;
 
-                if (property.HasAttribute(ValidationAttribute))
-                {
-                    return true;
-                }
+                if (property.HasAttribute(ValidationAttribute)) return true;
             }
 
             // In modern .NET, ValidationAttribute targets Parameter, so for records
             // [Required] stays on the constructor parameter, not the synthesized property.
-            if (HasValidationAttributeOnConstructorParam(namedType))
-            {
-                return true;
-            }
+            if (HasValidationAttributeOnConstructorParam(namedType)) return true;
 
             current = namedType.BaseType;
         }
@@ -247,23 +313,14 @@ internal sealed class ErrorOrContext
     private bool HasValidationAttributeOnConstructorParam(INamedTypeSymbol namedType)
     {
         foreach (var ctor in namedType.InstanceConstructors)
+        foreach (var param in ctor.Parameters)
         {
-            foreach (var param in ctor.Parameters)
-            {
-                if (!param.HasAttribute(ValidationAttribute))
-                {
-                    continue;
-                }
+            if (!param.HasAttribute(ValidationAttribute)) continue;
 
-                // Only count if there's a matching property (record positional parameter pattern)
-                foreach (var member in namedType.GetMembers(param.Name))
-                {
-                    if (member is IPropertySymbol)
-                    {
-                        return true;
-                    }
-                }
-            }
+            // Only count if there's a matching property (record positional parameter pattern)
+            foreach (var member in namedType.GetMembers(param.Name))
+                if (member is IPropertySymbol)
+                    return true;
         }
 
         return false;
@@ -276,10 +333,7 @@ internal sealed class ErrorOrContext
     /// </summary>
     public EquatableArray<ValidatablePropertyDescriptor> CollectValidatableProperties(ITypeSymbol? type)
     {
-        if (type is null || ValidationAttribute is null)
-        {
-            return default;
-        }
+        if (type is null || ValidationAttribute is null) return default;
 
         var properties = ImmutableArray.CreateBuilder<ValidatablePropertyDescriptor>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -288,16 +342,10 @@ internal sealed class ErrorOrContext
         {
             foreach (var member in namedType.GetMembers())
             {
-                if (member is not IPropertySymbol property)
-                {
-                    continue;
-                }
+                if (member is not IPropertySymbol property) continue;
 
                 // Skip properties already collected from derived type (handles overrides/hides)
-                if (!seen.Add(property.Name))
-                {
-                    continue;
-                }
+                if (!seen.Add(property.Name)) continue;
 
                 var propertyAttrs = CollectValidationAttributes(property);
                 var ctorParam = FindMatchingConstructorParam(namedType, property.Name);
@@ -306,10 +354,7 @@ internal sealed class ErrorOrContext
                     : default;
 
                 var attrs = MergeValidationAttributes(propertyAttrs, paramAttrs);
-                if (attrs.IsDefaultOrEmpty)
-                {
-                    continue;
-                }
+                if (attrs.IsDefaultOrEmpty) continue;
 
                 properties.Add(new ValidatablePropertyDescriptor(
                     property.Name,
@@ -329,15 +374,9 @@ internal sealed class ErrorOrContext
     private static IParameterSymbol? FindMatchingConstructorParam(INamedTypeSymbol type, string propertyName)
     {
         foreach (var ctor in type.InstanceConstructors)
-        {
-            foreach (var param in ctor.Parameters)
-            {
-                if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
-                {
-                    return param;
-                }
-            }
-        }
+        foreach (var param in ctor.Parameters)
+            if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
+                return param;
 
         return null;
     }
@@ -352,35 +391,21 @@ internal sealed class ErrorOrContext
 
     private EquatableArray<ValidatableAttributeInfo> CollectValidationAttributes(ISymbol property)
     {
-        if (ValidationAttribute is null)
-        {
-            return default;
-        }
+        if (ValidationAttribute is null) return default;
 
         var attrs = ImmutableArray.CreateBuilder<ValidatableAttributeInfo>();
         foreach (var attrData in property.GetAttributes())
         {
-            if (attrData.AttributeClass is null)
-            {
-                continue;
-            }
+            if (attrData.AttributeClass is null) continue;
 
-            if (!attrData.AttributeClass.IsOrInheritsFrom(ValidationAttribute))
-            {
-                continue;
-            }
+            if (!attrData.AttributeClass.IsOrInheritsFrom(ValidationAttribute)) continue;
 
             var ctorArgs = ImmutableArray.CreateBuilder<string>();
-            foreach (var arg in attrData.ConstructorArguments)
-            {
-                ctorArgs.Add(TypedConstantToLiteral(arg));
-            }
+            foreach (var arg in attrData.ConstructorArguments) ctorArgs.Add(TypedConstantToLiteral(arg));
 
             var namedArgs = ImmutableArray.CreateBuilder<NamedArgLiteral>();
             foreach (var namedArg in attrData.NamedArguments)
-            {
                 namedArgs.Add(new NamedArgLiteral(namedArg.Key, TypedConstantToLiteral(namedArg.Value)));
-            }
 
             attrs.Add(new ValidatableAttributeInfo(
                 attrData.AttributeClass.GetFullyQualifiedName(),
@@ -401,10 +426,7 @@ internal sealed class ErrorOrContext
             return $"new[] {{ {string.Join(", ", elements.Select(TypedConstantToLiteral))} }}";
         }
 
-        if (constant.Value is null)
-        {
-            return "null";
-        }
+        if (constant.Value is null) return "null";
 
         return constant switch
         {
@@ -432,7 +454,6 @@ internal sealed class ErrorOrContext
     {
         var sb = new StringBuilder(s.Length);
         foreach (var c in s)
-        {
             switch (c)
             {
                 case '\\': sb.Append(@"\\"); break;
@@ -447,17 +468,12 @@ internal sealed class ErrorOrContext
                 case '\v': sb.Append(@"\v"); break;
                 default:
                     if (char.IsControl(c) || c > 127)
-                    {
                         sb.Append($"\\u{(int)c:X4}");
-                    }
                     else
-                    {
                         sb.Append(c);
-                    }
 
                     break;
             }
-        }
 
         return sb.ToString();
     }
@@ -485,15 +501,9 @@ internal sealed class ErrorOrContext
     public bool IsFormFile(ITypeSymbol? type)
     {
         type = type?.UnwrapNullable();
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
-        if (FormFile is not null && type.IsOrImplements(FormFile))
-        {
-            return true;
-        }
+        if (FormFile is not null && type.IsOrImplements(FormFile)) return true;
 
         return type.Name == "IFormFile" &&
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
@@ -503,26 +513,17 @@ internal sealed class ErrorOrContext
     public bool IsFormFileCollection(ITypeSymbol? type)
     {
         type = type?.UnwrapNullable();
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         if (FormFileCollection is not null &&
             type.IsEqualTo(FormFileCollection))
-        {
             return true;
-        }
 
         if (IReadOnlyListOfT is not null &&
             type is INamedTypeSymbol { IsGenericType: true } named &&
             named.ConstructedFrom.IsEqualTo(IReadOnlyListOfT))
-        {
             if (IsFormFile(named.TypeArguments[0]))
-            {
                 return true;
-            }
-        }
 
         return false;
     }
@@ -531,10 +532,7 @@ internal sealed class ErrorOrContext
     public bool IsFormCollection(ITypeSymbol? type)
     {
         type = type?.UnwrapNullable();
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         return FormCollection is not null && type.IsOrImplements(FormCollection);
     }
@@ -543,15 +541,9 @@ internal sealed class ErrorOrContext
     public bool IsHttpContext(ITypeSymbol? type)
     {
         type = type?.UnwrapNullable();
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
-        if (HttpContext is not null && type.IsOrInheritsFrom(HttpContext))
-        {
-            return true;
-        }
+        if (HttpContext is not null && type.IsOrInheritsFrom(HttpContext)) return true;
 
         return type.Name == "HttpContext" &&
                type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
@@ -560,16 +552,10 @@ internal sealed class ErrorOrContext
     /// <summary>Checks if the type is or inherits from System.IO.Stream.</summary>
     public bool IsStream(ITypeSymbol? type)
     {
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         type = type.UnwrapNullable();
-        if (Stream is not null)
-        {
-            return type.IsOrInheritsFrom(Stream);
-        }
+        if (Stream is not null) return type.IsOrInheritsFrom(Stream);
 
         return type.Name == "Stream" &&
                type.ContainingNamespace.ToDisplayString() == "System.IO";
@@ -578,16 +564,10 @@ internal sealed class ErrorOrContext
     /// <summary>Checks if the type is or inherits from System.IO.Pipelines.PipeReader.</summary>
     public bool IsPipeReader(ITypeSymbol? type)
     {
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         type = type.UnwrapNullable();
-        if (PipeReader is not null)
-        {
-            return type.IsOrInheritsFrom(PipeReader);
-        }
+        if (PipeReader is not null) return type.IsOrInheritsFrom(PipeReader);
 
         return type.Name == "PipeReader" &&
                type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
@@ -596,16 +576,10 @@ internal sealed class ErrorOrContext
     /// <summary>Checks if the type is System.Threading.CancellationToken.</summary>
     public bool IsCancellationToken(ITypeSymbol? type)
     {
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         type = type.UnwrapNullable();
-        if (CancellationToken is not null)
-        {
-            return type.IsEqualTo(CancellationToken);
-        }
+        if (CancellationToken is not null) return type.IsEqualTo(CancellationToken);
 
         return type.Name == "CancellationToken" &&
                type.ContainingNamespace.ToDisplayString() == "System.Threading";
@@ -614,16 +588,10 @@ internal sealed class ErrorOrContext
     /// <summary>Checks if the type is System.Reflection.ParameterInfo.</summary>
     public bool IsParameterInfo(ITypeSymbol? type)
     {
-        if (type is null)
-        {
-            return false;
-        }
+        if (type is null) return false;
 
         type = type.UnwrapNullable();
-        if (ParameterInfo is not null)
-        {
-            return type.IsEqualTo(ParameterInfo);
-        }
+        if (ParameterInfo is not null) return type.IsEqualTo(ParameterInfo);
 
         return type.Name == "ParameterInfo" &&
                type.ContainingNamespace.ToDisplayString() == "System.Reflection";

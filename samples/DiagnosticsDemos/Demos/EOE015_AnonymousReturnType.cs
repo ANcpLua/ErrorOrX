@@ -1,10 +1,10 @@
 namespace DiagnosticsDemos.Demos;
 
-public record TodoSummary(int Id, string Title);
+public sealed record TodoSummary(int Id, string Title);
 
 /// <summary>
-/// EOE015: Anonymous return type not supported — Anonymous types cannot be used as ErrorOr value types
-/// because they have no stable identity for JSON serialization.
+///     EOE015: Anonymous return type not supported — Anonymous types cannot be used as ErrorOr value types
+///     because they have no stable identity for JSON serialization.
 /// </summary>
 public static class EOE015_AnonymousReturnType
 {
@@ -61,10 +61,10 @@ public static class EOE015_AnonymousReturnType
     // -------------------------------------------------------------------------
     // FIXED: Generic wrapper with concrete type argument
     // -------------------------------------------------------------------------
-    public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
+    public sealed record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
 
     // -------------------------------------------------------------------------
     // TIP: Records are excellent for API response types
     // -------------------------------------------------------------------------
-    public record ApiResponse<T>(T Data, string Message = "Success", bool IsSuccess = true);
+    public sealed record ApiResponse<T>(T Data, string Message = "Success", bool IsSuccess = true);
 }

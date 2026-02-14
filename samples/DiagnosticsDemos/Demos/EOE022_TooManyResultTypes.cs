@@ -1,12 +1,12 @@
 namespace DiagnosticsDemos.Demos;
 
 /// <summary>
-/// EOE022: Too many result types — Endpoint has too many result types for Results&lt;...&gt; union.
+///     EOE022: Too many result types — Endpoint has too many result types for Results&lt;...&gt; union.
 /// </summary>
 /// <remarks>
-/// ASP.NET Core's Results&lt;T1, T2, ...&gt; supports up to 6 type parameters.
-/// If an endpoint can produce more than 6 different response types,
-/// OpenAPI documentation may be incomplete. This is an informational diagnostic.
+///     ASP.NET Core's Results&lt;T1, T2, ...&gt; supports up to 6 type parameters.
+///     If an endpoint can produce more than 6 different response types,
+///     OpenAPI documentation may be incomplete. This is an informational diagnostic.
 /// </remarks>
 public static class EOE022_TooManyResultTypes
 {
@@ -36,15 +36,9 @@ public static class EOE022_TooManyResultTypes
     [Get("/api/eoe022/items/{id}")]
     public static ErrorOr<string> GetItem(int id)
     {
-        if (id <= 0)
-        {
-            return Error.Validation("Item.InvalidId", "ID must be positive");
-        }
+        if (id <= 0) return Error.Validation("Item.InvalidId", "ID must be positive");
 
-        if (id > 1000)
-        {
-            return Error.NotFound("Item.NotFound", $"Item {id} not found");
-        }
+        if (id > 1000) return Error.NotFound("Item.NotFound", $"Item {id} not found");
 
         return $"Item {id}";
     }
@@ -52,16 +46,10 @@ public static class EOE022_TooManyResultTypes
     [Post("/api/eoe022/items")]
     public static ErrorOr<string> CreateItem([FromBody] CreateItemRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Error.Validation("Item.NameRequired", "Name is required");
-        }
+        if (string.IsNullOrWhiteSpace(request.Name)) return Error.Validation("Item.NameRequired", "Name is required");
 
         // Simulated duplicate check
-        if (request.Name == "existing")
-        {
-            return Error.Conflict("Item.Duplicate", "Item already exists");
-        }
+        if (request.Name == "existing") return Error.Conflict("Item.Duplicate", "Item already exists");
 
         return $"Created: {request.Name}";
     }
@@ -69,15 +57,9 @@ public static class EOE022_TooManyResultTypes
     [Delete("/api/eoe022/items/{id}")]
     public static ErrorOr<Deleted> DeleteItem(int id)
     {
-        if (id <= 0)
-        {
-            return Error.Validation("Item.InvalidId", "ID must be positive");
-        }
+        if (id <= 0) return Error.Validation("Item.InvalidId", "ID must be positive");
 
-        if (id > 1000)
-        {
-            return Error.NotFound("Item.NotFound", $"Item {id} not found");
-        }
+        if (id > 1000) return Error.NotFound("Item.NotFound", $"Item {id} not found");
 
         return Result.Deleted;
     }
@@ -92,26 +74,14 @@ public static class EOE022_TooManyResultTypes
     public static ErrorOr<string> UpdateItem(int id, [FromBody] CreateItemRequest request)
     {
         // All validation errors use the same error type
-        if (id <= 0)
-        {
-            return Error.Validation("Item.InvalidId", "ID must be positive");
-        }
+        if (id <= 0) return Error.Validation("Item.InvalidId", "ID must be positive");
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Error.Validation("Item.NameRequired", "Name is required");
-        }
+        if (string.IsNullOrWhiteSpace(request.Name)) return Error.Validation("Item.NameRequired", "Name is required");
 
-        if (request.Name.Length > 100)
-        {
-            return Error.Validation("Item.NameTooLong", "Name cannot exceed 100 characters");
-        }
+        if (request.Name.Length > 100) return Error.Validation("Item.NameTooLong", "Name cannot exceed 100 characters");
 
         // Business logic errors
-        if (id > 1000)
-        {
-            return Error.NotFound("Item.NotFound", $"Item {id} not found");
-        }
+        if (id > 1000) return Error.NotFound("Item.NotFound", $"Item {id} not found");
 
         return $"Updated {id}: {request.Name}";
     }
@@ -119,5 +89,5 @@ public static class EOE022_TooManyResultTypes
     // -------------------------------------------------------------------------
     // FIXED: Typical CRUD operations need few error types
     // -------------------------------------------------------------------------
-    public record CreateItemRequest(string Name);
+    public sealed record CreateItemRequest(string Name);
 }

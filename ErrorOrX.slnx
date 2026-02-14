@@ -1,36 +1,36 @@
 <Solution>
     <!-- Solution Items -->
     <Folder Name="/Solution Items/">
-        <File Path=".editorconfig" />
-        <File Path="Directory.Build.props" />
-        <File Path="Directory.Packages.props" />
-        <File Path="global.json" />
-        <File Path="NuGet.config" />
-        <File Path="README.md" />
-        <File Path="CHANGELOG.md" />
-        <File Path="CLAUDE.md" />
-        <File Path="Directory.Build.targets" />
-        <File Path="Version.props" />
+        <File Path=".editorconfig"/>
+        <File Path="Directory.Build.props"/>
+        <File Path="Directory.Packages.props"/>
+        <File Path="global.json"/>
+        <File Path="NuGet.config"/>
+        <File Path="README.md"/>
+        <File Path="CHANGELOG.md"/>
+        <File Path="CLAUDE.md"/>
+        <File Path="Directory.Build.targets"/>
+        <File Path="Version.props"/>
     </Folder>
 
     <!-- Source Projects -->
     <Folder Name="/src/">
-        <Project Path="src/ErrorOrX/ErrorOrX.csproj" />
-        <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj" />
+        <Project Path="src/ErrorOrX/ErrorOrX.csproj"/>
+        <Project Path="src/ErrorOrX.Generators/ErrorOrX.Generators.csproj"/>
     </Folder>
 
     <!-- Samples -->
     <Folder Name="/samples/">
-        <Project Path="samples/DiagnosticsDemos/DiagnosticsDemos.csproj" />
-        <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj" />
-        <Project Path="samples/ErrorOrX.Validation.Showcase.Models/ErrorOrX.Validation.Showcase.Models.csproj" />
-        <Project Path="samples/ErrorOrX.Validation.Showcase/ErrorOrX.Validation.Showcase.csproj" />
+        <Project Path="samples/DiagnosticsDemos/DiagnosticsDemos.csproj"/>
+        <Project Path="samples/ErrorOrX.Sample/ErrorOrX.Sample.csproj"/>
+        <Project Path="samples/ErrorOrX.Validation.Showcase.Models/ErrorOrX.Validation.Showcase.Models.csproj"/>
+        <Project Path="samples/ErrorOrX.Validation.Showcase/ErrorOrX.Validation.Showcase.csproj"/>
     </Folder>
 
     <!-- Tests -->
     <Folder Name="/tests/">
-        <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj" />
-        <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj" />
-        <Project Path="tests/ErrorOrX.Integration.Tests/ErrorOrX.Integration.Tests.csproj" />
+        <Project Path="tests/ErrorOrX.Tests/ErrorOrX.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Generators.Tests/ErrorOrX.Generators.Tests.csproj"/>
+        <Project Path="tests/ErrorOrX.Integration.Tests/ErrorOrX.Integration.Tests.csproj"/>
     </Folder>
 </Solution>

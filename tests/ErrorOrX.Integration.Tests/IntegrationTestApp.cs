@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErrorOrX.Integration.Tests;
@@ -41,29 +41,53 @@ public sealed class IntegrationTestApp
 public static class TestEndpoints
 {
     [Get("/parity/query-required")]
-    public static ErrorOr<string> QueryRequired(string q) => q;
+    public static ErrorOr<string> QueryRequired(string q)
+    {
+        return q;
+    }
 
     [Post("/parity/body-json")]
-    public static ErrorOr<string> BodyJson(TestDto dto) => dto.Name;
+    public static ErrorOr<string> BodyJson(TestDto dto)
+    {
+        return dto.Name;
+    }
 
     [Get("/parity/query-int")]
-    public static ErrorOr<int> QueryInt(int id) => id;
+    public static ErrorOr<int> QueryInt(int id)
+    {
+        return id;
+    }
 
     [Post("/parity/form")]
-    public static ErrorOr<string> FormValue([FromForm] string name) => name;
+    public static ErrorOr<string> FormValue([FromForm] string name)
+    {
+        return name;
+    }
 
     [Get("/parity/return-t")]
-    public static ErrorOr<string> ReturnT() => "success";
+    public static ErrorOr<string> ReturnT()
+    {
+        return "success";
+    }
 
     [Post("/parity/return-t-post")]
-    public static ErrorOr<string> ReturnTPost() => "success";
+    public static ErrorOr<string> ReturnTPost()
+    {
+        return "success";
+    }
 
     [Post("/parity/created")]
-    public static ErrorOr<Created> ReturnCreated() => Result.Created;
+    public static ErrorOr<Created> ReturnCreated()
+    {
+        return Result.Created;
+    }
 
     [Get("/parity/auth/protected")]
     [Authorize]
-    public static ErrorOr<string> Protected() => "secure";
+    public static ErrorOr<string> Protected()
+    {
+        return "secure";
+    }
 }
 
 public record TestDto(string Name);

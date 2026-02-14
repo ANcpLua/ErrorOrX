@@ -6,15 +6,15 @@ public class SearchParams
     public int Page { get; set; } = 1;
 }
 
-public record FilterParams(string? Name, int? MinPrice, int? MaxPrice);
+public sealed record FilterParams(string? Name, int? MinPrice, int? MaxPrice);
 
 /// <summary>
-/// EOE017: Nullable [AsParameters] not supported — [AsParameters] cannot be applied to nullable types
-/// because parameter expansion requires a concrete instance.
+///     EOE017: Nullable [AsParameters] not supported — [AsParameters] cannot be applied to nullable types
+///     because parameter expansion requires a concrete instance.
 /// </summary>
 /// <remarks>
-/// The model binder cannot expand a null object's properties, so [AsParameters]
-/// types must be non-nullable.
+///     The model binder cannot expand a null object's properties, so [AsParameters]
+///     types must be non-nullable.
 /// </remarks>
 public static class EOE017_NullableAsParameters
 {
@@ -69,7 +69,7 @@ public static class EOE017_NullableAsParameters
     // -------------------------------------------------------------------------
     // TIP: Make properties nullable, not the container
     // -------------------------------------------------------------------------
-    public record OptionalParams(
+    public sealed record OptionalParams(
         string? Query = null, // Property is nullable (optional)
         int? Page = null, // Property is nullable with null default
         int PageSize = 10); // Property has non-null default
@@ -77,7 +77,7 @@ public static class EOE017_NullableAsParameters
     // -------------------------------------------------------------------------
     // TIP: Use default values in records for optional parameters
     // -------------------------------------------------------------------------
-    public record DefaultParams(
+    public sealed record DefaultParams(
         string Query = "default",
         int Page = 1,
         int PageSize = 10);

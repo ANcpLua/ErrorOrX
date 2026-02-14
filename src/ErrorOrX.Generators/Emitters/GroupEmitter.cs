@@ -14,12 +14,9 @@ internal static class GroupEmitter
     /// </summary>
     public static ImmutableArray<GroupEmitContext> EmitGroupDeclarations(
         StringBuilder code,
-        ImmutableArray<RouteGroupAggregate> groups)
+        EquatableArray<RouteGroupAggregate> groups)
     {
-        if (groups.IsDefaultOrEmpty)
-        {
-            return ImmutableArray<GroupEmitContext>.Empty;
-        }
+        if (groups.IsDefaultOrEmpty) return ImmutableArray<GroupEmitContext>.Empty;
 
         var contexts = ImmutableArray.CreateBuilder<GroupEmitContext>(groups.Length);
 
@@ -54,8 +51,7 @@ internal static class GroupEmitter
             code.Append($"            var {groupVarName} = {vApiVarName}.MapGroup(\"{group.GroupPath}\")");
 
             if (!group.Versions.IsDefaultOrEmpty)
-            {
-                foreach (var v in group.Versions.AsImmutableArray())
+                foreach (var v in group.Versions)
                 {
                     var versionExpr = v.MinorVersion.HasValue
                         ? $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion}, {v.MinorVersion.Value})"
@@ -65,12 +61,11 @@ internal static class GroupEmitter
                         ? $".HasDeprecatedApiVersion({versionExpr})"
                         : $".HasApiVersion({versionExpr})");
                 }
-            }
 
             code.AppendLine(";");
         }
         else
-        // Simple group without versioning
+            // Simple group without versioning
         {
             code.AppendLine($"            var {groupVarName} = app.MapGroup(\"{group.GroupPath}\");");
         }
@@ -97,7 +92,6 @@ internal static class GroupEmitter
 
         // For grouped endpoints with specific version mappings, emit MapToApiVersion
         if (!ep.Versioning.MappedVersions.IsDefaultOrEmpty)
-        {
             foreach (var v in ep.Versioning.MappedVersions.AsImmutableArray())
             {
                 var versionExpr = v.MinorVersion.HasValue
@@ -105,13 +99,9 @@ internal static class GroupEmitter
                     : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
                 code.AppendLine($"                .MapToApiVersion({versionExpr})");
             }
-        }
 
         // Version-neutral within a versioned group
-        if (ep.Versioning.IsVersionNeutral)
-        {
-            code.AppendLine("                .IsApiVersionNeutral()");
-        }
+        if (ep.Versioning.IsVersionNeutral) code.AppendLine("                .IsApiVersionNeutral()");
 
         EndpointMetadataEmitter.EmitEndpointMetadata(code, in ep, "                ", maxArity);
 

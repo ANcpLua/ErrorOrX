@@ -20,13 +20,11 @@ internal static class RouteBindingHelper
             httpVerb);
 
         if (!bindingResult.IsValid)
-        {
             return DiagnosticFlow.Fail<RouteBindingAnalysis>(diagnostics.ToImmutable().AsEquatableArray());
-        }
 
-        var routeParametersInfo = ExtractRouteMethodParameters(bindingResult.Parameters);
+        var routeParametersInfo = ExtractRouteMethodParameters(bindingResult.Parameters.AsImmutableArray());
         var analysis = new RouteBindingAnalysis(
-            new EquatableArray<EndpointParameter>(bindingResult.Parameters),
+            bindingResult.Parameters,
             routeParametersInfo);
 
         var flow = DiagnosticFlow.Ok(analysis);
@@ -40,9 +38,7 @@ internal static class RouteBindingHelper
         ImmutableArray<EndpointParameter> parameters)
     {
         if (parameters.IsDefaultOrEmpty)
-        {
             return new EquatableArray<RouteMethodParameterInfo>(ImmutableArray<RouteMethodParameterInfo>.Empty);
-        }
 
         var builder = ImmutableArray.CreateBuilder<RouteMethodParameterInfo>();
         foreach (var parameter in parameters)
@@ -56,18 +52,13 @@ internal static class RouteBindingHelper
         ImmutableArray<RouteMethodParameterInfo>.Builder builder)
     {
         if (parameter.Source == ParameterSource.Route)
-        {
             builder.Add(new RouteMethodParameterInfo(
                 parameter.Name,
                 parameter.KeyName ?? parameter.Name,
                 parameter.TypeFqn,
                 parameter.IsNullable));
-        }
 
-        if (parameter.Children.IsDefaultOrEmpty)
-        {
-            return;
-        }
+        if (parameter.Children.IsDefaultOrEmpty) return;
 
         foreach (var child in parameter.Children.AsImmutableArray())
             CollectRouteMethodParameters(in child, builder);

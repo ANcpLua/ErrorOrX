@@ -61,17 +61,11 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        if (ctx.TargetSymbol is not IMethodSymbol { IsStatic: true } method)
-        {
-            return null;
-        }
+        if (ctx.TargetSymbol is not IMethodSymbol { IsStatic: true } method) return null;
 
         // Extract HTTP method and pattern from attribute
         // Combined null check: attr exists AND has a valid AttributeClass
-        if (ctx.Attributes.FirstOrDefault() is not { AttributeClass: { } attrClass } attr)
-        {
-            return null;
-        }
+        if (ctx.Attributes.FirstOrDefault() is not { AttributeClass: { } attrClass } attr) return null;
 
         var attrClassName = attrClass.ToDisplayString();
 
@@ -89,10 +83,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             _ => (null, null)
         };
 
-        if (httpMethod is null || pattern is null)
-        {
-            return null;
-        }
+        if (httpMethod is null || pattern is null) return null;
 
         // Extract XML documentation
         var xmlDoc = method.GetDocumentationCommentXml(cancellationToken: ct);
@@ -122,19 +113,14 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         if (attr.ConstructorArguments.Length > 0 &&
             attr.ConstructorArguments[0].Value is string p &&
             !string.IsNullOrWhiteSpace(p))
-        {
             return p;
-        }
 
         return "/";
     }
 
     private static (string? httpMethod, string? pattern) GetBaseAttributeInfo(AttributeData attr)
     {
-        if (attr.ConstructorArguments.Length < 2)
-        {
-            return (null, null);
-        }
+        if (attr.ConstructorArguments.Length < 2) return (null, null);
 
         var method = attr.ConstructorArguments[0].Value as string;
         var pattern = attr.ConstructorArguments[1].Value as string;
@@ -146,10 +132,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static (string? summary, string? description) ParseXmlDoc(string? xml)
     {
-        if (xml is null || string.IsNullOrWhiteSpace(xml))
-        {
-            return (null, null);
-        }
+        if (xml is null || string.IsNullOrWhiteSpace(xml)) return (null, null);
 
         string? summary = null;
         string? description = null;
@@ -158,34 +141,27 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         var summaryStart = xml.IndexOfOrdinal("<summary>");
         var summaryEnd = xml.IndexOfOrdinal("</summary>");
         if (summaryStart >= 0 && summaryEnd > summaryStart)
-        {
             summary = xml.Substring(summaryStart + 9, summaryEnd - summaryStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace("\n", " ")
                 .Trim();
-        }
 
         var remarksStart = xml.IndexOfOrdinal("<remarks>");
         var remarksEnd = xml.IndexOfOrdinal("</remarks>");
         if (remarksStart >= 0 && remarksEnd > remarksStart)
-        {
             description = xml.Substring(remarksStart + 9, remarksEnd - remarksStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace("\n", " ")
                 .Trim();
-        }
 
         return (summary, description);
     }
 
     private static ImmutableArray<(string ParamName, string Description)> ParseParamTags(string? xml)
     {
-        if (xml is null || string.IsNullOrWhiteSpace(xml))
-        {
-            return ImmutableArray<(string, string)>.Empty;
-        }
+        if (xml is null || string.IsNullOrWhiteSpace(xml)) return ImmutableArray<(string, string)>.Empty;
 
         var parameters = new List<(string, string)>();
         var searchPos = 0;
@@ -193,43 +169,28 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         while (true)
         {
             var paramStart = xml.IndexOf("<param name=\"", searchPos, StringComparison.Ordinal);
-            if (paramStart < 0)
-            {
-                break;
-            }
+            if (paramStart < 0) break;
 
             var nameStart = paramStart + 13;
             var nameEnd = xml.IndexOf("\"", nameStart, StringComparison.Ordinal);
-            if (nameEnd < 0)
-            {
-                break;
-            }
+            if (nameEnd < 0) break;
 
             var paramName = xml.Substring(nameStart, nameEnd - nameStart);
 
             var contentStart = xml.IndexOf(">", nameEnd, StringComparison.Ordinal);
-            if (contentStart < 0)
-            {
-                break;
-            }
+            if (contentStart < 0) break;
 
             contentStart++;
 
             var contentEnd = xml.IndexOf("</param>", contentStart, StringComparison.Ordinal);
-            if (contentEnd < 0)
-            {
-                break;
-            }
+            if (contentEnd < 0) break;
 
             var description = xml.Substring(contentStart, contentEnd - contentStart)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace("\n", " ")
                 .Trim();
-            if (!string.IsNullOrWhiteSpace(description))
-            {
-                parameters.Add((paramName, description));
-            }
+            if (!string.IsNullOrWhiteSpace(description)) parameters.Add((paramName, description));
 
             searchPos = contentEnd + 8;
         }
@@ -252,10 +213,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             var typeFqn = param.Type.ToDisplayString();
 
             // Skip special types (services, context, etc.)
-            if (IsSkippedParameterType(param, typeFqn))
-            {
-                continue;
-            }
+            if (IsSkippedParameterType(param, typeFqn)) continue;
 
             // Check explicit binding attributes
             var (explicitLocation, explicitName) = GetExplicitBinding(param);
@@ -282,13 +240,11 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
                 // Check if optional in route template
                 foreach (var rp in routeParams)
-                {
                     if (string.Equals(rp.Name, param.Name, StringComparison.OrdinalIgnoreCase) && rp.IsOptional)
                     {
                         required = false;
                         break;
                     }
-                }
             }
             else if (IsPrimitiveType(typeFqn))
             {
@@ -317,21 +273,13 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         if (typeFqn is WellKnownTypes.HttpContext or WellKnownTypes.CancellationToken
             or WellKnownTypes.FormFile or WellKnownTypes.FormFileCollection
             or WellKnownTypes.Stream or WellKnownTypes.PipeReader or WellKnownTypes.FormCollection)
-        {
             return true;
-        }
 
         // Skip interface types (services)
-        if (param.Type.TypeKind == TypeKind.Interface)
-        {
-            return true;
-        }
+        if (param.Type.TypeKind == TypeKind.Interface) return true;
 
         // Skip abstract types (services)
-        if (param.Type is { IsAbstract: true, TypeKind: TypeKind.Class })
-        {
-            return true;
-        }
+        if (param.Type is { IsAbstract: true, TypeKind: TypeKind.Class }) return true;
 
         // Skip [FromServices] / [FromKeyedServices] / [FromBody] / [FromForm]
         foreach (var attr in param.GetAttributes())
@@ -339,9 +287,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             var attrName = attr.AttributeClass?.ToDisplayString();
             if (attrName is WellKnownTypes.FromServicesAttribute or WellKnownTypes.FromBodyAttribute
                 or WellKnownTypes.FromFormAttribute or WellKnownTypes.FromKeyedServicesAttribute)
-            {
                 return true;
-            }
         }
 
         return false;
@@ -378,12 +324,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     private static string? GetAttributeStringArg(AttributeData attr, string propName)
     {
         foreach (var kvp in attr.NamedArguments)
-        {
             if (kvp.Key == propName && kvp.Value.Value is string s && !string.IsNullOrWhiteSpace(s))
-            {
                 return s;
-            }
-        }
 
         return null;
     }
@@ -467,30 +409,19 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         GeneratorSyntaxContext ctx,
         CancellationToken ct)
     {
-        if (ctx.Node is not TypeDeclarationSyntax typeDecl)
-        {
-            return null;
-        }
+        if (ctx.Node is not TypeDeclarationSyntax typeDecl) return null;
 
         // Skip null symbols and compiler-generated types
         if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol ||
             symbol.IsImplicitlyDeclared)
-        {
             return null;
-        }
 
         // Skip types without XML docs
         var xmlDoc = symbol.GetDocumentationCommentXml(cancellationToken: ct);
-        if (string.IsNullOrWhiteSpace(xmlDoc))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(xmlDoc)) return null;
 
         var (summary, _) = ParseXmlDoc(xmlDoc);
-        if (summary is null)
-        {
-            return null;
-        }
+        if (summary is null) return null;
 
         var typeKey = GetReflectionFullName(symbol);
 
@@ -502,10 +433,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
         ImmutableArray<OpenApiEndpointInfo> endpoints,
         ImmutableArray<TypeMetadataInfo> types)
     {
-        if (endpoints.IsDefaultOrEmpty)
-        {
-            return;
-        }
+        if (endpoints.IsDefaultOrEmpty) return;
 
         var code = new StringBuilder();
         code.AppendLine("// <auto-generated/>");
@@ -536,10 +464,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
         // Emit schema transformer (applies type descriptions)
         var hasTypeDocs = false;
-        if (!types.IsDefaultOrEmpty)
-        {
-            hasTypeDocs = EmitSchemaTransformer(code, types);
-        }
+        if (!types.IsDefaultOrEmpty) hasTypeDocs = EmitSchemaTransformer(code, types);
 
         // Emit registration extension
         EmitRegistrationExtension(code, tags, hasOperationDocs, hasTypeDocs);
@@ -586,10 +511,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             .OrderBy(static e => e.OperationId, StringComparer.Ordinal)
             .ToList();
 
-        if (opsWithDocs.Count is 0 && opsWithParams.Count is 0)
-        {
-            return false;
-        }
+        if (opsWithDocs.Count is 0 && opsWithParams.Count is 0) return false;
 
         // Collect operations with parameter docs
         var opsWithParamDocs = opsWithDocs
@@ -597,7 +519,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             .ToList();
 
         code.AppendLine("/// <summary>");
-        code.AppendLine("/// Operation transformer that applies XML documentation and parameter definitions to operations.");
+        code.AppendLine(
+            "/// Operation transformer that applies XML documentation and parameter definitions to operations.");
         code.AppendLine("/// Each entry is a strict 1:1 mapping from handler signature to operation metadata.");
         code.AppendLine("/// </summary>");
         code.AppendLine("file sealed class XmlDocOperationTransformer : IOpenApiOperationTransformer");
@@ -631,10 +554,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
             code.AppendLine($"            [\"{op.OperationId}\"] = new Dictionary<string, string>");
             code.AppendLine("            {");
             foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
-            {
                 code.AppendLine(
                     $"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
-            }
 
             code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }
@@ -658,10 +579,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
                 var first = true;
                 foreach (var p in op.Parameters.AsImmutableArray())
                 {
-                    if (!first)
-                    {
-                        code.Append("), (");
-                    }
+                    if (!first) code.Append("), (");
 
                     var format = p.SchemaFormat is not null ? $"\"{p.SchemaFormat}\"" : "null";
                     var locationEnum = p.Location switch
@@ -765,10 +683,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
     {
         var typesWithDocs = types.OrderBy(static t => t.TypeKey, StringComparer.Ordinal).ToList();
 
-        if (typesWithDocs.Count is 0)
-        {
-            return false;
-        }
+        if (typesWithDocs.Count is 0) return false;
 
         code.AppendLine("/// <summary>");
         code.AppendLine("/// Schema transformer that applies type XML documentation to schemas.");

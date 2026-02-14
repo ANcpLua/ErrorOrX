@@ -23,7 +23,6 @@ internal static class GroupAggregator
         var ungroupedList = new List<IndexedEndpoint>();
 
         foreach (var item in indexed)
-        {
             if (item.Endpoint.RouteGroup.GroupPath is { } path)
             {
                 if (!groupDict.TryGetValue(path, out var list))
@@ -38,14 +37,14 @@ internal static class GroupAggregator
             {
                 ungroupedList.Add(item);
             }
-        }
 
         var grouped = groupDict
             .OrderBy(static kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(static kvp => CreateAggregate(kvp.Key, [.. kvp.Value]))
-            .ToImmutableArray();
+            .Select(static kvp => CreateAggregate(kvp.Key, kvp.Value.ToImmutableArray().AsEquatableArray()))
+            .ToImmutableArray()
+            .AsEquatableArray();
 
-        var ungrouped = ungroupedList.ToImmutableArray();
+        var ungrouped = ungroupedList.ToImmutableArray().AsEquatableArray();
 
         return new GroupingResult(grouped, ungrouped);
     }
@@ -55,27 +54,30 @@ internal static class GroupAggregator
     ///     Computes the union of all versions across endpoints in the group.
     ///     API name is taken from the first endpoint's RouteGroup (should be consistent within group).
     /// </summary>
-    private static RouteGroupAggregate CreateAggregate(string groupPath, ImmutableArray<IndexedEndpoint> endpoints)
+    private static RouteGroupAggregate CreateAggregate(string groupPath, EquatableArray<IndexedEndpoint> endpoints)
     {
+        var immutableEndpoints = endpoints.AsImmutableArray();
+
         // Get API name from first endpoint (assumed consistent within group)
         // Defensive: empty array would cause FirstOrDefault() to return default struct
-        var apiName = endpoints.Length > 0 ? endpoints[0].Endpoint.RouteGroup.ApiName : null;
+        var apiName = immutableEndpoints.Length > 0 ? immutableEndpoints[0].Endpoint.RouteGroup.ApiName : null;
 
         // Check for version-neutral endpoints
-        var hasVersionNeutral = endpoints.Any(static x => x.Endpoint.Versioning.IsVersionNeutral);
+        var hasVersionNeutral = immutableEndpoints.Any(static x => x.Endpoint.Versioning.IsVersionNeutral);
 
         // Compute union of all versions, sorted by major.minor
-        var sortedVersions = endpoints
+        var sortedVersions = immutableEndpoints
             .SelectMany(static x => x.Endpoint.Versioning.SupportedVersions.AsImmutableArray())
             .Distinct()
             .OrderBy(static v => v.MajorVersion)
             .ThenBy(static v => v.MinorVersion ?? 0)
-            .ToImmutableArray();
+            .ToImmutableArray()
+            .AsEquatableArray();
 
         return new RouteGroupAggregate(
             groupPath,
             apiName,
-            new EquatableArray<ApiVersionInfo>(sortedVersions),
+            sortedVersions,
             hasVersionNeutral,
             endpoints);
     }
@@ -87,10 +89,7 @@ internal static class GroupAggregator
     /// </summary>
     public static string GetRelativePattern(in EndpointDescriptor ep)
     {
-        if (!ep.RouteGroup.HasRouteGroup || ep.RouteGroup.GroupPath is not { } groupPath)
-        {
-            return ep.Pattern;
-        }
+        if (!ep.RouteGroup.HasRouteGroup || ep.RouteGroup.GroupPath is not { } groupPath) return ep.Pattern;
 
         // Normalize paths for comparison (remove leading slashes)
         var normalizedGroup = groupPath.TrimStart('/');
@@ -120,7 +119,7 @@ internal static class GroupAggregator
         string? ApiName,
         EquatableArray<ApiVersionInfo> Versions,
         bool HasVersionNeutral,
-        ImmutableArray<IndexedEndpoint> Endpoints)
+        EquatableArray<IndexedEndpoint> Endpoints)
     {
         /// <summary>
         ///     Returns true if this group uses versioned API (NewVersionedApi pattern).
@@ -132,6 +131,6 @@ internal static class GroupAggregator
     ///     Result of grouping endpoints by route group.
     /// </summary>
     internal readonly record struct GroupingResult(
-        ImmutableArray<RouteGroupAggregate> Groups,
-        ImmutableArray<IndexedEndpoint> UngroupedEndpoints);
+        EquatableArray<RouteGroupAggregate> Groups,
+        EquatableArray<IndexedEndpoint> UngroupedEndpoints);
 }

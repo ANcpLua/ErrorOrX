@@ -1,9 +1,9 @@
 namespace DiagnosticsDemos.Demos;
 
 // Types for this demo
-public record ProductResponse(int Id, string Name, decimal Price);
+public sealed record ProductResponse(int Id, string Name, decimal Price);
 
-public record CategoryResponse(int Id, string Name);
+public sealed record CategoryResponse(int Id, string Name);
 
 // -------------------------------------------------------------------------
 // JSON Context WITHOUT ProductResponse - TRIGGERS EOE007
@@ -31,12 +31,12 @@ internal partial class EOE007JsonContext : JsonSerializerContext
 }
 
 /// <summary>
-/// EOE007: Type not AOT-serializable — Type used in endpoint is not registered in JsonSerializerContext for AOT.
+///     EOE007: Type not AOT-serializable — Type used in endpoint is not registered in JsonSerializerContext for AOT.
 /// </summary>
 /// <remarks>
-/// For Native AOT support, all types that need JSON serialization must be
-/// registered in a [JsonSerializable] context. This diagnostic is reported
-/// by the generator (not analyzer) because it requires cross-file analysis.
+///     For Native AOT support, all types that need JSON serialization must be
+///     registered in a [JsonSerializable] context. This diagnostic is reported
+///     by the generator (not analyzer) because it requires cross-file analysis.
 /// </remarks>
 public static class EOE007_TypeNotInJsonContext
 {

@@ -1,8 +1,8 @@
 namespace DiagnosticsDemos.Demos.Eoe026;
 
-public record OrderRequest(string ProductId, int Quantity);
+public sealed record OrderRequest(string ProductId, int Quantity);
 
-public record OrderResponse(string OrderId, string Status);
+public sealed record OrderResponse(string OrderId, string Status);
 
 // -------------------------------------------------------------------------
 // TRIGGERS EOE026: When no JsonSerializerContext exists for body types
@@ -29,12 +29,12 @@ internal partial class EOE026JsonContext : JsonSerializerContext
 }
 
 /// <summary>
-/// EOE026: Missing JsonSerializerContext for AOT — No JsonSerializerContext found but endpoint uses request body,
-/// so AOT serialization will fail.
+///     EOE026: Missing JsonSerializerContext for AOT — No JsonSerializerContext found but endpoint uses request body,
+///     so AOT serialization will fail.
 /// </summary>
 /// <remarks>
-/// For Native AOT support, you must define a JsonSerializerContext
-/// with [JsonSerializable] attributes for all request/response types.
+///     For Native AOT support, you must define a JsonSerializerContext
+///     with [JsonSerializable] attributes for all request/response types.
 /// </remarks>
 public static class EOE026_MissingJsonContextForBody
 {
@@ -44,10 +44,7 @@ public static class EOE026_MissingJsonContextForBody
     [Post("/api/eoe026/orders")]
     public static ErrorOr<OrderResponse> CreateOrder([FromBody] OrderRequest request)
     {
-        if (request.Quantity <= 0)
-        {
-            return Error.Validation("Order.InvalidQuantity", "Quantity must be positive");
-        }
+        if (request.Quantity <= 0) return Error.Validation("Order.InvalidQuantity", "Quantity must be positive");
 
         return new OrderResponse(Guid.NewGuid().ToString(), "Created");
     }
@@ -55,10 +52,7 @@ public static class EOE026_MissingJsonContextForBody
     [Get("/api/eoe026/orders/{id}")]
     public static ErrorOr<OrderResponse> GetOrder(string id)
     {
-        if (string.IsNullOrEmpty(id))
-        {
-            return Error.Validation("Order.InvalidId", "Order ID is required");
-        }
+        if (string.IsNullOrEmpty(id)) return Error.Validation("Order.InvalidId", "Order ID is required");
 
         return new OrderResponse(id, "Completed");
     }
