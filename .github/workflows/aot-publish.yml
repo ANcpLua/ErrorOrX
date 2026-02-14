@@ -35,15 +35,7 @@ jobs:
           version_prefix = read_text("Version.props", "VersionPrefix")
           version_suffix = read_text("Version.props", "VersionSuffix")
           version = version_prefix if not version_suffix else f"{version_prefix}-{version_suffix}"
-
-          root = ET.parse("Directory.Packages.props").getroot()
-          openapi_version = None
-          for node in root.findall(".//PackageVersion"):
-              if node.get("Include") == "Microsoft.AspNetCore.OpenApi":
-                  openapi_version = node.get("Version")
-                  break
-          if not openapi_version:
-              raise SystemExit("Microsoft.AspNetCore.OpenApi version not found.")
+          openapi_version = read_text("Version.props", "MicrosoftAspNetCoreOpenApiVersion")
 
           output_path = os.environ["GITHUB_OUTPUT"]
           with open(output_path, "a", encoding="utf-8") as output:
