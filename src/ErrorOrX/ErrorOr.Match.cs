@@ -14,8 +14,8 @@ public readonly partial record struct ErrorOr<TValue>
     public TNextValue Match<TNextValue>(Func<TValue, TNextValue> onValue,
         Func<IReadOnlyList<Error>, TNextValue> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         return IsError ? onError(Errors) : onValue(Value);
     }
@@ -34,8 +34,8 @@ public readonly partial record struct ErrorOr<TValue>
     public Task<TNextValue> MatchAsync<TNextValue>(Func<TValue, Task<TNextValue>> onValue,
         Func<IReadOnlyList<Error>, Task<TNextValue>> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         return IsError ? onError(Errors) : onValue(Value);
     }
@@ -52,8 +52,8 @@ public readonly partial record struct ErrorOr<TValue>
     /// <returns>The result of the executed function.</returns>
     public TNextValue MatchFirst<TNextValue>(Func<TValue, TNextValue> onValue, Func<Error, TNextValue> onFirstError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onFirstError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onFirstError);
 
         return IsError ? onFirstError(FirstError) : onValue(Value);
     }
@@ -72,8 +72,8 @@ public readonly partial record struct ErrorOr<TValue>
     public Task<TNextValue> MatchFirstAsync<TNextValue>(Func<TValue, Task<TNextValue>> onValue,
         Func<Error, Task<TNextValue>> onFirstError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onFirstError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onFirstError);
 
         return IsError ? onFirstError(FirstError) : onValue(Value);
     }

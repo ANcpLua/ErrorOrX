@@ -13,7 +13,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, ErrorOr<TNextValue>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         return IsError ? new ErrorOr<TNextValue>(_errors) : onValue(Value);
     }
@@ -25,7 +25,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public ErrorOr<TValue> ThenDo(Action<TValue> action)
     {
-        _ = Throw.IfNull(action);
+        _ = Guard.NotNull(action);
 
         if (IsError)
         {
@@ -48,7 +48,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public ErrorOr<TNextValue> Then<TNextValue>(Func<TValue, TNextValue> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         if (IsError)
         {
@@ -70,7 +70,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TNextValue>> ThenAsync<TNextValue>(Func<TValue, Task<ErrorOr<TNextValue>>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         if (IsError)
         {
@@ -87,7 +87,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public async Task<ErrorOr<TValue>> ThenDoAsync(Func<TValue, Task> action)
     {
-        _ = Throw.IfNull(action);
+        _ = Guard.NotNull(action);
 
         if (IsError)
         {
@@ -111,7 +111,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TNextValue>> ThenAsync<TNextValue>(Func<TValue, Task<TNextValue>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         if (IsError)
         {

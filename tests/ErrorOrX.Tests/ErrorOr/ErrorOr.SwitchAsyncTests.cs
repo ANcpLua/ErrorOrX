@@ -19,7 +19,7 @@ public class SwitchAsyncTests
 
         Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
 
-        static Task ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException<Task>();
+        static Task ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        static Task ThenAction(Person _) => Throw.UnreachableException<Task>();
+        static Task ThenAction(Person _) => throw new UnreachableException();
 
         Task ElsesAction(IReadOnlyList<Error> errors) =>
             Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors));
@@ -60,7 +60,7 @@ public class SwitchAsyncTests
 
         Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
 
-        static Task OnFirstErrorAction(Error _) => Throw.UnreachableException<Task>();
+        static Task OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        static Task ThenAction(Person _) => Throw.UnreachableException<Task>();
+        static Task ThenAction(Person _) => throw new UnreachableException();
 
         Task OnFirstErrorAction(Error errors)
             => Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
@@ -104,7 +104,7 @@ public class SwitchAsyncTests
 
         Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
 
-        static Task OnFirstErrorAction(Error _) => Throw.UnreachableException<Task>();
+        static Task OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class SwitchAsyncTests
 
         Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
 
-        static Task ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException<Task>();
+        static Task ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     private sealed record Person;

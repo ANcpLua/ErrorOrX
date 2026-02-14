@@ -12,7 +12,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, Error> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? onError(Errors) : Value;
     }
@@ -27,7 +27,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, IReadOnlyList<Error>> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? new ErrorOr<TValue>(onError(Errors)) : Value;
     }
@@ -50,7 +50,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public ErrorOr<TValue> Else(Func<IReadOnlyList<Error>, TValue> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? onError(Errors) : Value;
     }
@@ -77,7 +77,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<TValue>> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? await onError(Errors).ConfigureAwait(false) : Value;
     }
@@ -93,7 +93,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<Error>> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? await onError(Errors).ConfigureAwait(false) : Value;
     }
@@ -109,7 +109,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// </returns>
     public async Task<ErrorOr<TValue>> ElseAsync(Func<IReadOnlyList<Error>, Task<IReadOnlyList<Error>>> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         return IsError ? new ErrorOr<TValue>(await onError(Errors).ConfigureAwait(false)) : Value;
     }
@@ -141,7 +141,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public ErrorOr<TValue> ElseDo(Action<IReadOnlyList<Error>> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         if (IsError)
         {
@@ -158,7 +158,7 @@ public readonly partial record struct ErrorOr<TValue>
     /// <returns>The original <see cref="ErrorOr" /> instance.</returns>
     public async Task<ErrorOr<TValue>> ElseDoAsync(Func<IReadOnlyList<Error>, Task> onError)
     {
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onError);
 
         if (IsError)
         {

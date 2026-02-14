@@ -15,8 +15,8 @@ public static partial class ErrorOrExtensions
     public static async Task Switch<TValue>(this Task<ErrorOr<TValue>> errorOr, Action<TValue> onValue,
         Action<IReadOnlyList<Error>> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -36,8 +36,8 @@ public static partial class ErrorOrExtensions
     public static async Task SwitchAsync<TValue>(this Task<ErrorOr<TValue>> errorOr, Func<TValue, Task> onValue,
         Func<IReadOnlyList<Error>, Task> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -57,8 +57,8 @@ public static partial class ErrorOrExtensions
     public static async Task SwitchFirst<TValue>(this Task<ErrorOr<TValue>> errorOr, Action<TValue> onValue,
         Action<Error> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -78,8 +78,8 @@ public static partial class ErrorOrExtensions
     public static async Task SwitchFirstAsync<TValue>(this Task<ErrorOr<TValue>> errorOr, Func<TValue, Task> onValue,
         Func<Error, Task> onError)
     {
-        _ = Throw.IfNull(onValue);
-        _ = Throw.IfNull(onError);
+        _ = Guard.NotNull(onValue);
+        _ = Guard.NotNull(onError);
 
         var result = await errorOr.ConfigureAwait(false);
 

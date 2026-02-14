@@ -14,7 +14,7 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TNextValue>> Then<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, ErrorOr<TNextValue>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -33,7 +33,7 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TNextValue>> Then<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, TNextValue> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -49,7 +49,7 @@ public static partial class ErrorOrExtensions
     /// <returns>The original <paramref name="errorOr" />.</returns>
     public static async Task<ErrorOr<TValue>> ThenDo<TValue>(this Task<ErrorOr<TValue>> errorOr, Action<TValue> action)
     {
-        _ = Throw.IfNull(action);
+        _ = Guard.NotNull(action);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -68,7 +68,7 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TNextValue>> ThenAsync<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, Task<ErrorOr<TNextValue>>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -87,7 +87,7 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TNextValue>> ThenAsync<TValue, TNextValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, Task<TNextValue>> onValue)
     {
-        _ = Throw.IfNull(onValue);
+        _ = Guard.NotNull(onValue);
 
         var result = await errorOr.ConfigureAwait(false);
 
@@ -105,7 +105,7 @@ public static partial class ErrorOrExtensions
     public static async Task<ErrorOr<TValue>> ThenDoAsync<TValue>(this Task<ErrorOr<TValue>> errorOr,
         Func<TValue, Task> action)
     {
-        _ = Throw.IfNull(action);
+        _ = Guard.NotNull(action);
 
         var result = await errorOr.ConfigureAwait(false);
 

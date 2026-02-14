@@ -18,5 +18,5 @@ public readonly partial record struct ErrorOr<TValue>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors" /> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="errors" /> is an empty array.</exception>
     public static implicit operator ErrorOr<TValue>(Error[] errors) =>
-        new([.. Throw.IfNull(errors)]);
+        new([.. Guard.NotNull(errors)]);
 }

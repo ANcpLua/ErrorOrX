@@ -176,7 +176,7 @@ public static class ErrorOrOrExtensions
         this TValue? value,
         Func<Error> errorFactory) where TValue : class
     {
-        Throw.IfNull(errorFactory);
+        Guard.NotNull(errorFactory);
         return value is not null ? value : errorFactory();
     }
 
@@ -188,7 +188,7 @@ public static class ErrorOrOrExtensions
         this TValue? value,
         Func<Error> errorFactory) where TValue : struct
     {
-        Throw.IfNull(errorFactory);
+        Guard.NotNull(errorFactory);
         return value.HasValue ? value.Value : errorFactory();
     }
 

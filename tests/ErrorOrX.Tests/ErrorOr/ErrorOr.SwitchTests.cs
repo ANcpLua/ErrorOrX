@@ -19,7 +19,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException();
+        static void ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class SwitchTests
         action.Should().NotThrow();
         return;
 
-        static void ThenAction(Person _) => Throw.UnreachableException();
+        static void ThenAction(Person _) => throw new UnreachableException();
 
         void ElsesAction(IReadOnlyList<Error> errors) => errors.Should().BeEquivalentTo(errorOrPerson.Errors);
     }
@@ -59,7 +59,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void OnFirstErrorAction(Error _) => Throw.UnreachableException();
+        static void OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class SwitchTests
         action.Should().NotThrow();
         return;
 
-        static void ThenAction(Person _) => Throw.UnreachableException();
+        static void ThenAction(Person _) => throw new UnreachableException();
 
         void OnFirstErrorAction(Error errors)
             => errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
@@ -101,7 +101,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void OnFirstErrorAction(Error _) => Throw.UnreachableException();
+        static void OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class SwitchTests
 
         void ThenAction(Person person) => person.Should().BeEquivalentTo(errorOrPerson.Value);
 
-        static void ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException();
+        static void ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     private sealed record Person(string Name);

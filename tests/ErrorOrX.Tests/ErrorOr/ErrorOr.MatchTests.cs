@@ -23,7 +23,7 @@ public class MatchTests
             return "Nice";
         }
 
-        static string ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException<string>();
+        static string ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class MatchTests
         action.Should().NotThrow().Subject.Should().Be("Nice");
         return;
 
-        static string ThenAction(Person _) => Throw.UnreachableException<string>();
+        static string ThenAction(Person _) => throw new UnreachableException();
 
         string ElsesAction(IReadOnlyList<Error> errors)
         {
@@ -71,7 +71,7 @@ public class MatchTests
             return "Nice";
         }
 
-        static string OnFirstErrorAction(Error _) => Throw.UnreachableException<string>();
+        static string OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class MatchTests
         action.Should().NotThrow().Subject.Should().Be("Nice");
         return;
 
-        static string ThenAction(Person _) => Throw.UnreachableException<string>();
+        static string ThenAction(Person _) => throw new UnreachableException();
 
         string OnFirstErrorAction(Error errors)
         {
@@ -121,7 +121,7 @@ public class MatchTests
             return "Nice";
         }
 
-        static string OnFirstErrorAction(Error _) => Throw.UnreachableException<string>();
+        static string OnFirstErrorAction(Error _) => throw new UnreachableException();
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class MatchTests
             return "Nice";
         }
 
-        static string ElsesAction(IReadOnlyList<Error> _) => Throw.UnreachableException<string>();
+        static string ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
     }
 
     private sealed record Person(string Name);

@@ -12,6 +12,7 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <UseRoslynUtilities>true</UseRoslynUtilities>
     </PropertyGroup>
 
     <ItemGroup>

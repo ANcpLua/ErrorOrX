@@ -25,7 +25,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
 
     internal ErrorOr(IReadOnlyList<Error> errors)
     {
-        _ = Throw.IfNull(errors);
+        _ = Guard.NotNull(errors);
 
         if (errors.Count is 0)
         {
@@ -37,7 +37,7 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         _errors = [.. errors];
     }
 
-    private ErrorOr(TValue value) => _value = Throw.IfNull(value);
+    private ErrorOr(TValue value) => _value = Guard.NotNull(value);
 
     /// <summary>
     ///     Gets a value indicating whether the state is success (no errors).
