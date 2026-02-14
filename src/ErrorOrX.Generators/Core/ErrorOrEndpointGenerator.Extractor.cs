@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;

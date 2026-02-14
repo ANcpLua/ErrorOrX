@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;

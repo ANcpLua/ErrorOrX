@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace ErrorOr.Generators.Emitters;
 
 /// <summary>

@@ -33,7 +33,7 @@ internal static class HttpVerbExtensions
             HttpVerb.Head => "HEAD",
             HttpVerb.Options => "OPTIONS",
             HttpVerb.Trace => "TRACE",
-            _ => throw new System.ArgumentOutOfRangeException(nameof(verb), verb, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, null)
         };
     }
 
@@ -52,7 +52,7 @@ internal static class HttpVerbExtensions
             HttpVerb.Head => "MapMethods",
             HttpVerb.Options => "MapMethods",
             HttpVerb.Trace => "MapMethods",
-            _ => throw new System.ArgumentOutOfRangeException(nameof(verb), verb, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, null)
         };
     }
 
@@ -67,7 +67,7 @@ internal static class HttpVerbExtensions
     /// <summary>
     ///     Parses an attribute name to HttpVerb, returning null for unrecognized attributes.
     /// </summary>
-    public static HttpVerb? TryParseFromAttribute(string attrName, System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.TypedConstant> args)
+    public static HttpVerb? TryParseFromAttribute(string attrName, ImmutableArray<Microsoft.CodeAnalysis.TypedConstant> args)
     {
         return attrName switch
         {

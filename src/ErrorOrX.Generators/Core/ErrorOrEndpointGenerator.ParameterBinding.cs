@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ANcpLua.Roslyn.Utilities.Models;

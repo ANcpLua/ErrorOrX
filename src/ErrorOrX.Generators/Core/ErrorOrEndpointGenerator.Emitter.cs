@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Text;
 using ErrorOr.Analyzers;
 using ErrorOr.Generators.Emitters;
 using Microsoft.CodeAnalysis;

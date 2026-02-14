@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
@@ -260,7 +259,7 @@ internal static class ApiVersioningValidator
     {
         var result = version.MinorVersion.HasValue
             ? $"{version.MajorVersion}.{version.MinorVersion}"
-            : version.MajorVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            : version.MajorVersion.ToString(CultureInfo.InvariantCulture);
 
         if (!string.IsNullOrEmpty(version.Status))
         {

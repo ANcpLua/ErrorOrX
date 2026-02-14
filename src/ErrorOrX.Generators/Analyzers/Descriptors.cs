@@ -18,9 +18,6 @@ public static class Descriptors
     // Help link URLs for AOT diagnostics
     private const string TrimWarningsUrl = "https://learn.microsoft.com/dotnet/core/deploying/trimming/fixing-warnings";
 
-    private const string IntrinsicApisUrl =
-        "https://learn.microsoft.com/dotnet/core/deploying/trimming/trimming-intrinsic";
-
     // ============================================================================
     // EOE001-007: Core validation
     // ============================================================================
@@ -452,78 +449,6 @@ public static class Descriptors
     // ============================================================================
     // EOE034-038: AOT safety (formerly AOT001-AOT005)
     // ============================================================================
-
-    /// <summary>
-    ///     Activator.CreateInstance is not AOT-compatible.
-    ///     Use factory methods, explicit construction, or annotate with DynamicallyAccessedMembers.
-    /// </summary>
-    public static readonly DiagnosticDescriptor ActivatorCreateInstance = new(
-        "EOE034",
-        "Activator.CreateInstance is not AOT-safe",
-        "Activator.CreateInstance<{0}>() uses reflection and is not compatible with NativeAOT. " +
-        "Use explicit construction, factory methods, or if the Type is a parameter, annotate it with " +
-        "[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructors)].",
-        Category,
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: TrimWarningsUrl);
-
-    /// <summary>
-    ///     Type.GetType(string) with dynamic or case-insensitive lookup is not AOT-compatible.
-    ///     String literals are safe because the trimmer can analyze them at compile-time.
-    ///     Dynamic lookups or case-insensitive searches prevent the trimmer from knowing which types to preserve.
-    /// </summary>
-    public static readonly DiagnosticDescriptor TypeGetType = new(
-        "EOE035",
-        "Type.GetType is not AOT-safe",
-        "Type.GetType with {0} prevents the trimmer from statically analyzing which types to preserve. " +
-        "Use typeof() for compile-time type references, or use a string literal without case-insensitive search. " +
-        "For unavoidable dynamic patterns, annotate with [RequiresUnreferencedCode].",
-        Category,
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: IntrinsicApisUrl);
-
-    /// <summary>
-    ///     Reflection over type members is not AOT-compatible.
-    ///     Members may be trimmed and unavailable at runtime.
-    ///     Annotate the type parameter with [DynamicallyAccessedMembers] using the appropriate members flag.
-    /// </summary>
-    public static readonly DiagnosticDescriptor ReflectionOverMembers = new(
-        "EOE036",
-        "Reflection over members is not AOT-safe",
-        "typeof({0}).{1}() uses reflection and is not compatible with NativeAOT. " +
-        "Annotate the type parameter with [DynamicallyAccessedMembers({2})] or use source generators.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: TrimWarningsUrl);
-
-    /// <summary>
-    ///     Expression.Compile() generates code at runtime.
-    ///     This is not supported in NativeAOT.
-    /// </summary>
-    public static readonly DiagnosticDescriptor ExpressionCompile = new(
-        "EOE037",
-        "Expression.Compile is not AOT-safe",
-        "Expression.Compile() generates code at runtime and is not compatible with NativeAOT. Use compiled delegates or source generators.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: TrimWarningsUrl);
-
-    /// <summary>
-    ///     The 'dynamic' keyword uses runtime binding.
-    ///     This is not supported in NativeAOT.
-    /// </summary>
-    public static readonly DiagnosticDescriptor DynamicKeyword = new(
-        "EOE038",
-        "'dynamic' is not AOT-safe",
-        "The 'dynamic' keyword uses runtime binding and is not compatible with NativeAOT. Use strongly-typed code instead.",
-        Category,
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: TrimWarningsUrl);
 
     /// <summary>
     ///     Parameter has validation attributes from System.ComponentModel.DataAnnotations.

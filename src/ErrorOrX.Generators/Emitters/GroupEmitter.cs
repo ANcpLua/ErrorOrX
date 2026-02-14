@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Text;
 using static ErrorOr.Generators.GroupAggregator;
 
 namespace ErrorOr.Generators.Emitters;

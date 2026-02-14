@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

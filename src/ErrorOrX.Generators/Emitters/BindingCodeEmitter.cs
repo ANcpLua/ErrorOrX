@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace ErrorOr.Generators.Emitters;
 
 internal static class BindingCodeEmitter

@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
@@ -35,10 +34,7 @@ internal static class IncrementalProviderExtensions
                         return right;
                     }
 
-                    var builder = ImmutableArray.CreateBuilder<T>(left.Length + right.Length);
-                    builder.AddRange(left.AsImmutableArray());
-                    builder.AddRange(right.AsImmutableArray());
-                    return new EquatableArray<T>(builder.ToImmutable());
+                    return new EquatableArray<T>([.. left.AsImmutableArray(), .. right.AsImmutableArray()]);
                 });
         }
 
