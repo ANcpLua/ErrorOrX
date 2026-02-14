@@ -22,7 +22,7 @@
     <PropertyGroup>
         <ANcpLuaAnalyzersVersion>1.16.0</ANcpLuaAnalyzersVersion>
         <MeziantouAnalyzerVersion>2.0.301</MeziantouAnalyzerVersion>
-        <ANcpLuaRoslynUtilitiesVersion>1.38.1</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.38.2</ANcpLuaRoslynUtilitiesVersion>
         <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0</MicrosoftCodeAnalysisAnalyzersVersion>
         <MicrosoftCodeAnalysisCSharpVersion>5.0.0</MicrosoftCodeAnalysisCSharpVersion>
         <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
