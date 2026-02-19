@@ -5,6 +5,9 @@ updates:
     schedule:
       interval: "weekly"
       day: "wednesday"
+    ignore:
+      - dependency-name: "dotnet-sdk"
+        versions: [">=11.0.0-0"]
 
   - package-ecosystem: "nuget"
     directory: "/"
