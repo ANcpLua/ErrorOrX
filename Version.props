@@ -36,7 +36,7 @@
         <VerifyXunitV3Version>31.12.5</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
         <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
-        <AwesomeAssertionsVersion>9.3.0</AwesomeAssertionsVersion>
+        <AwesomeAssertionsVersion>9.4.0</AwesomeAssertionsVersion>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.3</MicrosoftAspNetCoreOpenApiVersion>
         <MicrosoftAspNetCoreMvcTestingVersion>10.0.3</MicrosoftAspNetCoreMvcTestingVersion>
         <MicrosoftAspNetCoreTestHostVersion>10.0.3</MicrosoftAspNetCoreTestHostVersion>
