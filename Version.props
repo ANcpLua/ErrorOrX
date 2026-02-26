@@ -33,7 +33,7 @@
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.6</JonSkeetRoslynAnalyzersVersion>
         <MicrosoftSourceLinkGitHubVersion>10.0.103</MicrosoftSourceLinkGitHubVersion>
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
-        <VerifyXunitV3Version>31.13.1</VerifyXunitV3Version>
+        <VerifyXunitV3Version>31.13.2</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
         <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
         <AwesomeAssertionsVersion>9.4.0</AwesomeAssertionsVersion>
