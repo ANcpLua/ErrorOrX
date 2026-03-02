@@ -24,8 +24,13 @@
             IDE feedback (squiggles as you type), which IIncrementalGenerator cannot deliver.
             Splitting into separate assemblies would double packaging complexity and break shared
             code (Descriptors.cs, RouteValidator, WellKnownTypes) used by both.
+
+            ERP022: ErrorProne.NET flags exception-swallowing exit points in content files from
+            ANcpLua.Roslyn.Utilities.Sources (AsyncBatchingWorkQueue, IncrementalValuesProviderExtensions).
+            These are deliberate try/catch patterns in resilient infrastructure code.
+            .editorconfig cannot suppress diagnostics in NuGet cache paths.
         -->
-        <NoWarn>$(NoWarn);NU5128;RS1038</NoWarn>
+        <NoWarn>$(NoWarn);NU5128;RS1038;ERP022</NoWarn>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>false</IncludeSymbols>
