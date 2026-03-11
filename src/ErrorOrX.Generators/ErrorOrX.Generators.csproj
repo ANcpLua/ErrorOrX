@@ -36,6 +36,16 @@
         <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
 
+    <!--
+        ANcpLua.Roslyn.Utilities.Sources 1.45.0 ships async extensions requiring
+        IAsyncEnumerable/Channels, unavailable in netstandard2.0. Exclude until
+        the upstream package gates these files by TFM.
+    -->
+    <ItemGroup>
+        <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Async/AsyncSequenceExtensions.cs"/>
+        <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Async/ParallelAsyncExtensions.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <Using Include="ANcpLua.Roslyn.Utilities"/>
     </ItemGroup>
