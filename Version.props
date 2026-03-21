@@ -2,7 +2,7 @@
     <!-- Centralized semantic version properties -->
     <PropertyGroup>
         <!-- Major.Minor.Patch -->
-        <VersionPrefix>3.6.1</VersionPrefix>
+        <VersionPrefix>3.6.6</VersionPrefix>
 
         <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
         <VersionSuffix></VersionSuffix>
@@ -38,8 +38,8 @@
         <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
         <AwesomeAssertionsVersion>9.4.0</AwesomeAssertionsVersion>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.5</MicrosoftAspNetCoreOpenApiVersion>
-        <MicrosoftAspNetCoreMvcTestingVersion>10.0.4</MicrosoftAspNetCoreMvcTestingVersion>
-        <MicrosoftAspNetCoreTestHostVersion>10.0.4</MicrosoftAspNetCoreTestHostVersion>
+        <MicrosoftAspNetCoreMvcTestingVersion>10.0.5</MicrosoftAspNetCoreMvcTestingVersion>
+        <MicrosoftAspNetCoreTestHostVersion>10.0.5</MicrosoftAspNetCoreTestHostVersion>
         <AspVersioningHttpVersion>8.1.1</AspVersioningHttpVersion>
     </PropertyGroup>
 </Project>
