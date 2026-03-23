@@ -1,7 +1,7 @@
 namespace ErrorOrX.Sample;
 
 /// <summary>
-///     Todo API demonstrating ErrorOr endpoints with automatic error inference.
+///     Demonstrates ErrorOr endpoints with automatic error inference.
 /// </summary>
 /// <remarks>
 ///     <para>
