@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -129,10 +127,8 @@ internal readonly record struct EndpointParameter(
 
 /// <summary>
 ///     Raw metadata extracted from a method parameter for binding classification.
-///     Not a record struct: contains IParameterSymbol which uses reference equality.
 /// </summary>
 internal readonly struct ParameterMeta(
-    IParameterSymbol symbol,
     string name,
     string typeFqn,
     RoutePrimitiveKind? routeKind,
@@ -143,9 +139,9 @@ internal readonly struct ParameterMeta(
     string? collectionItemTypeFqn,
     RoutePrimitiveKind? collectionItemPrimitiveKind,
     CustomBindingMethod customBinding,
+    EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
     EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
 {
-    public IParameterSymbol Symbol { get; } = symbol;
     public string Name { get; } = name;
     public string TypeFqn { get; } = typeFqn;
     public RoutePrimitiveKind? RouteKind { get; } = routeKind;
@@ -156,6 +152,7 @@ internal readonly struct ParameterMeta(
     public string? CollectionItemTypeFqn { get; } = collectionItemTypeFqn;
     public RoutePrimitiveKind? CollectionItemPrimitiveKind { get; } = collectionItemPrimitiveKind;
     public CustomBindingMethod CustomBinding { get; } = customBinding;
+    public EmptyBodyBehavior EmptyBodyBehavior { get; } = emptyBodyBehavior;
     public EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties { get; } = validatableProperties;
 
     public bool HasFromBody => Flags.HasFlag(ParameterFlags.FromBody);
@@ -216,10 +213,8 @@ internal readonly record struct ErrorOrReturnTypeInfo(
 
 /// <summary>
 ///     Pre-computed method-level analysis shared across multiple HTTP method attributes.
-///     Not a record struct: contains IMethodSymbol which uses reference equality.
 /// </summary>
 internal readonly struct MethodAnalysis(
-    IMethodSymbol method,
     ErrorOrReturnTypeInfo returnInfo,
     EquatableArray<string> inferredErrorTypeNames,
     EquatableArray<CustomErrorInfo> inferredCustomErrors,
@@ -227,7 +222,6 @@ internal readonly struct MethodAnalysis(
     bool isAcceptedResponse,
     MiddlewareInfo middleware)
 {
-    public IMethodSymbol Method { get; } = method;
     public ErrorOrReturnTypeInfo ReturnInfo { get; } = returnInfo;
     public EquatableArray<string> InferredErrorTypeNames { get; } = inferredErrorTypeNames;
     public EquatableArray<CustomErrorInfo> InferredCustomErrors { get; } = inferredCustomErrors;

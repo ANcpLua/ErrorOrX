@@ -52,17 +52,13 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var kind = SuccessKind.Payload;
 
-        if (context.SuccessMarker is not null &&
-            innerType.IsEqualTo(context.SuccessMarker))
+        if (context.MatchesType(innerType, WellKnownTypes.Success))
             kind = SuccessKind.Success;
-        else if (context.CreatedMarker is not null &&
-                 innerType.IsEqualTo(context.CreatedMarker))
+        else if (context.MatchesType(innerType, WellKnownTypes.CreatedMarker))
             kind = SuccessKind.Created;
-        else if (context.UpdatedMarker is not null &&
-                 innerType.IsEqualTo(context.UpdatedMarker))
+        else if (context.MatchesType(innerType, WellKnownTypes.Updated))
             kind = SuccessKind.Updated;
-        else if (context.DeletedMarker is not null &&
-                 innerType.IsEqualTo(context.DeletedMarker))
+        else if (context.MatchesType(innerType, WellKnownTypes.Deleted))
             kind = SuccessKind.Deleted;
 
         if (TryUnwrapAsyncEnumerable(innerType, context, out var elementType))
@@ -124,8 +120,7 @@ public sealed partial class ErrorOrEndpointGenerator
         [NotNullWhen(true)] out ITypeSymbol? elementType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
-            context.IAsyncEnumerableOfT is not null &&
-            named.ConstructedFrom.IsEqualTo(context.IAsyncEnumerableOfT))
+            context.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.IAsyncEnumerableT))
         {
             elementType = named.TypeArguments[0];
             return true;
@@ -141,8 +136,7 @@ public sealed partial class ErrorOrEndpointGenerator
         [NotNullWhen(true)] out ITypeSymbol? dataType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
-            context.SseItemOfT is not null &&
-            named.ConstructedFrom.IsEqualTo(context.SseItemOfT))
+            context.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.SseItemT))
         {
             dataType = named.TypeArguments[0];
             return true;
@@ -158,8 +152,7 @@ public sealed partial class ErrorOrEndpointGenerator
         [NotNullWhen(true)] out INamedTypeSymbol? errorOrType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
-            context.ErrorOrOfT is not null &&
-            named.ConstructedFrom.IsEqualTo(context.ErrorOrOfT))
+            context.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.ErrorOrT))
         {
             errorOrType = named;
             return true;
@@ -193,8 +186,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var results = new List<ProducesErrorInfo>();
 
         foreach (var attr in method.GetAttributes())
-            if (context.ProducesErrorAttribute is not null &&
-                attr.AttributeClass?.IsEqualTo(context.ProducesErrorAttribute) == true &&
+            if (context.MatchesType(attr.AttributeClass, WellKnownTypes.ProducesErrorAttribute) &&
                 attr.ConstructorArguments is [{ Value: int statusCode }, ..])
                 results.Add(new ProducesErrorInfo(statusCode));
 
@@ -208,9 +200,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static bool HasAcceptedResponseAttribute(ISymbol method, ErrorOrContext context)
     {
-        return context.AcceptedResponseAttribute is { } attr
-            ? method.HasAttribute(attr)
-            : method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
+        return context.HasAttribute(method, WellKnownTypes.AcceptedResponseAttribute);
     }
 
     private static SyntaxNode? GetMethodBody(ISymbol method)
@@ -372,13 +362,11 @@ public sealed partial class ErrorOrEndpointGenerator
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes)
     {
-        if (context.ReturnsErrorAttribute is null) return false;
-
         var foundAny = false;
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass?.IsEqualTo(context.ReturnsErrorAttribute) != true) continue;
+            if (!context.MatchesType(attr.AttributeClass, WellKnownTypes.ReturnsErrorAttribute)) continue;
 
             var args = attr.ConstructorArguments;
             if (args.Length < 2) continue;
@@ -554,8 +542,8 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
-        if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol || context.Error is null ||
-            !symbol.ContainingType.IsEqualTo(context.Error))
+        if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol ||
+            !context.MatchesType(symbol.ContainingType, WellKnownTypes.ErrorStruct))
             return false;
 
         factoryName = symbol.Name;
@@ -603,8 +591,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static AuthInfo TryExtractAuth(
         AttributeData attr, ISymbol attrClass, ErrorOrContext context, AuthInfo current)
     {
-        if (context.AuthorizeAttribute is not null &&
-            attrClass.IsEqualTo(context.AuthorizeAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.AuthorizeAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             policy ??= attr.NamedArguments.FirstOrDefault(static a => a.Key == "Policy").Value.Value as string;
@@ -623,8 +610,7 @@ public sealed partial class ErrorOrEndpointGenerator
             };
         }
 
-        if (context.AllowAnonymousAttribute is not null &&
-            attrClass.IsEqualTo(context.AllowAnonymousAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.AllowAnonymousAttribute))
             return current with
             {
                 AllowAnonymous = true
@@ -636,8 +622,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static RateLimitInfo TryExtractRateLimit(
         AttributeData attr, ISymbol attrClass, ErrorOrContext context, RateLimitInfo current)
     {
-        if (context.EnableRateLimitingAttribute is not null &&
-            attrClass.IsEqualTo(context.EnableRateLimitingAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.EnableRateLimitingAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             return current with
@@ -647,8 +632,7 @@ public sealed partial class ErrorOrEndpointGenerator
             };
         }
 
-        if (context.DisableRateLimitingAttribute is not null &&
-            attrClass.IsEqualTo(context.DisableRateLimitingAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.DisableRateLimitingAttribute))
             return current with
             {
                 Disabled = true
@@ -660,8 +644,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static OutputCacheInfo TryExtractOutputCache(
         AttributeData attr, ISymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
     {
-        if (context.OutputCacheAttribute is null ||
-            !attrClass.IsEqualTo(context.OutputCacheAttribute))
+        if (!context.MatchesType(attrClass, WellKnownTypes.OutputCacheAttribute))
             return current;
 
         var result = current with
@@ -689,8 +672,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static CorsInfo TryExtractCors(
         AttributeData attr, ISymbol attrClass, ErrorOrContext context, CorsInfo current)
     {
-        if (context.EnableCorsAttribute is not null &&
-            attrClass.IsEqualTo(context.EnableCorsAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.EnableCorsAttribute))
         {
             var policy = attr.ConstructorArguments is [{ Value: string p }] ? p : null;
             return current with
@@ -700,8 +682,7 @@ public sealed partial class ErrorOrEndpointGenerator
             };
         }
 
-        if (context.DisableCorsAttribute is not null &&
-            attrClass.IsEqualTo(context.DisableCorsAttribute))
+        if (context.MatchesType(attrClass, WellKnownTypes.DisableCorsAttribute))
             return current with
             {
                 Disabled = true
@@ -754,16 +735,14 @@ public sealed partial class ErrorOrEndpointGenerator
             if (attr.AttributeClass is not { } attrClass) continue;
 
             // Check for [ApiVersionNeutral]
-            if (context.ApiVersionNeutralAttribute is not null &&
-                attrClass.IsEqualTo(context.ApiVersionNeutralAttribute))
+            if (context.MatchesType(attrClass, WellKnownTypes.ApiVersionNeutralAttribute))
             {
                 isVersionNeutral = true;
                 continue;
             }
 
             // Check for [ApiVersion(...)]
-            if (context.ApiVersionAttribute is not null &&
-                attrClass.IsEqualTo(context.ApiVersionAttribute))
+            if (context.MatchesType(attrClass, WellKnownTypes.ApiVersionAttribute))
             {
                 var versionInfo = ParseApiVersionAttribute(attr);
                 if (versionInfo.HasValue) supportedVersions.Add(versionInfo.Value);
@@ -781,8 +760,7 @@ public sealed partial class ErrorOrEndpointGenerator
             if (attr.AttributeClass is not { } attrClass) continue;
 
             // Check for [MapToApiVersion(...)]
-            if (context.MapToApiVersionAttribute is not null &&
-                attrClass.IsEqualTo(context.MapToApiVersionAttribute))
+            if (context.MatchesType(attrClass, WellKnownTypes.MapToApiVersionAttribute))
             {
                 var versionInfo = ParseApiVersionAttribute(attr);
                 if (versionInfo.HasValue) mappedVersions.Add(versionInfo.Value);
@@ -873,8 +851,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (attr.AttributeClass is not { } attrClass) continue;
 
-            if (context.ApiVersionAttribute is not null &&
-                attrClass.IsEqualTo(context.ApiVersionAttribute) &&
+            if (context.MatchesType(attrClass, WellKnownTypes.ApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
                 versions.Add(versionString);
         }
@@ -896,8 +873,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (attr.AttributeClass is not { } attrClass) continue;
 
-            if (context.MapToApiVersionAttribute is not null &&
-                attrClass.IsEqualTo(context.MapToApiVersionAttribute) &&
+            if (context.MatchesType(attrClass, WellKnownTypes.MapToApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
                 versions.Add(versionString);
         }
@@ -914,15 +890,12 @@ public sealed partial class ErrorOrEndpointGenerator
         // RouteGroup is only applied at class level
         if (method.ContainingType is not { } containingType) return default;
 
-        // If RouteGroupAttribute is not yet emitted/available, return default
-        if (context.RouteGroupAttribute is null) return default;
-
         var attrs = containingType.GetAttributes();
         foreach (var attr in attrs)
         {
             if (attr.AttributeClass is not { } attrClass) continue;
 
-            if (!attrClass.IsEqualTo(context.RouteGroupAttribute)) continue;
+            if (!context.MatchesType(attrClass, WellKnownTypes.RouteGroupAttribute)) continue;
 
             // [RouteGroup(string path)]
             // Optional: ApiName named argument

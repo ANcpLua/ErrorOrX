@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ANcpLua.Roslyn.Utilities.Contexts;
 using Microsoft.CodeAnalysis;
 
@@ -7,253 +8,94 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 {
     public ErrorOrContext(Compilation compilation)
     {
-        FromBodyAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromBodyAttribute);
-        FromServicesAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromServicesAttribute);
-        FromRouteAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromRouteAttribute);
-        FromQueryAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromQueryAttribute);
-        FromHeaderAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromHeaderAttribute);
-        FromFormAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromFormAttribute);
-
-        ProducesErrorAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ProducesErrorAttribute);
-        AcceptedResponseAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AcceptedResponseAttribute);
-        ReturnsErrorAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ReturnsErrorAttribute);
-        ErrorOrOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorOrT)?.ConstructedFrom;
-        Error = compilation.GetBestTypeByMetadataName(WellKnownTypes.ErrorStruct);
-
-        FromKeyedServicesAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.FromKeyedServicesAttribute);
-        AsParametersAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AsParametersAttribute);
-        FormFileCollection = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormFileCollection);
-        FormCollection = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormCollection);
-        FormFile = compilation.GetBestTypeByMetadataName(WellKnownTypes.FormFile);
-        HttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.HttpContext);
-        BindableFromHttpContext = compilation.GetBestTypeByMetadataName(WellKnownTypes.BindableFromHttpContext);
-        ParameterInfo = compilation.GetBestTypeByMetadataName(WellKnownTypes.ParameterInfo);
-        SseItemOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.SseItemT)?.ConstructedFrom;
-
-        CancellationToken = compilation.GetBestTypeByMetadataName(WellKnownTypes.CancellationToken);
-
-        SuccessMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Success);
-        CreatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.CreatedMarker);
-        UpdatedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Updated);
-        DeletedMarker = compilation.GetBestTypeByMetadataName(WellKnownTypes.Deleted);
-
+        _compilation = compilation;
         Awaitable = new AwaitableContext(compilation);
-
-        ListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ListT)?.ConstructedFrom;
-        IListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IListT)?.ConstructedFrom;
-        IEnumerableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IEnumerableT)?.ConstructedFrom;
-        IAsyncEnumerableOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IAsyncEnumerableT)
-            ?.ConstructedFrom;
-        IReadOnlyListOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.IReadOnlyListT)
-            ?.ConstructedFrom;
-        ICollectionOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ICollectionT)?.ConstructedFrom;
-        HashSetOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.HashSetT)?.ConstructedFrom;
-
-        Guid = compilation.GetBestTypeByMetadataName(WellKnownTypes.Guid);
-        DateTime = compilation.GetBestTypeByMetadataName(WellKnownTypes.DateTime);
-        DateTimeOffset = compilation.GetBestTypeByMetadataName(WellKnownTypes.DateTimeOffset);
-        DateOnly = compilation.GetBestTypeByMetadataName(WellKnownTypes.DateOnly);
-        TimeOnly = compilation.GetBestTypeByMetadataName(WellKnownTypes.TimeOnly);
-        TimeSpan = compilation.GetBestTypeByMetadataName(WellKnownTypes.TimeSpan);
-
-        ReadOnlySpanOfT = compilation.GetBestTypeByMetadataName(WellKnownTypes.ReadOnlySpanT)?.ConstructedFrom;
-        IFormatProvider = compilation.GetBestTypeByMetadataName(WellKnownTypes.IFormatProvider);
-        Stream = compilation.GetBestTypeByMetadataName(WellKnownTypes.Stream);
-        PipeReader = compilation.GetBestTypeByMetadataName(WellKnownTypes.PipeReader);
-
-        AuthorizeAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AuthorizeAttribute);
-        AllowAnonymousAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.AllowAnonymousAttribute);
-        EnableRateLimitingAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.EnableRateLimitingAttribute);
-        DisableRateLimitingAttribute =
-            compilation.GetBestTypeByMetadataName(WellKnownTypes.DisableRateLimitingAttribute);
-        OutputCacheAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.OutputCacheAttribute);
-        EnableCorsAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.EnableCorsAttribute);
-        DisableCorsAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.DisableCorsAttribute);
-
-        ValidationAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ValidationAttribute);
-        IValidatableObject = compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableObject);
-
-        IValidatableInfoResolverSymbol =
-            compilation.GetBestTypeByMetadataName(WellKnownTypes.IValidatableInfoResolver);
-
-        ApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionAttribute);
-        ApiVersionNeutralAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.ApiVersionNeutralAttribute);
-        MapToApiVersionAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.MapToApiVersionAttribute);
-
-        RouteGroupAttribute = compilation.GetBestTypeByMetadataName(WellKnownTypes.RouteGroupAttribute);
     }
 
-    private INamedTypeSymbol? FromBodyAttribute { get; }
-    private INamedTypeSymbol? FromServicesAttribute { get; }
-    private INamedTypeSymbol? FromRouteAttribute { get; }
-    private INamedTypeSymbol? FromQueryAttribute { get; }
-    private INamedTypeSymbol? FromHeaderAttribute { get; }
-    private INamedTypeSymbol? FromFormAttribute { get; }
-
-    public INamedTypeSymbol? SuccessMarker { get; }
-    public INamedTypeSymbol? CreatedMarker { get; }
-    public INamedTypeSymbol? UpdatedMarker { get; }
-    public INamedTypeSymbol? DeletedMarker { get; }
+    private readonly Compilation _compilation;
 
     public AwaitableContext Awaitable { get; }
-
-    public INamedTypeSymbol? ListOfT { get; }
-    public INamedTypeSymbol? IListOfT { get; }
-    public INamedTypeSymbol? IEnumerableOfT { get; }
-    public INamedTypeSymbol? IAsyncEnumerableOfT { get; }
-    public INamedTypeSymbol? IReadOnlyListOfT { get; }
-    public INamedTypeSymbol? ICollectionOfT { get; }
-    public INamedTypeSymbol? HashSetOfT { get; }
-    public INamedTypeSymbol? SseItemOfT { get; }
-    public INamedTypeSymbol? ErrorOrOfT { get; }
-    public INamedTypeSymbol? Error { get; }
-
-    public INamedTypeSymbol? Guid { get; }
-    public INamedTypeSymbol? DateTime { get; }
-    public INamedTypeSymbol? DateTimeOffset { get; }
-    public INamedTypeSymbol? DateOnly { get; }
-    public INamedTypeSymbol? TimeOnly { get; }
-    public INamedTypeSymbol? TimeSpan { get; }
-
-    public INamedTypeSymbol? ReadOnlySpanOfT { get; }
-    public INamedTypeSymbol? IFormatProvider { get; }
-    private INamedTypeSymbol? Stream { get; }
-    private INamedTypeSymbol? PipeReader { get; }
-
-    public INamedTypeSymbol? ProducesErrorAttribute { get; }
-    public INamedTypeSymbol? AcceptedResponseAttribute { get; }
-    public INamedTypeSymbol? ReturnsErrorAttribute { get; }
-
-    private INamedTypeSymbol? FromKeyedServicesAttribute { get; }
-    private INamedTypeSymbol? AsParametersAttribute { get; }
-    private INamedTypeSymbol? FormFileCollection { get; }
-    private INamedTypeSymbol? FormCollection { get; }
-    private INamedTypeSymbol? FormFile { get; }
-    private INamedTypeSymbol? HttpContext { get; }
-    public INamedTypeSymbol? BindableFromHttpContext { get; }
-    private INamedTypeSymbol? ParameterInfo { get; }
-
-    private INamedTypeSymbol? CancellationToken { get; }
-
-    public INamedTypeSymbol? AuthorizeAttribute { get; }
-    public INamedTypeSymbol? AllowAnonymousAttribute { get; }
-    public INamedTypeSymbol? EnableRateLimitingAttribute { get; }
-    public INamedTypeSymbol? DisableRateLimitingAttribute { get; }
-    public INamedTypeSymbol? OutputCacheAttribute { get; }
-    public INamedTypeSymbol? EnableCorsAttribute { get; }
-    public INamedTypeSymbol? DisableCorsAttribute { get; }
-
-    private INamedTypeSymbol? ValidationAttribute { get; }
-    private INamedTypeSymbol? IValidatableObject { get; }
-    private INamedTypeSymbol? IValidatableInfoResolverSymbol { get; }
 
     /// <summary>
     ///     Returns true if the Microsoft.Extensions.Validation package is referenced,
     ///     meaning the consumer supports .NET 10 validation infrastructure.
     /// </summary>
-    public bool HasValidationResolverSupport => IValidatableInfoResolverSymbol is not null;
-
-    public INamedTypeSymbol? ApiVersionAttribute { get; }
-    public INamedTypeSymbol? ApiVersionNeutralAttribute { get; }
-    public INamedTypeSymbol? MapToApiVersionAttribute { get; }
-
-    public INamedTypeSymbol? RouteGroupAttribute { get; }
+    public bool HasValidationResolverSupport => GetType(WellKnownTypes.IValidatableInfoResolver) is not null;
 
     /// <summary>
     ///     Returns true if the Asp.Versioning.Http package is referenced.
     /// </summary>
-    public bool HasApiVersioningSupport => ApiVersionAttribute is not null;
+    public bool HasApiVersioningSupport => GetType(WellKnownTypes.ApiVersionAttribute) is not null;
 
-    public INamedTypeSymbol? FromBody => FromBodyAttribute;
-    public INamedTypeSymbol? FromServices => FromServicesAttribute;
-    public INamedTypeSymbol? FromRoute => FromRouteAttribute;
-    public INamedTypeSymbol? FromQuery => FromQueryAttribute;
-    public INamedTypeSymbol? FromHeader => FromHeaderAttribute;
-    public INamedTypeSymbol? FromForm => FromFormAttribute;
-    public INamedTypeSymbol? FromKeyedServices => FromKeyedServicesAttribute;
-    public INamedTypeSymbol? AsParameters => AsParametersAttribute;
-
-    /// <summary>
-    ///     Packs null-presence of all INamedTypeSymbol fields into a bitmask.
-    ///     Bit N is set when the corresponding field is non-null.
-    ///     AwaitableContext is excluded (resolves Task/ValueTask which are always present and stable).
-    /// </summary>
-    private long GetNullPresenceBitmask()
+    public bool MatchesType(ISymbol? symbol, string metadataName)
     {
-        long mask = 0;
-        if (FromBodyAttribute is not null) mask |= 1L << 0;
-        if (FromServicesAttribute is not null) mask |= 1L << 1;
-        if (FromRouteAttribute is not null) mask |= 1L << 2;
-        if (FromQueryAttribute is not null) mask |= 1L << 3;
-        if (FromHeaderAttribute is not null) mask |= 1L << 4;
-        if (FromFormAttribute is not null) mask |= 1L << 5;
-        if (ProducesErrorAttribute is not null) mask |= 1L << 6;
-        if (AcceptedResponseAttribute is not null) mask |= 1L << 7;
-        if (ReturnsErrorAttribute is not null) mask |= 1L << 8;
-        if (ErrorOrOfT is not null) mask |= 1L << 9;
-        if (Error is not null) mask |= 1L << 10;
-        if (FromKeyedServicesAttribute is not null) mask |= 1L << 11;
-        if (AsParametersAttribute is not null) mask |= 1L << 12;
-        if (FormFileCollection is not null) mask |= 1L << 13;
-        if (FormCollection is not null) mask |= 1L << 14;
-        if (FormFile is not null) mask |= 1L << 15;
-        if (HttpContext is not null) mask |= 1L << 16;
-        if (BindableFromHttpContext is not null) mask |= 1L << 17;
-        if (ParameterInfo is not null) mask |= 1L << 18;
-        if (SseItemOfT is not null) mask |= 1L << 19;
-        if (CancellationToken is not null) mask |= 1L << 20;
-        if (SuccessMarker is not null) mask |= 1L << 21;
-        if (CreatedMarker is not null) mask |= 1L << 22;
-        if (UpdatedMarker is not null) mask |= 1L << 23;
-        if (DeletedMarker is not null) mask |= 1L << 24;
-        if (ListOfT is not null) mask |= 1L << 25;
-        if (IListOfT is not null) mask |= 1L << 26;
-        if (IEnumerableOfT is not null) mask |= 1L << 27;
-        if (IAsyncEnumerableOfT is not null) mask |= 1L << 28;
-        if (IReadOnlyListOfT is not null) mask |= 1L << 29;
-        if (ICollectionOfT is not null) mask |= 1L << 30;
-        if (HashSetOfT is not null) mask |= 1L << 31;
-        if (Guid is not null) mask |= 1L << 32;
-        if (DateTime is not null) mask |= 1L << 33;
-        if (DateTimeOffset is not null) mask |= 1L << 34;
-        if (DateOnly is not null) mask |= 1L << 35;
-        if (TimeOnly is not null) mask |= 1L << 36;
-        if (TimeSpan is not null) mask |= 1L << 37;
-        if (ReadOnlySpanOfT is not null) mask |= 1L << 38;
-        if (IFormatProvider is not null) mask |= 1L << 39;
-        if (Stream is not null) mask |= 1L << 40;
-        if (PipeReader is not null) mask |= 1L << 41;
-        if (AuthorizeAttribute is not null) mask |= 1L << 42;
-        if (AllowAnonymousAttribute is not null) mask |= 1L << 43;
-        if (EnableRateLimitingAttribute is not null) mask |= 1L << 44;
-        if (DisableRateLimitingAttribute is not null) mask |= 1L << 45;
-        if (OutputCacheAttribute is not null) mask |= 1L << 46;
-        if (EnableCorsAttribute is not null) mask |= 1L << 47;
-        if (DisableCorsAttribute is not null) mask |= 1L << 48;
-        if (ValidationAttribute is not null) mask |= 1L << 49;
-        if (IValidatableObject is not null) mask |= 1L << 50;
-        if (IValidatableInfoResolverSymbol is not null) mask |= 1L << 51;
-        if (ApiVersionAttribute is not null) mask |= 1L << 52;
-        if (ApiVersionNeutralAttribute is not null) mask |= 1L << 53;
-        if (MapToApiVersionAttribute is not null) mask |= 1L << 54;
-        if (RouteGroupAttribute is not null) mask |= 1L << 55;
-        return mask;
+        if (symbol is not ITypeSymbol typeSymbol) return false;
+
+        if (GetType(metadataName) is { } resolvedType) return typeSymbol.IsEqualTo(resolvedType);
+
+        return MatchesMetadataName(typeSymbol, metadataName);
+    }
+
+    public bool MatchesConstructedFrom(ITypeSymbol? typeSymbol, string metadataName)
+    {
+        if (typeSymbol is not INamedTypeSymbol namedType) return false;
+
+        if (GetConstructedFrom(metadataName) is { } constructedFrom) return namedType.IsEqualTo(constructedFrom);
+
+        return MatchesMetadataName(namedType.OriginalDefinition, metadataName);
+    }
+
+    public bool HasAttribute(ISymbol symbol, string attributeMetadataName)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+            if (MatchesType(attribute.AttributeClass, attributeMetadataName))
+                return true;
+
+        return false;
+    }
+
+    public bool IsOrImplements(ITypeSymbol? type, string metadataName)
+    {
+        type = type?.UnwrapNullable();
+        if (type is null) return false;
+
+        if (GetType(metadataName) is { } resolvedType && type.IsOrImplements(resolvedType))
+            return true;
+
+        if (MatchesType(type, metadataName)) return true;
+
+        foreach (var interfaceType in type.AllInterfaces)
+            if (MatchesType(interfaceType, metadataName))
+                return true;
+
+        return false;
+    }
+
+    public bool IsOrInheritsFrom(ITypeSymbol? type, string metadataName)
+    {
+        type = type?.UnwrapNullable();
+        if (type is null) return false;
+
+        if (GetType(metadataName) is { } resolvedType && type.IsOrInheritsFrom(resolvedType))
+            return true;
+
+        for (var current = type; current is not null; current = current.BaseType)
+            if (MatchesType(current, metadataName))
+                return true;
+
+        return false;
     }
 
     public bool Equals(ErrorOrContext? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return GetNullPresenceBitmask() == other.GetNullPresenceBitmask();
+        return ReferenceEquals(_compilation, other._compilation);
     }
 
     public override bool Equals(object? obj) => Equals(obj as ErrorOrContext);
 
-    public override int GetHashCode()
-    {
-        var mask = GetNullPresenceBitmask();
-        return unchecked((int)(mask ^ (mask >> 32)));
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(_compilation);
 
     /// <summary>
     ///     Creates an incremental provider that resolves ErrorOrContext once per compilation.
@@ -276,14 +118,15 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     /// </summary>
     public bool RequiresValidation(ITypeSymbol? type)
     {
-        if (type is null || ValidationAttribute is null) return false;
+        var validationAttribute = GetType(WellKnownTypes.ValidationAttribute);
+        if (type is null || validationAttribute is null) return false;
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
             return false;
 
-        if (IValidatableObject is not null &&
-            type.AllInterfaces.Any(i => i.IsEqualTo(IValidatableObject)))
+        if (GetType(WellKnownTypes.IValidatableObject) is { } validatableObject &&
+            type.AllInterfaces.Any(i => i.IsEqualTo(validatableObject)))
             return true;
 
         var current = type;
@@ -293,12 +136,12 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
             {
                 if (member is not IPropertySymbol property) continue;
 
-                if (property.HasAttribute(ValidationAttribute)) return true;
+                if (property.HasAttribute(validationAttribute)) return true;
             }
 
             // In modern .NET, ValidationAttribute targets Parameter, so for records
             // [Required] stays on the constructor parameter, not the synthesized property.
-            if (HasValidationAttributeOnConstructorParam(namedType)) return true;
+            if (HasValidationAttributeOnConstructorParam(namedType, validationAttribute)) return true;
 
             current = namedType.BaseType;
         }
@@ -310,12 +153,14 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     ///     Checks if any constructor parameter that corresponds to a property has a validation attribute.
     ///     Handles records where attributes like [Required] target the parameter, not the property.
     /// </summary>
-    private bool HasValidationAttributeOnConstructorParam(INamedTypeSymbol namedType)
+    private static bool HasValidationAttributeOnConstructorParam(
+        INamedTypeSymbol namedType,
+        INamedTypeSymbol validationAttribute)
     {
         foreach (var ctor in namedType.InstanceConstructors)
         foreach (var param in ctor.Parameters)
         {
-            if (!param.HasAttribute(ValidationAttribute)) continue;
+            if (!param.HasAttribute(validationAttribute)) continue;
 
             // Only count if there's a matching property (record positional parameter pattern)
             foreach (var member in namedType.GetMembers(param.Name))
@@ -333,7 +178,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     /// </summary>
     public EquatableArray<ValidatablePropertyDescriptor> CollectValidatableProperties(ITypeSymbol? type)
     {
-        if (type is null || ValidationAttribute is null) return default;
+        var validationAttribute = GetType(WellKnownTypes.ValidationAttribute);
+        if (type is null || validationAttribute is null) return default;
 
         var properties = ImmutableArray.CreateBuilder<ValidatablePropertyDescriptor>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -347,10 +193,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
                 // Skip properties already collected from derived type (handles overrides/hides)
                 if (!seen.Add(property.Name)) continue;
 
-                var propertyAttrs = CollectValidationAttributes(property);
+                var propertyAttrs = CollectValidationAttributes(property, validationAttribute);
                 var ctorParam = FindMatchingConstructorParam(namedType, property.Name);
                 var paramAttrs = ctorParam is not null
-                    ? CollectValidationAttributes(ctorParam)
+                    ? CollectValidationAttributes(ctorParam, validationAttribute)
                     : default;
 
                 var attrs = MergeValidationAttributes(propertyAttrs, paramAttrs);
@@ -389,16 +235,16 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         return new EquatableArray<ValidatableAttributeInfo>([.. a.AsImmutableArray(), .. b.AsImmutableArray()]);
     }
 
-    private EquatableArray<ValidatableAttributeInfo> CollectValidationAttributes(ISymbol property)
+    private static EquatableArray<ValidatableAttributeInfo> CollectValidationAttributes(
+        ISymbol property,
+        INamedTypeSymbol validationAttribute)
     {
-        if (ValidationAttribute is null) return default;
-
         var attrs = ImmutableArray.CreateBuilder<ValidatableAttributeInfo>();
         foreach (var attrData in property.GetAttributes())
         {
             if (attrData.AttributeClass is null) continue;
 
-            if (!attrData.AttributeClass.IsOrInheritsFrom(ValidationAttribute)) continue;
+            if (!attrData.AttributeClass.IsOrInheritsFrom(validationAttribute)) continue;
 
             var ctorArgs = ImmutableArray.CreateBuilder<string>();
             foreach (var arg in attrData.ConstructorArguments) ctorArgs.Add(TypedConstantToLiteral(arg));
@@ -500,13 +346,7 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     /// <summary>Checks if the type implements IFormFile.</summary>
     public bool IsFormFile(ITypeSymbol? type)
     {
-        type = type?.UnwrapNullable();
-        if (type is null) return false;
-
-        if (FormFile is not null && type.IsOrImplements(FormFile)) return true;
-
-        return type.Name == "IFormFile" &&
-               type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
+        return IsOrImplements(type, WellKnownTypes.FormFile);
     }
 
     /// <summary>Checks if the type is IFormFileCollection or IReadOnlyList&lt;IFormFile&gt;.</summary>
@@ -515,13 +355,11 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         type = type?.UnwrapNullable();
         if (type is null) return false;
 
-        if (FormFileCollection is not null &&
-            type.IsEqualTo(FormFileCollection))
+        if (MatchesType(type, WellKnownTypes.FormFileCollection))
             return true;
 
-        if (IReadOnlyListOfT is not null &&
-            type is INamedTypeSymbol { IsGenericType: true } named &&
-            named.ConstructedFrom.IsEqualTo(IReadOnlyListOfT))
+        if (type is INamedTypeSymbol { IsGenericType: true } named &&
+            MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.IReadOnlyListT))
             if (IsFormFile(named.TypeArguments[0]))
                 return true;
 
@@ -531,69 +369,65 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     /// <summary>Checks if the type implements IFormCollection.</summary>
     public bool IsFormCollection(ITypeSymbol? type)
     {
-        type = type?.UnwrapNullable();
-        if (type is null) return false;
-
-        return FormCollection is not null && type.IsOrImplements(FormCollection);
+        return IsOrImplements(type, WellKnownTypes.FormCollection);
     }
 
     /// <summary>Checks if the type is or inherits from HttpContext.</summary>
     public bool IsHttpContext(ITypeSymbol? type)
     {
-        type = type?.UnwrapNullable();
-        if (type is null) return false;
-
-        if (HttpContext is not null && type.IsOrInheritsFrom(HttpContext)) return true;
-
-        return type.Name == "HttpContext" &&
-               type.ContainingNamespace.ToDisplayString() == "Microsoft.AspNetCore.Http";
+        return IsOrInheritsFrom(type, WellKnownTypes.HttpContext);
     }
 
     /// <summary>Checks if the type is or inherits from System.IO.Stream.</summary>
     public bool IsStream(ITypeSymbol? type)
     {
-        if (type is null) return false;
-
-        type = type.UnwrapNullable();
-        if (Stream is not null) return type.IsOrInheritsFrom(Stream);
-
-        return type.Name == "Stream" &&
-               type.ContainingNamespace.ToDisplayString() == "System.IO";
+        return IsOrInheritsFrom(type, WellKnownTypes.Stream);
     }
 
     /// <summary>Checks if the type is or inherits from System.IO.Pipelines.PipeReader.</summary>
     public bool IsPipeReader(ITypeSymbol? type)
     {
-        if (type is null) return false;
-
-        type = type.UnwrapNullable();
-        if (PipeReader is not null) return type.IsOrInheritsFrom(PipeReader);
-
-        return type.Name == "PipeReader" &&
-               type.ContainingNamespace.ToDisplayString() == "System.IO.Pipelines";
+        return IsOrInheritsFrom(type, WellKnownTypes.PipeReader);
     }
 
     /// <summary>Checks if the type is System.Threading.CancellationToken.</summary>
     public bool IsCancellationToken(ITypeSymbol? type)
     {
-        if (type is null) return false;
-
-        type = type.UnwrapNullable();
-        if (CancellationToken is not null) return type.IsEqualTo(CancellationToken);
-
-        return type.Name == "CancellationToken" &&
-               type.ContainingNamespace.ToDisplayString() == "System.Threading";
+        return MatchesType(type?.UnwrapNullable(), WellKnownTypes.CancellationToken);
     }
 
     /// <summary>Checks if the type is System.Reflection.ParameterInfo.</summary>
     public bool IsParameterInfo(ITypeSymbol? type)
     {
-        if (type is null) return false;
+        return MatchesType(type?.UnwrapNullable(), WellKnownTypes.ParameterInfo);
+    }
 
-        type = type.UnwrapNullable();
-        if (ParameterInfo is not null) return type.IsEqualTo(ParameterInfo);
+    private INamedTypeSymbol? GetType(string metadataName) => _compilation.GetBestTypeByMetadataName(metadataName);
 
-        return type.Name == "ParameterInfo" &&
-               type.ContainingNamespace.ToDisplayString() == "System.Reflection";
+    private INamedTypeSymbol? GetConstructedFrom(string metadataName) => GetType(metadataName)?.ConstructedFrom;
+
+    private static bool MatchesMetadataName(ITypeSymbol typeSymbol, string metadataName)
+    {
+        var lastDot = metadataName.LastIndexOf('.');
+        var shortName = lastDot >= 0 ? metadataName[(lastDot + 1)..] : metadataName;
+        var shortNameWithoutAttribute =
+            shortName.EndsWithOrdinal("Attribute") ? shortName[..^"Attribute".Length] : shortName;
+        var fullMetadataName = GetFullMetadataName(typeSymbol);
+
+        return fullMetadataName == metadataName ||
+               typeSymbol.MetadataName == shortName ||
+               typeSymbol.MetadataName == shortNameWithoutAttribute ||
+               typeSymbol.Name == shortName ||
+               typeSymbol.Name == shortNameWithoutAttribute;
+    }
+
+    private static string GetFullMetadataName(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.ContainingType is ITypeSymbol containingType)
+            return $"{GetFullMetadataName(containingType)}+{typeSymbol.MetadataName}";
+
+        return typeSymbol.ContainingNamespace is { IsGlobalNamespace: false } containingNamespace
+            ? $"{containingNamespace.ToDisplayString()}.{typeSymbol.MetadataName}"
+            : typeSymbol.MetadataName;
     }
 }

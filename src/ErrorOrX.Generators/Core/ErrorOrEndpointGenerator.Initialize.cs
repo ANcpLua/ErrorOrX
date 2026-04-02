@@ -314,7 +314,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
                     InferErrorTypesFromMethod(ctx, m, errorOrContext, builder, hasExplicitProducesError);
 
                 var analysis = new MethodAnalysis(
-                    m,
                     returnInfo,
                     inferredErrors,
                     customErrors,
@@ -336,7 +335,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             if (attr is null) continue;
 
             var flow = methodAnalysisFlow.Then(analysis =>
-                ProcessAttributeFlow(in analysis, attr, errorOrContext, ct));
+                ProcessAttributeFlow(method, in analysis, attr, errorOrContext, ct));
             flows.Add(flow);
         }
 
@@ -347,6 +346,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
     }
 
     private static DiagnosticFlow<EndpointDescriptor> ProcessAttributeFlow(
+        IMethodSymbol method,
         in MethodAnalysis analysis,
         AttributeData attr,
         ErrorOrContext errorOrContext,
@@ -374,7 +374,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             .ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
         var bindingFlow = RouteBindingHelper.BindRouteParameters(
-            analysis.Method,
+            method,
             routeParamNames,
             errorOrContext,
             verb.Value);
@@ -384,40 +384,40 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var bindingAnalysis = bindingFlow.ValueOrDefault();
 
         // Validate route pattern
-        builder.AddRange(RouteValidator.ValidatePattern(pattern, analysis.Method));
+        builder.AddRange(RouteValidator.ValidatePattern(pattern, method));
 
         // Extract method parameter info for route binding validation
         var methodParams = bindingAnalysis.RouteParameters.AsImmutableArray();
 
         // Validate route parameters are bound
         builder.AddRange(RouteValidator.ValidateParameterBindings(
-            pattern, routeParamInfos, methodParams, analysis.Method));
+            pattern, routeParamInfos, methodParams, method));
 
         // Validate route constraint types
         builder.AddRange(RouteValidator.ValidateConstraintTypes(
-            routeParamInfos, methodParams, analysis.Method));
+            routeParamInfos, methodParams, method));
 
         // Extract API versioning attributes
-        var versioning = ExtractVersioningAttributes(analysis.Method, errorOrContext);
+        var versioning = ExtractVersioningAttributes(method, errorOrContext);
 
         // Validate API versioning configuration (EOE027-EOE031)
-        var rawClassVersions = ExtractRawClassVersionStrings(analysis.Method, errorOrContext);
-        var rawMethodVersions = ExtractRawMethodVersionStrings(analysis.Method, errorOrContext);
-        var location = analysis.Method.Locations.FirstOrDefault() ?? Location.None;
+        var rawClassVersions = ExtractRawClassVersionStrings(method, errorOrContext);
+        var rawMethodVersions = ExtractRawMethodVersionStrings(method, errorOrContext);
+        var location = method.Locations.FirstOrDefault() ?? Location.None;
         builder.AddRange(ApiVersioningValidator.Validate(
-            analysis.Method.Name,
+            method.Name,
             versioning,
             rawClassVersions,
             rawMethodVersions,
             location,
             errorOrContext.HasApiVersioningSupport,
-            analysis.Method));
+            method));
 
         // Extract route group configuration for eShop-style grouping
-        var routeGroup = ExtractRouteGroupInfo(analysis.Method, errorOrContext);
+        var routeGroup = ExtractRouteGroupInfo(method, errorOrContext);
 
         // Extract custom endpoint metadata
-        var metadata = ExtractMetadata(analysis.Method);
+        var metadata = ExtractMetadata(method);
 
         var descriptor = new EndpointDescriptor(
             verb.Value,
@@ -425,8 +425,8 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             successTypeFqn,
             analysis.ReturnInfo.Kind,
             analysis.ReturnInfo.IsAsync,
-            analysis.Method.ContainingType?.GetFullyQualifiedName() ?? "Unknown",
-            analysis.Method.Name,
+            method.ContainingType?.GetFullyQualifiedName() ?? "Unknown",
+            method.Name,
             bindingAnalysis.Parameters,
             new ErrorInferenceInfo(
                 analysis.InferredErrorTypeNames,
