@@ -11,7 +11,6 @@
 var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
 
-// Map all ErrorOr endpoints
 app.MapErrorOrEndpoints();
 
 app.Run();
