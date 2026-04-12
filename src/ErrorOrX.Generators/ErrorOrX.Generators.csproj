@@ -62,6 +62,6 @@
     <PropertyGroup>
         <NuspecFile>ErrorOrX.Generators.nuspec</NuspecFile>
         <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-        <NuspecProperties>version=$(Version)</NuspecProperties>
+        <NuspecProperties>version=$(Version);configuration=$(Configuration)</NuspecProperties>
     </PropertyGroup>
 </Project>
