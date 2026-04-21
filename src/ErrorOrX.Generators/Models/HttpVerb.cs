@@ -35,7 +35,7 @@ internal static class HttpVerbExtensions
             HttpVerb.Head => "HEAD",
             HttpVerb.Options => "OPTIONS",
             HttpVerb.Trace => "TRACE",
-            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, message: null)
         };
     }
 
@@ -54,7 +54,7 @@ internal static class HttpVerbExtensions
             HttpVerb.Head => "MapMethods",
             HttpVerb.Options => "MapMethods",
             HttpVerb.Trace => "MapMethods",
-            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(verb), verb, message: null)
         };
     }
 

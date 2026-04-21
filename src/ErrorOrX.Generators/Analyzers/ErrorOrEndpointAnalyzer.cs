@@ -48,10 +48,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
+        context.RegisterSymbolAction(static ctx => AnalyzeMethod(in ctx), SymbolKind.Method);
     }
 
-    private static void AnalyzeMethod(SymbolAnalysisContext context)
+    private static void AnalyzeMethod(in SymbolAnalysisContext context)
     {
         if (context.Symbol is not IMethodSymbol method) return;
 
@@ -85,7 +85,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     }
 
     private static void AnalyzeEndpoint(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         IMethodSymbol method,
         string httpMethod,
         string pattern,
@@ -94,11 +94,13 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE005: Invalid route pattern
         var patternDiagnostics = ValidateRoutePattern(pattern);
         foreach (var message in patternDiagnostics)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.InvalidRoutePattern,
                 attributeLocation,
                 pattern,
                 message));
+        }
 
         // If pattern is invalid, skip further route analysis
         if (patternDiagnostics.Count > 0) return;
@@ -126,12 +128,16 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
                 // EOE003: Route parameter not bound
                 foreach (var routeParam in routeParams)
+                {
                     if (!methodParamsByRouteName.ContainsKey(routeParam.Name))
+                    {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Descriptors.RouteParameterNotBound,
                             attributeLocation,
                             pattern,
                             routeParam.Name));
+                    }
+                }
 
                 // EOE020: Route constraint type mismatch
                 ValidateConstraintTypes(context, routeParams, methodParamsByRouteName, attributeLocation);
@@ -141,28 +147,34 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE006: Multiple body sources
         var bodyCount = CountBodySources(method);
         if (bodyCount > 1)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MultipleBodySources,
                 method.Locations.FirstOrDefault(),
                 method.Name));
+        }
 
         // EOE008: Body on read-only HTTP method
         var isBodyless = verb?.IsBodyless() ?? WellKnownTypes.HttpMethod.IsBodyless(httpMethod);
         var hasBody = bodyCount > 0;
         if (hasBody && isBodyless)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.BodyOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
+        }
 
         // EOE009: [AcceptedResponse] on read-only method
-        if (HasAcceptedResponseAttribute(method, null) && isBodyless)
+        if (HasAcceptedResponseAttribute(method, acceptedResponseAttribute: null) && isBodyless)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
+        }
 
         // EOE039: DataAnnotations validation uses reflection
         CheckForValidationAttributes(context, method);
@@ -173,14 +185,15 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Validator.TryValidateObject uses reflection internally.
     /// </summary>
     private static void CheckForValidationAttributes(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         IMethodSymbol method)
     {
         var validationAttributeType = context.Compilation.GetTypeByMetadataName(WellKnownTypes.ValidationAttribute);
         if (validationAttributeType is null) return;
 
         foreach (var param in method.Parameters)
-        foreach (var attr in param.GetAttributes())
+        {
+            foreach (var attr in param.GetAttributes())
         {
             if (attr.AttributeClass is null) continue;
 
@@ -194,6 +207,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                     method.Name));
                 break; // Only report once per parameter
             }
+        }
         }
     }
 
@@ -217,7 +231,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Validates route constraint types match method parameter types (EOE020).
     /// </summary>
     private static void ValidateConstraintTypes(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         ImmutableArray<RouteParameterInfo> routeParams,
         IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
         Location attributeLocation)
@@ -230,7 +244,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Validates a single route parameter constraint against its bound method parameter.
     /// </summary>
     private static void ValidateSingleRouteConstraint(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         RouteParameterInfo rp,
         IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
         Location attributeLocation)
@@ -238,7 +252,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // Skip if no constraint or not bound to a method parameter
         if (rp.Constraint is not { } constraint ||
             !methodParamsByRouteName.TryGetValue(rp.Name, out var mp))
+        {
             return;
+        }
 
         if (mp.TypeFqn is not { } typeFqn) return;
 
@@ -265,13 +281,14 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Validates that a catch-all parameter is bound to a string type.
     /// </summary>
     private static void ValidateCatchAllConstraint(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         RouteParameterInfo rp,
         RouteMethodParameterInfo mp,
         string typeFqn,
         Location attributeLocation)
     {
         if (!IsStringType(typeFqn))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.RouteConstraintTypeMismatch,
                 attributeLocation,
@@ -280,6 +297,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 "string",
                 mp.Name,
                 NormalizeTypeName(typeFqn)));
+        }
     }
 
     /// <summary>
@@ -287,7 +305,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     ///     Uses shared RouteValidator.ConstraintToTypes to avoid duplication.
     /// </summary>
     private static void ValidateTypedConstraint(
-        SymbolAnalysisContext context,
+        in SymbolAnalysisContext context,
         RouteParameterInfo rp,
         string constraint,
         RouteMethodParameterInfo mp,
@@ -296,13 +314,17 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     {
         // Look up expected types for this constraint using shared RouteValidator
         if (!RouteValidator.ConstraintToTypes.TryGetValue(constraint,
-                out var expectedTypes)) return; // Unknown constraint (e.g., custom) - skip validation
+                out var expectedTypes))
+        {
+            return; // Unknown constraint (e.g., custom) - skip validation
+        }
 
         // Get the actual type, unwrapping Nullable<T> for optional parameters
         var actualTypeFqn = typeFqn.UnwrapNullable(rp.IsOptional || mp.IsNullable);
 
         // Check if actual type matches any expected type
         if (!DoesTypeMatchConstraint(actualTypeFqn, expectedTypes))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.RouteConstraintTypeMismatch,
                 attributeLocation,
@@ -311,6 +333,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 expectedTypes[0],
                 mp.Name,
                 NormalizeTypeName(typeFqn)));
+        }
     }
 
     /// <summary>
@@ -319,8 +342,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static bool DoesTypeMatchConstraint(string actualTypeFqn, IEnumerable<string> expectedTypes)
     {
         foreach (var expected in expectedTypes)
+        {
             if (TypeNamesMatch(actualTypeFqn, expected))
                 return true;
+        }
 
         return false;
     }
@@ -404,7 +429,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
             var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
             if (attr.ConstructorArguments.Length > patternIndex &&
                 attr.ConstructorArguments[patternIndex].Value is string p)
+            {
                 pattern = p;
+            }
 
             var location = attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                            ?? method.Locations.FirstOrDefault()
@@ -509,8 +536,10 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
+        {
             if (!paramNames.Add(rp.Name))
                 issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
+        }
 
         return issues;
     }

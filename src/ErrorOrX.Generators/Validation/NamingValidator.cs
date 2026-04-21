@@ -49,7 +49,7 @@ internal static class NamingValidator
         if (!char.IsUpper(name[0])) return false;
 
         // No underscores allowed in PascalCase
-        if (name.Contains("_")) return false;
+        if (name.Contains('_', StringComparison.Ordinal)) return false;
 
         return true;
     }
@@ -78,7 +78,7 @@ internal static class NamingValidator
 
             // Capitalize first letter, keep rest as-is
             sb.Append(char.ToUpperInvariant(part[0]));
-            if (part.Length > 1) sb.Append(part.Substring(1));
+            if (part.Length > 1) sb.Append(part, 1, part.Length - 1);
         }
 
         return sb.Length > 0 ? sb.ToString() : name;

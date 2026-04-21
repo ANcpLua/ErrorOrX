@@ -31,7 +31,7 @@ public static class Descriptors
         "Method '{0}' must return ErrorOr<T>, Task<ErrorOr<T>>, or ValueTask<ErrorOr<T>>",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Handler methods must be static for source generation.
@@ -42,7 +42,7 @@ public static class Descriptors
         "Method '{0}' must be static. Instance methods cannot be used with ErrorOr.Endpoints source generation.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Route template has a parameter that no method parameter captures.
@@ -53,7 +53,7 @@ public static class Descriptors
         "Route '{0}' has parameter '{{{1}}}' but no method parameter captures it",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Same route + HTTP method registered by multiple handlers.
@@ -65,7 +65,7 @@ public static class Descriptors
         "Route '{0} {1}' is already registered by '{2}.{3}'",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Route pattern syntax is invalid.
@@ -76,7 +76,7 @@ public static class Descriptors
         "Route pattern '{0}' is invalid: {1}",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Endpoint has multiple body sources (FromBody, FromForm, Stream, PipeReader).
@@ -88,7 +88,7 @@ public static class Descriptors
         "Endpoint '{0}' has multiple body sources. Use only one of: [FromBody], [FromForm], Stream, or PipeReader.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Type used in endpoint not registered in JsonSerializerContext for AOT.
@@ -101,7 +101,7 @@ public static class Descriptors
         "Type '{0}' used by '{1}' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof({0}))] to your JsonSerializerContext.",
         Category,
         DiagnosticSeverity.Error,
-        true,
+isEnabledByDefault: true,
         helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
 
     // ============================================================================
@@ -117,7 +117,7 @@ public static class Descriptors
         "Endpoint '{0}' uses {1} with a request body. Consider using POST/PUT/PATCH instead.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [AcceptedResponse] on GET/DELETE is semantically unusual.
@@ -129,7 +129,7 @@ public static class Descriptors
         "Endpoint '{0}' uses [AcceptedResponse] with {1}. 202 Accepted is typically for async POST/PUT operations.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [FromRoute] parameter type is not a supported primitive and has no TryParse.
@@ -140,7 +140,7 @@ public static class Descriptors
         "Parameter '{0}' with [FromRoute] must be a primitive type or implement TryParse. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [FromQuery] parameter type is not a supported primitive or collection of primitives.
@@ -151,7 +151,7 @@ public static class Descriptors
         "Parameter '{0}' with [FromQuery] must be a primitive or collection of primitives. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [AsParameters] used on non-class/struct type.
@@ -162,7 +162,7 @@ public static class Descriptors
         "Parameter '{0}' with [AsParameters] must be a class or struct type, not '{1}'",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [AsParameters] type has no accessible constructor.
@@ -173,7 +173,7 @@ public static class Descriptors
         "Type '{0}' used with [AsParameters] must have an accessible constructor",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [FromHeader] with non-string type requires TryParse.
@@ -184,7 +184,7 @@ public static class Descriptors
         "Parameter '{0}' with [FromHeader] must be string, a primitive with TryParse, or a collection thereof. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE015-019: Return type and parameter type validation
@@ -200,7 +200,7 @@ public static class Descriptors
         "Method '{0}' returns ErrorOr with anonymous type. Anonymous types cannot be serialized. Use a named type instead.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [AsParameters] types cannot contain nested [AsParameters] properties.
@@ -212,7 +212,7 @@ public static class Descriptors
         "Type '{0}' used with [AsParameters] has property '{1}' also marked [AsParameters]. Nested parameter expansion is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [AsParameters] cannot be applied to nullable types.
@@ -224,7 +224,7 @@ public static class Descriptors
         "Parameter '{0}' with [AsParameters] cannot be nullable. Remove the '?' or use a non-nullable type.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Private or protected types cannot be used in endpoint signatures.
@@ -236,7 +236,7 @@ public static class Descriptors
         "Type '{0}' used by endpoint '{1}' is {2} and cannot be accessed by generated code. Make it internal or public.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Type parameters (open generics) cannot be used in endpoint return types.
@@ -248,7 +248,7 @@ public static class Descriptors
         "Method '{0}' uses type parameter '{1}' in return type. Generic type parameters cannot be used with ErrorOr endpoints.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE020-021: Route constraint validation
@@ -264,7 +264,7 @@ public static class Descriptors
         "Route parameter '{{{0}:{1}}}' expects {2}, but method parameter '{3}' is {4}",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Complex type parameter on bodyless/custom method requires explicit binding attribute.
@@ -279,7 +279,7 @@ public static class Descriptors
         "or [FromServices] for DI injection.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE022-024: Result types and error factories
@@ -295,7 +295,7 @@ public static class Descriptors
         "Endpoint '{0}' has {1} possible response types, exceeding Results<...> max arity of {2}. OpenAPI documentation may be incomplete.",
         Category,
         DiagnosticSeverity.Info,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Error factory method is not a known ErrorType.
@@ -306,7 +306,7 @@ public static class Descriptors
         "Error.Or factory method '{0}' is not a known ErrorType. Supported types: Failure, Unexpected, Validation, Conflict, NotFound, Unauthorized, Forbidden.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Endpoint calls interface/abstract method returning ErrorOr without error documentation.
@@ -321,7 +321,7 @@ public static class Descriptors
         "OpenAPI cannot infer errors through interfaces.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE025-026: JSON/AOT validation
@@ -338,7 +338,7 @@ public static class Descriptors
         "Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     No JsonSerializerContext found but endpoint uses request body.
@@ -351,7 +351,7 @@ public static class Descriptors
         "Endpoint '{0}' uses '{1}' as request body but no JsonSerializerContext was found. Create one with [JsonSerializable(typeof({1}))].",
         Category,
         DiagnosticSeverity.Error,
-        true,
+isEnabledByDefault: true,
         helpLinkUri: "https://learn.microsoft.com/aspnet/core/fundamentals/aot/request-delegate-generator/rdg");
 
     // ============================================================================
@@ -368,7 +368,7 @@ public static class Descriptors
         "Endpoint '{0}' is marked [ApiVersionNeutral] but also has [MapToApiVersion]. Remove one or the other.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Endpoint has [MapToApiVersion] for a version not declared with [ApiVersion].
@@ -380,7 +380,7 @@ public static class Descriptors
         "Endpoint '{0}' maps to version '{1}' which is not declared in [ApiVersion]. Add [ApiVersion(\"{1}\")] to the class.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Asp.Versioning.Http package is not referenced but [ApiVersion] attributes are used.
@@ -392,7 +392,7 @@ public static class Descriptors
         "Endpoint '{0}' uses API versioning but Asp.Versioning.Http package is not referenced",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Endpoint has no [ApiVersion] attribute but other endpoints in the project use versioning.
@@ -405,7 +405,7 @@ public static class Descriptors
         "Add [ApiVersion(\"X.Y\")] or [ApiVersionNeutral] to declare its version scope.",
         Category,
         DiagnosticSeverity.Info,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     [ApiVersion] has invalid format. Use "major.minor" or just "major".
@@ -416,7 +416,7 @@ public static class Descriptors
         "[ApiVersion(\"{0}\")] has invalid format. Use \"major.minor\" (e.g., \"1.0\") or \"major\" (e.g., \"2\").",
         Category,
         DiagnosticSeverity.Error,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE032-033: Route parameter and naming validation
@@ -432,7 +432,7 @@ public static class Descriptors
         "Multiple parameters bind to route parameter '{0}'. Only the first parameter ('{1}') will be bound; '{2}' will be ignored.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     Handler method name should follow PascalCase convention.
@@ -444,7 +444,7 @@ public static class Descriptors
         "Method '{0}' should follow PascalCase naming convention. Consider renaming to '{1}'.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     // ============================================================================
     // EOE034-038: AOT safety (formerly AOT001-AOT005)
@@ -462,7 +462,7 @@ public static class Descriptors
         "Consider FluentValidation with source generators or manual validation.",
         Category,
         DiagnosticSeverity.Info,
-        true,
+isEnabledByDefault: true,
         helpLinkUri: TrimWarningsUrl);
 
     // ============================================================================
@@ -483,7 +483,7 @@ public static class Descriptors
         "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 
     /// <summary>
     ///     JsonSerializerContext is missing ProblemDetails and HttpValidationProblemDetails.
@@ -496,5 +496,5 @@ public static class Descriptors
         "[JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+isEnabledByDefault: true);
 }

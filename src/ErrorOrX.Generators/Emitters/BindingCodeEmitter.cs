@@ -407,13 +407,17 @@ internal static class BindingCodeEmitter
         if (source == ParameterSource.Route && param is { IsNullable: false, IsNonNullableValueType: false })
             return paramName + "!";
 
-        if ((source == ParameterSource.Query || source == ParameterSource.Header)
+        if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: true })
+        {
             return paramName + ".Value";
+        }
 
-        if ((source == ParameterSource.Query || source == ParameterSource.Header)
+        if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: false })
+        {
             return paramName + "!";
+        }
 
         return paramName;
     }

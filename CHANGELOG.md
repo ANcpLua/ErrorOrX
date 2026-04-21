@@ -4,25 +4,45 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.6.6] - 2026-04-21
+
 ### Fixed
 
-- **Analyzer early-return scoping**: Custom HTTP methods (e.g., `[ErrorOrEndpoint("CONNECT", "/path/{id}")]`) with route
-  parameters silently skipped EOE006, EOE008, EOE009, and EOE039 diagnostics. The `return` when `ParseMethodString`
-  returned null exited the entire `AnalyzeEndpoint` method instead of just the route binding block.
+- **ErrorOrContext incremental caching**: rewrote as a value-equatable bundle of support-flag booleans; all symbol
+  matching now uses pure metadata-name comparison with no live `Compilation` or `ISymbol` retention. The previous
+  implementation compared `_compilation` by `ReferenceEquals`, causing the incremental pipeline to invalidate the
+  `ErrorOrContext` step on every compilation refresh and making `Generator_Caches_Output_When_Source_Unchanged` fail.
 
-- **HttpVerb doc comment**: Corrected misleading "No default/discard arms" comment — the enum's switch expressions do
+- **Analyzer early-return scoping**: custom HTTP methods (e.g., `[ErrorOrEndpoint("CONNECT", "/path/{id}")]`) with
+  route parameters silently skipped EOE006, EOE008, EOE009, and EOE039 diagnostics. The `return` when
+  `ParseMethodString` returned null exited the entire `AnalyzeEndpoint` method instead of just the route-binding block.
+
+- **HttpVerb doc comment**: corrected misleading "No default/discard arms" comment — the enum's switch expressions do
   have defensive discard arms (`_ => throw`), which is intentional for the `byte`-backed enum.
 
 ### Changed
 
+- **Dependencies**:
+  - `ANcpLua.NET.Sdk` 2.22.1 → 3.0.1 (major — aligned with ecosystem-wide SDK v3 migration)
+  - `ANcpLua.Analyzers` 1.19.4 → 1.26.1
+  - `ANcpLua.Roslyn.Utilities` → 1.56.1 (AwaitableContext migration)
+  - .NET SDK 10.0.103 → 10.0.202, plus dependabot bumps for Meziantou, Verify, SourceLink, aspnetcore group.
+
 - **Renamed `EmitJsonConfigExtension`** to `EmitAddErrorOrEndpointsExtension` — the method emits the
-  `AddErrorOrEndpoints()` service registration extension, not JSON configuration. Historical name no longer matched.
+  `AddErrorOrEndpoints()` service registration extension, not JSON configuration.
 
 - **Typed `IsBodyless` in analyzer**: EOE008 and EOE009 now use `HttpVerb.IsBodyless()` with string fallback for custom
   verbs, replacing the previous string-only `WellKnownTypes.HttpMethod.IsBodyless()` calls.
 
-- **Updated dependencies**: ANcpLua.Analyzers 1.13.0 → 1.14.0, ANcpLua.Roslyn.Utilities 1.31.0 → 1.33.0,
-  ANcpLua.NET.Sdk 2.0.5 → 2.0.6, .NET SDK 10.0.102 → 10.0.103.
+### Internal
+
+- `SymbolAnalysisContext` parameters take `in` throughout `ErrorOrEndpointAnalyzer` (EPS05 — 80-byte readonly struct).
+- `ErrorOrContext` matching methods (`MatchesType`, `IsOrImplements`, `IsOrInheritsFrom`, `RequiresValidation`, etc.)
+  are now static (CA1822); ~40 call sites migrated to `ErrorOrContext.X(...)`.
+- Dead parameters removed from `BuildParameterMetas`, `CreateParameterMeta`, `ClassifyFromRouteParameter`.
+- `EmitValidationDictBuilder` rewritten from interpolated strings to chained `Append`/`AppendLine` (MA0028).
+- Misc analyzer-fix cleanup: brace-wrapping, named parameters on ambiguous positional args, char overloads for
+  `IndexOf`/`Contains`, zero-alloc `StringBuilder.Append(string, int, int)`, explicit `StringComparison.Ordinal`.
 
 ## [3.6.0] - 2026-02-13
 

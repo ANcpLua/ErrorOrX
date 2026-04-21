@@ -39,7 +39,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (method.Parameters.Length is 0) return ParameterBindingResult.Empty;
 
-        var metas = BuildParameterMetas(method.Parameters, context, diagnostics);
+        var metas = BuildParameterMetas(method.Parameters, context);
 
         // EOE006: Multiple body sources (FromBody, FromForm, Stream, PipeReader)
         var bodyCount = metas.Count(static m => m.HasFromBody);
@@ -60,19 +60,17 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static ParameterMeta[] BuildParameterMetas(
         ImmutableArray<IParameterSymbol> parameters,
-        ErrorOrContext context,
-        ImmutableArray<DiagnosticInfo>.Builder diagnostics)
+        ErrorOrContext context)
     {
         var metas = new ParameterMeta[parameters.Length];
         for (var i = 0; i < parameters.Length; i++)
-            metas[i] = CreateParameterMeta(parameters[i], context, diagnostics);
+            metas[i] = CreateParameterMeta(parameters[i], context);
         return metas;
     }
 
     private static ParameterMeta CreateParameterMeta(
         IParameterSymbol parameter,
-        ErrorOrContext context,
-        ImmutableArray<DiagnosticInfo>.Builder diagnostics)
+        ErrorOrContext context)
     {
         var type = parameter.Type;
         var typeFqn = type.GetFullyQualifiedName();
@@ -91,7 +89,7 @@ public sealed partial class ErrorOrEndpointGenerator
             : null;
 
         var validatableProperties = flags.HasFlag(ParameterFlags.RequiresValidation)
-            ? context.CollectValidatableProperties(type)
+            ? ErrorOrContext.CollectValidatableProperties(type)
             : default;
 
         return new ParameterMeta(
@@ -142,42 +140,48 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (isNonNullableValueType) flags |= ParameterFlags.NonNullableValueType;
 
-        if (context.RequiresValidation(type)) flags |= ParameterFlags.RequiresValidation;
+        if (ErrorOrContext.RequiresValidation(type)) flags |= ParameterFlags.RequiresValidation;
 
         return flags;
     }
 
     private static SpecialParameterKind DetectSpecialKind(ITypeSymbol type, ErrorOrContext context)
     {
-        if (context.IsHttpContext(type)) return SpecialParameterKind.HttpContext;
+        if (ErrorOrContext.IsHttpContext(type)) return SpecialParameterKind.HttpContext;
 
-        if (context.IsCancellationToken(type)) return SpecialParameterKind.CancellationToken;
+        if (ErrorOrContext.IsCancellationToken(type)) return SpecialParameterKind.CancellationToken;
 
-        if (context.IsFormFile(type)) return SpecialParameterKind.FormFile;
+        if (ErrorOrContext.IsFormFile(type)) return SpecialParameterKind.FormFile;
 
-        if (context.IsFormFileCollection(type)) return SpecialParameterKind.FormFileCollection;
+        if (ErrorOrContext.IsFormFileCollection(type)) return SpecialParameterKind.FormFileCollection;
 
-        if (context.IsFormCollection(type)) return SpecialParameterKind.FormCollection;
+        if (ErrorOrContext.IsFormCollection(type)) return SpecialParameterKind.FormCollection;
 
-        if (context.IsStream(type)) return SpecialParameterKind.Stream;
+        if (ErrorOrContext.IsStream(type)) return SpecialParameterKind.Stream;
 
-        return context.IsPipeReader(type) ? SpecialParameterKind.PipeReader : SpecialParameterKind.None;
+        return ErrorOrContext.IsPipeReader(type) ? SpecialParameterKind.PipeReader : SpecialParameterKind.None;
     }
 
     private static string DetermineBoundName(ISymbol parameter, ParameterFlags flags, ErrorOrContext context)
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
+        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromRouteAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromQuery))
+        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromQueryAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromHeader))
+        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromHeaderAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromForm))
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
@@ -211,7 +215,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         return isValid
-            ? new ParameterBindingResult(true, builder.ToImmutable().AsEquatableArray())
+            ? new ParameterBindingResult(IsValid: true, builder.ToImmutable().AsEquatableArray())
             : ParameterBindingResult.Invalid;
     }
 
@@ -229,16 +233,20 @@ public sealed partial class ErrorOrEndpointGenerator
             return ClassifyAsParameters(in meta, parameter.Type, routeParameters, method, diagnostics, context, httpVerb);
 
         if (meta.HasFromBody)
+        {
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                 validatableProperties: meta.ValidatableProperties);
+        }
 
         if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type, context);
 
         if (meta.HasFromServices) return ParameterSuccess(in meta, ParameterSource.Service);
 
         if (meta.HasFromKeyedServices)
+        {
             return ParameterSuccess(in meta, ParameterSource.KeyedService,
                 keyedServiceKey: meta.ServiceKey);
+        }
 
         if (meta.HasFromHeader) return ClassifyFromHeaderParameter(in meta, method, diagnostics);
 
@@ -318,8 +326,10 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             // POST, PUT, PATCH with complex type → Body
             if (!httpVerb.IsBodyless())
+            {
                 return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                     validatableProperties: meta.ValidatableProperties);
+            }
 
             // Bodyless/custom methods: do not infer body; warn for DTO-like types.
             diagnostics.Add(DiagnosticInfo.Create(
@@ -404,8 +414,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.BoundName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE011: [FromQuery] only supports primitives or collections of primitives
         diagnostics.Add(DiagnosticInfo.Create(
@@ -438,8 +450,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.BoundName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE014: [FromHeader] requires string, primitive with TryParse, or collection thereof
         diagnostics.Add(DiagnosticInfo.Create(
@@ -478,8 +492,10 @@ public sealed partial class ErrorOrEndpointGenerator
         // For complex form DTOs, analyze the constructor to build child parameter info
         // BCL handles actual binding - we just need structure for code generation
         if (type is not INamedTypeSymbol typeSymbol)
+        {
             // Non-named types get simple form binding - BCL will handle/fail at runtime
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
+        }
 
         var constructor = typeSymbol.Constructors
             .Where(static c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -487,16 +503,17 @@ public sealed partial class ErrorOrEndpointGenerator
             .FirstOrDefault();
 
         if (constructor is null || constructor.Parameters.Length is 0)
+        {
             // No suitable constructor - simple form binding
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
+        }
 
         // Build child parameters for DTO constructor
         var children = ImmutableArray.CreateBuilder<EndpointParameter>(constructor.Parameters.Length);
-        var dummyDiagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 
         foreach (var paramSymbol in constructor.Parameters)
         {
-            var childMeta = CreateParameterMeta(paramSymbol, context, dummyDiagnostics);
+            var childMeta = CreateParameterMeta(paramSymbol, context);
 
             ParameterSource childSource;
             if (childMeta.IsFormFile)
@@ -518,15 +535,15 @@ public sealed partial class ErrorOrEndpointGenerator
                 default));
         }
 
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.Form,
             meta.BoundName,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-            false,
-            null,
+IsCollection: false,
+CollectionItemTypeFqn: null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,
@@ -577,7 +594,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var children = ImmutableArray.CreateBuilder<EndpointParameter>();
         foreach (var paramSymbol in constructor.Parameters)
         {
-            var childMeta = CreateParameterMeta(paramSymbol, context, diagnostics);
+            var childMeta = CreateParameterMeta(paramSymbol, context);
 
             // EOE016: Nested [AsParameters] not supported
             if (childMeta.HasAsParameters)
@@ -597,15 +614,15 @@ public sealed partial class ErrorOrEndpointGenerator
             children.Add(result.Parameter);
         }
 
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.AsParameters,
-            null,
+KeyName: null,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-            false,
-            null,
+IsCollection: false,
+CollectionItemTypeFqn: null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,
@@ -624,7 +641,7 @@ public sealed partial class ErrorOrEndpointGenerator
         EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
         EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
     {
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             source,
@@ -672,18 +689,18 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static RoutePrimitiveKind? TryGetRoutePrimitiveKindBySymbol(ISymbol type, ErrorOrContext context)
     {
-        if (context.MatchesType(type, WellKnownTypes.Guid)) return RoutePrimitiveKind.Guid;
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.Guid)) return RoutePrimitiveKind.Guid;
 
-        if (context.MatchesType(type, WellKnownTypes.DateTime)) return RoutePrimitiveKind.DateTime;
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.DateTime)) return RoutePrimitiveKind.DateTime;
 
-        if (context.MatchesType(type, WellKnownTypes.DateTimeOffset))
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.DateTimeOffset))
             return RoutePrimitiveKind.DateTimeOffset;
 
-        if (context.MatchesType(type, WellKnownTypes.DateOnly)) return RoutePrimitiveKind.DateOnly;
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.DateOnly)) return RoutePrimitiveKind.DateOnly;
 
-        if (context.MatchesType(type, WellKnownTypes.TimeOnly)) return RoutePrimitiveKind.TimeOnly;
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.TimeOnly)) return RoutePrimitiveKind.TimeOnly;
 
-        if (context.MatchesType(type, WellKnownTypes.TimeSpan)) return RoutePrimitiveKind.TimeSpan;
+        if (ErrorOrContext.MatchesType(type, WellKnownTypes.TimeSpan)) return RoutePrimitiveKind.TimeSpan;
 
         return null;
     }
@@ -712,7 +729,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool ImplementsBindableInterface(ITypeSymbol type, ErrorOrContext context)
     {
-        return context.IsOrImplements(type, WellKnownTypes.BindableFromHttpContext);
+        return ErrorOrContext.IsOrImplements(type, WellKnownTypes.BindableFromHttpContext);
     }
 
     private static CustomBindingMethod DetectBindAsyncMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
@@ -730,10 +747,12 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
             !method.ReturnType.IsTaskType() || method.Parameters.Length < 1 ||
-            !context.IsHttpContext(method.Parameters[0].Type))
+            !ErrorOrContext.IsHttpContext(method.Parameters[0].Type))
+        {
             return CustomBindingMethod.None;
+        }
 
-        if (method.Parameters.Length >= 2 && context.IsParameterInfo(method.Parameters[1].Type))
+        if (method.Parameters.Length >= 2 && ErrorOrContext.IsParameterInfo(method.Parameters[1].Type))
             return CustomBindingMethod.BindAsyncWithParam;
 
         return CustomBindingMethod.BindAsync;
@@ -755,12 +774,18 @@ public sealed partial class ErrorOrEndpointGenerator
         if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method ||
             method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) ||
             method.Parameters[^1].RefKind != RefKind.Out)
+        {
             return CustomBindingMethod.None;
+        }
 
         if (method.Parameters.Length >= 3)
+        {
             for (var i = 1; i < method.Parameters.Length - 1; i++)
+            {
                 if (IsFormatProvider(method.Parameters[i].Type, context))
                     return CustomBindingMethod.TryParseWithFormat;
+            }
+        }
 
         return CustomBindingMethod.TryParse;
     }
@@ -770,8 +795,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType == SpecialType.System_String) return true;
 
         if (type is INamedTypeSymbol { IsGenericType: true } named)
-            return context.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.ReadOnlySpanT) &&
+        {
+            return ErrorOrContext.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.ReadOnlySpanT) &&
                    named.TypeArguments is [{ SpecialType: SpecialType.System_Char }];
+        }
 
         return false;
     }
@@ -779,7 +806,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool IsFormatProvider(ITypeSymbol type, ErrorOrContext context)
     {
         type = type.UnwrapNullable();
-        return context.MatchesType(type, WellKnownTypes.IFormatProvider);
+        return ErrorOrContext.MatchesType(type, WellKnownTypes.IFormatProvider);
     }
 
     private static (bool IsCollection, ITypeSymbol? ItemType, RoutePrimitiveKind? Kind) AnalyzeCollectionType(
@@ -806,12 +833,12 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context)
     {
-        return context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.ListT) ||
-               context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IListT) ||
-               context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IEnumerableT) ||
-               context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IReadOnlyListT) ||
-               context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.ICollectionT) ||
-               context.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.HashSetT);
+        return ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.ListT) ||
+               ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IListT) ||
+               ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IEnumerableT) ||
+               ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IReadOnlyListT) ||
+               ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.ICollectionT) ||
+               ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.HashSetT);
     }
 
     private static (bool IsNullable, bool IsNonNullableValueType) GetParameterNullability(
@@ -841,14 +868,14 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool HasParameterAttribute(ISymbol parameter, ErrorOrContext context, string attributeName)
     {
-        return context.HasAttribute(parameter, attributeName);
+        return ErrorOrContext.HasAttribute(parameter, attributeName);
     }
 
     private static string? TryGetAttributeName(ISymbol parameter, ErrorOrContext context, string attributeName)
     {
         var attributes = parameter.GetAttributes();
 
-        var matchingAttr = attributes.FirstOrDefault(attr => context.MatchesType(attr.AttributeClass, attributeName));
+        var matchingAttr = attributes.FirstOrDefault(attr => ErrorOrContext.MatchesType(attr.AttributeClass, attributeName));
         return matchingAttr is not null ? ExtractNameFromAttribute(matchingAttr) : null;
     }
 
@@ -857,14 +884,20 @@ public sealed partial class ErrorOrEndpointGenerator
         if (attr is null) return null;
 
         foreach (var namedArg in attr.NamedArguments)
+        {
             if (string.Equals(namedArg.Key, "Name", StringComparison.OrdinalIgnoreCase) &&
                 namedArg.Value.Value is string name && !string.IsNullOrWhiteSpace(name))
+            {
                 return name;
+            }
+        }
 
         if (attr.ConstructorArguments.Length > 0 &&
             attr.ConstructorArguments[0].Value is string ctorArg &&
             !string.IsNullOrWhiteSpace(ctorArg))
+        {
             return ctorArg;
+        }
 
         if (attr.ApplicationSyntaxReference?.GetSyntax() is { } syntax)
         {
@@ -893,8 +926,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Check using fluent matchers for common DI naming patterns
         if (type is INamedTypeSymbol namedType)
+        {
             if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
                 return true;
+        }
 
         return false;
     }
@@ -914,14 +949,14 @@ public sealed partial class ErrorOrEndpointGenerator
         if (TryGetRoutePrimitiveKindBySymbol(type, context) is not null) return false;
 
         // Form file types are not complex (have special binding)
-        if (context.IsFormFile(type) || context.IsFormFileCollection(type) || context.IsFormCollection(type))
+        if (ErrorOrContext.IsFormFile(type) || ErrorOrContext.IsFormFileCollection(type) || ErrorOrContext.IsFormCollection(type))
             return false;
 
         // Stream types are not complex (have special binding)
-        if (context.IsStream(type) || context.IsPipeReader(type)) return false;
+        if (ErrorOrContext.IsStream(type) || ErrorOrContext.IsPipeReader(type)) return false;
 
         // HttpContext, CancellationToken are not complex
-        if (context.IsHttpContext(type) || context.IsCancellationToken(type)) return false;
+        if (ErrorOrContext.IsHttpContext(type) || ErrorOrContext.IsCancellationToken(type)) return false;
 
         // Types with TryParse or BindAsync are route-bindable, not complex
         if (type is INamedTypeSymbol namedType && !IsPrimitiveOrWellKnownType(namedType, context))
@@ -944,7 +979,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
     {
-        public static readonly ParameterClassificationResult Error = new(true, default);
+        public static readonly ParameterClassificationResult Error = new(IsError: true, default);
     }
 
     private readonly struct AttributeNameMatcher

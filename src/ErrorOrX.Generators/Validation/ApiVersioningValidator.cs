@@ -78,10 +78,12 @@ internal static class ApiVersioningValidator
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
         if (versioning is { IsVersionNeutral: true, MappedVersions.IsDefaultOrEmpty: false })
+        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.VersionNeutralWithMappings,
                 location,
                 methodName));
+        }
     }
 
     /// <summary>
@@ -104,11 +106,13 @@ internal static class ApiVersioningValidator
         {
             var mappedStr = FormatVersion(mapped);
             if (!declaredVersions.Contains(mappedStr))
+            {
                 diagnostics.Add(DiagnosticInfo.Create(
                     Descriptors.MappedVersionNotDeclared,
                     location,
                     methodName,
                     mappedStr));
+            }
         }
     }
 
@@ -126,20 +130,32 @@ internal static class ApiVersioningValidator
         var reported = new HashSet<string>(StringComparer.Ordinal);
 
         if (!rawClassVersions.IsDefaultOrEmpty)
+        {
             foreach (var version in rawClassVersions)
+            {
                 if (!IsValidVersionFormat(version) && reported.Add(version))
+                {
                     diagnostics.Add(DiagnosticInfo.Create(
                         Descriptors.InvalidApiVersionFormat,
                         location,
                         version));
+                }
+            }
+        }
 
         if (!rawMethodVersions.IsDefaultOrEmpty)
+        {
             foreach (var version in rawMethodVersions)
+            {
                 if (!IsValidVersionFormat(version) && reported.Add(version))
+                {
                     diagnostics.Add(DiagnosticInfo.Create(
                         Descriptors.InvalidApiVersionFormat,
                         location,
                         version));
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -166,16 +182,20 @@ internal static class ApiVersioningValidator
         if (v.Length > 1 &&
             (v[0] == 'v' || v[0] == 'V') &&
             char.IsDigit(v[1]))
+        {
             return false;
+        }
 
         // Check for semver format (3 parts like 1.0.0)
         var parts = v.Split('.');
         if (parts.Length > 2)
+        {
             // Allow if third part is a status suffix (contains non-digits at start)
             // "1.0-beta" splits as ["1", "0-beta"] - 2 parts, valid
             // "1.0.0" splits as ["1", "0", "0"] - 3 parts, invalid
             // "1.0.0-beta" splits as ["1", "0", "0-beta"] - 3 parts, still invalid (semver)
             return false;
+        }
 
         return ValidVersionPattern.IsMatch(v);
     }
@@ -193,10 +213,12 @@ internal static class ApiVersioningValidator
         // Check method and containing type for versioning attributes by name
         if (HasVersioningAttributeByName(method) ||
             (method.ContainingType is { } containingType && HasVersioningAttributeByName(containingType)))
+        {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.ApiVersioningPackageNotReferenced,
                 location,
                 methodName));
+        }
     }
 
     /// <summary>
@@ -212,8 +234,10 @@ internal static class ApiVersioningValidator
             // Check by name since we can't resolve the type
             var attrName = attrClass.Name;
             foreach (var versioningAttrName in VersioningAttributeNames)
+            {
                 if (string.Equals(attrName, versioningAttrName, StringComparison.Ordinal))
                     return true;
+            }
         }
 
         return false;

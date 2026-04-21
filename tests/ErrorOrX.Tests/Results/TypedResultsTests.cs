@@ -182,7 +182,7 @@ public class ResultTypesTests
     public void MethodReturningErrorOrCreated_WhenResourceCreated_ShouldReturnCreated()
     {
         // Arrange & Act
-        var result = SimulateResourceCreation(true);
+        var result = SimulateResourceCreation(shouldSucceed: true);
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -193,7 +193,7 @@ public class ResultTypesTests
     public void MethodReturningErrorOrCreated_WhenResourceExists_ShouldReturnConflict()
     {
         // Arrange & Act
-        var result = SimulateResourceCreation(false);
+        var result = SimulateResourceCreation(shouldSucceed: false);
 
         // Assert
         result.IsError.Should().BeTrue();

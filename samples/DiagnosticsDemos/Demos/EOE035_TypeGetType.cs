@@ -58,7 +58,7 @@ public static class EOE035_TypeGetType
     public static ErrorOr<string> GetCaseSensitive()
     {
         // ✅ No warning - string literal + explicit ignoreCase: false
-        var type = Type.GetType("System.String", false, false);
+        var type = Type.GetType("System.String", throwOnError: false, ignoreCase: false);
         return type?.FullName ?? "Not found";
     }
 

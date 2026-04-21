@@ -22,8 +22,10 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var param in ep.HandlerParameters)
+            {
                 if (param.Source == ParameterSource.Body && !bodyTypes.ContainsKey(param.TypeFqn))
                     bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
+            }
 
             if (!string.IsNullOrEmpty(ep.SuccessTypeFqn))
             {
@@ -64,6 +66,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (userContexts.IsDefaultOrEmpty)
         {
             if (publishAot)
+            {
                 foreach (var kvp in bodyTypes)
                 {
                     if (kvp.Key.IsPrimitiveJsonType()) continue;
@@ -75,6 +78,7 @@ public sealed partial class ErrorOrEndpointGenerator
                         kvp.Value,
                         displayType));
                 }
+            }
 
             return;
         }
@@ -82,18 +86,24 @@ public sealed partial class ErrorOrEndpointGenerator
         // User has a JsonSerializerContext - check if all needed types are registered
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        foreach (var typeFqn in ctx.SerializableTypes)
+        {
+            foreach (var typeFqn in ctx.SerializableTypes)
             registeredTypes.Add(typeFqn);
+        }
 
         // Combine all needed types
         var allNeededTypes = new Dictionary<string, string>();
         foreach (var kvp in bodyTypes)
+        {
             if (!allNeededTypes.ContainsKey(kvp.Key))
                 allNeededTypes[kvp.Key] = kvp.Value;
+        }
 
         foreach (var kvp in responseTypes)
+        {
             if (!allNeededTypes.ContainsKey(kvp.Key))
                 allNeededTypes[kvp.Key] = kvp.Value;
+        }
 
         foreach (var kvp in allNeededTypes)
         {
@@ -134,6 +144,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
             var errorTypeCount = 0;
             if (!ep.ErrorInference.InferredErrorTypeNames.IsDefaultOrEmpty)
+            {
                 foreach (var type in ep.ErrorInference.InferredErrorTypeNames.AsImmutableArray().Distinct())
                 {
                     // Failure/Unexpected map to InternalServerError (500), which is already in baseCount
@@ -142,17 +153,20 @@ public sealed partial class ErrorOrEndpointGenerator
                     // All others (Validation, NotFound, Conflict, etc.) map to distinct types
                     errorTypeCount++;
                 }
+            }
 
             // Total unique types
             var totalTypes = baseCount + errorTypeCount;
 
             if (totalTypes > maxArity || !ep.ErrorInference.InferredCustomErrors.IsDefaultOrEmpty)
+            {
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Descriptors.TooManyResultTypes,
                     Location.None,
                     $"{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}",
                     totalTypes,
                     maxArity));
+            }
         }
     }
 }
@@ -174,7 +188,9 @@ internal static class JsonContextProvider
         if (ctx.Node is not ClassDeclarationSyntax classDecl ||
             ctx.SemanticModel.GetDeclaredSymbol(classDecl) is not INamedTypeSymbol classSymbol ||
             !InheritsFromJsonSerializerContext(classSymbol))
+        {
             return ImmutableArray<JsonContextInfo>.Empty;
+        }
 
         // Cache attributes to avoid multiple GetAttributes() calls
         var attributes = classSymbol.GetAttributes();
