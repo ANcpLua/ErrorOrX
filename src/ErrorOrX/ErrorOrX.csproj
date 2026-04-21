@@ -27,8 +27,6 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
     </ItemGroup>
 
-    <!-- Previously auto-injected by SDK's UseRoslynUtilities feature (removed in SDK v3.0.0).
-         Consumers that want the global using now opt in explicitly. -->
     <ItemGroup>
         <Using Include="ANcpLua.Roslyn.Utilities"/>
     </ItemGroup>
