@@ -22,8 +22,7 @@
     <PropertyGroup>
         <ANcpLuaAnalyzersVersion>1.23.0</ANcpLuaAnalyzersVersion>
         <MeziantouAnalyzerVersion>3.0.48</MeziantouAnalyzerVersion>
-        <!-- Pinned at 1.52.0 until the code migrates off AwaitableContext (removed in v1.54.0 cull). -->
-        <ANcpLuaRoslynUtilitiesVersion>1.52.0</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>1.56.1</ANcpLuaRoslynUtilitiesVersion>
         <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
         <MicrosoftCodeAnalysisCSharpVersion>5.3.0</MicrosoftCodeAnalysisCSharpVersion>
         <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
@@ -39,8 +38,8 @@
         <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
         <AwesomeAssertionsVersion>9.4.0</AwesomeAssertionsVersion>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.6</MicrosoftAspNetCoreOpenApiVersion>
-        <MicrosoftAspNetCoreMvcTestingVersion>10.0.5</MicrosoftAspNetCoreMvcTestingVersion>
-        <MicrosoftAspNetCoreTestHostVersion>10.0.5</MicrosoftAspNetCoreTestHostVersion>
+        <MicrosoftAspNetCoreMvcTestingVersion>10.0.6</MicrosoftAspNetCoreMvcTestingVersion>
+        <MicrosoftAspNetCoreTestHostVersion>10.0.6</MicrosoftAspNetCoreTestHostVersion>
         <AspVersioningHttpVersion>8.1.1</AspVersioningHttpVersion>
     </PropertyGroup>
 </Project>

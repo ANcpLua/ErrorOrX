@@ -16,7 +16,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
     {
-        var resultType = context.Awaitable.GetTaskResultType(returnType);
+        var resultType = returnType.GetTaskResultType();
         var unwrapped = resultType ?? returnType;
         var isAsync = resultType is not null;
 
@@ -418,7 +418,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
     {
         // Reuse existing helpers - unwrap Task/ValueTask, then check for ErrorOr<T>
-        var unwrapped = context.Awaitable.GetTaskResultType(method.ReturnType) ?? method.ReturnType;
+        var unwrapped = method.ReturnType.GetTaskResultType() ?? method.ReturnType;
         return IsErrorOrType(unwrapped, context, out _);
     }
 

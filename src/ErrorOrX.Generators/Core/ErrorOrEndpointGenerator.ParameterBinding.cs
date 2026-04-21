@@ -729,7 +729,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member, ErrorOrContext context)
     {
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
-            !context.Awaitable.IsTaskLike(method.ReturnType) || method.Parameters.Length < 1 ||
+            !method.ReturnType.IsTaskType() || method.Parameters.Length < 1 ||
             !context.IsHttpContext(method.Parameters[0].Type))
             return CustomBindingMethod.None;
 

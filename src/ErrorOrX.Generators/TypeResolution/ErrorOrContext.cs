@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using ANcpLua.Roslyn.Utilities.Contexts;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
@@ -9,12 +8,9 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     public ErrorOrContext(Compilation compilation)
     {
         _compilation = compilation;
-        Awaitable = new AwaitableContext(compilation);
     }
 
     private readonly Compilation _compilation;
-
-    public AwaitableContext Awaitable { get; }
 
     /// <summary>
     ///     Returns true if the Microsoft.Extensions.Validation package is referenced,
