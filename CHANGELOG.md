@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.6.7] - 2026-04-21
+
+### Internal
+
+- **EPS05 follow-on**: propagated `in`-modifier to remaining readonly-struct call sites missed in v3.6.6 —
+  intra-analyzer dispatch (`AnalyzeEndpoint`, `ValidateConstraintTypes`, `CheckForValidationAttributes`,
+  `ValidateSingleRouteConstraint`, `ValidateCatchAllConstraint`, `ValidateTypedConstraint`),
+  `ApiVersioningValidator.Validate` (passes `versioning` by `in` to its two sub-validators, and is itself
+  now called with `in versioning` from the generator), and `ResultsUnionTypeBuilder.BuildFallbackResult`
+  (takes `middleware` by `in`).
+
 ## [3.6.6] - 2026-04-21
 
 ### Fixed
