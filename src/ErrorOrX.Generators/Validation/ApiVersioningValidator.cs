@@ -54,13 +54,13 @@ internal static class ApiVersioningValidator
             ValidatePackageReferenced(methodName, method, location, diagnostics);
 
         // EOE027: Version-neutral with mappings
-        ValidateVersionNeutralWithMappings(methodName, versioning, location, diagnostics);
+        ValidateVersionNeutralWithMappings(methodName, in versioning, location, diagnostics);
 
         // EOE031: Invalid version format (check raw strings)
         ValidateVersionFormats(rawClassVersions, rawMethodVersions, location, diagnostics);
 
         // EOE028: Mapped version not declared
-        ValidateMappedVersionsDeclared(methodName, versioning, location, diagnostics);
+        ValidateMappedVersionsDeclared(methodName, in versioning, location, diagnostics);
 
         // Note: EOE030 is handled in EmitMappingsAndRunAnalysis because it requires cross-file analysis
 

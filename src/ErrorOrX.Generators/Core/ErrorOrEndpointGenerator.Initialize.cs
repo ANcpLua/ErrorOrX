@@ -412,7 +412,7 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var location = method.Locations.FirstOrDefault() ?? Location.None;
         builder.AddRange(ApiVersioningValidator.Validate(
             method.Name,
-            versioning,
+in versioning,
             rawClassVersions,
             rawMethodVersions,
             location,

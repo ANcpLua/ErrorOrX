@@ -81,7 +81,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // Analyze each endpoint attribute
         foreach (var (httpMethod, pattern, attributeLocation) in endpointAttributes)
-            AnalyzeEndpoint(context, method, httpMethod, pattern, attributeLocation);
+            AnalyzeEndpoint(in context, method, httpMethod, pattern, attributeLocation);
     }
 
     private static void AnalyzeEndpoint(
@@ -140,7 +140,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 }
 
                 // EOE020: Route constraint type mismatch
-                ValidateConstraintTypes(context, routeParams, methodParamsByRouteName, attributeLocation);
+                ValidateConstraintTypes(in context, routeParams, methodParamsByRouteName, attributeLocation);
             }
         }
 
@@ -177,7 +177,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         // EOE039: DataAnnotations validation uses reflection
-        CheckForValidationAttributes(context, method);
+        CheckForValidationAttributes(in context, method);
     }
 
     /// <summary>
@@ -237,7 +237,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         Location attributeLocation)
     {
         foreach (var rp in routeParams)
-            ValidateSingleRouteConstraint(context, rp, methodParamsByRouteName, attributeLocation);
+            ValidateSingleRouteConstraint(in context, rp, methodParamsByRouteName, attributeLocation);
     }
 
     /// <summary>
@@ -263,9 +263,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         // Validate based on constraint type
         if (rp.IsCatchAll)
-            ValidateCatchAllConstraint(context, rp, mp, typeFqn, attributeLocation);
+            ValidateCatchAllConstraint(in context, rp, mp, typeFqn, attributeLocation);
         else
-            ValidateTypedConstraint(context, rp, constraint, mp, typeFqn, attributeLocation);
+            ValidateTypedConstraint(in context, rp, constraint, mp, typeFqn, attributeLocation);
     }
 
     /// <summary>

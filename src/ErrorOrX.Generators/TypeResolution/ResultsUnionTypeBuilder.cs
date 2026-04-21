@@ -154,7 +154,7 @@ HasBody: true,
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
-            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, middleware, hasValidationError);
+            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, in middleware, hasValidationError);
 
         // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
