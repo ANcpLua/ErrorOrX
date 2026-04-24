@@ -40,6 +40,6 @@
         <MicrosoftAspNetCoreOpenApiVersion>10.0.7</MicrosoftAspNetCoreOpenApiVersion>
         <MicrosoftAspNetCoreMvcTestingVersion>10.0.7</MicrosoftAspNetCoreMvcTestingVersion>
         <MicrosoftAspNetCoreTestHostVersion>10.0.7</MicrosoftAspNetCoreTestHostVersion>
-        <AspVersioningHttpVersion>8.1.1</AspVersioningHttpVersion>
+        <AspVersioningHttpVersion>10.0.0</AspVersioningHttpVersion>
     </PropertyGroup>
 </Project>
