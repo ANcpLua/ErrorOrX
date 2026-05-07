@@ -15,7 +15,7 @@ public abstract class GeneratorTestBase
 {
     private const string AttributesHintName = "ErrorOrEndpointAttributes.Mappings.g.cs";
 
-    private static readonly Type[] RequiredTypes =
+    private static readonly Type[] s_requiredTypes =
     [
         typeof(HttpContext),
         typeof(TypedResults),
@@ -42,7 +42,7 @@ public abstract class GeneratorTestBase
     ///     Types to include when running without API versioning support.
     ///     Used to test EOE029 (package not referenced).
     /// </summary>
-    private static readonly Type[] RequiredTypesWithoutVersioning =
+    private static readonly Type[] s_requiredTypesWithoutVersioning =
     [
         typeof(HttpContext),
         typeof(TypedResults),
@@ -68,7 +68,7 @@ public abstract class GeneratorTestBase
     /// </summary>
     protected static async Task<GeneratorResult> RunAsync(string source)
     {
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypes);
+        using var scope = TestConfiguration.WithAdditionalReferences(s_requiredTypes);
         return await Test<ErrorOrEndpointGenerator>.Run(source, TestContext.Current.CancellationToken);
     }
 
@@ -78,7 +78,7 @@ public abstract class GeneratorTestBase
     /// </summary>
     protected static async Task<GeneratorResult> RunWithoutVersioningAsync(string source)
     {
-        using var scope = TestConfiguration.WithAdditionalReferences(RequiredTypesWithoutVersioning);
+        using var scope = TestConfiguration.WithAdditionalReferences(s_requiredTypesWithoutVersioning);
         return await Test<ErrorOrEndpointGenerator>.Run(source, TestContext.Current.CancellationToken);
     }
 

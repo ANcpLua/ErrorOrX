@@ -5,7 +5,7 @@ public class ErrorTests
     private const string ErrorCode = "ErrorCode";
     private const string ErrorDescription = "ErrorDescription";
 
-    private static readonly Dictionary<string, object> Dictionary = new() { { "key1", "value1" }, { "key2", 21 } };
+    private static readonly Dictionary<string, object> s_dictionary = new() { { "key1", "value1" }, { "key2", 21 } };
 
     #region Factory Methods with Custom Parameters
 
@@ -13,7 +13,7 @@ public class ErrorTests
     public void CreateError_WhenFailureError_ShouldHaveErrorTypeFailure()
     {
         // Act
-        var error = Error.Failure(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Failure(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Failure);
@@ -23,7 +23,7 @@ public class ErrorTests
     public void CreateError_WhenUnexpectedError_ShouldHaveErrorTypeFailure()
     {
         // Act
-        var error = Error.Unexpected(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Unexpected(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Unexpected);
@@ -33,7 +33,7 @@ public class ErrorTests
     public void CreateError_WhenValidationError_ShouldHaveErrorTypeValidation()
     {
         // Act
-        var error = Error.Validation(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Validation(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Validation);
@@ -43,7 +43,7 @@ public class ErrorTests
     public void CreateError_WhenConflictError_ShouldHaveErrorTypeConflict()
     {
         // Act
-        var error = Error.Conflict(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Conflict(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Conflict);
@@ -53,7 +53,7 @@ public class ErrorTests
     public void CreateError_WhenNotFoundError_ShouldHaveErrorTypeNotFound()
     {
         // Act
-        var error = Error.NotFound(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.NotFound(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.NotFound);
@@ -63,7 +63,7 @@ public class ErrorTests
     public void CreateError_WhenNotAuthorizedError_ShouldHaveErrorTypeUnauthorized()
     {
         // Act
-        var error = Error.Unauthorized(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Unauthorized(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Unauthorized);
@@ -73,7 +73,7 @@ public class ErrorTests
     public void CreateError_WhenForbiddenError_ShouldHaveErrorTypeForbidden()
     {
         // Act
-        var error = Error.Forbidden(ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Forbidden(ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, ErrorType.Forbidden);
@@ -83,7 +83,7 @@ public class ErrorTests
     public void CreateError_WhenCustomType_ShouldHaveCustomErrorType()
     {
         // Act
-        var error = Error.Custom(1232, ErrorCode, ErrorDescription, Dictionary);
+        var error = Error.Custom(1232, ErrorCode, ErrorDescription, s_dictionary);
 
         // Assert
         ValidateError(error, (ErrorType)1232);
@@ -95,7 +95,7 @@ public class ErrorTests
         error.Description.Should().Be(ErrorDescription);
         error.Type.Should().Be(expectedErrorType);
         ((int)error.Type).Should().Be((int)expectedErrorType);
-        error.Metadata.Should().BeEquivalentTo(Dictionary);
+        error.Metadata.Should().BeEquivalentTo(s_dictionary);
     }
 
     #endregion
