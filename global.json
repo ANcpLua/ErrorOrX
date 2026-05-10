@@ -5,9 +5,9 @@
     "allowPrerelease": true
   },
   "msbuild-sdks": {
-    "ANcpLua.NET.Sdk": "3.4.21",
-    "ANcpLua.NET.Sdk.Web": "3.4.21",
-    "ANcpLua.NET.Sdk.Test": "3.4.21"
+    "ANcpLua.NET.Sdk": "3.4.22",
+    "ANcpLua.NET.Sdk.Web": "3.4.22",
+    "ANcpLua.NET.Sdk.Test": "3.4.22"
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"
