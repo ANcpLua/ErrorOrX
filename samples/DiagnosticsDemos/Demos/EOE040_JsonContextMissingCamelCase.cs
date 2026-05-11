@@ -13,7 +13,7 @@ namespace DiagnosticsDemos.Demos;
 // -------------------------------------------------------------------------
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(Eoe040Response))]
-internal partial class GoodJsonContext : JsonSerializerContext;
+internal sealed partial class GoodJsonContext : JsonSerializerContext;
 
 /// <summary>
 ///     EOE040: JsonSerializerContext missing CamelCase — Custom JsonSerializerContext should configure

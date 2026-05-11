@@ -13,4 +13,4 @@ namespace ErrorOrX.Validation.Showcase;
 [JsonSerializable(typeof(List<Order>))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext;
+internal sealed partial class AppJsonSerializerContext : JsonSerializerContext;

@@ -89,6 +89,21 @@ resharper_parameter_type_can_be_enumerable_local_highlighting = none
 resharper_suggest_base_type_for_parameter_highlighting = none
 
 # ============================================================================
+# Samples / DiagnosticsDemos Suppressions
+# ============================================================================
+# Demo files exist to *demonstrate* ErrorOrX diagnostics (EOE0xx). They
+# intentionally trip patterns that the production analyzer suite would flag
+# as cleanup. Suppressing here keeps the samples build green without papering
+# over real issues in src/ or tests/.
+[samples/**/*.cs]
+dotnet_diagnostic.CA1034.severity = none # Nested types — demos co-locate DTOs for one-file-per-diagnostic clarity
+dotnet_diagnostic.CA1052.severity = none # Static holder — EOE002 demos a non-static (broken) handler shape
+dotnet_diagnostic.CA1054.severity = none # URI parameter as string — demo DTOs keep examples literal
+dotnet_diagnostic.CA1056.severity = none # URI property as string — same as CA1054
+dotnet_diagnostic.IDE0060.severity = none # Unused parameter — demo handlers are stubs that exist to bind/trigger diagnostics
+dotnet_diagnostic.IDE1006.severity = none # s_ prefix — demo fields use plain `_field` over s_ convention
+
+# ============================================================================
 # Generator-Specific Suppressions
 # ============================================================================
 

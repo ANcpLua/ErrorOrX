@@ -26,9 +26,7 @@ public sealed record CategoryResponse(int Id, string Name);
 [JsonSerializable(typeof(List<ProductResponse>))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class EOE007JsonContext : JsonSerializerContext
-{
-}
+internal sealed partial class EOE007JsonContext : JsonSerializerContext;
 
 /// <summary>
 ///     EOE007: Type not AOT-serializable — Type used in endpoint is not registered in JsonSerializerContext for AOT.

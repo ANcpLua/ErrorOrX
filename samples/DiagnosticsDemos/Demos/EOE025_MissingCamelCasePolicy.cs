@@ -16,9 +16,7 @@ public sealed record PersonResponse(int Id, string FirstName, string LastName);
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(PersonResponse))]
 [JsonSerializable(typeof(List<PersonResponse>))]
-internal partial class EOE025JsonContext : JsonSerializerContext
-{
-}
+internal sealed partial class EOE025JsonContext : JsonSerializerContext;
 
 /// <summary>
 ///     EOE025: Missing CamelCase policy — JsonSerializerContext is missing CamelCase property naming policy.

@@ -16,7 +16,7 @@ namespace DiagnosticsDemos.Demos;
 [JsonSerializable(typeof(Eoe041Response))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class CompleteJsonContext : JsonSerializerContext;
+internal sealed partial class CompleteJsonContext : JsonSerializerContext;
 
 /// <summary>
 ///     EOE041: JsonSerializerContext missing error types — Custom JsonSerializerContext must include

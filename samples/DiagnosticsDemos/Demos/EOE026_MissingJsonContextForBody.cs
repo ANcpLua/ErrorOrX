@@ -24,9 +24,7 @@ public sealed record OrderResponse(string OrderId, string Status);
 // Don't forget ProblemDetails for error responses
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(HttpValidationProblemDetails))]
-internal partial class EOE026JsonContext : JsonSerializerContext
-{
-}
+internal sealed partial class EOE026JsonContext : JsonSerializerContext;
 
 /// <summary>
 ///     EOE026: Missing JsonSerializerContext for AOT — No JsonSerializerContext found but endpoint uses request body,
