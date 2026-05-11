@@ -31,6 +31,15 @@ dotnet_diagnostic.MA0004.severity = none # ConfigureAwait — ASP.NET Core has n
 dotnet_diagnostic.MA0016.severity = none # Collection abstraction — contradicts CA1859 (use concrete types)
 dotnet_diagnostic.MA0051.severity = none # Method too long — source generators have legitimate long methods
 
+# Roslynator — suppress rules that fight ErrorOr<T> union-type semantics
+# RCS1084: "Use coalesce instead of conditional" rewrites
+#   `entity is not null ? entity : Error.NotFound(...)`  (idiomatic ErrorOr<T>)
+# into
+#   `(ErrorOr<T>?)entity ?? Error.NotFound(...)`         (cast + CS8604 nullability warning)
+# The ternary form is the natural way to lift `T? -> ErrorOr<T>` via implicit conversion;
+# the suggested rewrite is strictly worse on every GetById-style endpoint.
+dotnet_diagnostic.RCS1084.severity = none
+
 # ============================================================================
 # IDE Suggestion-Level Rules Rationale
 # ============================================================================
