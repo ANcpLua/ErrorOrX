@@ -1,8 +1,6 @@
-using ANcpLua.Roslyn.Utilities.Matching;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using SymbolMatch = ANcpLua.Roslyn.Utilities.Matching.Match;
 
 namespace ErrorOr.Analyzers;
 
@@ -13,21 +11,12 @@ namespace ErrorOr.Analyzers;
 /// <remarks>
 ///     This analyzer handles single-method diagnostics that can run fast.
 ///     Cross-file diagnostics (EOE004, EOE007) remain in the generator.
-///     Route constraint mappings are shared via RouteValidator to avoid duplication.
+///     Route classification (Stream/PipeReader/IFormFile/etc.) is delegated to
+///     <see cref="ErrorOrContext" /> so analyzer and generator stay in lockstep.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 {
-    /// <summary>
-    ///     Type matchers for body source detection using ANcpLua.Roslyn.Utilities.
-    /// </summary>
-    private static readonly TypeMatcher StreamMatcher = SymbolMatch.Type().NameContains("Stream");
-
-    private static readonly TypeMatcher PipeReaderMatcher = SymbolMatch.Type().Named("PipeReader");
-    private static readonly TypeMatcher FormFileMatcher = SymbolMatch.Type().Named("IFormFile");
-    private static readonly TypeMatcher FormFileCollectionMatcher = SymbolMatch.Type().Named("IFormFileCollection");
-    private static readonly TypeMatcher FormCollectionMatcher = SymbolMatch.Type().Named("IFormCollection");
-
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [
@@ -167,7 +156,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         // EOE009: [AcceptedResponse] on read-only method
-        if (HasAcceptedResponseAttribute(method, acceptedResponseAttribute: null) && isBodyless)
+        if (HasAcceptedResponseAttribute(method) && isBodyless)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
@@ -194,20 +183,20 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         foreach (var param in method.Parameters)
         {
             foreach (var attr in param.GetAttributes())
-        {
-            if (attr.AttributeClass is null) continue;
-
-            // Check if the attribute inherits from ValidationAttribute
-            if (InheritsFrom(attr.AttributeClass, validationAttributeType))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    Descriptors.ValidationUsesReflection,
-                    param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                    param.Name,
-                    method.Name));
-                break; // Only report once per parameter
+                if (attr.AttributeClass is null) continue;
+
+                // Check if the attribute inherits from ValidationAttribute
+                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        Descriptors.ValidationUsesReflection,
+                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                        param.Name,
+                        method.Name));
+                    break; // Only report once per parameter
+                }
             }
-        }
         }
     }
 
@@ -356,34 +345,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                named.ContainingNamespace?.ToDisplayString() is "ErrorOr" or "ErrorOr.Core.ErrorOr";
     }
 
-    /// <summary>
-    ///     Type detection using fluent matchers from ANcpLua.Roslyn.Utilities.
-    /// </summary>
-    private static bool IsStream(ISymbol type)
-    {
-        return StreamMatcher.Matches(type);
-    }
-
-    private static bool IsPipeReader(ISymbol type)
-    {
-        return PipeReaderMatcher.Matches(type);
-    }
-
-    private static bool IsFormFile(ISymbol type)
-    {
-        return FormFileMatcher.Matches(type);
-    }
-
-    private static bool IsFormFileCollection(ISymbol type)
-    {
-        return FormFileCollectionMatcher.Matches(type);
-    }
-
-    private static bool IsFormCollection(ISymbol type)
-    {
-        return FormCollectionMatcher.Matches(type);
-    }
-
     private static List<(string HttpMethod, string Pattern, Location Location)> GetEndpointAttributes(
         ISymbol method)
     {
@@ -487,12 +448,13 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Check for body-related types using pattern matchers
-            if (IsStream(param.Type) || IsPipeReader(param.Type))
+            // Body-related types: route through ErrorOrContext so analyzer + generator
+            // share one source of truth (FQN + inheritance, not name substring match).
+            if (ErrorOrContext.IsStream(param.Type) || ErrorOrContext.IsPipeReader(param.Type))
                 hasStream = true;
-            else if (IsFormFile(param.Type) ||
-                     IsFormFileCollection(param.Type) ||
-                     IsFormCollection(param.Type))
+            else if (ErrorOrContext.IsFormFile(param.Type) ||
+                     ErrorOrContext.IsFormFileCollection(param.Type) ||
+                     ErrorOrContext.IsFormCollection(param.Type))
                 hasFromForm = true;
         }
 
@@ -503,11 +465,9 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
     }
 
-    private static bool HasAcceptedResponseAttribute(ISymbol method, INamedTypeSymbol? acceptedResponseAttribute)
+    private static bool HasAcceptedResponseAttribute(ISymbol method)
     {
-        return acceptedResponseAttribute is not null
-            ? method.HasAttribute(acceptedResponseAttribute)
-            : method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
+        return method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
     }
 
     private static List<string> ValidateRoutePattern(string pattern)
