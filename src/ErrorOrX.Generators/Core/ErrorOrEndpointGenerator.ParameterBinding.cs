@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Matching;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
@@ -860,9 +861,9 @@ CollectionItemTypeFqn: null,
         var matcher = new AttributeNameMatcher(WellKnownTypes.FromKeyedServicesAttribute);
         var attr = parameter.GetAttributes().FirstOrDefault(a => matcher.IsMatch(a.AttributeClass));
 
-        if (attr is null || attr.ConstructorArguments.Length is 0) return null;
+        if (attr is null) return null;
 
-        var val = attr.ConstructorArguments[0].Value;
+        var val = attr.GetConstructorArgument<object>(0);
         return val switch { string s => $"\"{s}\"", null => null, _ => val.ToString() };
     }
 
@@ -892,8 +893,7 @@ CollectionItemTypeFqn: null,
             }
         }
 
-        if (attr.ConstructorArguments.Length > 0 &&
-            attr.ConstructorArguments[0].Value is string ctorArg &&
+        if (attr.GetConstructorArgument<string>(0) is { } ctorArg &&
             !string.IsNullOrWhiteSpace(ctorArg))
         {
             return ctorArg;

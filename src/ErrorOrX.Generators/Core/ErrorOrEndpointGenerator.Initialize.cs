@@ -1,4 +1,5 @@
 using ANcpLua.Roslyn.Utilities.Models;
+using ANcpLua.Roslyn.Utilities;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -477,8 +478,7 @@ in versioning,
 
         // Extract pattern - index differs for ErrorOrEndpoint (has httpMethod arg first)
         var patternIndex = isErrorOrEndpoint ? 1 : 0;
-        var pattern = attr.ConstructorArguments.Length > patternIndex &&
-                      attr.ConstructorArguments[patternIndex].Value is string p
+        var pattern = attr.GetConstructorArgument<string>(patternIndex) is { } p
             ? p
             : "/";
 

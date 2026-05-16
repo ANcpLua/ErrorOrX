@@ -29,8 +29,15 @@
             ANcpLua.Roslyn.Utilities.Sources (AsyncBatchingWorkQueue, IncrementalValuesProviderExtensions).
             These are deliberate try/catch patterns in resilient infrastructure code.
             .editorconfig cannot suppress diagnostics in NuGet cache paths.
+
+            AL0140: The generator emitter code intentionally relies on local type inference for
+            Roslyn syntax construction where explicit types add noise rather than safety.
+
+            RS1035: ANcpLua.Roslyn.Utilities.Sources contains environment-variable checks in
+            source-package infrastructure; suppress here until the upstream package removes that
+            analyzer-host API usage.
         -->
-        <NoWarn>$(NoWarn);NU5128;RS1038;ERP022</NoWarn>
+        <NoWarn>$(NoWarn);NU5128;RS1038;ERP022;AL0140;RS1035</NoWarn>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>false</IncludeSymbols>
