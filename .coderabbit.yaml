@@ -90,13 +90,6 @@ reviews:
   poem: false
   enable_prompt_for_ai_agents: true
   path_filters:
-  - "!**/*.g.cs"
-  - "!**/*.g.ts"
-  - "!**/*.g.sql"
-  - "!**/*.g.tsp"
-  - "!**/*.Designer.cs"
-  - "!**/Generated/**"
-  - "!**/generated/**"
   - "!**/bin/**"
   - "!**/obj/**"
   - "!**/dist/**"
@@ -107,9 +100,6 @@ reviews:
   - "!**/.next/**"
   - "!**/*.min.js"
   - "!**/*.min.css"
-  - "!**/package-lock.json"
-  - "!**/pnpm-lock.yaml"
-  - "!**/yarn.lock"
   - "!Artifacts/**"
   - "!artifacts/**"
   - "!**/*.sarif"
@@ -521,37 +511,21 @@ issue_enrichment:
       - help-wanted
   labeling:
     labeling_instructions:
-    - label: area:api
-      instructions: Apply when REST, RPC, MCP, public endpoints, contracts, or request/response
-        models change.
-    - label: area:ui
-      instructions: Apply when frontend UI, styling, accessibility, or client-side
-        state changes.
-    - label: area:build
-      instructions: Apply when build scripts, NUKE/MSBuild, package managers, Docker,
-        CI, or release automation change.
-    - label: area:test
-      instructions: Apply when tests, fixtures, test infrastructure, coverage, or
-        snapshots change.
-    - label: area:docs
-      instructions: Apply when docs, AGENTS.md, CLAUDE.md, README, changelogs, specs,
-        or generated reference docs change.
-    - label: area:security
-      instructions: Apply when authentication, authorization, secrets, token handling,
-        logging of sensitive data, or dependency security changes.
-    - label: area:data
-      instructions: Apply when database schema, persistence, migrations, queues, storage,
-        serialization, generated data, or data contracts change.
-    - label: area:agents
-      instructions: Apply when agent prompts, MCP tools, AI workflow code, model calls,
-        tool schemas, or agent-facing instructions change.
-    - label: area:generated
-      instructions: Apply when generated files, generators, schemas, OpenAPI/TypeSpec/semconv
-        models, lockfiles, or generated docs change.
-    - label: breaking
-      instructions: Apply when public APIs, CLI flags, package surfaces, endpoint
-        schemas, storage formats, config keys, or emitted artifacts change incompatibly.
-    - label: review:slop
-      instructions: Auto-applied by CodeRabbit slop detection for low-quality AI-generated
-        changes. Do not apply manually.
+    - label: bug
+      instructions: Apply when the issue reports incorrect behavior, failing tests,
+        regressions, or broken automation.
+    - label: enhancement
+      instructions: Apply when the issue asks for new capability or meaningful improvement.
+    - label: documentation
+      instructions: Apply when the issue is primarily about docs, examples, guides,
+        or agent instructions.
+    - label: security
+      instructions: Apply when the issue involves secrets, auth, privacy, dependency
+        risk, or exploitability.
+    - label: dependencies
+      instructions: Apply when the issue is about package, SDK, runtime, or lockfile
+        updates.
+    - label: good-first-issue
+      instructions: Apply only when the issue is small, well-scoped, and low-risk
+        for a new contributor or agent.
     auto_apply_labels: true
