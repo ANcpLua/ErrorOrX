@@ -1,3 +1,4 @@
+using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -110,8 +111,7 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static string GetPattern(AttributeData attr)
     {
-        if (attr.ConstructorArguments.Length > 0 &&
-            attr.ConstructorArguments[0].Value is string p &&
+        if (attr.GetConstructorArgument<string>(0) is { } p &&
             !string.IsNullOrWhiteSpace(p))
         {
             return p;
@@ -122,10 +122,8 @@ public sealed class OpenApiTransformerGenerator : IIncrementalGenerator
 
     private static (string? httpMethod, string? pattern) GetBaseAttributeInfo(AttributeData attr)
     {
-        if (attr.ConstructorArguments.Length < 2) return (null, null);
-
-        var method = attr.ConstructorArguments[0].Value as string;
-        var pattern = attr.ConstructorArguments[1].Value as string;
+        var method = attr.GetConstructorArgument<string>(0);
+        var pattern = attr.GetConstructorArgument<string>(1);
 
         return string.IsNullOrWhiteSpace(method)
             ? (null, null)

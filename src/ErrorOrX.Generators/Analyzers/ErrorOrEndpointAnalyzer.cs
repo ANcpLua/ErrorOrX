@@ -1,3 +1,4 @@
+using ANcpLua.Roslyn.Utilities;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -388,8 +389,7 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             // Extract pattern from constructor arguments
             var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
-            if (attr.ConstructorArguments.Length > patternIndex &&
-                attr.ConstructorArguments[patternIndex].Value is string p)
+            if (attr.GetConstructorArgument<string>(patternIndex) is { } p)
             {
                 pattern = p;
             }
