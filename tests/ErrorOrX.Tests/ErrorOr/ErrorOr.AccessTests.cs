@@ -1,12 +1,11 @@
 namespace ErrorOrX.Tests.ErrorOr;
 
 /// <summary>
-///     Unit tests for the ErrorOr&lt;TValue&gt; struct.
+///     Tests for <c>ErrorOr&lt;TValue&gt;</c> state, value/error access, implicit conversions,
+///     and Error factory ErrorType assignment.
 /// </summary>
-public class ErrorOrTests
+public class ErrorOrAccessTests
 {
-    #region Error with Metadata Tests
-
     [Fact]
     public void Error_WithMetadata_ShouldContainMetadata()
     {
@@ -21,10 +20,6 @@ public class ErrorOrTests
         error.Metadata.Should().ContainKey("Field");
         error.Metadata["Field"].Should().Be("Email");
     }
-
-    #endregion
-
-    #region IsError and IsSuccess Tests
 
     [Fact]
     public void IsError_WhenCreatedWithValue_ShouldBeFalse()
@@ -66,10 +61,6 @@ public class ErrorOrTests
         result.IsSuccess.Should().BeFalse();
     }
 
-    #endregion
-
-    #region Value Access Tests
-
     [Fact]
     public void Value_WhenCreatedWithValue_ShouldReturnValue()
     {
@@ -97,10 +88,6 @@ public class ErrorOrTests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*cannot be accessed when errors have been recorded*");
     }
-
-    #endregion
-
-    #region Errors Access Tests
 
     [Fact]
     public void Errors_WhenCreatedWithError_ShouldReturnErrors()
@@ -179,10 +166,6 @@ public class ErrorOrTests
             .WithMessage("*cannot be accessed when no errors have been recorded*");
     }
 
-    #endregion
-
-    #region Implicit Conversion Tests
-
     [Fact]
     public void ImplicitConversion_FromValue_ShouldCreateSuccessResult()
     {
@@ -225,10 +208,6 @@ public class ErrorOrTests
         result.IsError.Should().BeTrue();
         result.Errors.Should().HaveCount(2);
     }
-
-    #endregion
-
-    #region Error Type Tests
 
     [Fact]
     public void Error_Failure_ShouldHaveCorrectType()
@@ -301,265 +280,4 @@ public class ErrorOrTests
         // Assert
         error.Type.Should().Be(ErrorType.Unexpected);
     }
-
-    #endregion
-
-    #region Match Tests
-
-    [Fact]
-    public void Match_WhenSuccess_ShouldInvokeOnValue()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-        var onValueInvoked = false;
-        var onErrorInvoked = false;
-
-        // Act
-        var output = result.Match(
-            value =>
-            {
-                onValueInvoked = true;
-                return value * 2;
-            },
-            _ =>
-            {
-                onErrorInvoked = true;
-                return -1;
-            });
-
-        // Assert
-        onValueInvoked.Should().BeTrue();
-        onErrorInvoked.Should().BeFalse();
-        output.Should().Be(84);
-    }
-
-    [Fact]
-    public void Match_WhenError_ShouldInvokeOnError()
-    {
-        // Arrange
-        ErrorOr<int> result = Error.Failure("Test.Error", "A test error");
-        var onValueInvoked = false;
-        var onErrorInvoked = false;
-
-        // Act
-        var output = result.Match(
-            value =>
-            {
-                onValueInvoked = true;
-                return value * 2;
-            },
-            _ =>
-            {
-                onErrorInvoked = true;
-                return -1;
-            });
-
-        // Assert
-        onValueInvoked.Should().BeFalse();
-        onErrorInvoked.Should().BeTrue();
-        output.Should().Be(-1);
-    }
-
-    #endregion
-
-    #region Switch Tests
-
-    [Fact]
-    public void Switch_WhenSuccess_ShouldInvokeOnValue()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-        var onValueInvoked = false;
-        var onErrorInvoked = false;
-
-        // Act
-        result.Switch(
-            _ => onValueInvoked = true,
-            _ => onErrorInvoked = true);
-
-        // Assert
-        onValueInvoked.Should().BeTrue();
-        onErrorInvoked.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Switch_WhenError_ShouldInvokeOnError()
-    {
-        // Arrange
-        ErrorOr<int> result = Error.Failure("Test.Error", "A test error");
-        var onValueInvoked = false;
-        var onErrorInvoked = false;
-
-        // Act
-        result.Switch(
-            _ => onValueInvoked = true,
-            _ => onErrorInvoked = true);
-
-        // Assert
-        onValueInvoked.Should().BeFalse();
-        onErrorInvoked.Should().BeTrue();
-    }
-
-    #endregion
-
-    #region Then/ThenDo Tests
-
-    [Fact]
-    public void Then_WhenSuccess_ShouldTransformValue()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-
-        // Act
-        var transformed = result.Then(static value => value.ToString());
-
-        // Assert
-        transformed.IsError.Should().BeFalse();
-        transformed.Value.Should().Be("42");
-    }
-
-    [Fact]
-    public void Then_WhenError_ShouldPropagateError()
-    {
-        // Arrange
-        var error = Error.Failure("Test.Error", "A test error");
-        ErrorOr<int> result = error;
-
-        // Act
-        var transformed = result.Then(static value => value.ToString());
-
-        // Assert
-        transformed.IsError.Should().BeTrue();
-        transformed.FirstError.Should().Be(error);
-    }
-
-    [Fact]
-    public void ThenDo_WhenSuccess_ShouldExecuteAction()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-        var actionExecuted = false;
-
-        // Act
-        var output = result.ThenDo(_ => actionExecuted = true);
-
-        // Assert
-        actionExecuted.Should().BeTrue();
-        output.IsError.Should().BeFalse();
-        output.Value.Should().Be(42);
-    }
-
-    [Fact]
-    public void ThenDo_WhenError_ShouldNotExecuteAction()
-    {
-        // Arrange
-        var error = Error.Failure("Test.Error", "A test error");
-        ErrorOr<int> result = error;
-        var actionExecuted = false;
-
-        // Act
-        var output = result.ThenDo(_ => actionExecuted = true);
-
-        // Assert
-        actionExecuted.Should().BeFalse();
-        output.IsError.Should().BeTrue();
-    }
-
-    #endregion
-
-    #region Else Tests
-
-    [Fact]
-    public void Else_WhenSuccess_ShouldReturnOriginalValue()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-
-        // Act - Else returns ErrorOr<TValue>, so extract .Value
-        var output = result.Else(static _ => -1);
-
-        // Assert
-        output.IsError.Should().BeFalse();
-        output.Value.Should().Be(42);
-    }
-
-    [Fact]
-    public void Else_WhenError_ShouldReturnFallbackValue()
-    {
-        // Arrange
-        ErrorOr<int> result = Error.Failure("Test.Error", "A test error");
-
-        // Act - Else returns ErrorOr<TValue> with the fallback value
-        var output = result.Else(static _ => -1);
-
-        // Assert
-        output.IsError.Should().BeFalse();
-        output.Value.Should().Be(-1);
-    }
-
-    [Fact]
-    public void ElseWithValue_WhenError_ShouldReturnFallbackValue()
-    {
-        // Arrange
-        ErrorOr<int> result = Error.Failure("Test.Error", "A test error");
-
-        // Act - Else returns ErrorOr<TValue> with the fallback value
-        var output = result.Else(-1);
-
-        // Assert
-        output.IsError.Should().BeFalse();
-        output.Value.Should().Be(-1);
-    }
-
-    #endregion
-
-    #region FailIf Tests
-
-    [Fact]
-    public void FailIf_WhenPredicateIsFalse_ShouldReturnOriginalValue()
-    {
-        // Arrange
-        ErrorOr<int> result = 42;
-        var error = Error.Validation("Test.Validation", "Value is invalid");
-
-        // Act
-        var output = result.FailIf(static value => value < 0, in error);
-
-        // Assert
-        output.IsError.Should().BeFalse();
-        output.Value.Should().Be(42);
-    }
-
-    [Fact]
-    public void FailIf_WhenPredicateIsTrue_ShouldReturnError()
-    {
-        // Arrange
-        ErrorOr<int> result = -5;
-        var error = Error.Validation("Test.Validation", "Value must be positive");
-
-        // Act
-        var output = result.FailIf(static value => value < 0, in error);
-
-        // Assert
-        output.IsError.Should().BeTrue();
-        output.FirstError.Should().Be(error);
-    }
-
-    [Fact]
-    public void FailIf_WhenAlreadyError_ShouldReturnOriginalError()
-    {
-        // Arrange
-        var originalError = Error.Failure("Original.Error", "Original error");
-        ErrorOr<int> result = originalError;
-        var newError = Error.Validation("Test.Validation", "Value is invalid");
-
-        // Act
-        var output = result.FailIf(static _ => true, in newError);
-
-        // Assert
-        output.IsError.Should().BeTrue();
-        output.FirstError.Should().Be(originalError);
-    }
-
-    #endregion
 }

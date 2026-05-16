@@ -10,13 +10,23 @@ namespace ErrorOr.Analyzers;
 ///     Provides immediate IDE feedback for common issues.
 /// </summary>
 /// <remarks>
-///     This analyzer handles single-method diagnostics that can run fast.
-///     Cross-file diagnostics (EOE004, EOE007) remain in the generator.
-///     Route classification (Stream/PipeReader/IFormFile/etc.) is delegated to
-///     <see cref="ErrorOrContext" /> so analyzer and generator stay in lockstep.
+///     <para>
+///         This analyzer handles single-method diagnostics that can run fast.
+///         Cross-file diagnostics (EOE004, EOE007) remain in the generator.
+///         Route classification (Stream/PipeReader/IFormFile/etc.) is delegated to
+///         <see cref="ErrorOrContext" /> so analyzer and generator stay in lockstep.
+///     </para>
+///     <para>
+///         Split across:
+///         <list type="bullet">
+///             <item><c>ErrorOrEndpointAnalyzer.cs</c> — Entry, Initialize, top-level analysis loop, return-type / attribute extraction.</item>
+///             <item><c>ErrorOrEndpointAnalyzer.RouteValidation.cs</c> — Pattern parsing + per-constraint validation.</item>
+///             <item><c>ErrorOrEndpointAnalyzer.BodyAndValidation.cs</c> — Body-source counting, DataAnnotations reflection check.</item>
+///         </list>
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
+public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 {
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
@@ -170,176 +180,6 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         CheckForValidationAttributes(in context, method);
     }
 
-    /// <summary>
-    ///     Checks if any parameter has validation attributes from System.ComponentModel.DataAnnotations.
-    ///     Validator.TryValidateObject uses reflection internally.
-    /// </summary>
-    private static void CheckForValidationAttributes(
-        in SymbolAnalysisContext context,
-        IMethodSymbol method)
-    {
-        var validationAttributeType = context.Compilation.GetTypeByMetadataName(WellKnownTypes.ValidationAttribute);
-        if (validationAttributeType is null) return;
-
-        foreach (var param in method.Parameters)
-        {
-            foreach (var attr in param.GetAttributes())
-            {
-                if (attr.AttributeClass is null) continue;
-
-                // Check if the attribute inherits from ValidationAttribute
-                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        Descriptors.ValidationUsesReflection,
-                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                        param.Name,
-                        method.Name));
-                    break; // Only report once per parameter
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Checks if a type inherits from a base type.
-    /// </summary>
-    private static bool InheritsFrom(ITypeSymbol type, ISymbol baseType)
-    {
-        var current = type.BaseType;
-        while (current is not null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType)) return true;
-
-            current = current.BaseType;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    ///     Validates route constraint types match method parameter types (EOE020).
-    /// </summary>
-    private static void ValidateConstraintTypes(
-        in SymbolAnalysisContext context,
-        ImmutableArray<RouteParameterInfo> routeParams,
-        IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
-        Location attributeLocation)
-    {
-        foreach (var rp in routeParams)
-            ValidateSingleRouteConstraint(in context, rp, methodParamsByRouteName, attributeLocation);
-    }
-
-    /// <summary>
-    ///     Validates a single route parameter constraint against its bound method parameter.
-    /// </summary>
-    private static void ValidateSingleRouteConstraint(
-        in SymbolAnalysisContext context,
-        RouteParameterInfo rp,
-        IReadOnlyDictionary<string, RouteMethodParameterInfo> methodParamsByRouteName,
-        Location attributeLocation)
-    {
-        // Skip if no constraint or not bound to a method parameter
-        if (rp.Constraint is not { } constraint ||
-            !methodParamsByRouteName.TryGetValue(rp.Name, out var mp))
-        {
-            return;
-        }
-
-        if (mp.TypeFqn is not { } typeFqn) return;
-
-        // Skip format-only constraints
-        if (IsFormatOnlyConstraint(constraint)) return;
-
-        // Validate based on constraint type
-        if (rp.IsCatchAll)
-            ValidateCatchAllConstraint(in context, rp, mp, typeFqn, attributeLocation);
-        else
-            ValidateTypedConstraint(in context, rp, constraint, mp, typeFqn, attributeLocation);
-    }
-
-    /// <summary>
-    ///     Checks if a constraint is format-only and doesn't constrain the CLR type.
-    ///     Delegates to shared RouteValidator to avoid duplication.
-    /// </summary>
-    private static bool IsFormatOnlyConstraint(string constraint)
-    {
-        return RouteValidator.FormatOnlyConstraints.Contains(constraint);
-    }
-
-    /// <summary>
-    ///     Validates that a catch-all parameter is bound to a string type.
-    /// </summary>
-    private static void ValidateCatchAllConstraint(
-        in SymbolAnalysisContext context,
-        RouteParameterInfo rp,
-        RouteMethodParameterInfo mp,
-        string typeFqn,
-        Location attributeLocation)
-    {
-        if (!IsStringType(typeFqn))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Descriptors.RouteConstraintTypeMismatch,
-                attributeLocation,
-                rp.Name,
-                "*",
-                "string",
-                mp.Name,
-                NormalizeTypeName(typeFqn)));
-        }
-    }
-
-    /// <summary>
-    ///     Validates that a typed constraint matches the bound parameter type.
-    ///     Uses shared RouteValidator.ConstraintToTypes to avoid duplication.
-    /// </summary>
-    private static void ValidateTypedConstraint(
-        in SymbolAnalysisContext context,
-        RouteParameterInfo rp,
-        string constraint,
-        RouteMethodParameterInfo mp,
-        string typeFqn,
-        Location attributeLocation)
-    {
-        // Look up expected types for this constraint using shared RouteValidator
-        if (!RouteValidator.ConstraintToTypes.TryGetValue(constraint,
-                out var expectedTypes))
-        {
-            return; // Unknown constraint (e.g., custom) - skip validation
-        }
-
-        // Get the actual type, unwrapping Nullable<T> for optional parameters
-        var actualTypeFqn = typeFqn.UnwrapNullable(rp.IsOptional || mp.IsNullable);
-
-        // Check if actual type matches any expected type
-        if (!DoesTypeMatchConstraint(actualTypeFqn, expectedTypes))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Descriptors.RouteConstraintTypeMismatch,
-                attributeLocation,
-                rp.Name,
-                constraint,
-                expectedTypes[0],
-                mp.Name,
-                NormalizeTypeName(typeFqn)));
-        }
-    }
-
-    /// <summary>
-    ///     Checks if an actual type matches any of the expected types for a constraint.
-    /// </summary>
-    private static bool DoesTypeMatchConstraint(string actualTypeFqn, IEnumerable<string> expectedTypes)
-    {
-        foreach (var expected in expectedTypes)
-        {
-            if (TypeNamesMatch(actualTypeFqn, expected))
-                return true;
-        }
-
-        return false;
-    }
-
     private static bool IsErrorOr(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { Name: "ErrorOr", IsGenericType: true } named &&
@@ -425,97 +265,5 @@ public sealed class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
     private static ImmutableArray<RouteParameterInfo> ExtractRouteParametersWithConstraints(string pattern)
     {
         return RouteValidator.ExtractRouteParameters(pattern);
-    }
-
-    private static int CountBodySources(IMethodSymbol method)
-    {
-        var bodyCount = 0;
-        var hasFromForm = false;
-        var hasStream = false;
-
-        foreach (var param in method.Parameters)
-        {
-            // Check for body-related attributes using HasAttribute
-            if (param.HasAttribute(WellKnownTypes.FromBodyAttribute))
-            {
-                bodyCount++;
-                continue;
-            }
-
-            if (param.HasAttribute(WellKnownTypes.FromFormAttribute))
-            {
-                hasFromForm = true;
-                continue;
-            }
-
-            // Body-related types: route through ErrorOrContext so analyzer + generator
-            // share one source of truth (FQN + inheritance, not name substring match).
-            if (ErrorOrContext.IsStream(param.Type) || ErrorOrContext.IsPipeReader(param.Type))
-                hasStream = true;
-            else if (ErrorOrContext.IsFormFile(param.Type) ||
-                     ErrorOrContext.IsFormFileCollection(param.Type) ||
-                     ErrorOrContext.IsFormCollection(param.Type))
-                hasFromForm = true;
-        }
-
-        // Multiple [FromBody] is always an error
-        if (bodyCount > 1) return bodyCount;
-
-        // Otherwise return number of distinct body source buckets used
-        return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
-    }
-
-    private static bool HasAcceptedResponseAttribute(ISymbol method)
-    {
-        return method.HasAttribute(WellKnownTypes.AcceptedResponseAttribute);
-    }
-
-    private static List<string> ValidateRoutePattern(string pattern)
-    {
-        var issues = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            issues.Add("Route pattern cannot be empty");
-            return issues;
-        }
-
-        // Strip escaped braces before validation (matches RouteValidator behavior)
-        // This prevents false positives for routes like /api/{{version}}/users
-        var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
-
-        // Check for empty parameter names: {}
-        if (escapedStripped.Contains("{}"))
-            issues.Add("Route contains empty parameter '{}'. Parameter names are required");
-
-        // Check for unclosed braces
-        var openCount = escapedStripped.Count(static c => c == '{');
-        var closeCount = escapedStripped.Count(static c => c == '}');
-        if (openCount != closeCount) issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
-
-        // Check for duplicate parameter names using RouteValidator (single source of truth)
-        var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
-        {
-            if (!paramNames.Add(rp.Name))
-                issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
-        }
-
-        return issues;
-    }
-
-    private static bool IsStringType(string typeFqn)
-    {
-        return typeFqn.IsStringType();
-    }
-
-    private static bool TypeNamesMatch(string actualFqn, string expected)
-    {
-        return actualFqn.TypeNamesEqual(expected);
-    }
-
-    private static string NormalizeTypeName(string typeFqn)
-    {
-        return typeFqn.NormalizeTypeName();
     }
 }
