@@ -324,11 +324,13 @@ reviews:
         repo uses one.'
     - mode: error
       name: CI Release Safety
-      instructions: 'Pass/fail criteria: fail workflow/build/release changes that
-        reduce required validation, introduce admin bypasses, broaden token permissions
-        without justification, leak secrets, remove concurrency where needed, make
-        publish steps run on the wrong trigger, or allow failed required checks to
-        be ignored.'
+      instructions: 'Pass/fail criteria: if no workflow/build/release files changed,
+        pass. Fail when a changed workflow removes an existing validation job, removes
+        concurrency from push/PR workflows, adds --admin/force-push/bypass commands,
+        increases token permissions beyond contents:read without inline rationale,
+        exposes secrets in command arguments/logs, changes publish triggers to run
+        outside tags or approved environments, or allows a previously required failing
+        check to be ignored.'
     - mode: warning
       name: Tests Match Risk
       instructions: 'Pass/fail criteria: warn when production behavior changes without
@@ -505,7 +507,7 @@ knowledge_base:
   pull_requests:
     scope: global
   mcp:
-    usage: enabled
+    usage: auto
   linked_repositories:
   - repository: ANcpLua/ANcpLua.Agents
     instructions: Related ANcpLua/O-ANcppLua repository. Use for cross-repo API, package,
