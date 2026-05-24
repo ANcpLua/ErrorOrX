@@ -12,7 +12,6 @@
         <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
         <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
 
-        <PackageVersion Update="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="$(MicrosoftCodeAnalysisBannedApiAnalyzersVersion)"/>
         <PackageVersion Update="Microsoft.Sbom.Targets" Version="$(MicrosoftSbomTargetsVersion)"/>
         <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="$(ErrorProneNETCoreAnalyzersVersion)"/>
         <PackageVersion Include="ErrorProne.NET.Structs" Version="$(ErrorProneNETStructsVersion)"/>
