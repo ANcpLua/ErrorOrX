@@ -30,9 +30,9 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var endpoints = CombineHttpMethodProviders(context, errorOrContextProvider);
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
-            .Select(ParseGenerateJsonContextOption);
+            .IsToggleEnabled("ErrorOrGenerateJsonContext", defaultValue: true);
         var publishAotOption = context.AnalyzerConfigOptionsProvider
-            .Select(ParsePublishAotOption);
+            .IsToggleEnabled("PublishAot", defaultValue: false);
         var referenceArities = context.MetadataReferencesProvider
             .Select(static (reference, _) => ResultsUnionTypeBuilder.GetResultsUnionArity(reference))
             .CollectAsEquatableArray();
@@ -52,18 +52,6 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
             });
 
         context.RegisterSourceOutput(emitInput, static (spc, ctx) => EmitMappingsAndRunAnalysis(spc, in ctx));
-    }
-
-    private static bool ParseGenerateJsonContextOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
-    {
-        options.GlobalOptions.TryGetValue("build_property.ErrorOrGenerateJsonContext", out var value);
-        return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool ParsePublishAotOption(AnalyzerConfigOptionsProvider options, CancellationToken _)
-    {
-        options.GlobalOptions.TryGetValue("build_property.PublishAot", out var value);
-        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void EmitMappingsAndRunAnalysis(
