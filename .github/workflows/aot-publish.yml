@@ -64,6 +64,7 @@ jobs:
           cp "$src_dir/TodoApi.cs"                       "$project_dir/"
           cp "$src_dir/OrderApi.cs"                      "$project_dir/"
           cp "$src_dir/AdvancedErrorHandlingApi.cs"      "$project_dir/"
+          cp "$src_dir/AdminApi.cs"                      "$project_dir/"
           cp "$src_dir/Domain/Todo.cs"                   "$project_dir/Domain/"
           cp "$src_dir/Domain/ITodoService.cs"           "$project_dir/Domain/"
           cp "$src_dir/Domain/TodoService.cs"            "$project_dir/Domain/"

@@ -128,18 +128,23 @@ spanning `Failure`, `NotFound`, and `Validation`.
 
 ## Middleware Attributes
 
-Standard ASP.NET Core attributes on handlers are translated to Minimal API fluent calls:
+Standard ASP.NET Core attributes on handlers are translated to Minimal API fluent
+calls. The generator also auto-adds `401`/`403` (for `[Authorize]`) and `429`
+(for `[EnableRateLimiting]`) `ProducesResponseTypeMetadata` so OpenAPI documents
+the failure modes:
 
-```csharp
-[Post("/admin")]
-[Authorize("Admin")]
-[EnableRateLimiting("fixed")]
-[OutputCache(Duration = 60)]
-public static ErrorOr<User> CreateAdmin(CreateUserRequest req) { … }
+| Attribute               | Emitted fluent call                               |
+|-------------------------|---------------------------------------------------|
+| `[Authorize(...)]`      | `.RequireAuthorization(...)`                      |
+| `[EnableRateLimiting]`  | `.RequireRateLimiting(...)`                       |
+| `[OutputCache]`         | `.CacheOutput(p => p.Expire(TimeSpan.From...))`   |
+| `[EnableCors]`          | `.RequireCors(...)`                               |
 
-// Emits:
-//   .RequireAuthorization("Admin").RequireRateLimiting("fixed").CacheOutput(…)
-```
+Four worked endpoints (one per attribute, including stacked combinations):
+[`samples/ErrorOrX.Samples.Api/AdminApi.cs`](samples/ErrorOrX.Samples.Api/AdminApi.cs).
+Service wiring (`AddAuthorizationBuilder`, `AddRateLimiter`, `AddOutputCache`,
+`AddCors`) lives in
+[`Program.cs`](samples/ErrorOrX.Samples.Api/Program.cs).
 
 ## Native AOT
 
