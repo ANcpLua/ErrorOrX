@@ -1,5 +1,3 @@
-using ANcpLua.Roslyn.Utilities.Models;
-using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
@@ -58,12 +56,10 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.AllowAnonymousAttribute))
-        {
             return current with
             {
                 AllowAnonymous = true
             };
-        }
 
         return current;
     }
@@ -82,12 +78,10 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.DisableRateLimitingAttribute))
-        {
             return current with
             {
                 Disabled = true
             };
-        }
 
         return current;
     }
@@ -105,20 +99,16 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var namedArg in attr.NamedArguments)
         {
             if (namedArg is { Key: "PolicyName", Value.Value: string policy })
-            {
                 result = result with
                 {
                     Policy = policy
                 };
-            }
 
             if (namedArg is { Key: "Duration", Value.Value: int duration })
-            {
                 result = result with
                 {
                     Duration = duration
                 };
-            }
         }
 
         return result;
@@ -138,12 +128,10 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.DisableCorsAttribute))
-        {
             return current with
             {
                 Disabled = true
             };
-        }
 
         return current;
     }
@@ -253,13 +241,13 @@ public sealed partial class ErrorOrEndpointGenerator
                 return ParseVersionString(versionString, isDeprecated);
             // ApiVersion(int majorVersion, int minorVersion)
             case [{ Value: int major }, { Value: int minor }]:
-                return new ApiVersionInfo(major, minor, Status: null, isDeprecated);
+                return new ApiVersionInfo(major, minor, null, isDeprecated);
             // ApiVersion(double version) - e.g., 1.0
             case [{ Value: double doubleVersion }]:
             {
                 var majorPart = (int)doubleVersion;
                 var minorPart = (int)((doubleVersion - majorPart) * 10);
-                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, Status: null, isDeprecated);
+                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
             }
             default:
                 return null;
@@ -310,9 +298,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
             if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.ApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
-            {
                 versions.Add(versionString);
-            }
         }
 
         return versions.ToImmutable();
@@ -334,9 +320,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
             if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.MapToApiVersionAttribute) &&
                 attr.ConstructorArguments is [{ Value: string versionString }])
-            {
                 versions.Add(versionString);
-            }
         }
 
         return versions.ToImmutable();
@@ -366,16 +350,12 @@ public sealed partial class ErrorOrEndpointGenerator
             // Extract optional ApiName from named arguments
             string? apiName = null;
             foreach (var namedArg in attr.NamedArguments)
-            {
                 if (namedArg is
                     {
                         Key: "ApiName",
                         Value.Value: string name
                     })
-                {
                     apiName = name;
-                }
-            }
 
             return new RouteGroupInfo(groupPath, apiName);
         }

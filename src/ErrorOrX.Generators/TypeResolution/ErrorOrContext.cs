@@ -33,6 +33,14 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     /// </summary>
     public bool HasApiVersioningSupport { get; }
 
+    public bool Equals(ErrorOrContext? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return HasValidationResolverSupport == other.HasValidationResolverSupport &&
+               HasApiVersioningSupport == other.HasApiVersioningSupport;
+    }
+
     public static bool MatchesType(ISymbol? symbol, string metadataName)
     {
         return symbol is ITypeSymbol typeSymbol && MatchesMetadataName(typeSymbol, metadataName);
@@ -47,10 +55,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     public static bool HasAttribute(ISymbol symbol, string attributeMetadataName)
     {
         foreach (var attribute in symbol.GetAttributes())
-        {
             if (MatchesType(attribute.AttributeClass, attributeMetadataName))
                 return true;
-        }
 
         return false;
     }
@@ -63,10 +69,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         if (MatchesType(type, metadataName)) return true;
 
         foreach (var interfaceType in type.AllInterfaces)
-        {
             if (MatchesType(interfaceType, metadataName))
                 return true;
-        }
 
         return false;
     }
@@ -77,16 +81,17 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         if (type is null) return false;
 
         for (var current = type; current is not null; current = current.BaseType)
-        {
             if (MatchesType(current, metadataName))
                 return true;
-        }
 
         return false;
     }
 
     /// <summary>Checks if the type implements IFormFile.</summary>
-    public static bool IsFormFile(ITypeSymbol? type) => IsOrImplements(type, WellKnownTypes.FormFile);
+    public static bool IsFormFile(ITypeSymbol? type)
+    {
+        return IsOrImplements(type, WellKnownTypes.FormFile);
+    }
 
     /// <summary>Checks if the type is IFormFileCollection or IReadOnlyList&lt;IFormFile&gt;.</summary>
     public static bool IsFormFileCollection(ITypeSymbol? type)
@@ -103,24 +108,40 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     }
 
     /// <summary>Checks if the type implements IFormCollection.</summary>
-    public static bool IsFormCollection(ITypeSymbol? type) => IsOrImplements(type, WellKnownTypes.FormCollection);
+    public static bool IsFormCollection(ITypeSymbol? type)
+    {
+        return IsOrImplements(type, WellKnownTypes.FormCollection);
+    }
 
     /// <summary>Checks if the type is or inherits from HttpContext.</summary>
-    public static bool IsHttpContext(ITypeSymbol? type) => IsOrInheritsFrom(type, WellKnownTypes.HttpContext);
+    public static bool IsHttpContext(ITypeSymbol? type)
+    {
+        return IsOrInheritsFrom(type, WellKnownTypes.HttpContext);
+    }
 
     /// <summary>Checks if the type is or inherits from System.IO.Stream.</summary>
-    public static bool IsStream(ITypeSymbol? type) => IsOrInheritsFrom(type, WellKnownTypes.Stream);
+    public static bool IsStream(ITypeSymbol? type)
+    {
+        return IsOrInheritsFrom(type, WellKnownTypes.Stream);
+    }
 
     /// <summary>Checks if the type is or inherits from System.IO.Pipelines.PipeReader.</summary>
-    public static bool IsPipeReader(ITypeSymbol? type) => IsOrInheritsFrom(type, WellKnownTypes.PipeReader);
+    public static bool IsPipeReader(ITypeSymbol? type)
+    {
+        return IsOrInheritsFrom(type, WellKnownTypes.PipeReader);
+    }
 
     /// <summary>Checks if the type is System.Threading.CancellationToken.</summary>
-    public static bool IsCancellationToken(ITypeSymbol? type) =>
-        MatchesType(type?.UnwrapNullable(), WellKnownTypes.CancellationToken);
+    public static bool IsCancellationToken(ITypeSymbol? type)
+    {
+        return MatchesType(type?.UnwrapNullable(), WellKnownTypes.CancellationToken);
+    }
 
     /// <summary>Checks if the type is System.Reflection.ParameterInfo.</summary>
-    public static bool IsParameterInfo(ITypeSymbol? type) =>
-        MatchesType(type?.UnwrapNullable(), WellKnownTypes.ParameterInfo);
+    public static bool IsParameterInfo(ITypeSymbol? type)
+    {
+        return MatchesType(type?.UnwrapNullable(), WellKnownTypes.ParameterInfo);
+    }
 
     /// <summary>
     ///     Determines if a type requires BCL validation:
@@ -134,9 +155,7 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
-        {
             return false;
-        }
 
         if (IsOrImplements(type, WellKnownTypes.IValidatableObject)) return true;
 
@@ -202,15 +221,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
             : default;
     }
 
-    public bool Equals(ErrorOrContext? other)
+    public override bool Equals(object? obj)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return HasValidationResolverSupport == other.HasValidationResolverSupport &&
-               HasApiVersioningSupport == other.HasApiVersioningSupport;
+        return Equals(obj as ErrorOrContext);
     }
-
-    public override bool Equals(object? obj) => Equals(obj as ErrorOrContext);
 
     public override int GetHashCode()
     {
@@ -234,10 +248,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     private static bool HasValidationAttribute(ISymbol symbol)
     {
         foreach (var attribute in symbol.GetAttributes())
-        {
             if (IsOrInheritsFrom(attribute.AttributeClass, WellKnownTypes.ValidationAttribute))
                 return true;
-        }
 
         return false;
     }
@@ -250,10 +262,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
             if (!HasValidationAttribute(param)) continue;
 
             foreach (var member in namedType.GetMembers(param.Name))
-            {
                 if (member is IPropertySymbol)
                     return true;
-            }
         }
 
         return false;
@@ -263,10 +273,8 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     {
         foreach (var ctor in type.InstanceConstructors)
         foreach (var param in ctor.Parameters)
-        {
             if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
                 return param;
-        }
 
         return null;
     }
@@ -342,7 +350,6 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     {
         var sb = new StringBuilder(s.Length);
         foreach (var c in s)
-        {
             switch (c)
             {
                 case '\\': sb.Append(@"\\"); break;
@@ -363,7 +370,6 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 
                     break;
             }
-        }
 
         return sb.ToString();
     }

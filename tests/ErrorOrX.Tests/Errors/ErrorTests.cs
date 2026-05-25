@@ -319,7 +319,7 @@ public class ErrorTests
         error.Metadata.Should().BeEquivalentTo(complexMetadata);
         error.Metadata["stringValue"].Should().Be("test");
         error.Metadata["intValue"].Should().Be(42);
-        error.Metadata["boolValue"].Should().Be(expected: true);
+        error.Metadata["boolValue"].Should().Be(true);
     }
 
     #endregion

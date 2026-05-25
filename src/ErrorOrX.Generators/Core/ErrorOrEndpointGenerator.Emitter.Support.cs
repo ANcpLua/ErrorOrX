@@ -72,10 +72,8 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var p in ep.HandlerParameters)
-            {
                 if (p.Source == ParameterSource.Body)
                     types.Add(p.TypeFqn);
-            }
 
             if (ep.Sse is { IsSse: true, SseItemTypeFqn: not null })
             {
@@ -95,5 +93,4 @@ public sealed partial class ErrorOrEndpointGenerator
         sorted.Sort(StringComparer.Ordinal);
         return sorted;
     }
-
 }

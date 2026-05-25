@@ -51,14 +51,12 @@ internal static class ValidationResolverEmitter
         var types = new List<ValidatableTypeDescriptor>();
 
         foreach (var ep in endpoints)
-        {
-            foreach (var param in ep.HandlerParameters.AsImmutableArray())
+        foreach (var param in ep.HandlerParameters.AsImmutableArray())
         {
             if (!param.RequiresValidation || param.ValidatableProperties.IsDefaultOrEmpty) continue;
 
             if (seen.Add(param.TypeFqn))
                 types.Add(new ValidatableTypeDescriptor(param.TypeFqn, param.ValidatableProperties));
-        }
         }
 
         types.Sort(static (a, b) => string.CompareOrdinal(a.TypeFqn, b.TypeFqn));

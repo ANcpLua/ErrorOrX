@@ -7,7 +7,10 @@ namespace ErrorOr.Generators.Emitters;
 ///         <item><c>BindingCodeEmitter.cs</c> — Dispatcher, Route, and special / service / form-file bindings.</item>
 ///         <item><c>BindingCodeEmitter.Query.cs</c> — Query and Header bindings (scalar + collection).</item>
 ///         <item><c>BindingCodeEmitter.Body.cs</c> — Body, Form (DTO + scalar), and AsParameters expansion.</item>
-///         <item><c>BindingCodeEmitter.Parsing.cs</c> — Shared <c>BuildArgumentExpression</c>, <c>GetTryParseExpression</c>, validation dict builder.</item>
+///         <item>
+///             <c>BindingCodeEmitter.Parsing.cs</c> — Shared <c>BuildArgumentExpression</c>,
+///             <c>GetTryParseExpression</c>, validation dict builder.
+///         </item>
 ///     </list>
 /// </summary>
 internal static partial class BindingCodeEmitter

@@ -1,7 +1,5 @@
 using System.Text.RegularExpressions;
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Matching;
-using ANcpLua.Roslyn.Utilities.Models;
 using Microsoft.CodeAnalysis;
 using SymbolMatch = ANcpLua.Roslyn.Utilities.Matching.Match;
 
@@ -117,9 +115,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
             !method.ReturnType.IsTaskType() || method.Parameters.Length < 1 ||
             !ErrorOrContext.IsHttpContext(method.Parameters[0].Type))
-        {
             return CustomBindingMethod.None;
-        }
 
         if (method.Parameters.Length >= 2 && ErrorOrContext.IsParameterInfo(method.Parameters[1].Type))
             return CustomBindingMethod.BindAsyncWithParam;
@@ -143,18 +139,12 @@ public sealed partial class ErrorOrEndpointGenerator
         if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method ||
             method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) ||
             method.Parameters[^1].RefKind != RefKind.Out)
-        {
             return CustomBindingMethod.None;
-        }
 
         if (method.Parameters.Length >= 3)
-        {
             for (var i = 1; i < method.Parameters.Length - 1; i++)
-            {
                 if (IsFormatProvider(method.Parameters[i].Type, context))
                     return CustomBindingMethod.TryParseWithFormat;
-            }
-        }
 
         return CustomBindingMethod.TryParse;
     }
@@ -164,10 +154,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType == SpecialType.System_String) return true;
 
         if (type is INamedTypeSymbol { IsGenericType: true } named)
-        {
             return ErrorOrContext.MatchesConstructedFrom(named.ConstructedFrom, WellKnownTypes.ReadOnlySpanT) &&
                    named.TypeArguments is [{ SpecialType: SpecialType.System_Char }];
-        }
 
         return false;
     }
@@ -244,7 +232,8 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         var attributes = parameter.GetAttributes();
 
-        var matchingAttr = attributes.FirstOrDefault(attr => ErrorOrContext.MatchesType(attr.AttributeClass, attributeName));
+        var matchingAttr =
+            attributes.FirstOrDefault(attr => ErrorOrContext.MatchesType(attr.AttributeClass, attributeName));
         return matchingAttr is not null ? ExtractNameFromAttribute(matchingAttr) : null;
     }
 
@@ -253,19 +242,13 @@ public sealed partial class ErrorOrEndpointGenerator
         if (attr is null) return null;
 
         foreach (var namedArg in attr.NamedArguments)
-        {
             if (string.Equals(namedArg.Key, "Name", StringComparison.OrdinalIgnoreCase) &&
                 namedArg.Value.Value is string name && !string.IsNullOrWhiteSpace(name))
-            {
                 return name;
-            }
-        }
 
         if (attr.GetConstructorArgument<string>(0) is { } ctorArg &&
             !string.IsNullOrWhiteSpace(ctorArg))
-        {
             return ctorArg;
-        }
 
         if (attr.ApplicationSyntaxReference?.GetSyntax() is { } syntax)
         {
@@ -294,10 +277,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Check using fluent matchers for common DI naming patterns
         if (type is INamedTypeSymbol namedType)
-        {
             if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
                 return true;
-        }
 
         return false;
     }
@@ -317,7 +298,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (TryGetRoutePrimitiveKindBySymbol(type, context) is not null) return false;
 
         // Form file types are not complex (have special binding)
-        if (ErrorOrContext.IsFormFile(type) || ErrorOrContext.IsFormFileCollection(type) || ErrorOrContext.IsFormCollection(type))
+        if (ErrorOrContext.IsFormFile(type) || ErrorOrContext.IsFormFileCollection(type) ||
+            ErrorOrContext.IsFormCollection(type))
             return false;
 
         // Stream types are not complex (have special binding)
@@ -344,5 +326,4 @@ public sealed partial class ErrorOrEndpointGenerator
         return !IsLikelyServiceType(type);
         // Everything else is complex (DTOs, records, classes)
     }
-
 }

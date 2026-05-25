@@ -5,7 +5,7 @@ namespace ErrorOr.Generators;
 /// <summary>
 ///     Emits the error-to-result dispatch inside <c>Invoke_Ep{N}_Core</c>:
 ///     <list type="bullet">
-///         <item>Union-type path that switches on <see cref="ErrorMapping"/> ErrorType-to-Result factories.</item>
+///         <item>Union-type path that switches on <see cref="ErrorMapping" /> ErrorType-to-Result factories.</item>
 ///         <item>Validation handling (DataAnnotations + Error.Validation aggregation).</item>
 ///         <item>ProblemDetails construction and Location-header emission for Created+Id responses.</item>
 ///     </list>
@@ -40,10 +40,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ep.HttpVerb == HttpVerb.Post
             && successInfo is { StatusCode: 201, HasBody: true }
             && ep.LocationIdPropertyName is { Length: > 0 } idProp)
-        {
             return
                 $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
-        }
 
         return successInfo.Factory;
     }
@@ -52,7 +50,8 @@ public sealed partial class ErrorOrEndpointGenerator
         in InvokerContext ctx)
     {
         var hasValidation = !ep.ErrorInference.InferredErrorTypeNames.IsDefaultOrEmpty &&
-                            ep.ErrorInference.InferredErrorTypeNames.AsImmutableArray().Contains(ErrorMapping.Validation);
+                            ep.ErrorInference.InferredErrorTypeNames.AsImmutableArray()
+                                .Contains(ErrorMapping.Validation);
 
         if (!hasValidation) return;
 
@@ -87,7 +86,6 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                {");
 
         if (!ep.ErrorInference.InferredErrorTypeNames.IsDefaultOrEmpty)
-        {
             foreach (var errorTypeName in ep.ErrorInference.InferredErrorTypeNames.AsImmutableArray()
                          .Where(static e => e != ErrorMapping.Validation)
                          .Distinct()
@@ -98,7 +96,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{errorTypeName}:");
                 code.AppendLine($"                        return {ctx.WrapReturn(factory)};");
             }
-        }
 
         code.AppendLine("                    default:");
         code.AppendLine(

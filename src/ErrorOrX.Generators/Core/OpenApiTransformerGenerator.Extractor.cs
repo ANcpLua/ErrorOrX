@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -74,24 +73,20 @@ public sealed partial class OpenApiTransformerGenerator
         var summaryStart = xml.IndexOfOrdinal("<summary>");
         var summaryEnd = xml.IndexOfOrdinal("</summary>");
         if (summaryStart >= 0 && summaryEnd > summaryStart)
-        {
             summary = xml.Substring(summaryStart + 9, summaryEnd - summaryStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace('\n', ' ')
                 .Trim();
-        }
 
         var remarksStart = xml.IndexOfOrdinal("<remarks>");
         var remarksEnd = xml.IndexOfOrdinal("</remarks>");
         if (remarksStart >= 0 && remarksEnd > remarksStart)
-        {
             description = xml.Substring(remarksStart + 9, remarksEnd - remarksStart - 9)
                 .Trim()
                 .Replace("\r\n", " ")
                 .Replace('\n', ' ')
                 .Trim();
-        }
 
         return (summary, description);
     }
@@ -177,13 +172,11 @@ public sealed partial class OpenApiTransformerGenerator
 
                 // Check if optional in route template
                 foreach (var rp in routeParams)
-                {
                     if (string.Equals(rp.Name, param.Name, StringComparison.OrdinalIgnoreCase) && rp.IsOptional)
                     {
                         required = false;
                         break;
                     }
-                }
             }
             else if (IsPrimitiveType(typeFqn))
             {
@@ -212,9 +205,7 @@ public sealed partial class OpenApiTransformerGenerator
         if (typeFqn is WellKnownTypes.HttpContext or WellKnownTypes.CancellationToken
             or WellKnownTypes.FormFile or WellKnownTypes.FormFileCollection
             or WellKnownTypes.Stream or WellKnownTypes.PipeReader or WellKnownTypes.FormCollection)
-        {
             return true;
-        }
 
         // Skip interface types (services)
         if (param.Type.TypeKind == TypeKind.Interface) return true;
@@ -228,9 +219,7 @@ public sealed partial class OpenApiTransformerGenerator
             var attrName = attr.AttributeClass?.ToDisplayString();
             if (attrName is WellKnownTypes.FromServicesAttribute or WellKnownTypes.FromBodyAttribute
                 or WellKnownTypes.FromFormAttribute or WellKnownTypes.FromKeyedServicesAttribute)
-            {
                 return true;
-            }
         }
 
         return false;
@@ -267,10 +256,8 @@ public sealed partial class OpenApiTransformerGenerator
     private static string? GetAttributeStringArg(AttributeData attr, string propName)
     {
         foreach (var kvp in attr.NamedArguments)
-        {
             if (kvp.Key == propName && kvp.Value.Value is string s && !string.IsNullOrWhiteSpace(s))
                 return s;
-        }
 
         return null;
     }
@@ -359,9 +346,7 @@ public sealed partial class OpenApiTransformerGenerator
         // Skip null symbols and compiler-generated types
         if (ctx.SemanticModel.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol symbol ||
             symbol.IsImplicitlyDeclared)
-        {
             return null;
-        }
 
         // Skip types without XML docs
         var xmlDoc = symbol.GetDocumentationCommentXml(cancellationToken: ct);

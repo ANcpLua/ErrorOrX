@@ -1,5 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
-using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -48,20 +46,16 @@ public sealed partial class ErrorOrEndpointGenerator
         // Collect registered types from user context
         var registeredTypes = new HashSet<string>();
         foreach (var ctx in userContexts)
-        {
-            foreach (var typeFqn in ctx.SerializableTypes)
+        foreach (var typeFqn in ctx.SerializableTypes)
             registeredTypes.Add(typeFqn);
-        }
 
         // Find missing types
         var missingTypes = new List<string>();
 
         // Check endpoint types
         foreach (var type in jsonTypes)
-        {
             if (!registeredTypes.Any(rt => type.TypeNamesEqual(rt)))
                 missingTypes.Add(type);
-        }
 
         // Always check for ProblemDetails and HttpValidationProblemDetails
         var missingProblemDetails = !registeredTypes.Any(static rt =>
@@ -75,21 +69,17 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Report EOE025 if user context lacks CamelCase policy
         if (!userContext.HasCamelCasePolicy)
-        {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MissingCamelCasePolicy,
                 Location.None,
                 fullClassName));
-        }
 
         // Report EOE041 if user context is missing ProblemDetails types
         if (missingProblemDetails || missingValidationProblemDetails)
-        {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.JsonContextMissingProblemDetails,
                 Location.None,
                 fullClassName));
-        }
 
         // Emit helper file with missing types as comments using IndentedStringBuilder
         var sb = new IndentedStringBuilder();
@@ -134,5 +124,4 @@ public sealed partial class ErrorOrEndpointGenerator
         // Use same filename as full context to ensure replacement (no stale file issues)
         spc.AddSource("ErrorOrJsonContext.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
-
 }

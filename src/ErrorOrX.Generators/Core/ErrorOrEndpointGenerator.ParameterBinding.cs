@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
@@ -38,7 +37,8 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterBindingResult.Invalid;
         }
 
-        return BuildEndpointParameters(metas, method.Parameters, routeParameters, method, diagnostics, context, httpVerb);
+        return BuildEndpointParameters(metas, method.Parameters, routeParameters, method, diagnostics, context,
+            httpVerb);
     }
 
     private static ParameterMeta[] BuildParameterMetas(
@@ -77,7 +77,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         return isValid
-            ? new ParameterBindingResult(IsValid: true, builder.ToImmutable().AsEquatableArray())
+            ? new ParameterBindingResult(true, builder.ToImmutable().AsEquatableArray())
             : ParameterBindingResult.Invalid;
     }
 
@@ -92,23 +92,20 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
-            return ClassifyAsParameters(in meta, parameter.Type, routeParameters, method, diagnostics, context, httpVerb);
+            return ClassifyAsParameters(in meta, parameter.Type, routeParameters, method, diagnostics, context,
+                httpVerb);
 
         if (meta.HasFromBody)
-        {
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                 validatableProperties: meta.ValidatableProperties);
-        }
 
         if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type, context);
 
         if (meta.HasFromServices) return ParameterSuccess(in meta, ParameterSource.Service);
 
         if (meta.HasFromKeyedServices)
-        {
             return ParameterSuccess(in meta, ParameterSource.KeyedService,
                 keyedServiceKey: meta.ServiceKey);
-        }
 
         if (meta.HasFromHeader) return ClassifyFromHeaderParameter(in meta, method, diagnostics);
 
@@ -188,10 +185,8 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             // POST, PUT, PATCH with complex type → Body
             if (!httpVerb.IsBodyless())
-            {
                 return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                     validatableProperties: meta.ValidatableProperties);
-            }
 
             // Bodyless/custom methods: do not infer body; warn for DTO-like types.
             diagnostics.Add(DiagnosticInfo.Create(
@@ -220,7 +215,7 @@ public sealed partial class ErrorOrEndpointGenerator
         EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
         EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
     {
-        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
+        return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             source,
@@ -238,6 +233,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
     {
-        public static readonly ParameterClassificationResult Error = new(IsError: true, default);
+        public static readonly ParameterClassificationResult Error = new(true, default);
     }
 }

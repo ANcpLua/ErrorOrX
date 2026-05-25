@@ -17,9 +17,15 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        Task ThenAction(Person person)
+        {
+            return Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        }
 
-        static Task ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
+        static Task ElsesAction(IReadOnlyList<Error> _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     [Fact]
@@ -37,10 +43,15 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        static Task ThenAction(Person _) => throw new UnreachableException();
+        static Task ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
-        Task ElsesAction(IReadOnlyList<Error> errors) =>
-            Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors));
+        Task ElsesAction(IReadOnlyList<Error> errors)
+        {
+            return Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors));
+        }
     }
 
     [Fact]
@@ -58,9 +69,15 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        Task ThenAction(Person person)
+        {
+            return Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        }
 
-        static Task OnFirstErrorAction(Error _) => throw new UnreachableException();
+        static Task OnFirstErrorAction(Error _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     [Fact]
@@ -78,11 +95,16 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        static Task ThenAction(Person _) => throw new UnreachableException();
+        static Task ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
         Task OnFirstErrorAction(Error errors)
-            => Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
+        {
+            return Task.FromResult(errors.Should().BeEquivalentTo(errorOrPerson.Errors[0])
                 .And.BeEquivalentTo(errorOrPerson.FirstError));
+        }
     }
 
     [Fact]
@@ -102,9 +124,15 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        Task ThenAction(Person person)
+        {
+            return Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        }
 
-        static Task OnFirstErrorAction(Error _) => throw new UnreachableException();
+        static Task OnFirstErrorAction(Error _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     [Fact]
@@ -122,9 +150,15 @@ public class SwitchAsyncTests
         await action.Should().NotThrowAsync();
         return;
 
-        Task ThenAction(Person person) => Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        Task ThenAction(Person person)
+        {
+            return Task.FromResult(person.Should().BeEquivalentTo(errorOrPerson.Value));
+        }
 
-        static Task ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
+        static Task ElsesAction(IReadOnlyList<Error> _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     private sealed record Person;

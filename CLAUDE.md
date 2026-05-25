@@ -152,7 +152,6 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 | JSON/AOT           | EOE007, EOE025-026, EOE039-041 | Not serializable, missing CamelCase, missing context, validation reflection |
 | API versioning     | EOE027-031                     | Version-neutral conflicts, undeclared versions                              |
 | Route/naming       | EOE032-033                     | Duplicate route params, non-PascalCase method names                         |
-| AOT safety         | EOE034-038                     | Activator, Type.GetType, reflection, Expression.Compile, dynamic            |
 
 ## Consumer Setup
 

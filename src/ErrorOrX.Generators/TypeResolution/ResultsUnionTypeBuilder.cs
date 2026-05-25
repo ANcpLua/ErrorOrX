@@ -24,10 +24,8 @@ internal static class ResultsUnionTypeBuilder
         if (referenceArities.IsDefaultOrEmpty) return maxArity;
 
         foreach (var arity in referenceArities)
-        {
             if (arity > maxArity)
                 maxArity = arity;
-        }
 
         return maxArity;
     }
@@ -64,13 +62,11 @@ internal static class ResultsUnionTypeBuilder
     {
         // Handle [AcceptedResponse] attribute first (highest precedence)
         if (isAcceptedResponse)
-        {
             return new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Accepted}<{successTypeFqn}>",
                 202,
-HasBody: true,
+                true,
                 $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)");
-        }
 
         // Map marker types to their correct status codes
         return successKind switch
@@ -78,25 +74,25 @@ HasBody: true,
             SuccessKind.Success => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.Ok,
                 200,
-HasBody: false,
+                false,
                 $"{WellKnownTypes.Fqn.TypedResults.Ok}()"),
 
             SuccessKind.Created => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.Created,
                 201,
-HasBody: false,
+                false,
                 $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)"),
 
             SuccessKind.Updated => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
-HasBody: false,
+                false,
                 $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             SuccessKind.Deleted => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
-HasBody: false,
+                false,
                 $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             // Not a marker type - use default 200 OK regardless of method (Minimal API parity)
@@ -104,7 +100,7 @@ HasBody: false,
             _ => new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Ok}<{successTypeFqn}>",
                 200,
-HasBody: true,
+                true,
                 $"{WellKnownTypes.Fqn.TypedResults.Ok}(result.Value)")
         };
     }
@@ -154,7 +150,8 @@ HasBody: true,
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
-            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, in middleware, hasValidationError);
+            return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, in middleware,
+                hasValidationError);
 
         // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
@@ -165,7 +162,7 @@ HasBody: true,
         // Include error status codes for explicit Produces metadata (needed because the wrapper
         // uses RequestDelegate signature, so union types don't provide metadata automatically)
         return new UnionTypeResult(
-CanUseUnion: true,
+            true,
             $"{WellKnownTypes.Fqn.HttpResults.Results}<{string.Join(", ", sortedTypes)}>",
             new EquatableArray<int>([
                 .. unionEntries.Where(static e => e.Status >= 400).Select(static e => e.Status).OrderBy(static x => x)
@@ -199,14 +196,12 @@ CanUseUnion: true,
 
         // [EnableRateLimiting] adds 429 Too Many Requests
         if (middleware is { EnableRateLimiting: true, DisableRateLimiting: false })
-        {
             if (!includedStatuses.Contains(429))
             {
                 // StatusCodeHttpResult is used for 429 since there's no typed TooManyRequestsHttpResult
                 unionEntries.Add((429, WellKnownTypes.Fqn.HttpResults.StatusCodeHttpResult));
                 includedStatuses.Add(429);
             }
-        }
     }
 
     private static void AddSuccessAndBindingOutcomes(
@@ -324,10 +319,8 @@ CanUseUnion: true,
         if (declaredProducesErrors.IsDefaultOrEmpty) return false;
 
         foreach (var producesError in declaredProducesErrors)
-        {
             if (!includedStatuses.Contains(producesError.StatusCode))
                 return true; // Found a status code not in our static union mapping
-        }
 
         return false;
     }
@@ -348,7 +341,7 @@ CanUseUnion: true,
         CollectMiddlewareStatuses(in middleware, allStatuses);
 
         return new UnionTypeResult(
-CanUseUnion: false,
+            false,
             WellKnownTypes.Fqn.Result,
             new EquatableArray<int>([.. allStatuses.OrderBy(static x => x)]),
             hasValidationError);

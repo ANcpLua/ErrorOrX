@@ -1,6 +1,4 @@
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ErrorOr.Generators;
 
@@ -11,7 +9,10 @@ namespace ErrorOr.Generators;
 ///         Pipeline wiring lives here. Sibling partials:
 ///         <list type="bullet">
 ///             <item><c>Initialize.Attributes.cs</c> — Marker attribute emission via PostInitializationOutput.</item>
-///             <item><c>Initialize.EndpointFlow.cs</c> — Per-attribute endpoint discovery, validation, and descriptor build.</item>
+///             <item>
+///                 <c>Initialize.EndpointFlow.cs</c> — Per-attribute endpoint discovery, validation, and descriptor
+///                 build.
+///             </item>
 ///         </list>
 ///     </para>
 /// </summary>
@@ -30,9 +31,9 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var endpoints = CombineHttpMethodProviders(context, errorOrContextProvider);
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
-            .IsToggleEnabled("ErrorOrGenerateJsonContext", defaultValue: true);
+            .IsToggleEnabled("ErrorOrGenerateJsonContext", true);
         var publishAotOption = context.AnalyzerConfigOptionsProvider
-            .IsToggleEnabled("PublishAot", defaultValue: false);
+            .IsToggleEnabled("PublishAot", false);
         var referenceArities = context.MetadataReferencesProvider
             .Select(static (reference, _) => ResultsUnionTypeBuilder.GetResultsUnionArity(reference))
             .CollectAsEquatableArray();

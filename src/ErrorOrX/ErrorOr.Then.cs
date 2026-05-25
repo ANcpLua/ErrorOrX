@@ -27,10 +27,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(action);
 
-        if (IsError)
-        {
-            return new ErrorOr<TValue>(_errors);
-        }
+        if (IsError) return new ErrorOr<TValue>(_errors);
 
         action(Value);
 
@@ -50,10 +47,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(onValue);
 
-        if (IsError)
-        {
-            return new ErrorOr<TNextValue>(_errors);
-        }
+        if (IsError) return new ErrorOr<TNextValue>(_errors);
 
         return onValue(Value);
     }
@@ -72,10 +66,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(onValue);
 
-        if (IsError)
-        {
-            return new ErrorOr<TNextValue>(_errors);
-        }
+        if (IsError) return new ErrorOr<TNextValue>(_errors);
 
         return await onValue(Value).ConfigureAwait(false);
     }
@@ -89,10 +80,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(action);
 
-        if (IsError)
-        {
-            return new ErrorOr<TValue>(_errors);
-        }
+        if (IsError) return new ErrorOr<TValue>(_errors);
 
         await action(Value).ConfigureAwait(false);
 
@@ -113,10 +101,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(onValue);
 
-        if (IsError)
-        {
-            return new ErrorOr<TNextValue>(_errors);
-        }
+        if (IsError) return new ErrorOr<TNextValue>(_errors);
 
         return await onValue(Value).ConfigureAwait(false);
     }

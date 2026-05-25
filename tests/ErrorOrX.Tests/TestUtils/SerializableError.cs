@@ -5,9 +5,16 @@ namespace ErrorOrX.Tests.TestUtils;
 public class SerializableError : IXunitSerializable
 {
     // Required by xUnit for deserialization
-    public SerializableError() => Value = Error.Unexpected();
+    public SerializableError()
+    {
+        Value = Error.Unexpected();
+    }
 
-    public SerializableError(Error error) => Value = error;
+    public SerializableError(Error error)
+    {
+        Value = error;
+    }
+
     public Error Value { get; private set; }
 
     public void Deserialize(IXunitSerializationInfo info)
@@ -57,8 +64,18 @@ public class SerializableError : IXunitSerializable
         }
     }
 
-    public static implicit operator Error(SerializableError s) => s.Value;
-    public static implicit operator SerializableError(Error e) => new(e);
+    public static implicit operator Error(SerializableError s)
+    {
+        return s.Value;
+    }
 
-    public override string ToString() => $"Error({Value.Code}, {Value.Type})";
+    public static implicit operator SerializableError(Error e)
+    {
+        return new SerializableError(e);
+    }
+
+    public override string ToString()
+    {
+        return $"Error({Value.Code}, {Value.Type})";
+    }
 }

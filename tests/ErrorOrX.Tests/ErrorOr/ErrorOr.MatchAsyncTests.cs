@@ -23,7 +23,10 @@ public class MatchAsyncTests
             return Task.FromResult("Nice");
         }
 
-        static Task<string> ElsesAction(IReadOnlyList<Error> _) => throw new UnreachableException();
+        static Task<string> ElsesAction(IReadOnlyList<Error> _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     [Fact]
@@ -41,7 +44,10 @@ public class MatchAsyncTests
         (await action.Should().NotThrowAsync()).Subject.Should().Be("Nice");
         return;
 
-        static Task<string> ThenAction(Person _) => throw new UnreachableException();
+        static Task<string> ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
         Task<string> ElsesAction(IReadOnlyList<Error> errors)
         {
@@ -71,7 +77,10 @@ public class MatchAsyncTests
             return Task.FromResult("Nice");
         }
 
-        static Task<string> OnFirstErrorAction(Error _) => throw new UnreachableException();
+        static Task<string> OnFirstErrorAction(Error _)
+        {
+            throw new UnreachableException();
+        }
     }
 
     [Fact]
@@ -89,7 +98,10 @@ public class MatchAsyncTests
         (await action.Should().NotThrowAsync()).Subject.Should().Be("Nice");
         return;
 
-        static Task<string> ThenAction(Person _) => throw new UnreachableException();
+        static Task<string> ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
         Task<string> OnFirstErrorAction(Error errors)
         {
@@ -115,7 +127,10 @@ public class MatchAsyncTests
         (await action.Should().NotThrowAsync()).Subject.Should().Be("Nice");
         return;
 
-        static Task<string> ThenAction(Person _) => throw new UnreachableException();
+        static Task<string> ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
         Task<string> OnFirstErrorAction(Error errors)
         {
@@ -141,7 +156,10 @@ public class MatchAsyncTests
         (await action.Should().NotThrowAsync()).Subject.Should().Be("Nice");
         return;
 
-        static Task<string> ThenAction(Person _) => throw new UnreachableException();
+        static Task<string> ThenAction(Person _)
+        {
+            throw new UnreachableException();
+        }
 
         Task<string> ElsesAction(IReadOnlyList<Error> errors)
         {

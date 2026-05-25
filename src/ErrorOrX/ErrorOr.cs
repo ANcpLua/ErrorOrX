@@ -17,27 +17,33 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     ///     Prevents a default <see cref="ErrorOr" /> struct from being created.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when this method is called.</exception>
-    public ErrorOr() =>
+    public ErrorOr()
+    {
         throw new InvalidOperationException(
             "Default construction of ErrorOr<TValue> is invalid. Please use provided factory methods to instantiate.");
+    }
 
-    private ErrorOr(in Error error) => _errors = [error];
+    private ErrorOr(in Error error)
+    {
+        _errors = [error];
+    }
 
     internal ErrorOr(IReadOnlyList<Error> errors)
     {
         _ = Guard.NotNull(errors);
 
         if (errors.Count is 0)
-        {
             throw new ArgumentException(
                 "Cannot create an ErrorOr<TValue> from an empty collection of errors. Provide at least one error.",
                 nameof(errors));
-        }
 
         _errors = [.. errors];
     }
 
-    private ErrorOr(TValue value) => _value = Guard.NotNull(value);
+    private ErrorOr(TValue value)
+    {
+        _value = Guard.NotNull(value);
+    }
 
     /// <summary>
     ///     Gets a value indicating whether the state is success (no errors).
@@ -86,10 +92,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         get
         {
             if (IsError)
-            {
                 throw new InvalidOperationException(
                     "The Value property cannot be accessed when errors have been recorded. Check IsError before accessing Value.");
-            }
 
             return _value;
         }
@@ -104,10 +108,8 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         get
         {
             if (!IsError)
-            {
                 throw new InvalidOperationException(
                     "The FirstError property cannot be accessed when no errors have been recorded. Check IsError before accessing FirstError.");
-            }
 
             return _errors[0];
         }
@@ -116,8 +118,10 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     /// <summary>
     ///     Returns a string representation of the ErrorOr instance.
     /// </summary>
-    public override string ToString() =>
-        IsError
+    public override string ToString()
+    {
+        return IsError
             ? $"ErrorOr {{ IsError = True, FirstError = {FirstError} }}"
             : $"ErrorOr {{ IsError = False, Value = {_value} }}";
+    }
 }

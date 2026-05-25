@@ -3,9 +3,15 @@ namespace ErrorOr.Generators.Emitters;
 /// <summary>
 ///     Cross-cutting helpers shared by every binding family:
 ///     <list type="bullet">
-///         <item><see cref="BuildArgumentExpression"/> — composes the call-site expression respecting nullability and value-vs-reference type rules.</item>
-///         <item><see cref="GetTryParseExpression"/> — table-routed BCL-aware <c>TryParse</c> invocation per type FQN.</item>
-///         <item><see cref="EmitValidationDictBuilder"/> — emits the <c>Dictionary&lt;string, string[]&gt;</c> aggregation pattern used by both DataAnnotations and ErrorOr.Validation paths.</item>
+///         <item>
+///             <see cref="BuildArgumentExpression" /> — composes the call-site expression respecting nullability and
+///             value-vs-reference type rules.
+///         </item>
+///         <item><see cref="GetTryParseExpression" /> — table-routed BCL-aware <c>TryParse</c> invocation per type FQN.</item>
+///         <item>
+///             <see cref="EmitValidationDictBuilder" /> — emits the <c>Dictionary&lt;string, string[]&gt;</c>
+///             aggregation pattern used by both DataAnnotations and ErrorOr.Validation paths.
+///         </item>
 ///     </list>
 /// </summary>
 internal static partial class BindingCodeEmitter
@@ -22,15 +28,11 @@ internal static partial class BindingCodeEmitter
 
         if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: true })
-        {
             return paramName + ".Value";
-        }
 
         if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: false })
-        {
             return paramName + "!";
-        }
 
         return paramName;
     }

@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using ErrorOr.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -19,9 +18,15 @@ namespace ErrorOr.Analyzers;
 ///     <para>
 ///         Split across:
 ///         <list type="bullet">
-///             <item><c>ErrorOrEndpointAnalyzer.cs</c> — Entry, Initialize, top-level analysis loop, return-type / attribute extraction.</item>
+///             <item>
+///                 <c>ErrorOrEndpointAnalyzer.cs</c> — Entry, Initialize, top-level analysis loop, return-type /
+///                 attribute extraction.
+///             </item>
 ///             <item><c>ErrorOrEndpointAnalyzer.RouteValidation.cs</c> — Pattern parsing + per-constraint validation.</item>
-///             <item><c>ErrorOrEndpointAnalyzer.BodyAndValidation.cs</c> — Body-source counting, DataAnnotations reflection check.</item>
+///             <item>
+///                 <c>ErrorOrEndpointAnalyzer.BodyAndValidation.cs</c> — Body-source counting, DataAnnotations
+///                 reflection check.
+///             </item>
 ///         </list>
 ///     </para>
 /// </remarks>
@@ -94,13 +99,11 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE005: Invalid route pattern
         var patternDiagnostics = ValidateRoutePattern(pattern);
         foreach (var message in patternDiagnostics)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.InvalidRoutePattern,
                 attributeLocation,
                 pattern,
                 message));
-        }
 
         // If pattern is invalid, skip further route analysis
         if (patternDiagnostics.Count > 0) return;
@@ -128,16 +131,12 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
                 // EOE003: Route parameter not bound
                 foreach (var routeParam in routeParams)
-                {
                     if (!methodParamsByRouteName.ContainsKey(routeParam.Name))
-                    {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Descriptors.RouteParameterNotBound,
                             attributeLocation,
                             pattern,
                             routeParam.Name));
-                    }
-                }
 
                 // EOE020: Route constraint type mismatch
                 ValidateConstraintTypes(in context, routeParams, methodParamsByRouteName, attributeLocation);
@@ -147,34 +146,28 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE006: Multiple body sources
         var bodyCount = CountBodySources(method);
         if (bodyCount > 1)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MultipleBodySources,
                 method.Locations.FirstOrDefault(),
                 method.Name));
-        }
 
         // EOE008: Body on read-only HTTP method
         var isBodyless = verb?.IsBodyless() ?? WellKnownTypes.HttpMethod.IsBodyless(httpMethod);
         var hasBody = bodyCount > 0;
         if (hasBody && isBodyless)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.BodyOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
-        }
 
         // EOE009: [AcceptedResponse] on read-only method
         if (HasAcceptedResponseAttribute(method) && isBodyless)
-        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
-        }
 
         // EOE039: DataAnnotations validation uses reflection
         CheckForValidationAttributes(in context, method);
@@ -229,10 +222,7 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
             // Extract pattern from constructor arguments
             var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
-            if (attr.GetConstructorArgument<string>(patternIndex) is { } p)
-            {
-                pattern = p;
-            }
+            if (attr.GetConstructorArgument<string>(patternIndex) is { } p) pattern = p;
 
             var location = attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                            ?? method.Locations.FirstOrDefault()

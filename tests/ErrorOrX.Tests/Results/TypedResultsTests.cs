@@ -182,7 +182,7 @@ public class ResultTypesTests
     public void MethodReturningErrorOrCreated_WhenResourceCreated_ShouldReturnCreated()
     {
         // Arrange & Act
-        var result = SimulateResourceCreation(shouldSucceed: true);
+        var result = SimulateResourceCreation(true);
 
         // Assert
         result.IsError.Should().BeFalse();
@@ -193,7 +193,7 @@ public class ResultTypesTests
     public void MethodReturningErrorOrCreated_WhenResourceExists_ShouldReturnConflict()
     {
         // Arrange & Act
-        var result = SimulateResourceCreation(shouldSucceed: false);
+        var result = SimulateResourceCreation(false);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -204,17 +204,19 @@ public class ResultTypesTests
 
     #region Helper Methods
 
-    private static ErrorOr<Success> SimulateSuccessfulOperation() => Result.Success;
+    private static ErrorOr<Success> SimulateSuccessfulOperation()
+    {
+        return Result.Success;
+    }
 
-    private static ErrorOr<Success> SimulateFailedOperation() =>
-        Error.Failure("Operation.Failed", "The operation failed");
+    private static ErrorOr<Success> SimulateFailedOperation()
+    {
+        return Error.Failure("Operation.Failed", "The operation failed");
+    }
 
     private static ErrorOr<Created> SimulateResourceCreation(bool shouldSucceed)
     {
-        if (shouldSucceed)
-        {
-            return Result.Created;
-        }
+        if (shouldSucceed) return Result.Created;
 
         return Error.Conflict("Resource.AlreadyExists", "The resource already exists");
     }

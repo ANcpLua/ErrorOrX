@@ -116,7 +116,6 @@ Real-time IDE feedback covering:
 | AOT/JSON   | EOE025-026, EOE039-041 | Missing camelCase, missing JsonSerializerContext, validation reflection |
 | Versioning | EOE027-031             | Version-neutral conflict, undeclared version, invalid format            |
 | Naming     | EOE032-033             | Duplicate route binding, non-PascalCase handler                         |
-| AOT Safety | EOE034-038             | `Activator.CreateInstance`, `dynamic`, `Expression.Compile()`           |
 
 [See Descriptors.cs](src/ErrorOrX.Generators/Analyzers/Descriptors.cs)
 

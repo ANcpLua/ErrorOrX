@@ -5,7 +5,7 @@ public sealed class ErrorEqualityTests
     public static readonly TheoryData<string, string, int, SerializableMetadata> ValidData =
         new()
         {
-            { "CodeA", "DescriptionA", 1, new SerializableMetadata(metadata: null) },
+            { "CodeA", "DescriptionA", 1, new SerializableMetadata(null) },
             { "CodeB", "DescriptionB", 3215, new Dictionary<string, object> { { "foo", "bar" }, { "baz", "qux" } } }
         };
 

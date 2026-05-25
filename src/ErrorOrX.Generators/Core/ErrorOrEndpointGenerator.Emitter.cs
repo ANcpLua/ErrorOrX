@@ -1,4 +1,3 @@
-using ErrorOr.Analyzers;
 using ErrorOr.Generators.Emitters;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -37,13 +36,9 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool HasValidatableTypes(ImmutableArray<EndpointDescriptor> endpoints)
     {
         foreach (var ep in endpoints)
-        {
-            foreach (var p in ep.HandlerParameters.AsImmutableArray())
-            {
-                if (p is { RequiresValidation: true, ValidatableProperties.IsDefaultOrEmpty: false })
+        foreach (var p in ep.HandlerParameters.AsImmutableArray())
+            if (p is { RequiresValidation: true, ValidatableProperties.IsDefaultOrEmpty: false })
                 return true;
-            }
-        }
 
         return false;
     }
@@ -143,10 +138,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Emit grouped endpoint mappings
         foreach (var ctx in groupContexts)
-        {
-            foreach (var indexed in ctx.Group.Endpoints)
+        foreach (var indexed in ctx.Group.Endpoints)
             GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
-        }
 
         // Emit ungrouped endpoint mappings (legacy pattern)
         foreach (var indexed in grouping.UngroupedEndpoints)

@@ -190,5 +190,4 @@ public sealed partial class ErrorOrEndpointGenerator
                               """;
         spc.AddSource("ErrorOrEndpointOptions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
-
 }

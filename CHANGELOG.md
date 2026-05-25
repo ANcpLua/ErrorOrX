@@ -34,10 +34,10 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - **Dependencies**:
-  - `ANcpLua.NET.Sdk` 2.22.1 → 3.0.1 (major — aligned with ecosystem-wide SDK v3 migration)
-  - `ANcpLua.Analyzers` 1.19.4 → 1.26.1
-  - `ANcpLua.Roslyn.Utilities` → 1.56.1 (AwaitableContext migration)
-  - .NET SDK 10.0.103 → 10.0.202, plus dependabot bumps for Meziantou, Verify, SourceLink, aspnetcore group.
+    - `ANcpLua.NET.Sdk` 2.22.1 → 3.0.1 (major — aligned with ecosystem-wide SDK v3 migration)
+    - `ANcpLua.Analyzers` 1.19.4 → 1.26.1
+    - `ANcpLua.Roslyn.Utilities` → 1.56.1 (AwaitableContext migration)
+    - .NET SDK 10.0.103 → 10.0.202, plus dependabot bumps for Meziantou, Verify, SourceLink, aspnetcore group.
 
 - **Renamed `EmitJsonConfigExtension`** to `EmitAddErrorOrEndpointsExtension` — the method emits the
   `AddErrorOrEndpoints()` service registration extension, not JSON configuration.
@@ -546,7 +546,7 @@ ErrorMapping.AllErrorTypes        // Deterministic iteration
   middleware attributes:
 
   | Attribute                         | Emitted Call                                            |
-      |-----------------------------------|---------------------------------------------------------|
+        |-----------------------------------|---------------------------------------------------------|
   | `[Authorize]`                     | `.RequireAuthorization()`                               |
   | `[Authorize("Policy")]`           | `.RequireAuthorization("Policy")`                       |
   | `[AllowAnonymous]`                | `.AllowAnonymous()`                                     |

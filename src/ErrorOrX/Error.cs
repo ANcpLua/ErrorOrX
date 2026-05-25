@@ -40,15 +40,9 @@ public readonly record struct Error
     /// <inheritdoc />
     public bool Equals(Error other)
     {
-        if (Type != other.Type || Code != other.Code || Description != other.Description)
-        {
-            return false;
-        }
+        if (Type != other.Type || Code != other.Code || Description != other.Description) return false;
 
-        if (_metadata is null)
-        {
-            return other._metadata is null;
-        }
+        if (_metadata is null) return other._metadata is null;
 
         return other._metadata is not null && CompareMetadata(_metadata, other._metadata);
     }
@@ -62,8 +56,10 @@ public readonly record struct Error
     public static Error Failure(
         string code = "General.Failure",
         string description = "A failure has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Failure, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Failure, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Unexpected" /> from a code and description.
@@ -74,8 +70,10 @@ public readonly record struct Error
     public static Error Unexpected(
         string code = "General.Unexpected",
         string description = "An unexpected error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Unexpected, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Unexpected, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Validation" /> from a code and description.
@@ -86,8 +84,10 @@ public readonly record struct Error
     public static Error Validation(
         string code = "General.Validation",
         string description = "A validation error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Validation, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Validation, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Conflict" /> from a code and description.
@@ -98,8 +98,10 @@ public readonly record struct Error
     public static Error Conflict(
         string code = "General.Conflict",
         string description = "A conflict error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Conflict, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Conflict, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.NotFound" /> from a code and description.
@@ -110,8 +112,10 @@ public readonly record struct Error
     public static Error NotFound(
         string code = "General.NotFound",
         string description = "A 'Not Found' error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.NotFound, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.NotFound, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Unauthorized" /> from a code and description.
@@ -122,8 +126,10 @@ public readonly record struct Error
     public static Error Unauthorized(
         string code = "General.Unauthorized",
         string description = "An 'Unauthorized' error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Unauthorized, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Unauthorized, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> of type <see cref="ErrorType.Forbidden" /> from a code and description.
@@ -134,8 +140,10 @@ public readonly record struct Error
     public static Error Forbidden(
         string code = "General.Forbidden",
         string description = "A 'Forbidden' error has occurred.",
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, ErrorType.Forbidden, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, ErrorType.Forbidden, metadata);
+    }
 
     /// <summary>
     ///     Creates an <see cref="Error" /> with the given numeric <paramref name="type" />,
@@ -149,16 +157,15 @@ public readonly record struct Error
         int type,
         string code,
         string description,
-        IReadOnlyDictionary<string, object>? metadata = null) =>
-        new(code, description, (ErrorType)type, metadata);
+        IReadOnlyDictionary<string, object>? metadata = null)
+    {
+        return new Error(code, description, (ErrorType)type, metadata);
+    }
 
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        if (_metadata is null)
-        {
-            return HashCode.Combine(Code, Description, Type);
-        }
+        if (_metadata is null) return HashCode.Combine(Code, Description, Type);
 
         var hashCode = new HashCode();
         hashCode.Add(Code);
@@ -179,24 +186,14 @@ public readonly record struct Error
         // ReSharper disable once SuggestBaseTypeForParameter
         FrozenDictionary<string, object> otherMetadata)
     {
-        if (ReferenceEquals(metadata, otherMetadata))
-        {
-            return true;
-        }
+        if (ReferenceEquals(metadata, otherMetadata)) return true;
 
-        if (metadata.Count != otherMetadata.Count)
-        {
-            return false;
-        }
+        if (metadata.Count != otherMetadata.Count) return false;
 
         foreach (var kvp in metadata)
-        {
             if (!otherMetadata.TryGetValue(kvp.Key, out var otherValue) ||
                 !Equals(kvp.Value, otherValue))
-            {
                 return false;
-            }
-        }
 
         return true;
     }

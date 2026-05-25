@@ -101,13 +101,11 @@ internal static class EndpointMetadataEmitter
         // Error responses
         foreach (var statusCode in unionResult.ExplicitProduceCodes.AsImmutableArray().Distinct()
                      .OrderBy(static x => x))
-        {
             EmitProducesMetadataLine(code, indent, statusCode,
                 statusCode == 400
                     ? WellKnownTypes.Fqn.HttpValidationProblemDetails
                     : WellKnownTypes.Fqn.ProblemDetails,
                 WellKnownTypes.Constants.ContentTypeProblemJson);
-        }
     }
 
     /// <summary>

@@ -6,7 +6,7 @@ public sealed class IntegrationTestAppFactory : WebApplicationFactory<Integratio
 {
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        WebApplicationBuilder appBuilder = WebApplication.CreateBuilder(new WebApplicationOptions
+        var appBuilder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             EnvironmentName = Environments.Development
         });
@@ -15,7 +15,7 @@ public sealed class IntegrationTestAppFactory : WebApplicationFactory<Integratio
         appBuilder.Services.AddHealthChecks();
         IntegrationTestApp.ConfigureServices(appBuilder.Services);
 
-        WebApplication app = appBuilder.Build();
+        var app = appBuilder.Build();
         app.MapHealthChecks("/health");
         IntegrationTestApp.Configure(app);
         app.Start();

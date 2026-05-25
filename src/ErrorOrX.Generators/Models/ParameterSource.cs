@@ -26,7 +26,9 @@ internal enum ParameterSource
 internal static class ParameterSourceExtensions
 {
     /// <summary>Gets whether this source binds from form-related data.</summary>
-    public static bool IsFormRelated(this ParameterSource source) =>
-        source is ParameterSource.Form or ParameterSource.FormFile
+    public static bool IsFormRelated(this ParameterSource source)
+    {
+        return source is ParameterSource.Form or ParameterSource.FormFile
             or ParameterSource.FormFiles or ParameterSource.FormCollection;
+    }
 }

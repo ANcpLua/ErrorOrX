@@ -4,7 +4,7 @@ namespace ErrorOr.Generators.Emitters;
 ///     Query and Header binding emission. Both sources share the same scalar/collection branching
 ///     and the same nullable-vs-required emission shape; only the source-extraction call differs
 ///     (<c>TryGetQueryValue</c> / <c>ctx.Request.Query["..."]</c> vs <c>ctx.Request.Headers.TryGetValue</c>).
-///     Also hosts <see cref="EmitBindAsyncBinding"/> since it's a query-bound custom hook.
+///     Also hosts <see cref="EmitBindAsyncBinding" /> since it's a query-bound custom hook.
 /// </summary>
 internal static partial class BindingCodeEmitter
 {

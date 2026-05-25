@@ -7,9 +7,15 @@ namespace ErrorOrX.Tests.TestUtils;
 /// </summary>
 public sealed class SerializableMetadata : IXunitSerializable
 {
-    public SerializableMetadata() => Value = null;
+    public SerializableMetadata()
+    {
+        Value = null;
+    }
 
-    public SerializableMetadata(Dictionary<string, object>? metadata) => Value = metadata;
+    public SerializableMetadata(Dictionary<string, object>? metadata)
+    {
+        Value = metadata;
+    }
 
     public Dictionary<string, object>? Value { get; private set; }
 
@@ -49,8 +55,18 @@ public sealed class SerializableMetadata : IXunitSerializable
         }
     }
 
-    public static implicit operator Dictionary<string, object>?(SerializableMetadata s) => s.Value;
-    public static implicit operator SerializableMetadata(Dictionary<string, object>? d) => new(d);
+    public static implicit operator Dictionary<string, object>?(SerializableMetadata s)
+    {
+        return s.Value;
+    }
 
-    public override string ToString() => Value is null ? "null" : $"[{Value.Count} items]";
+    public static implicit operator SerializableMetadata(Dictionary<string, object>? d)
+    {
+        return new SerializableMetadata(d);
+    }
+
+    public override string ToString()
+    {
+        return Value is null ? "null" : $"[{Value.Count} items]";
+    }
 }

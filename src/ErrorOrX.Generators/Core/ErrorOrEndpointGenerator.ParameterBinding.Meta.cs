@@ -1,11 +1,10 @@
-using ANcpLua.Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace ErrorOr.Generators;
 
 /// <summary>
 ///     Partial class containing symbol-to-meta extraction for parameter binding.
-///     Converts <see cref="IParameterSymbol"/> into <see cref="ParameterMeta"/> for downstream classification.
+///     Converts <see cref="IParameterSymbol" /> into <see cref="ParameterMeta" /> for downstream classification.
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
@@ -107,22 +106,16 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
-        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromRouteAttribute) ??
                    parameter.Name;
-        }
 
         if (flags.HasFlag(ParameterFlags.FromQuery))
-        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromQueryAttribute) ??
                    parameter.Name;
-        }
 
         if (flags.HasFlag(ParameterFlags.FromHeader))
-        {
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromHeaderAttribute) ??
                    parameter.Name;
-        }
 
         if (flags.HasFlag(ParameterFlags.FromForm))
             return TryGetAttributeName(parameter, context, WellKnownTypes.FromFormAttribute) ?? parameter.Name;

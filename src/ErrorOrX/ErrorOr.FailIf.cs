@@ -17,10 +17,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(onValue);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return onValue(Value) ? error : this;
     }
@@ -44,10 +41,7 @@ public readonly partial record struct ErrorOr<TValue>
         _ = Guard.NotNull(onValue);
         _ = Guard.NotNull(errorBuilder);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return onValue(Value) ? errorBuilder(Value) : this;
     }
@@ -71,10 +65,7 @@ public readonly partial record struct ErrorOr<TValue>
         _ = Guard.NotNull(onValue);
         _ = Guard.NotNull(errorBuilder);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return onValue(Value) ? await errorBuilder(Value).ConfigureAwait(false) : this;
     }
@@ -98,10 +89,7 @@ public readonly partial record struct ErrorOr<TValue>
         _ = Guard.NotNull(onValue);
         _ = Guard.NotNull(errorBuilder);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return await onValue(Value).ConfigureAwait(false) ? errorBuilder(Value) : this;
     }
@@ -121,10 +109,7 @@ public readonly partial record struct ErrorOr<TValue>
     {
         _ = Guard.NotNull(onValue);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return await onValue(Value).ConfigureAwait(false) ? error : this;
     }
@@ -149,10 +134,7 @@ public readonly partial record struct ErrorOr<TValue>
         _ = Guard.NotNull(onValue);
         _ = Guard.NotNull(errorBuilder);
 
-        if (IsError)
-        {
-            return this;
-        }
+        if (IsError) return this;
 
         return await onValue(Value).ConfigureAwait(false) ? await errorBuilder(Value).ConfigureAwait(false) : this;
     }
