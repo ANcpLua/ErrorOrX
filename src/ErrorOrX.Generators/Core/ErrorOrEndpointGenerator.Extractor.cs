@@ -30,16 +30,18 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var innerType = errorOrType.TypeArguments[0];
 
-        // EOE015: Anonymous types cannot be serialized
-        if (innerType.IsAnonymousType)
-            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, true);
+        // EOE015: ErrorOr<object> / ErrorOr<dynamic> — flag for warning, but keep a valid FQN
+        // so generation proceeds (the user can ship reflection-based JSON with a registered
+        // typeof(object) in their JsonSerializerContext). C# does not permit anonymous types in
+        // generic type arguments, so the original IsAnonymousType check was unreachable; users
+        // actually hit this by upcasting an anonymous expression: `ErrorOr<object> Get() => new { ... }`.
+        // `dynamic` surfaces as SpecialType.System_Object too, so this catches both shapes.
+        var isObjectReturn = innerType.SpecialType is SpecialType.System_Object;
 
         // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
-        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
-        }
 
         switch (innerType)
         {
@@ -86,7 +88,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         var successTypeFqn = innerType.GetFullyQualifiedName();
         var idPropertyName = DetectIdProperty(innerType);
-        return new ErrorOrReturnTypeInfo(successTypeFqn, isAsync, IsSse: false, SseItemTypeFqn: null, kind, idPropertyName);
+        return new ErrorOrReturnTypeInfo(successTypeFqn, isAsync, false, null, kind, idPropertyName, isObjectReturn);
     }
 
     /// <summary>
@@ -102,7 +104,6 @@ public sealed partial class ErrorOrEndpointGenerator
         string? bestMatch = null;
 
         for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
-        {
             foreach (var member in current.GetMembers())
             {
                 // Pattern-as-spec: public readable property
@@ -110,9 +111,7 @@ public sealed partial class ErrorOrEndpointGenerator
                     {
                         DeclaredAccessibility: Accessibility.Public, GetMethod: not null
                     } property)
-                {
                     continue;
-                }
 
                 // Exact match "Id" is preferred - return immediately
                 if (property.Name == "Id") return "Id";
@@ -120,7 +119,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 // Case-insensitive match for fallback
                 if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase)) bestMatch ??= property.Name;
             }
-        }
 
         return bestMatch;
     }
@@ -180,13 +178,9 @@ public sealed partial class ErrorOrEndpointGenerator
         var results = new List<ProducesErrorInfo>();
 
         foreach (var attr in method.GetAttributes())
-        {
             if (ErrorOrContext.MatchesType(attr.AttributeClass, WellKnownTypes.ProducesErrorAttribute) &&
                 attr.ConstructorArguments is [{ Value: int statusCode }, ..])
-            {
                 results.Add(new ProducesErrorInfo(statusCode));
-            }
-        }
 
         return results.Count > 0
             ? new EquatableArray<ProducesErrorInfo>([.. results])

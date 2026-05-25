@@ -15,5 +15,6 @@
 
 ### Changed Rules
 
- Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
----------|--------------|--------------|--------------|--------------|-------
+ Rule ID | New Category      | New Severity | Old Category      | Old Severity | Notes
+---------|-------------------|--------------|-------------------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------
+ EOE015  | ErrorOr.Endpoints | Warning      | ErrorOr.Endpoints | Error        | Behavior change: now detects ErrorOr<object> / ErrorOr<dynamic> (the reachable user mistake) instead of the unreachable anonymous-type-in-signature check. Severity softened from Error to Warning to avoid breaking consumer builds on upgrade; suppress with #pragma if you intentionally use object-typed payloads with a registered JsonSerializerContext.

@@ -351,5 +351,11 @@ internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonS
 
     }
   ],
-  Diagnostics: []
+  Diagnostics: [
+    {
+      Id: EOE015,
+      Severity: Warning,
+      Message: Method 'GetData' returns ErrorOr<object> (or ErrorOr<dynamic>), which cannot be serialized under Native AOT. Use a concrete payload type, or register typeof(object) in your JsonSerializerContext and suppress this warning.
+    }
+  ]
 }

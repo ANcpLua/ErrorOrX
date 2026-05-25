@@ -9,6 +9,74 @@ namespace ErrorOrX.Generators.Tests;
 /// </summary>
 public class RouteBodyValidationTests : GeneratorTestBase
 {
+    #region EOE015 - ErrorOr<object> not supported
+
+    [Fact]
+    public Task EOE015_ErrorOr_Object_Return_Warns()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class TodoApi
+                              {
+                                  [Get("/data")]
+                                  public static ErrorOr<object> GetData() => new { Name = "test" };
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
+    #region EOE018 - Inaccessible type in endpoint
+
+    [Fact]
+    public Task EOE018_Private_Return_Type()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class TodoApi
+                              {
+                                  private class SecretData { public string Value { get; set; } }
+
+                                  [Get("/secret")]
+                                  public static ErrorOr<SecretData> GetSecret() => new SecretData { Value = "secret" };
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
+    #region EOE019 - Type parameter not supported
+
+    [Fact]
+    public Task EOE019_Generic_Type_Parameter()
+    {
+        const string Source = """
+                              using ErrorOr;
+
+                              namespace DiagnosticTest;
+
+                              public static class GenericApi
+                              {
+                                  [Get("/items")]
+                                  public static ErrorOr<T> GetItem<T>() where T : class => default!;
+                              }
+                              """;
+
+        return VerifyAsync(Source);
+    }
+
+    #endregion
+
     #region EOE003 - Route parameter not bound
 
     [Fact]
@@ -151,74 +219,6 @@ public class RouteBodyValidationTests : GeneratorTestBase
                                   public static ErrorOr<string> Upload(
                                       [FromBody] CreateRequest body,
                                       Stream data) => "uploaded";
-                              }
-                              """;
-
-        return VerifyAsync(Source);
-    }
-
-    #endregion
-
-    #region EOE015 - Anonymous return type not supported
-
-    [Fact]
-    public Task EOE015_Anonymous_Return_Type()
-    {
-        const string Source = """
-                              using ErrorOr;
-
-                              namespace DiagnosticTest;
-
-                              public static class TodoApi
-                              {
-                                  [Get("/data")]
-                                  public static ErrorOr<object> GetData() => new { Name = "test" };
-                              }
-                              """;
-
-        return VerifyAsync(Source);
-    }
-
-    #endregion
-
-    #region EOE018 - Inaccessible type in endpoint
-
-    [Fact]
-    public Task EOE018_Private_Return_Type()
-    {
-        const string Source = """
-                              using ErrorOr;
-
-                              namespace DiagnosticTest;
-
-                              public static class TodoApi
-                              {
-                                  private class SecretData { public string Value { get; set; } }
-
-                                  [Get("/secret")]
-                                  public static ErrorOr<SecretData> GetSecret() => new SecretData { Value = "secret" };
-                              }
-                              """;
-
-        return VerifyAsync(Source);
-    }
-
-    #endregion
-
-    #region EOE019 - Type parameter not supported
-
-    [Fact]
-    public Task EOE019_Generic_Type_Parameter()
-    {
-        const string Source = """
-                              using ErrorOr;
-
-                              namespace DiagnosticTest;
-
-                              public static class GenericApi
-                              {
-                                  [Get("/items")]
-                                  public static ErrorOr<T> GetItem<T>() where T : class => default!;
                               }
                               """;
 

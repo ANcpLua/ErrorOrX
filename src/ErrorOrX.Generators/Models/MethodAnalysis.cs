@@ -22,7 +22,7 @@ internal readonly record struct ErrorOrReturnTypeInfo(
     string? SseItemTypeFqn,
     SuccessKind Kind,
     string? IdPropertyName = null,
-    bool IsAnonymousType = false,
+    bool IsObjectReturn = false,
     bool IsInaccessibleType = false,
     string? InaccessibleTypeName = null,
     string? InaccessibleTypeAccessibility = null,

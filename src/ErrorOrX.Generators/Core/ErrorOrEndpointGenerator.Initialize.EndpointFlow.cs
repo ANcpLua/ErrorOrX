@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
@@ -9,9 +8,12 @@ namespace ErrorOr.Generators;
 /// <summary>
 ///     Per-attribute endpoint discovery and descriptor construction. The pipeline:
 ///     <list type="number">
-///         <item><see cref="CombineHttpMethodProviders"/> fans out one <c>SyntaxProvider</c> per HTTP-method attribute.</item>
-///         <item><see cref="AnalyzeEndpointFlow"/> shape-validates the method via <c>DiagnosticFlow</c> railway.</item>
-///         <item><see cref="ProcessAttributeFlow"/> binds parameters, validates routes/versions, and builds the descriptor.</item>
+///         <item><see cref="CombineHttpMethodProviders" /> fans out one <c>SyntaxProvider</c> per HTTP-method attribute.</item>
+///         <item><see cref="AnalyzeEndpointFlow" /> shape-validates the method via <c>DiagnosticFlow</c> railway.</item>
+///         <item>
+///             <see cref="ProcessAttributeFlow" /> binds parameters, validates routes/versions, and builds the
+///             descriptor.
+///         </item>
 ///     </list>
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
@@ -72,31 +74,24 @@ public sealed partial class ErrorOrEndpointGenerator
             {
                 var returnInfo = ExtractErrorOrReturnType(m.ReturnType, errorOrContext);
 
-                // EOE015: Anonymous return type
-                if (returnInfo.IsAnonymousType)
-                {
-                    return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
-                        DiagnosticInfo.Create(Descriptors.AnonymousReturnTypeNotSupported, location, m.Name));
-                }
+                // EOE015 is now Warning severity (non-failing) — handled in the next .Then via the
+                // builder pattern below, alongside EOE033. Fail-fast here would short-circuit the
+                // railway on a warning, which would skip generation that the user can still ship.
 
                 // EOE018: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
                             returnInfo.InaccessibleTypeName ?? "unknown",
                             m.Name,
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
-                }
 
                 // EOE019: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
-                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
                             m.Name,
                             returnInfo.TypeParameterName ?? "T"));
-                }
 
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))
@@ -111,6 +106,13 @@ public sealed partial class ErrorOrEndpointGenerator
                 // EOE033: Validate PascalCase naming convention
                 if (NamingValidator.ValidatePascalCase(m.Name, location) is { } namingDiagnostic)
                     builder.Add(namingDiagnostic);
+
+                // EOE015: ErrorOr<object> / ErrorOr<dynamic> — warn but continue. The generator
+                // still emits valid code (JsonSerializable(typeof(object))); the warning surfaces
+                // the AOT-safety risk so the user can switch to a concrete payload type or
+                // explicitly register object in their JsonSerializerContext.
+                if (returnInfo.IsObjectReturn)
+                    builder.Add(DiagnosticInfo.Create(Descriptors.ObjectReturnTypeNotSupported, location, m.Name));
 
                 // Extract method-level attributes first (needed for interface call detection)
                 var producesErrors = ExtractProducesErrorAttributes(m, errorOrContext);
@@ -217,7 +219,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var location = method.Locations.FirstOrDefault() ?? Location.None;
         builder.AddRange(ApiVersioningValidator.Validate(
             method.Name,
-in versioning,
+            in versioning,
             rawClassVersions,
             rawMethodVersions,
             location,
