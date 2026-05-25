@@ -1,4 +1,3 @@
-using ANcpLua.Roslyn.Utilities;
 using ANcpLua.Roslyn.Utilities.Models;
 using ErrorOr.Analyzers;
 using Microsoft.CodeAnalysis;
@@ -8,9 +7,9 @@ namespace ErrorOr.Generators;
 /// <summary>
 ///     Partial class containing per-binding-source parameter classifiers.
 ///     Each <c>ClassifyFrom*Parameter</c> validates one attribute family and emits the
-///     matching EOE0xx diagnostic on failure. <see cref="ClassifyAsParameters"/> and
-///     <see cref="ClassifyFormDtoParameter"/> additionally recurse into constructor parameters
-///     to build nested <see cref="EndpointParameter"/> trees.
+///     matching EOE0xx diagnostic on failure. <see cref="ClassifyAsParameters" /> and
+///     <see cref="ClassifyFormDtoParameter" /> additionally recurse into constructor parameters
+///     to build nested <see cref="EndpointParameter" /> trees.
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
@@ -82,10 +81,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
-        {
             return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.BoundName,
                 customBinding: meta.CustomBinding);
-        }
 
         // EOE011: [FromQuery] only supports primitives or collections of primitives
         diagnostics.Add(DiagnosticInfo.Create(
@@ -114,10 +111,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
-        {
             return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.BoundName,
                 customBinding: meta.CustomBinding);
-        }
 
         // EOE014: [FromHeader] requires string, primitive with TryParse, or collection thereof
         diagnostics.Add(DiagnosticInfo.Create(
@@ -156,10 +151,8 @@ public sealed partial class ErrorOrEndpointGenerator
         // For complex form DTOs, analyze the constructor to build child parameter info
         // BCL handles actual binding - we just need structure for code generation
         if (type is not INamedTypeSymbol typeSymbol)
-        {
             // Non-named types get simple form binding - BCL will handle/fail at runtime
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
-        }
 
         var constructor = typeSymbol.Constructors
             .Where(static c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -167,10 +160,8 @@ public sealed partial class ErrorOrEndpointGenerator
             .FirstOrDefault();
 
         if (constructor is null || constructor.Parameters.Length is 0)
-        {
             // No suitable constructor - simple form binding
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
-        }
 
         // Build child parameters for DTO constructor
         var children = ImmutableArray.CreateBuilder<EndpointParameter>(constructor.Parameters.Length);
@@ -199,15 +190,15 @@ public sealed partial class ErrorOrEndpointGenerator
                 default));
         }
 
-        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
+        return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.Form,
             meta.BoundName,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-IsCollection: false,
-CollectionItemTypeFqn: null,
+            false,
+            null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,
@@ -234,8 +225,13 @@ CollectionItemTypeFqn: null,
             return ParameterClassificationResult.Error;
         }
 
-        // EOE012: [AsParameters] can only be used on class or struct types
-        if (type is not INamedTypeSymbol typeSymbol)
+        // EOE012: [AsParameters] can only be used on (non-primitive, non-enum) class or struct types.
+        // `int` IS an INamedTypeSymbol — the prior `is not INamedTypeSymbol` guard let primitives slip
+        // through silently. Filter by SpecialType + TypeKind to catch primitives, enums, and value types
+        // that don't make sense as parameter-expansion targets.
+        if (type is not INamedTypeSymbol typeSymbol
+            || type.SpecialType is not SpecialType.None
+            || type.TypeKind is TypeKind.Enum)
         {
             diagnostics.Add(DiagnosticInfo.Create(Descriptors.InvalidAsParametersType, method, meta.Name,
                 meta.TypeFqn));
@@ -255,12 +251,28 @@ CollectionItemTypeFqn: null,
             return ParameterClassificationResult.Error;
         }
 
+        // EOE016 (property-level): [AsParameters] also binds public properties per Microsoft Learn,
+        // so a nested [AsParameters] on a property must be caught. The constructor-param scan below
+        // catches the record/primary-constructor case; this catches the regular-property case.
+        foreach (var member in typeSymbol.GetMembers())
+        {
+            if (member is IPropertySymbol property &&
+                ErrorOrContext.HasAttribute(property, WellKnownTypes.AsParametersAttribute))
+            {
+                diagnostics.Add(DiagnosticInfo.Create(Descriptors.NestedAsParametersNotSupported,
+                    method.Locations.FirstOrDefault() ?? Location.None,
+                    typeSymbol.ToDisplayString(),
+                    property.Name));
+                return ParameterClassificationResult.Error;
+            }
+        }
+
         var children = ImmutableArray.CreateBuilder<EndpointParameter>();
         foreach (var paramSymbol in constructor.Parameters)
         {
             var childMeta = CreateParameterMeta(paramSymbol, context);
 
-            // EOE016: Nested [AsParameters] not supported
+            // EOE016 (ctor-param level): Nested [AsParameters] not supported
             if (childMeta.HasAsParameters)
             {
                 diagnostics.Add(DiagnosticInfo.Create(Descriptors.NestedAsParametersNotSupported,
@@ -278,15 +290,15 @@ CollectionItemTypeFqn: null,
             children.Add(result.Parameter);
         }
 
-        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
+        return new ParameterClassificationResult(false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.AsParameters,
-KeyName: null,
+            null,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-IsCollection: false,
-CollectionItemTypeFqn: null,
+            false,
+            null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,

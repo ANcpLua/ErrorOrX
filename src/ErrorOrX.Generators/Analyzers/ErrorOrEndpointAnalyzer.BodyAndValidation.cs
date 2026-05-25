@@ -6,8 +6,8 @@ namespace ErrorOr.Analyzers;
 
 /// <summary>
 ///     Body-source counting (EOE006) and DataAnnotations reflection check (EOE039) for the
-///     <see cref="ErrorOrEndpointAnalyzer"/>. Body classification routes through
-///     <see cref="ErrorOrContext"/> so analyzer and generator share one source of truth
+///     <see cref="ErrorOrEndpointAnalyzer" />. Body classification routes through
+///     <see cref="ErrorOrContext" /> so analyzer and generator share one source of truth
 ///     (FQN + inheritance, not name-substring match).
 /// </summary>
 public sealed partial class ErrorOrEndpointAnalyzer
@@ -59,46 +59,32 @@ public sealed partial class ErrorOrEndpointAnalyzer
     ///     Checks if any parameter has validation attributes from System.ComponentModel.DataAnnotations.
     ///     Validator.TryValidateObject uses reflection internally.
     /// </summary>
+    /// <remarks>
+    ///     Routes through <see cref="ErrorOrContext.IsOrInheritsFrom" /> (symbol-side FQN walk)
+    ///     rather than <c>Compilation.GetTypeByMetadataName</c> (Pattern A), which returns null
+    ///     on multi-assembly type-forwarding — dotnet/roslyn#52037 and Compilation.cs:1221
+    ///     ("Type forwarders are ignored"). The .NET 10 ref-pack ships
+    ///     <c>System.ComponentModel.DataAnnotations.dll</c> as a forwarder facade alongside the
+    ///     runtime impl, so Pattern A silently returns null on consumer compilations.
+    /// </remarks>
     private static void CheckForValidationAttributes(
         in SymbolAnalysisContext context,
         IMethodSymbol method)
     {
-        var validationAttributeType = context.Compilation.GetTypeByMetadataName(WellKnownTypes.ValidationAttribute);
-        if (validationAttributeType is null) return;
-
         foreach (var param in method.Parameters)
+        foreach (var attr in param.GetAttributes())
         {
-            foreach (var attr in param.GetAttributes())
-            {
-                if (attr.AttributeClass is null) continue;
+            if (attr.AttributeClass is null) continue;
 
-                // Check if the attribute inherits from ValidationAttribute
-                if (InheritsFrom(attr.AttributeClass, validationAttributeType))
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        Descriptors.ValidationUsesReflection,
-                        param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                        param.Name,
-                        method.Name));
-                    break; // Only report once per parameter
-                }
+            if (ErrorOrContext.IsOrInheritsFrom(attr.AttributeClass, WellKnownTypes.ValidationAttribute))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    Descriptors.ValidationUsesReflection,
+                    param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                    param.Name,
+                    method.Name));
+                break; // Only report once per parameter
             }
         }
-    }
-
-    /// <summary>
-    ///     Checks if a type inherits from a base type.
-    /// </summary>
-    private static bool InheritsFrom(ITypeSymbol type, ISymbol baseType)
-    {
-        var current = type.BaseType;
-        while (current is not null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType)) return true;
-
-            current = current.BaseType;
-        }
-
-        return false;
     }
 }

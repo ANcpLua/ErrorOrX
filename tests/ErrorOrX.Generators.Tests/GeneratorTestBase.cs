@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.DataAnnotations;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -35,7 +36,11 @@ public abstract class GeneratorTestBase
         // API versioning attributes
         typeof(ApiVersionAttribute),
         typeof(ApiVersionNeutralAttribute),
-        typeof(MapToApiVersionAttribute)
+        typeof(MapToApiVersionAttribute),
+        // DataAnnotations — pulls System.ComponentModel.Annotations.dll into the test compilation
+        // so [Required]/[StringLength]/[Range] resolve to real symbols with proper BaseType chains.
+        // Without this, EOE039's IsOrInheritsFrom walk has nothing to traverse and silently no-ops.
+        typeof(RequiredAttribute)
     ];
 
     /// <summary>
