@@ -53,8 +53,22 @@ jobs:
       - name: Create AOT sample (package-based)
         run: |
           project_dir="$RUNNER_TEMP/errororx-aot-sample"
-          mkdir -p "$project_dir"
-          cp -R samples/ErrorOrX.Sample/. "$project_dir/"
+          src_dir="samples/ErrorOrX.Samples.Api"
+          mkdir -p "$project_dir/Domain"
+
+          # Copy source files only. Skip the source .csproj, bin/, obj/, README.md, and requests.http
+          # — the .csproj is regenerated below with vanilla Microsoft.NET.Sdk.Web for a clean AOT test
+          # against the published packages, not the project references the repo csproj uses.
+          cp "$src_dir/Program.cs"                       "$project_dir/"
+          cp "$src_dir/AppJsonSerializerContext.cs"      "$project_dir/"
+          cp "$src_dir/TodoApi.cs"                       "$project_dir/"
+          cp "$src_dir/OrderApi.cs"                      "$project_dir/"
+          cp "$src_dir/AdvancedErrorHandlingApi.cs"      "$project_dir/"
+          cp "$src_dir/Domain/Todo.cs"                   "$project_dir/Domain/"
+          cp "$src_dir/Domain/ITodoService.cs"           "$project_dir/Domain/"
+          cp "$src_dir/Domain/TodoService.cs"            "$project_dir/Domain/"
+          cp "$src_dir/Domain/CreateOrderRequest.cs"     "$project_dir/Domain/"
+          cp "$src_dir/Domain/IOrderService.cs"          "$project_dir/Domain/"
 
           cat > "$project_dir/nuget.config" <<EOF
           <configuration>
@@ -66,12 +80,13 @@ jobs:
           </configuration>
           EOF
 
-          cat > "$project_dir/ErrorOrX.Sample.csproj" <<EOF
+          cat > "$project_dir/ErrorOrX.Samples.Api.csproj" <<EOF
           <Project Sdk="Microsoft.NET.Sdk.Web">
             <PropertyGroup>
               <TargetFramework>net10.0</TargetFramework>
-              <RootNamespace>ErrorOrX.Sample</RootNamespace>
+              <RootNamespace>ErrorOrX.Samples.Api</RootNamespace>
               <ImplicitUsings>enable</ImplicitUsings>
+              <Nullable>enable</Nullable>
               <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
               <CompilerGeneratedFilesOutputPath>\$(BaseIntermediateOutputPath)\\GeneratedFiles</CompilerGeneratedFilesOutputPath>
               <ErrorOrGenerateJsonContext>false</ErrorOrGenerateJsonContext>
@@ -79,8 +94,8 @@ jobs:
 
             <ItemGroup>
               <Using Include="ErrorOr" />
-              <Using Include="ErrorOrX.Sample" />
-              <Using Include="ErrorOrX.Sample.Domain" />
+              <Using Include="ErrorOrX.Samples.Api" />
+              <Using Include="ErrorOrX.Samples.Api.Domain" />
             </ItemGroup>
 
             <ItemGroup>

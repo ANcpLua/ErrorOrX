@@ -1,198 +1,37 @@
-# ErrorOrX Diagnostics Demos
+# ErrorOrX.Samples.Diagnostics
 
-This project demonstrates all ErrorOrX analyzer and generator diagnostics (EOE001-EOE041).
-
-Each file in the `Demos/` folder contains:
-
-- A clear explanation of what the diagnostic checks
-- Code that would **trigger** the diagnostic (commented out)
-- The **fixed** version showing the correct pattern
-
-## Quick Start
+Realistic-looking API code that deliberately triggers ErrorOrX diagnostics. This project is **excluded from `ErrorOrX.slnx`** — the source-generator-reported errors halt compilation, which is the entire point. Open the project in your IDE for live squiggles, or build it explicitly:
 
 ```bash
-# Build to see diagnostics in IDE
-dotnet build samples/ErrorOrX.Samples.Diagnostics
-
-# View generated files
-ls samples/ErrorOrX.Samples.Diagnostics/obj/GeneratedFiles
+dotnet build samples/ErrorOrX.Samples.Diagnostics/ErrorOrX.Samples.Diagnostics.csproj
 ```
 
-## Viewing Diagnostics in Your IDE
+**The build is expected to fail.** Each failure is a curated example of a real mistake a consumer would naturally make and the diagnostic that catches it.
 
-1. Open the solution in Visual Studio, Rider, or VS Code
-2. Navigate to any file in `Demos/`
-3. Uncomment the "TRIGGERS" code sections
-4. The IDE will show squiggles and error/warning messages
-5. Hover over the squiggle to see the diagnostic message
+## What's here — verified firing diagnostics
 
-## Diagnostics Reference
+| File                       | Diagnostics                                                    | Why this is the natural place                                       |
+|----------------------------|----------------------------------------------------------------|---------------------------------------------------------------------|
+| `Apis/SearchApi.cs`        | **EOE020** route constraint mismatch, **EOE021** ambiguous binding on `GET`/`DELETE` + complex DTO, **EOE024** undocumented interface call | Search endpoints with filter DTOs and id-typed routes               |
+| `Apis/BlogApi.cs`          | **EOE003** unbound route param `{slug}`, **EOE004** duplicate `GET /api/posts` | Typo'd parameter name; two API classes both mapping the same route  |
+| `Apis/OrdersApi.cs`        | **EOE007** body type (`NewOrder`, `Order`) not in `JsonSerializerContext` | `Order`/`NewOrder` deliberately omitted from `AppJsonContext`       |
+| `Apis/NotificationsApi.cs` | **EOE024** undocumented interface call                         | `INotificationService` returns `ErrorOr<>` without `[ProducesError]` |
+| `Apis/UploadApi.cs`        | **EOE006** multiple body sources (`[FromBody]` + `Stream`)     | Upload endpoint conflating metadata body with raw stream            |
 
-### EOE001-007: Core Validation
+**Seven EOE diagnostics fire across five realistic API files.** That covers the cross-graph cleverness (EOE004 duplicate-route, EOE007 cross-file JSON-context discovery, EOE024 call-graph correctness) and the smart-binding inference (EOE020/EOE021) — the diagnostics that actually justify the library's existence over stock Minimal API.
 
-| ID     | Name                      | Severity | Description                                                                      |
-|--------|---------------------------|----------|----------------------------------------------------------------------------------|
-| EOE001 | Invalid return type       | Error    | Handler must return `ErrorOr<T>`, `Task<ErrorOr<T>>`, or `ValueTask<ErrorOr<T>>` |
-| EOE002 | Handler must be static    | Error    | Instance methods cannot be used with source generation                           |
-| EOE003 | Route parameter not bound | Error    | Route has `{param}` but no method parameter captures it                          |
-| EOE004 | Duplicate route           | Error    | Same route + HTTP method registered by multiple handlers                         |
-| EOE005 | Invalid route pattern     | Error    | Route pattern syntax is invalid (unclosed braces, etc.)                          |
-| EOE006 | Multiple body sources     | Error    | Only one of `[FromBody]`, `[FromForm]`, Stream, or PipeReader allowed            |
-| EOE007 | Type not AOT-serializable | Error    | Type not in any `[JsonSerializable]` context for AOT                             |
+## Why these were picked (and why others weren't)
 
-### EOE008-014: Parameter Binding Validation
+Source generators have two paths to surface a diagnostic: the **`DiagnosticAnalyzer`** (per-symbol, lightweight, fast) and the **generator pipeline** (cross-file, needs full compilation). The interesting diagnostics here exercise both — `EOE003`/`EOE020` come from the analyzer, `EOE004`/`EOE007`/`EOE021`/`EOE024` come from the generator. Together they show the library does work no per-method analyzer could do on its own.
 
-| ID     | Name                                   | Severity | Description                                                   |
-|--------|----------------------------------------|----------|---------------------------------------------------------------|
-| EOE008 | Body on read-only method               | Warning  | GET/DELETE with request body is discouraged                   |
-| EOE009 | [AcceptedResponse] on read-only method | Warning  | 202 Accepted unusual for GET/DELETE                           |
-| EOE010 | Invalid [FromRoute] type               | Error    | Route parameter must be primitive or have TryParse            |
-| EOE011 | Invalid [FromQuery] type               | Error    | Query parameter must be primitive or collection of primitives |
-| EOE012 | Invalid [AsParameters] type            | Error    | Must be class or struct, not primitive                        |
-| EOE013 | [AsParameters] no constructor          | Error    | Type must have accessible constructor                         |
-| EOE014 | Invalid [FromHeader] type              | Error    | Header must be string or primitive with TryParse              |
+The other 33 descriptors are mostly:
+- **dry compile-error territory** (`EOE001`/`EOE002`/`EOE005`/`EOE018`) — caught by the C# compiler shape rules anyway,
+- **attribute-misuse minutiae** (`EOE010`–`EOE014`/`EOE015`–`EOE017`) — cataloging not showcasing,
+- **API-versioning specific** (`EOE027`–`EOE031`) — niche unless you do versioning,
+- or **subsets of the picks above** (`EOE026` is `EOE007`'s sibling case).
 
-### EOE015-019: Return Type and Parameter Type Validation
+## Library-side gap (worth fixing)
 
-| ID     | Name                         | Severity | Description                                                  |
-|--------|------------------------------|----------|--------------------------------------------------------------|
-| EOE015 | Anonymous return type        | Error    | Anonymous types cannot be serialized; use named types        |
-| EOE016 | Nested [AsParameters]        | Error    | Recursive parameter expansion not supported                  |
-| EOE017 | Nullable [AsParameters]      | Error    | Parameter expansion requires concrete instance               |
-| EOE018 | Inaccessible type            | Error    | Private/protected types cannot be accessed by generated code |
-| EOE019 | Type parameter not supported | Error    | Open generic type parameters cannot be used in return types  |
+**`EOE039` (DataAnnotations validation uses reflection)** has a reporting path at `ErrorOrEndpointAnalyzer.BodyAndValidation.cs:78` but did not fire on an endpoint of the shape `[Post("/x")] static ErrorOr<Created> Submit([Required] [StringLength(200)] string title, [Range(1,5)] int priority)`. The analyzer's `GetTypeByMetadataName("System.ComponentModel.DataAnnotations.ValidationAttribute")` may be returning `null` in projects that don't transitively reference the annotations assembly, even though the `[Required]` attribute symbol IS resolvable. Worth a unit test on this shape and possibly a fallback that checks the attribute's fully-qualified namespace string when the metadata-name lookup fails.
 
-### EOE020-021: Route Constraint Validation
-
-| ID     | Name                           | Severity | Description                                                                                   |
-|--------|--------------------------------|----------|-----------------------------------------------------------------------------------------------|
-| EOE020 | Route constraint type mismatch | Warning  | `{id:int}` requires int parameter, not string                                                 |
-| EOE021 | Ambiguous parameter binding    | Error    | Complex type on GET/DELETE needs explicit `[AsParameters]`, `[FromBody]`, or `[FromServices]` |
-
-### EOE022-024: Result Types and Error Factories
-
-| ID     | Name                        | Severity | Description                                                             |
-|--------|-----------------------------|----------|-------------------------------------------------------------------------|
-| EOE022 | Too many result types       | Info     | Endpoint exceeds Results<...> max arity (6 types)                       |
-| EOE023 | Unknown error factory       | Warning  | `Error.Custom()` doesn't map to known HTTP status                       |
-| EOE024 | Undocumented interface call | Error    | Interface returning ErrorOr needs `[ProducesError]` or `[ReturnsError]` |
-
-### EOE025-026: JSON/AOT Validation
-
-| ID     | Name                          | Severity | Description                                             |
-|--------|-------------------------------|----------|---------------------------------------------------------|
-| EOE025 | Missing CamelCase policy      | Warning  | JsonSerializerContext should use CamelCase for web APIs |
-| EOE026 | Missing JsonSerializerContext | Error    | Endpoint with body needs `[JsonSerializable]` for AOT   |
-
-### EOE027-031: API Versioning
-
-| ID     | Name                          | Severity | Description                                                                             |
-|--------|-------------------------------|----------|-----------------------------------------------------------------------------------------|
-| EOE027 | Version-neutral with mappings | Warning  | `[ApiVersionNeutral]` and `[MapToApiVersion]` are mutually exclusive                    |
-| EOE028 | Mapped version not declared   | Warning  | `[MapToApiVersion("X")]` requires `[ApiVersion("X")]` on class                          |
-| EOE029 | Package not referenced        | Warning  | Asp.Versioning.Http package needed for versioning attributes                            |
-| EOE030 | Endpoint missing versioning   | Info     | Other endpoints use versioning; consider adding `[ApiVersion]` or `[ApiVersionNeutral]` |
-| EOE031 | Invalid version format        | Error    | Use "major.minor" or "major", not "v1" or "1.0.0"                                       |
-
-### EOE032-033: Route Parameter and Naming Validation
-
-| ID     | Name                              | Severity | Description                                                  |
-|--------|-----------------------------------|----------|--------------------------------------------------------------|
-| EOE032 | Duplicate route parameter binding | Warning  | Multiple parameters bind to same route parameter             |
-| EOE033 | Method name not PascalCase        | Warning  | Handler methods should use PascalCase (GetById, not getById) |
-
-### EOE034-038: AOT Safety
-
-| ID     | Name                     | Severity | Description                                               |
-|--------|--------------------------|----------|-----------------------------------------------------------|
-| EOE034 | Activator.CreateInstance | Warning  | Uses reflection; use explicit construction or factories   |
-| EOE035 | Type.GetType             | Warning  | Types may be trimmed; use typeof() or registry            |
-| EOE036 | Reflection over members  | Warning  | GetProperties/GetMethods may fail; members may be trimmed |
-| EOE037 | Expression.Compile       | Warning  | Runtime code generation not supported in AOT              |
-| EOE038 | 'dynamic' keyword        | Warning  | Runtime binding not supported in AOT                      |
-
-### EOE039-041: Validation Reflection and JSON Context Completeness
-
-| ID     | Name                                  | Severity | Description                                                                                  |
-|--------|---------------------------------------|----------|----------------------------------------------------------------------------------------------|
-| EOE039 | DataAnnotations validation reflection | Info     | `[Required]`/`[StringLength]`/... trigger `Validator.TryValidateObject` (reflection + trim warnings) |
-| EOE040 | JsonSerializerContext missing CamelCase | Warning | Custom `JsonSerializerContext` should set `PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase` |
-| EOE041 | JsonSerializerContext missing error types | Warning | Custom `JsonSerializerContext` should include `ProblemDetails` and `HttpValidationProblemDetails` |
-
-## File Structure
-
-```
-samples/ErrorOrX.Samples.Diagnostics/
-├── ErrorOrX.Samples.Diagnostics.csproj    # Project file with references
-├── README.md                   # This file
-├── GlobalUsings.cs            # Common using directives
-└── Demos/
-    ├── EOE001_InvalidReturnType.cs
-    ├── EOE002_NonStaticHandler.cs
-    ├── EOE003_RouteParameterNotBound.cs
-    ├── EOE004_DuplicateRoute.cs
-    ├── EOE005_InvalidRoutePattern.cs
-    ├── EOE006_MultipleBodySources.cs
-    ├── EOE007_TypeNotInJsonContext.cs
-    ├── EOE008_BodyOnReadOnlyMethod.cs
-    ├── EOE009_AcceptedOnReadOnlyMethod.cs
-    ├── EOE010_InvalidFromRouteType.cs
-    ├── EOE011_InvalidFromQueryType.cs
-    ├── EOE012_InvalidAsParametersType.cs
-    ├── EOE013_AsParametersNoConstructor.cs
-    ├── EOE014_InvalidFromHeaderType.cs
-    ├── EOE015_AnonymousReturnType.cs
-    ├── EOE016_NestedAsParameters.cs
-    ├── EOE017_NullableAsParameters.cs
-    ├── EOE018_InaccessibleType.cs
-    ├── EOE019_TypeParameterNotSupported.cs
-    ├── EOE020_RouteConstraintTypeMismatch.cs
-    ├── EOE021_AmbiguousParameterBinding.cs
-    ├── EOE022_TooManyResultTypes.cs
-    ├── EOE023_UnknownErrorFactory.cs
-    ├── EOE024_UndocumentedInterfaceCall.cs
-    ├── EOE025_MissingCamelCasePolicy.cs
-    ├── EOE026_MissingJsonContextForBody.cs
-    ├── EOE027_VersionNeutralWithMappings.cs
-    ├── EOE028_MappedVersionNotDeclared.cs
-    ├── EOE029_ApiVersioningPackageNotReferenced.cs
-    ├── EOE030_EndpointMissingVersioning.cs
-    ├── EOE031_InvalidApiVersionFormat.cs
-    ├── EOE032_DuplicateRouteParameterBinding.cs
-    ├── EOE033_MethodNameNotPascalCase.cs
-    ├── EOE034_ActivatorCreateInstance.cs
-    ├── EOE035_TypeGetType.cs
-    ├── EOE036_ReflectionOverMembers.cs
-    ├── EOE037_ExpressionCompile.cs
-    ├── EOE038_DynamicKeyword.cs
-    ├── EOE039_ValidationUsesReflection.cs
-    ├── EOE040_JsonContextMissingCamelCase.cs
-    └── EOE041_JsonContextMissingProblemDetails.cs
-```
-
-## Severity Levels
-
-- **Error**: Code will not compile or will fail at runtime. Must be fixed.
-- **Warning**: Code compiles but may have issues. Should be reviewed.
-- **Info**: Informational; may indicate missing best practices.
-
-## Suppressing Diagnostics
-
-If you need to suppress a diagnostic:
-
-```csharp
-// Suppress single occurrence
-#pragma warning disable EOE008
-[Get("/search")]
-public static ErrorOr<string> Search([FromBody] SearchRequest req) => "ok";
-#pragma warning restore EOE008
-
-// Suppress in .editorconfig
-[*.cs]
-dotnet_diagnostic.EOE008.severity = none
-
-// Suppress in project file
-<PropertyGroup>
-  <NoWarn>$(NoWarn);EOE008</NoWarn>
-</PropertyGroup>
-```
+EOE034–EOE038 are deliberately absent from this curation — they duplicated `ANcpLua.Analyzers`' AL0094/AL0095/AL0101/AL0102 (which already fire on the same `Activator.CreateInstance`/`Type.GetType`/`Expression.Compile`/`dynamic` patterns) and are tracked for removal in `src/ErrorOrX.Generators/AnalyzerReleases.Unshipped.md`.

@@ -154,7 +154,8 @@ app.MapErrorOrEndpoints(); // Auto-generated extension method
 
 - `AddErrorOrEndpoints()` returns a fluent builder
 - `.UseJsonContext<T>()` registers the AOT JSON context
-- `.WithCamelCase()` / `.WithIgnoreNulls()` configure naming and null handling at the builder level (so the `JsonSerializerContext` itself stays minimal)
+- `.WithCamelCase()` / `.WithIgnoreNulls()` configure naming and null handling at the builder level (so the
+  `JsonSerializerContext` itself stays minimal)
 - `MapErrorOrEndpoints()` registers all endpoints from classes with `[Get]`, `[Post]`, etc.
 - Zero manual endpoint registration needed
 
@@ -214,4 +215,5 @@ GET /api/todos/00000000-0000-0000-0000-000000000000
 
 - [Main Documentation](../../README.md)
 - [Diagnostics catalog](../ErrorOrX.Samples.Diagnostics/README.md) — every EOE diagnostic with a runnable example
-- [aspnetcore-issue-draft.md](../../aspnetcore-issue-draft.md) — repo-root draft documenting a cross-assembly validation gap in ASP.NET Core that ErrorOrX handles natively
+- [aspnetcore-issue-draft.md](../../aspnetcore-issue-draft.md) — repo-root draft documenting a cross-assembly validation
+  gap in ASP.NET Core that ErrorOrX handles natively

@@ -34,11 +34,7 @@ public sealed class TodoService : ITodoService
         var index = _todos.FindIndex(t => t.Id == id);
         if (index < 0) return Error.NotFound("Todo.NotFound", $"Todo {id} not found");
 
-        _todos[index] = _todos[index] with
-        {
-            Title = request.Title,
-            IsComplete = request.IsComplete
-        };
+        _todos[index] = _todos[index] with { Title = request.Title, IsComplete = request.IsComplete };
 
         return new Updated();
     }

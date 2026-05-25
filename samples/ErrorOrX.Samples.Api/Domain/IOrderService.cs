@@ -14,10 +14,7 @@ public sealed class OrderService : IOrderService
     private readonly List<Order> _orders = [];
     private readonly TimeProvider _timeProvider;
 
-    public OrderService(TimeProvider timeProvider)
-    {
-        _timeProvider = timeProvider;
-    }
+    public OrderService(TimeProvider timeProvider) => _timeProvider = timeProvider;
 
     public Order Create(CreateOrderRequest request)
     {
@@ -32,15 +29,9 @@ public sealed class OrderService : IOrderService
         return order;
     }
 
-    public Order? GetById(Guid id)
-    {
-        return _orders.Find(o => o.Id == id);
-    }
+    public Order? GetById(Guid id) => _orders.Find(o => o.Id == id);
 
-    public List<Order> GetAll()
-    {
-        return [.. _orders];
-    }
+    public List<Order> GetAll() => [.. _orders];
 
     public Order? Update(Guid id, UpdateOrderRequest request)
     {
@@ -50,15 +41,11 @@ public sealed class OrderService : IOrderService
         var existing = _orders[index];
         var updated = existing with
         {
-            CustomerName = request.CustomerName ?? existing.CustomerName,
-            Email = request.Email ?? existing.Email
+            CustomerName = request.CustomerName ?? existing.CustomerName, Email = request.Email ?? existing.Email
         };
         _orders[index] = updated;
         return updated;
     }
 
-    public bool Delete(Guid id)
-    {
-        return _orders.RemoveAll(o => o.Id == id) > 0;
-    }
+    public bool Delete(Guid id) => _orders.RemoveAll(o => o.Id == id) > 0;
 }

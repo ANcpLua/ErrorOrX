@@ -3,10 +3,7 @@ namespace ErrorOrX.Samples.Api;
 public static class OrderApi
 {
     [Get("/api/orders")]
-    public static ErrorOr<List<Order>> GetAll(IOrderService svc)
-    {
-        return svc.GetAll();
-    }
+    public static ErrorOr<List<Order>> GetAll(IOrderService svc) => svc.GetAll();
 
     [Get("/api/orders/{id:guid}")]
     public static ErrorOr<Order> GetById(Guid id, IOrderService svc)
@@ -18,10 +15,7 @@ public static class OrderApi
     }
 
     [Post("/api/orders")]
-    public static ErrorOr<Order> Create(CreateOrderRequest request, IOrderService svc)
-    {
-        return svc.Create(request);
-    }
+    public static ErrorOr<Order> Create(CreateOrderRequest request, IOrderService svc) => svc.Create(request);
 
     [Put("/api/orders/{id:guid}")]
     public static ErrorOr<Order> Update(Guid id, UpdateOrderRequest request, IOrderService svc)
@@ -33,10 +27,8 @@ public static class OrderApi
     }
 
     [Delete("/api/orders/{id:guid}")]
-    public static ErrorOr<Deleted> Delete(Guid id, IOrderService svc)
-    {
-        return svc.Delete(id)
+    public static ErrorOr<Deleted> Delete(Guid id, IOrderService svc) =>
+        svc.Delete(id)
             ? Result.Deleted
             : Error.NotFound("Order.NotFound", $"Order with ID {id} was not found.");
-    }
 }
