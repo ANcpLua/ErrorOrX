@@ -381,5 +381,16 @@ internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonS
 
     }
   ],
-  Diagnostics: []
+  Diagnostics: [
+    {
+      Id: EOE039,
+      Severity: Info,
+      Message: Parameter 'title' in endpoint 'Create' has validation attributes. Validator.TryValidateObject uses reflection and may cause trim warnings. Consider FluentValidation with source generators or manual validation.
+    },
+    {
+      Id: EOE039,
+      Severity: Info,
+      Message: Parameter 'priority' in endpoint 'Create' has validation attributes. Validator.TryValidateObject uses reflection and may cause trim warnings. Consider FluentValidation with source generators or manual validation.
+    }
+  ]
 }

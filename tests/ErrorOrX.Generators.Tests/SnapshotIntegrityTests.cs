@@ -46,17 +46,7 @@ public class SnapshotIntegrityTests
     // Snapshots pending a design decision before they can either fire their named diagnostic
     // OR be renamed to the negative-case convention. Keep this list small and time-bounded —
     // every entry is a known-broken test silenced for review, not a long-term suppression.
-    private static readonly HashSet<string> s_pendingDecisions = new(StringComparer.Ordinal)
-    {
-        // EOE039 (×2): analyzer-only diagnostic that the snapshot-test framework cannot exercise.
-        // Test<TGenerator>.Run only invokes the source generator; the standalone
-        // ErrorOrEndpointAnalyzer (which solely reports EOE039) is never wired in. The analyzer's
-        // Pattern C fix at ErrorOrEndpointAnalyzer.BodyAndValidation.cs is correct and fires in
-        // real consumer builds. Resolving these snapshots requires either dual-reporting EOE039
-        // from the generator pipeline OR migrating these tests to AnalyzerTest<TAnalyzer>.
-        "JsonAotValidationTests.EOE039_Validation_Attribute_On_Parameter.verified.txt",
-        "JsonAotValidationTests.EOE039_Multiple_Validation_Attributes.verified.txt"
-    };
+    private static readonly HashSet<string> s_pendingDecisions = new(StringComparer.Ordinal);
 
     [Fact]
     public void EOE_Snapshots_Contain_Their_Own_Diagnostic_Id()

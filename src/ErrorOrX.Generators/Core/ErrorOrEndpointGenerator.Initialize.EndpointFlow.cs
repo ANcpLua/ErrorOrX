@@ -114,6 +114,22 @@ public sealed partial class ErrorOrEndpointGenerator
                 if (returnInfo.IsObjectReturn)
                     builder.Add(DiagnosticInfo.Create(Descriptors.ObjectReturnTypeNotSupported, location, m.Name));
 
+                // EOE039: DataAnnotations validation uses reflection (Info severity).
+                // Dual-reports with the analyzer so the diagnostic is visible in build output and
+                // snapshot tests, not just the IDE. ErrorOrContext.HasValidationNeeds is the shared
+                // predicate — covers both [Required] on the parameter and [Required] on a property
+                // of the parameter's type (records, regular DTOs, IValidatableObject).
+                foreach (var param in m.Parameters)
+                {
+                    if (!ErrorOrContext.HasValidationNeeds(param)) continue;
+
+                    builder.Add(DiagnosticInfo.Create(
+                        Descriptors.ValidationUsesReflection,
+                        param.Locations.FirstOrDefault() ?? location,
+                        param.Name,
+                        m.Name));
+                }
+
                 // Extract method-level attributes first (needed for interface call detection)
                 var producesErrors = ExtractProducesErrorAttributes(m, errorOrContext);
                 var isAcceptedResponse = HasAcceptedResponseAttribute(m, errorOrContext);

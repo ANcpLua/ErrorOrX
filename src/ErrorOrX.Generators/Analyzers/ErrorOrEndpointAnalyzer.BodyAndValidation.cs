@@ -56,14 +56,17 @@ public sealed partial class ErrorOrEndpointAnalyzer
     }
 
     /// <summary>
-    ///     Checks if any parameter has validation attributes from System.ComponentModel.DataAnnotations.
-    ///     Validator.TryValidateObject uses reflection internally.
+    ///     Reports EOE039 for any parameter that would trigger BCL reflection-based validation —
+    ///     either directly attributed with a ValidationAttribute, or whose type carries validation
+    ///     on a property or constructor parameter. Delegates the predicate to
+    ///     <see cref="ErrorOrContext.HasValidationNeeds" /> so analyzer and generator stay aligned
+    ///     (the generator dual-reports the same diagnostic for build-output + snapshot coverage).
     /// </summary>
     /// <remarks>
-    ///     Routes through <see cref="ErrorOrContext.IsOrInheritsFrom" /> (symbol-side FQN walk)
-    ///     rather than <c>Compilation.GetTypeByMetadataName</c> (Pattern A), which returns null
-    ///     on multi-assembly type-forwarding — dotnet/roslyn#52037 and Compilation.cs:1221
-    ///     ("Type forwarders are ignored"). The .NET 10 ref-pack ships
+    ///     The shared predicate routes through <see cref="ErrorOrContext.IsOrInheritsFrom" />
+    ///     (symbol-side FQN walk) rather than <c>Compilation.GetTypeByMetadataName</c> (Pattern A),
+    ///     which returns null on multi-assembly type-forwarding — dotnet/roslyn#52037 and
+    ///     Compilation.cs:1221 ("Type forwarders are ignored"). The .NET 10 ref-pack ships
     ///     <c>System.ComponentModel.DataAnnotations.dll</c> as a forwarder facade alongside the
     ///     runtime impl, so Pattern A silently returns null on consumer compilations.
     /// </remarks>
@@ -72,19 +75,14 @@ public sealed partial class ErrorOrEndpointAnalyzer
         IMethodSymbol method)
     {
         foreach (var param in method.Parameters)
-        foreach (var attr in param.GetAttributes())
         {
-            if (attr.AttributeClass is null) continue;
+            if (!ErrorOrContext.HasValidationNeeds(param)) continue;
 
-            if (ErrorOrContext.IsOrInheritsFrom(attr.AttributeClass, WellKnownTypes.ValidationAttribute))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    Descriptors.ValidationUsesReflection,
-                    param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
-                    param.Name,
-                    method.Name));
-                break; // Only report once per parameter
-            }
+            context.ReportDiagnostic(Diagnostic.Create(
+                Descriptors.ValidationUsesReflection,
+                param.Locations.FirstOrDefault() ?? method.Locations.FirstOrDefault(),
+                param.Name,
+                method.Name));
         }
     }
 }

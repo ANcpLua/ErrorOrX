@@ -245,6 +245,19 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
             .Select(static (compilation, _) => new ErrorOrContext(compilation));
     }
 
+    /// <summary>
+    ///     Checks whether a method parameter would trigger reflection-based BCL validation.
+    ///     True if the parameter carries a ValidationAttribute directly, OR if its type
+    ///     declares any property/ctor-param-bound-to-property carrying one (see
+    ///     <see cref="RequiresValidation" />). Used by both the analyzer (EOE039 in IDE)
+    ///     and the generator (EOE039 in build output + snapshots) as the single source of
+    ///     truth for "this endpoint will incur Validator.TryValidateObject reflection."
+    /// </summary>
+    public static bool HasValidationNeeds(IParameterSymbol parameter)
+    {
+        return HasValidationAttribute(parameter) || RequiresValidation(parameter.Type);
+    }
+
     private static bool HasValidationAttribute(ISymbol symbol)
     {
         foreach (var attribute in symbol.GetAttributes())
