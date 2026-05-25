@@ -19,17 +19,17 @@ namespace ErrorOr.Analyzers;
 ///             EOE024).
 ///         </item>
 ///         <item>
-///             <c>Descriptors.JsonSerialization.cs</c> — AOT serialization story (EOE007, EOE025, EOE026, EOE039,
-///             EOE040, EOE041).
+///             <c>Descriptors.JsonSerialization.cs</c> — AOT serialization story (EOE007, EOE025, EOE026, EOE034,
+///             EOE035, EOE036).
 ///         </item>
 ///         <item><c>Descriptors.ApiVersioning.cs</c> — API versioning attributes (EOE027–EOE031).</item>
 ///     </list>
 /// </summary>
 /// <remarks>
-///     EOE034–EOE038 (AOT-hostile call sites) are intentionally absent. They duplicated
-///     ANcpLua.Analyzers' AL0094/AL0095/AL0101/AL0102, which already fire on
-///     <c>Activator.CreateInstance</c>, <c>Type.GetType</c>, <c>Expression.Compile</c>, and
-///     <c>dynamic</c>. Removal is tracked in <c>AnalyzerReleases.Unshipped.md</c>.
+///     The active ID surface is contiguous <c>EOE001–EOE036</c>. Prior versions reserved
+///     EOE034–EOE038 for AOT-hostile call site checks (Activator.CreateInstance, Type.GetType,
+///     Expression.Compile, dynamic) which were removed in favour of ANcpLua.Analyzers'
+///     AL0094/AL0095/AL0101/AL0102. v4.0.0 reclaims those IDs for the JSON-context diagnostics.
 /// </remarks>
 public static partial class Descriptors
 {

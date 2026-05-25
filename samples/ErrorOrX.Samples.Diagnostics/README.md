@@ -30,8 +30,8 @@ The other 33 descriptors are mostly:
 - **API-versioning specific** (`EOE027`–`EOE031`) — niche unless you do versioning,
 - or **subsets of the picks above** (`EOE026` is `EOE007`'s sibling case).
 
-## Library-side gap (worth fixing)
+## Notes on the EOE034 family
 
-**`EOE039` (DataAnnotations validation uses reflection)** has a reporting path at `ErrorOrEndpointAnalyzer.BodyAndValidation.cs:78` but did not fire on an endpoint of the shape `[Post("/x")] static ErrorOr<Created> Submit([Required] [StringLength(200)] string title, [Range(1,5)] int priority)`. The analyzer's `GetTypeByMetadataName("System.ComponentModel.DataAnnotations.ValidationAttribute")` may be returning `null` in projects that don't transitively reference the annotations assembly, even though the `[Required]` attribute symbol IS resolvable. Worth a unit test on this shape and possibly a fallback that checks the attribute's fully-qualified namespace string when the metadata-name lookup fails.
+**`EOE034` (DataAnnotations validation uses reflection)** fires on endpoints of the shape `[Post("/x")] static ErrorOr<Created> Submit([Required] [StringLength(200)] string title, [Range(1,5)] int priority)`. Dual-reported by both the analyzer (IDE-time feedback via `ErrorOrEndpointAnalyzer.BodyAndValidation.cs`) and the source generator (build-time output + snapshot coverage). Detection routes through `ErrorOrContext.HasValidationNeeds`, which catches both direct attribute attribution on the parameter and deep validation needs on the parameter's type (record properties, IValidatableObject).
 
-EOE034–EOE038 are deliberately absent from this curation — they duplicated `ANcpLua.Analyzers`' AL0094/AL0095/AL0101/AL0102 (which already fire on the same `Activator.CreateInstance`/`Type.GetType`/`Expression.Compile`/`dynamic` patterns) and are tracked for removal in `src/ErrorOrX.Generators/AnalyzerReleases.Unshipped.md`.
+The IDs `EOE034`–`EOE036` previously held AOT-hostile call-site checks (Activator.CreateInstance, Type.GetType, Expression.Compile, dynamic) which were retired in 3.x in favour of `ANcpLua.Analyzers`' AL0094/AL0095/AL0101/AL0102. v4.0.0 reclaims these IDs for the JSON-context diagnostics (was EOE039-EOE041); see `CHANGELOG.md` for the migration table.

@@ -2,7 +2,7 @@ namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
 ///     Tests for JSON-serialization and AOT-safety diagnostics (EOE007,
-///     EOE025, EOE039, EOE041). Covers missing types in the user's
+///     EOE025, EOE034, EOE036). Covers missing types in the user's
 ///     <c>JsonSerializerContext</c>, missing CamelCase policy,
 ///     DataAnnotations validation that relies on reflection, and the absence
 ///     of error-payload types (<c>ProblemDetails</c>) in the user's context.
@@ -95,10 +95,10 @@ public class JsonAotValidationTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE039 - DataAnnotations validation uses reflection
+    #region EOE034 - DataAnnotations validation uses reflection
 
     [Fact]
-    public Task EOE039_Validation_Attribute_On_Parameter()
+    public Task EOE034_Validation_Attribute_On_Parameter()
     {
         const string Source = """
                               using ErrorOr;
@@ -119,7 +119,7 @@ public class JsonAotValidationTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE039_Multiple_Validation_Attributes()
+    public Task EOE034_Multiple_Validation_Attributes()
     {
         const string Source = """
                               using ErrorOr;
@@ -141,10 +141,10 @@ public class JsonAotValidationTests : GeneratorTestBase
 
     #endregion
 
-    #region EOE041 - JsonSerializerContext missing error types
+    #region EOE036 - JsonSerializerContext missing error types
 
     [Fact]
-    public Task EOE041_Missing_ProblemDetails_In_JsonContext()
+    public Task EOE036_Missing_ProblemDetails_In_JsonContext()
     {
         const string Source = """
                               using ErrorOr;
@@ -170,7 +170,7 @@ public class JsonAotValidationTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE041_No_Diagnostic_When_ProblemDetails_Present()
+    public Task EOE036_No_Diagnostic_When_ProblemDetails_Present()
     {
         const string Source = """
                               using ErrorOr;

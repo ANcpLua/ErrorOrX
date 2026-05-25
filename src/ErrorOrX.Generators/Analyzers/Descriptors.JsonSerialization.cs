@@ -35,11 +35,11 @@ public static partial class Descriptors
         helpLinkUri: AotRdgUrl);
 
     /// <summary>
-    ///     EOE039 — endpoint parameter carries [Required]/[StringLength]/etc; Validator.TryValidateObject uses
+    ///     EOE034 — endpoint parameter carries [Required]/[StringLength]/etc; Validator.TryValidateObject uses
     ///     reflection, surfaces trim warnings.
     /// </summary>
     public static readonly DiagnosticDescriptor ValidationUsesReflection = new(
-        "EOE039",
+        "EOE034",
         "DataAnnotations validation uses reflection",
         "Parameter '{0}' in endpoint '{1}' has validation attributes. " +
         "Validator.TryValidateObject uses reflection and may cause trim warnings. " +
@@ -49,9 +49,9 @@ public static partial class Descriptors
         true,
         helpLinkUri: TrimWarningsUrl);
 
-    /// <summary>EOE040 — alias for EOE025; reports the CamelCase policy gap on a specific user-defined JsonSerializerContext.</summary>
+    /// <summary>EOE035 — alias for EOE025; reports the CamelCase policy gap on a specific user-defined JsonSerializerContext.</summary>
     public static readonly DiagnosticDescriptor JsonContextMissingCamelCase = new(
-        "EOE040",
+        "EOE035",
         "JsonSerializerContext missing CamelCase",
         "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility",
         Category,
@@ -59,11 +59,11 @@ public static partial class Descriptors
         true);
 
     /// <summary>
-    ///     EOE041 — JsonSerializerContext is missing ProblemDetails and HttpValidationProblemDetails (needed for error
+    ///     EOE036 — JsonSerializerContext is missing ProblemDetails and HttpValidationProblemDetails (needed for error
     ///     responses).
     /// </summary>
     public static readonly DiagnosticDescriptor JsonContextMissingProblemDetails = new(
-        "EOE041",
+        "EOE036",
         "JsonSerializerContext missing error types",
         "JsonSerializerContext '{0}' should include [JsonSerializable(typeof(ProblemDetails))] and " +
         "[JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses",

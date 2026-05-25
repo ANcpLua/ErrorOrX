@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace ErrorOr.Analyzers;
 
 /// <summary>
-///     Body-source counting (EOE006) and DataAnnotations reflection check (EOE039) for the
+///     Body-source counting (EOE006) and DataAnnotations reflection check (EOE034) for the
 ///     <see cref="ErrorOrEndpointAnalyzer" />. Body classification routes through
 ///     <see cref="ErrorOrContext" /> so analyzer and generator share one source of truth
 ///     (FQN + inheritance, not name-substring match).
@@ -56,7 +56,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
     }
 
     /// <summary>
-    ///     Reports EOE039 for any parameter that would trigger BCL reflection-based validation —
+    ///     Reports EOE034 for any parameter that would trigger BCL reflection-based validation —
     ///     either directly attributed with a ValidationAttribute, or whose type carries validation
     ///     on a property or constructor parameter. Delegates the predicate to
     ///     <see cref="ErrorOrContext.HasValidationNeeds" /> so analyzer and generator stay aligned

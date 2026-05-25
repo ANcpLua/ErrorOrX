@@ -4,6 +4,70 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-05-25
+
+### BREAKING
+
+- **Diagnostic ID renumber to close the EOE034-038 gap.** The five AOT-hostile-call-site diagnostics
+  (EOE034 Activator.CreateInstance, EOE035 Type.GetType, EOE036 reflection-over-members, EOE037
+  Expression.Compile, EOE038 'dynamic') were removed in 3.x because they duplicated
+  ANcpLua.Analyzers' AL0094/AL0095/AL0101/AL0102. v4.0.0 reclaims those IDs for the JSON-context
+  diagnostics that used to live at EOE039-EOE041:
+
+  | Old ID | New ID | Concern                                              |
+  |--------|--------|------------------------------------------------------|
+  | EOE039 | EOE034 | DataAnnotations validation uses reflection           |
+  | EOE040 | EOE035 | JsonSerializerContext missing CamelCase              |
+  | EOE041 | EOE036 | JsonSerializerContext missing ProblemDetails/error types |
+
+  The active diagnostic surface is now contiguous `EOE001-EOE036`. Variable names
+  (`ValidationUsesReflection`, `JsonContextMissingCamelCase`, `JsonContextMissingProblemDetails`)
+  are unchanged — only the string ID portion of the descriptor moved.
+
+  **Consumer impact**: any `#pragma warning disable EOE039`, `EOE040`, or `EOE041` in your code
+  now suppresses nothing. Update those pragmas to the new IDs above. EOE001-EOE033 are unchanged.
+
+- **EOE015 behavior change carried forward from 3.x unshipped**: severity Error → Warning,
+  detection target changed from "anonymous type in ErrorOr<T> signature" (unreachable per C#
+  spec) to "ErrorOr<object> / ErrorOr<dynamic> return". Suppress with `#pragma warning disable
+  EOE015` if you intentionally use object-typed payloads with a registered JsonSerializerContext.
+
+### Added
+
+- **`ErrorOrContext.HasValidationNeeds(IParameterSymbol)`** — public predicate shared between
+  the analyzer and the generator pipeline. Catches both `[Required]` directly on the parameter
+  AND validation attributes on properties/ctor-params of the parameter's type (records, regular
+  DTOs, IValidatableObject). Single source of truth for EOE034 firing.
+
+- **EOE034 dual-reporting** from the generator pipeline. Previously the analyzer was the only
+  reporter, which meant `dotnet build` output never surfaced the warning and snapshot tests
+  could not exercise it. The generator now emits EOE034 alongside the analyzer (Info severity,
+  non-failing) so build logs, CI artifacts, and snapshot tests all see the same diagnostic.
+
+- **`SnapshotIntegrityTests.EOE_Snapshots_Contain_Their_Own_Diagnostic_Id`** — regex-walks
+  every `Snapshots/*.verified.txt` whose filename matches `EOE<NNN>_*` and asserts the file
+  contains `Id: EOE<NNN>` in its Diagnostics block, or carries a negative-case marker
+  (`_No_Diagnostic`, `_Is_Valid`, `_Do_Not_Report`, `_Allowed`). Prevents the silent-pass
+  bug class going forward: any future `EOEXXX_*` snapshot that records `Diagnostics: []` (or
+  the wrong ID) fails CI.
+
+### Fixed
+
+- **EOE012**: guard at `Classifiers.cs:229` now correctly rejects primitives.
+  Previously `type is not INamedTypeSymbol` evaluated `false` for `int` (which IS an
+  `INamedTypeSymbol`) so `[AsParameters] int page` slipped through silently. Tightened
+  to also reject `SpecialType != None` and `TypeKind.Enum`.
+
+- **EOE016**: `ClassifyAsParameters` now scans the property bag of the outer type, not just
+  constructor parameters. `[AsParameters]` on a property of an outer `[AsParameters]` type
+  is now correctly flagged.
+
+- **EOE023**: misleading test fixture renamed to
+  `EOE023_Error_Custom_Is_Known_Factory_No_Diagnostic`. `Error.Custom(code, ...)` is a
+  first-class recognized factory at `ErrorInference.cs:147`; the EOE023 path is reached
+  only via user-defined `Error` shadowing types through the semantic fallback at
+  `ErrorInference.cs:248-253`.
+
 ## [3.6.7] - 2026-04-21
 
 ### Internal

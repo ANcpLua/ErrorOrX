@@ -169,7 +169,7 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 method.Name,
                 httpMethod.ToUpperInvariant()));
 
-        // EOE039: DataAnnotations validation uses reflection
+        // EOE034: DataAnnotations validation uses reflection
         CheckForValidationAttributes(in context, method);
     }
 

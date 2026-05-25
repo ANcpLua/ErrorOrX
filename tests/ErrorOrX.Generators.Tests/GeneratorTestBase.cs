@@ -39,7 +39,7 @@ public abstract class GeneratorTestBase
         typeof(MapToApiVersionAttribute),
         // DataAnnotations — pulls System.ComponentModel.Annotations.dll into the test compilation
         // so [Required]/[StringLength]/[Range] resolve to real symbols with proper BaseType chains.
-        // Without this, EOE039's IsOrInheritsFrom walk has nothing to traverse and silently no-ops.
+        // Without this, EOE034's IsOrInheritsFrom walk has nothing to traverse and silently no-ops.
         typeof(RequiredAttribute)
     ];
 

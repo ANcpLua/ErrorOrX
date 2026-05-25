@@ -149,7 +149,7 @@ public static ErrorOr<List<Todo>> Search([FromQuery] SearchFilter filter) => ...
 | Route validation   | EOE003-005                     | Unbound parameter, duplicate route, invalid pattern                         |
 | Binding validation | EOE006, EOE008-021             | Multiple body, invalid binding types, ambiguous binding                     |
 | Union types        | EOE022-024                     | Too many types, unknown factory, undocumented interface                     |
-| JSON/AOT           | EOE007, EOE025-026, EOE039-041 | Not serializable, missing CamelCase, missing context, validation reflection |
+| JSON/AOT           | EOE007, EOE025-026, EOE034-036 | Not serializable, missing CamelCase, missing context, validation reflection |
 | API versioning     | EOE027-031                     | Version-neutral conflicts, undeclared versions                              |
 | Route/naming       | EOE032-033                     | Duplicate route params, non-PascalCase method names                         |
 
@@ -193,7 +193,7 @@ app.MapErrorOrEndpoints();
 
 | File                | Owns                                               |
 |---------------------|----------------------------------------------------|
-| `Descriptors.cs`    | All diagnostics (EOE001-EOE041)                    |
+| `Descriptors.cs`    | All diagnostics (EOE001-EOE036)                    |
 | `ErrorMapping.cs`   | ErrorType names, HTTP codes, TypedResult factories |
 | `EndpointModels.cs` | All data structures                                |
 | `WellKnownTypes.cs` | All FQN string constants                           |

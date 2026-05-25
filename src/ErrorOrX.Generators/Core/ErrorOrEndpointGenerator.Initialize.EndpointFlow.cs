@@ -114,7 +114,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 if (returnInfo.IsObjectReturn)
                     builder.Add(DiagnosticInfo.Create(Descriptors.ObjectReturnTypeNotSupported, location, m.Name));
 
-                // EOE039: DataAnnotations validation uses reflection (Info severity).
+                // EOE034: DataAnnotations validation uses reflection (Info severity).
                 // Dual-reports with the analyzer so the diagnostic is visible in build output and
                 // snapshot tests, not just the IDE. ErrorOrContext.HasValidationNeeds is the shared
                 // predicate — covers both [Required] on the parameter and [Required] on a property

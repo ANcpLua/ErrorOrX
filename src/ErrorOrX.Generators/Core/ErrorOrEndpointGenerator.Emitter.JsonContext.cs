@@ -74,7 +74,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 Location.None,
                 fullClassName));
 
-        // Report EOE041 if user context is missing ProblemDetails types
+        // Report EOE036 if user context is missing ProblemDetails types
         if (missingProblemDetails || missingValidationProblemDetails)
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.JsonContextMissingProblemDetails,

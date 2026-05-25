@@ -34,7 +34,7 @@ Verify diagnostics are emitted correctly:
 | EOE002     | Handler must be static                       |
 | EOE003-005 | Route validation                             |
 | EOE021     | Ambiguous parameter binding                  |
-| EOE039-041 | Validation reflection, JSON context warnings |
+| EOE034-036 | Validation reflection, JSON context warnings |
 
 ## Snapshot Testing
 
