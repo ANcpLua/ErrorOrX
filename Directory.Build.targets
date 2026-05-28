@@ -1,10 +1,7 @@
 <Project>
+    <!-- ANcpLua.Analyzers comes from ANcpLua.NET.Sdk's GlobalPackageReference (single source of truth).
+         Other analyzers below are not in the SDK and must be added per-project here. -->
     <ItemGroup>
-        <!-- Ensure ANcpLua.Analyzers is referenced in all projects -->
-        <!-- Use Condition to avoid duplicating if SDK already adds it (prevents NU1504) -->
-        <PackageReference Include="ANcpLua.Analyzers" PrivateAssets="all" Condition="'@(PackageReference->WithMetadataValue('Identity', 'ANcpLua.Analyzers'))' == ''"/>
-
-        <!-- Additional code quality analyzers -->
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" PrivateAssets="all"/>
         <PackageReference Include="ErrorProne.NET.Structs" PrivateAssets="all"/>
         <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all"/>
@@ -15,10 +12,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- SDK-injected packages: Update overrides SDK version, conditional Include adds for non-SDK projects.
-             Cannot live in Directory.Packages.props because ANcpLua.NET.Sdk also injects these (NU1506). -->
-        <PackageVersion Update="ANcpLua.Analyzers" Version="$(ANcpLuaAnalyzersVersion)"/>
-        <PackageVersion Include="ANcpLua.Analyzers" Version="$(ANcpLuaAnalyzersVersion)" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'ANcpLua.Analyzers'))' == ''"/>
+        <!-- JonSkeet.RoslynAnalyzers is not in the SDK; Update overrides any inherited version, conditional
+             Include adds it where missing. Cannot live in Directory.Packages.props because of NU1506
+             conflicts with the SDK's GlobalPackageReference injections. -->
         <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)"/>
         <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
     </ItemGroup>

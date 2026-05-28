@@ -15,12 +15,12 @@ namespace ErrorOr.Generators;
 /// </remarks>
 internal static class RouteValidator
 {
-    private static readonly Regex SRouteParameterRegexInstance = new(
+    private static readonly Regex s_routeParameterRegex = new(
         @"(?<!\{)\{(?<star>\*)?(?<n>[a-zA-Z_][a-zA-Z0-9_]*)(?<constraints>(?::[a-zA-Z]+(?:\([^)]*\))?)*)(?<optional>\?)?\}(?!\})",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture,
         TimeSpan.FromSeconds(1));
 
-    private static readonly Regex SIndividualConstraintRegex = new(
+    private static readonly Regex s_individualConstraintRegex = new(
         @":(?<name>[a-zA-Z]+)(?:\((?<args>[^)]*)\))?",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture,
         TimeSpan.FromSeconds(1));
@@ -35,7 +35,7 @@ internal static class RouteValidator
     ///     - required, nonfile
     ///     These format constraints accept string but validate format at runtime.
     /// </remarks>
-    internal static readonly FrozenDictionary<string, string[]> ConstraintToTypes =
+    internal static readonly FrozenDictionary<string, string[]> s_constraintToTypes =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["int"] = ["System.Int32", "int"],
@@ -69,7 +69,7 @@ internal static class RouteValidator
     ///     Constraints that are format-only and should not trigger type mismatch warnings
     ///     when the parameter is any type that supports ToString().
     /// </summary>
-    internal static readonly FrozenSet<string> FormatOnlyConstraints =
+    internal static readonly FrozenSet<string> s_formatOnlyConstraints =
         new[]
             {
                 "min", "max", "range", "minlength", "maxlength", "length", "regex", "required", "nonfile"
@@ -85,7 +85,7 @@ internal static class RouteValidator
 
         var cleanPattern = pattern.Replace("{{", "").Replace("}}", "");
 
-        var matches = SRouteParameterRegexInstance.Matches(cleanPattern);
+        var matches = s_routeParameterRegex.Matches(cleanPattern);
         if (matches.Count is 0) return ImmutableArray<RouteParameterInfo>.Empty;
 
         var builder = ImmutableArray.CreateBuilder<RouteParameterInfo>(matches.Count);
@@ -100,12 +100,12 @@ internal static class RouteValidator
             var constraintList = new List<string>();
             if (!string.IsNullOrEmpty(constraintsRaw))
             {
-                var cMatches = SIndividualConstraintRegex.Matches(constraintsRaw);
+                var cMatches = s_individualConstraintRegex.Matches(constraintsRaw);
                 foreach (Match cMatch in cMatches)
                     constraintList.Add(cMatch.Groups["name"].Value);
             }
 
-            var primaryConstraint = constraintList.FirstOrDefault(static c => ConstraintToTypes.ContainsKey(c))
+            var primaryConstraint = constraintList.FirstOrDefault(static c => s_constraintToTypes.ContainsKey(c))
                                     ?? constraintList.FirstOrDefault();
 
             builder.Add(new RouteParameterInfo(name, primaryConstraint, isOptional, isCatchAll));
@@ -274,7 +274,7 @@ internal static class RouteValidator
                 out var constraint))
             return;
 
-        if (FormatOnlyConstraints.Contains(constraint)) return;
+        if (s_formatOnlyConstraints.Contains(constraint)) return;
 
         if (routeParam.IsCatchAll)
         {
@@ -282,7 +282,7 @@ internal static class RouteValidator
             return;
         }
 
-        if (!ConstraintToTypes.TryGetValue(constraint,
+        if (!s_constraintToTypes.TryGetValue(constraint,
                 out var expectedTypes))
             return; // Unknown constraint - skip validation (could be custom)
 
@@ -411,7 +411,7 @@ internal static class RouteValidator
         {
             var cleanSegment = segment.Replace("{{", "").Replace("}}", "");
 
-            var match = SRouteParameterRegexInstance.Match(cleanSegment);
+            var match = s_routeParameterRegex.Match(cleanSegment);
             if (match.Success)
             {
                 var isCatchAll = match.Groups["star"].Success;
@@ -420,11 +420,11 @@ internal static class RouteValidator
                 var cList = new List<string>();
                 if (!string.IsNullOrEmpty(constraintsRaw))
                 {
-                    var cMatches = SIndividualConstraintRegex.Matches(constraintsRaw);
+                    var cMatches = s_individualConstraintRegex.Matches(constraintsRaw);
                     foreach (Match cm in cMatches)
                     {
                         var cName = cm.Groups["name"].Value.ToLowerInvariant();
-                        if (ConstraintToTypes.ContainsKey(cName)) cList.Add(cName);
+                        if (s_constraintToTypes.ContainsKey(cName)) cList.Add(cName);
                     }
                 }
 

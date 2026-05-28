@@ -27,12 +27,18 @@ public sealed partial class ErrorOrEndpointGenerator
         var putProvider = CreateEndpointProvider(context, WellKnownTypes.PutAttribute, errorOrContextProvider);
         var deleteProvider = CreateEndpointProvider(context, WellKnownTypes.DeleteAttribute, errorOrContextProvider);
         var patchProvider = CreateEndpointProvider(context, WellKnownTypes.PatchAttribute, errorOrContextProvider);
+        var headProvider = CreateEndpointProvider(context, WellKnownTypes.HeadAttribute, errorOrContextProvider);
+        var optionsProvider =
+            CreateEndpointProvider(context, WellKnownTypes.OptionsAttribute, errorOrContextProvider);
+        var traceProvider = CreateEndpointProvider(context, WellKnownTypes.TraceAttribute, errorOrContextProvider);
         var baseProvider =
             CreateEndpointProvider(context, WellKnownTypes.ErrorOrEndpointAttribute, errorOrContextProvider);
 
         return IncrementalProviderExtensions.CombineAll(
             getProvider, postProvider, putProvider,
-            deleteProvider, patchProvider, baseProvider);
+            deleteProvider, patchProvider,
+            headProvider, optionsProvider, traceProvider,
+            baseProvider);
     }
 
     private static IncrementalValuesProvider<EndpointDescriptor> CreateEndpointProvider(
@@ -51,7 +57,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 var (ctx, errorOrContext) = pair;
                 return AnalyzeEndpointFlow(ctx, errorOrContext, ct);
             })
-            .WithTrackingName(TrackingNames.EndpointBindingFlow(attributeName))
+            .WithTrackingName("EndpointBindingFlow." + attributeName)
             .ReportAndContinue(context)
             .SelectMany(static (endpoints, _) => endpoints.AsImmutableArray());
     }
@@ -72,7 +78,7 @@ public sealed partial class ErrorOrEndpointGenerator
             .ToFlow()
             .Then(m =>
             {
-                var returnInfo = ExtractErrorOrReturnType(m.ReturnType, errorOrContext);
+                var returnInfo = ExtractErrorOrReturnType(m.ReturnType);
 
                 // EOE015 is now Warning severity (non-failing) — handled in the next .Then via the
                 // builder pattern below, alongside EOE033. Fail-fast here would short-circuit the
@@ -131,12 +137,12 @@ public sealed partial class ErrorOrEndpointGenerator
                 }
 
                 // Extract method-level attributes first (needed for interface call detection)
-                var producesErrors = ExtractProducesErrorAttributes(m, errorOrContext);
-                var isAcceptedResponse = HasAcceptedResponseAttribute(m, errorOrContext);
+                var producesErrors = ExtractProducesErrorAttributes(m);
+                var isAcceptedResponse = HasAcceptedResponseAttribute(m);
                 var hasExplicitProducesError = !producesErrors.IsDefaultOrEmpty;
 
                 // Extract middleware attributes (BCL: Authorize, RateLimiting, OutputCache, CORS)
-                var middleware = ExtractMiddlewareAttributes(m, errorOrContext);
+                var middleware = ExtractMiddlewareAttributes(m);
 
                 // Infer errors once per method (now with interface call detection)
                 var (inferredErrors, customErrors) =
@@ -243,7 +249,7 @@ public sealed partial class ErrorOrEndpointGenerator
             method));
 
         // Extract route group configuration for eShop-style grouping
-        var routeGroup = ExtractRouteGroupInfo(method, errorOrContext);
+        var routeGroup = ExtractRouteGroupInfo(method);
 
         // Extract custom endpoint metadata
         var metadata = ExtractMetadata(method);
@@ -308,25 +314,16 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     /// <summary>
-    ///     Incremental pipeline tracking names for caching diagnostics.
+    ///     Incremental pipeline tracking names for caching diagnostics. Cache step labels — they
+    ///     just need to be stable per provider and unique across providers. The per-attribute
+    ///     <c>EndpointBindingFlow</c> label is built inline as <c>"EndpointBindingFlow." + attributeName</c>
+    ///     directly at the <c>WithTrackingName</c> call site, so no helper or mapping table is needed:
+    ///     the attribute FQN itself satisfies stability + uniqueness, and the literal prefix preserves
+    ///     the contract that <c>GeneratorCachingTests.IsCached("EndpointBindingFlow")</c> depends on.
     /// </summary>
     private static class TrackingNames
     {
         public const string ResultsUnionMaxArity = "ResultsUnionMaxArity";
         public const string ErrorOrContext = "ErrorOrContext";
-
-        public static string EndpointBindingFlow(string attributeName)
-        {
-            return attributeName switch
-            {
-                WellKnownTypes.GetAttribute => "EndpointBindingFlow.Get",
-                WellKnownTypes.PostAttribute => "EndpointBindingFlow.Post",
-                WellKnownTypes.PutAttribute => "EndpointBindingFlow.Put",
-                WellKnownTypes.DeleteAttribute => "EndpointBindingFlow.Delete",
-                WellKnownTypes.PatchAttribute => "EndpointBindingFlow.Patch",
-                WellKnownTypes.ErrorOrEndpointAttribute => "EndpointBindingFlow.Custom",
-                _ => "EndpointBindingFlow.Unknown"
-            };
-        }
     }
 }

@@ -21,7 +21,7 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         if (method.Parameters.Length is 0) return ParameterBindingResult.Empty;
 
-        var metas = BuildParameterMetas(method.Parameters, context);
+        var metas = BuildParameterMetas(method.Parameters);
 
         // EOE006: Multiple body sources (FromBody, FromForm, Stream, PipeReader)
         var bodyCount = metas.Count(static m => m.HasFromBody);
@@ -42,12 +42,11 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static ParameterMeta[] BuildParameterMetas(
-        ImmutableArray<IParameterSymbol> parameters,
-        ErrorOrContext context)
+        ImmutableArray<IParameterSymbol> parameters)
     {
         var metas = new ParameterMeta[parameters.Length];
         for (var i = 0; i < parameters.Length; i++)
-            metas[i] = CreateParameterMeta(parameters[i], context);
+            metas[i] = CreateParameterMeta(parameters[i]);
         return metas;
     }
 
@@ -99,7 +98,7 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                 validatableProperties: meta.ValidatableProperties);
 
-        if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type, context);
+        if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type);
 
         if (meta.HasFromServices) return ParameterSuccess(in meta, ParameterSource.Service);
 
@@ -109,7 +108,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         if (meta.HasFromHeader) return ClassifyFromHeaderParameter(in meta, method, diagnostics);
 
-        if (meta.HasFromRoute) return ClassifyFromRouteParameter(in meta, routeParameters, method, diagnostics);
+        if (meta.HasFromRoute) return ClassifyFromRouteParameter(in meta, method, diagnostics);
 
         if (meta.HasFromQuery) return ClassifyFromQueryParameter(in meta, method, diagnostics);
 
@@ -157,50 +156,49 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Smart inference based on HTTP method and type analysis
-        return InferParameterSource(in meta, parameter.Type, httpVerb, method, diagnostics, context);
+        return InferParameterSource(in meta, parameter.Type, httpVerb, method, diagnostics);
     }
 
     /// <summary>
-    ///     Infers the parameter source based on HTTP method and type analysis.
-    ///     POST/PUT/PATCH with complex types → Body
-    ///     Other methods with complex types → Service + EOE021 warning (explicit binding recommended)
-    ///     Service types (interfaces, abstract, DI patterns) → Service
-    ///     Fallback → Service
+    ///     Infers the parameter source based on HTTP method and type analysis. Two documented
+    ///     inference rules apply; everything else surfaces as EOE021 and refuses to generate the endpoint:
+    ///     <list type="bullet">
+    ///         <item>Interface / abstract / DI-named type → <c>Service</c> (documented service inference).</item>
+    ///         <item>POST/PUT/PATCH with complex DTO type → <c>Body</c> (documented body inference).</item>
+    ///         <item>Everything else (bodyless verb + DTO, or any unclassified concrete type) →
+    ///               <c>EOE021</c> diagnostic, endpoint does NOT generate. User must add explicit
+    ///               <c>[FromBody]</c>/<c>[FromQuery]</c>/<c>[FromServices]</c>/<c>[AsParameters]</c> binding.</item>
+    ///     </list>
+    ///     No silent fallback to <c>Service</c>. Previously, unclassified parameters silently became
+    ///     <c>RequestServices.GetRequiredService&lt;T&gt;()</c> calls, which failed at runtime with cryptic
+    ///     DI-resolution errors instead of build-time diagnostics.
     /// </summary>
     private static ParameterClassificationResult InferParameterSource(
         in ParameterMeta meta,
         ITypeSymbol type,
         HttpVerb httpVerb,
         ISymbol method,
-        ImmutableArray<DiagnosticInfo>.Builder diagnostics,
-        ErrorOrContext context)
+        ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        var isLikelyService = IsLikelyServiceType(type);
+        // Documented inference rule #1: interface / abstract / DI-named → Service.
+        if (IsLikelyServiceType(type)) return ParameterSuccess(in meta, ParameterSource.Service);
 
-        // Service types: interfaces, abstract classes, and DI naming patterns
-        if (isLikelyService) return ParameterSuccess(in meta, ParameterSource.Service);
+        // Documented inference rule #2: POST/PUT/PATCH with complex DTO → Body.
+        if (IsComplexType(type) && !httpVerb.IsBodyless())
+            return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
+                validatableProperties: meta.ValidatableProperties);
 
-        // Check if type is complex (DTO)
-        if (IsComplexType(type, context))
-        {
-            // POST, PUT, PATCH with complex type → Body
-            if (!httpVerb.IsBodyless())
-                return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
-                    validatableProperties: meta.ValidatableProperties);
+        // Everything else: bodyless + complex, or concrete-non-service-non-DTO catch-all.
+        // EOE021 fires (Error severity) AND we refuse to generate — no silent Service fallback that
+        // turns into a runtime DI failure the user can't trace back to the binding ambiguity.
+        diagnostics.Add(DiagnosticInfo.Create(
+            Descriptors.AmbiguousParameterBinding,
+            method.Locations.FirstOrDefault() ?? Location.None,
+            meta.Name,
+            meta.TypeFqn,
+            httpVerb.ToHttpString()));
 
-            // Bodyless/custom methods: do not infer body; warn for DTO-like types.
-            diagnostics.Add(DiagnosticInfo.Create(
-                Descriptors.AmbiguousParameterBinding,
-                method.Locations.FirstOrDefault() ?? Location.None,
-                meta.Name,
-                meta.TypeFqn,
-                httpVerb.ToHttpString()));
-
-            return ParameterSuccess(in meta, ParameterSource.Service);
-        }
-
-        // Fallback: treat as service injection (BCL handles resolution at runtime)
-        return ParameterSuccess(in meta, ParameterSource.Service);
+        return ParameterClassificationResult.Error;
     }
 
     private static ParameterClassificationResult ParameterSuccess(

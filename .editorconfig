@@ -10,17 +10,10 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 [*.cs]
-# ANcpLua.Analyzers rules — list BOTH the 1.29.x IDs (AL00xx) and the 2.0.0 IDs
-# (AL1xxx). Severity overrides are silently ignored if the ID doesn't match
-# what the analyzer emits, so listing both keeps the override active across
-# the 1.29.x → 2.0.0 transition. Drop the AL00xx flavour once Version.props
-# moves to ANcpLua.Analyzers 2.0.0+.
-dotnet_diagnostic.AL0025.severity = warning # Prefer static lambda (1.29.x)
-dotnet_diagnostic.AL1700.severity = warning # Prefer static lambda (2.0.0+)
-dotnet_diagnostic.AL0026.severity = warning # DateTime.Now/UtcNow (1.29.x)
-dotnet_diagnostic.AL1701.severity = warning # DateTime.Now/UtcNow (2.0.0+)
-dotnet_diagnostic.AL0027.severity = warning # Newtonsoft.Json (1.29.x)
-dotnet_diagnostic.AL1702.severity = warning # Newtonsoft.Json (2.0.0+)
+# ANcpLua.Analyzers 2.0.0+ rule IDs
+dotnet_diagnostic.AL1700.severity = warning # Prefer static lambda
+dotnet_diagnostic.AL1701.severity = warning # DateTime.Now/UtcNow
+dotnet_diagnostic.AL1702.severity = warning # Newtonsoft.Json
 
 # CA1062: Validate arguments of public methods — Roslyn callbacks guarantee non-null
 dotnet_diagnostic.CA1062.severity = none
@@ -123,10 +116,8 @@ dotnet_diagnostic.CA1019.severity = none # Polyfill attribute constructor — in
 dotnet_diagnostic.CA1305.severity = none # uint.ToString() — no locale dependence
 dotnet_diagnostic.CA1812.severity = none # IsExternalInit — compiler-reserved type
 
-# Extractor.cs: AL0029 (1.29.x) / AL1201 (2.0.0+) flags foreach-over-GetAttributes()
-# loops, suggesting HasAttribute() instead. These loops legitimately need to extract
-# constructor arguments and named arguments from AttributeData, not just check
-# existence. Both IDs listed for the same transition reason as the top of the file.
+# Extractor.cs: AL1201 flags foreach-over-GetAttributes() loops, suggesting
+# HasAttribute() instead. These loops legitimately need to extract constructor
+# arguments and named arguments from AttributeData, not just check existence.
 [**/ErrorOrX.Generators/Core/ErrorOrEndpointGenerator.Extractor.cs]
-dotnet_diagnostic.AL0029.severity = none
 dotnet_diagnostic.AL1201.severity = none

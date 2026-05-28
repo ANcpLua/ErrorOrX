@@ -9,7 +9,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Detects [Authorize], [AllowAnonymous], [EnableRateLimiting], [DisableRateLimiting],
     ///     [OutputCache], [EnableCors], [DisableCors].
     /// </summary>
-    private static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method, ErrorOrContext context)
+    private static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method)
     {
         var auth = default(AuthInfo);
         var rateLimit = default(RateLimitInfo);
@@ -20,10 +20,10 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (attr.AttributeClass is not { } attrClass) continue;
 
-            auth = TryExtractAuth(attr, attrClass, context, auth);
-            rateLimit = TryExtractRateLimit(attr, attrClass, context, rateLimit);
-            cache = TryExtractOutputCache(attr, attrClass, context, cache);
-            cors = TryExtractCors(attr, attrClass, context, cors);
+            auth = TryExtractAuth(attr, attrClass, auth);
+            rateLimit = TryExtractRateLimit(attr, attrClass, rateLimit);
+            cache = TryExtractOutputCache(attr, attrClass, cache);
+            cors = TryExtractCors(attr, attrClass, cors);
         }
 
         return new MiddlewareInfo(
@@ -34,7 +34,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static AuthInfo TryExtractAuth(
-        AttributeData attr, ISymbol attrClass, ErrorOrContext context, AuthInfo current)
+        AttributeData attr, ISymbol attrClass, AuthInfo current)
     {
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.AuthorizeAttribute))
         {
@@ -65,7 +65,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static RateLimitInfo TryExtractRateLimit(
-        AttributeData attr, ISymbol attrClass, ErrorOrContext context, RateLimitInfo current)
+        AttributeData attr, ISymbol attrClass, RateLimitInfo current)
     {
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.EnableRateLimitingAttribute))
         {
@@ -87,7 +87,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static OutputCacheInfo TryExtractOutputCache(
-        AttributeData attr, ISymbol attrClass, ErrorOrContext context, OutputCacheInfo current)
+        AttributeData attr, ISymbol attrClass, OutputCacheInfo current)
     {
         if (!ErrorOrContext.MatchesType(attrClass, WellKnownTypes.OutputCacheAttribute))
             return current;
@@ -115,7 +115,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static CorsInfo TryExtractCors(
-        AttributeData attr, ISymbol attrClass, ErrorOrContext context, CorsInfo current)
+        AttributeData attr, ISymbol attrClass, CorsInfo current)
     {
         if (ErrorOrContext.MatchesType(attrClass, WellKnownTypes.EnableCorsAttribute))
         {
@@ -151,13 +151,13 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Extract from containing type first (class-level versioning)
         if (method.ContainingType is { } containingType)
-            ExtractVersioningFromSymbol(containingType, context, supportedVersions, ref isVersionNeutral);
+            ExtractVersioningFromSymbol(containingType, supportedVersions, ref isVersionNeutral);
 
         // Extract from method (method-level overrides or additions)
-        ExtractVersioningFromSymbol(method, context, supportedVersions, ref isVersionNeutral);
+        ExtractVersioningFromSymbol(method, supportedVersions, ref isVersionNeutral);
 
         // Extract [MapToApiVersion] separately (only applies to method)
-        ExtractMappedVersions(method, context, mappedVersions);
+        ExtractMappedVersions(method, mappedVersions);
 
         return new VersioningInfo(
             supportedVersions.Count > 0
@@ -171,7 +171,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void ExtractVersioningFromSymbol(
         ISymbol symbol,
-        ErrorOrContext context,
         List<ApiVersionInfo> supportedVersions,
         ref bool isVersionNeutral)
     {
@@ -197,7 +196,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void ExtractMappedVersions(
         ISymbol method,
-        ErrorOrContext context,
         List<ApiVersionInfo> mappedVersions)
     {
         foreach (var attr in method.GetAttributes())
@@ -330,7 +328,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Extracts route group configuration from the containing type's [RouteGroup] attribute.
     ///     This enables eShop-style route grouping with NewVersionedApi() and MapGroup().
     /// </summary>
-    private static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method, ErrorOrContext context)
+    private static RouteGroupInfo ExtractRouteGroupInfo(ISymbol method)
     {
         // RouteGroup is only applied at class level
         if (method.ContainingType is not { } containingType) return default;

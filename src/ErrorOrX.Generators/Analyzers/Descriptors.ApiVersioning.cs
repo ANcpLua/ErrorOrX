@@ -38,7 +38,7 @@ public static partial class Descriptors
         "Endpoint '{0}' has no version information but other endpoints use API versioning. " +
         "Add [ApiVersion(\"X.Y\")] or [ApiVersionNeutral] to declare its version scope.",
         Category,
-        DiagnosticSeverity.Info,
+        DiagnosticSeverity.Warning,
         true);
 
     /// <summary>EOE031 — [ApiVersion] string has invalid format; use "major.minor" or "major".</summary>

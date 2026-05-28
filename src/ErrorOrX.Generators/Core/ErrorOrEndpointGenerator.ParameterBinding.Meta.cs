@@ -9,20 +9,19 @@ namespace ErrorOr.Generators;
 public sealed partial class ErrorOrEndpointGenerator
 {
     private static ParameterMeta CreateParameterMeta(
-        IParameterSymbol parameter,
-        ErrorOrContext context)
+        IParameterSymbol parameter)
     {
         var type = parameter.Type;
         var typeFqn = type.GetFullyQualifiedName();
 
-        var flags = BuildFlags(parameter, type, context);
-        var specialKind = DetectSpecialKind(type, context);
+        var flags = BuildFlags(parameter, type);
+        var specialKind = DetectSpecialKind(type);
 
-        var (isCollection, itemType, itemPrimitiveKind) = AnalyzeCollectionType(type, context);
+        var (isCollection, itemType, itemPrimitiveKind) = AnalyzeCollectionType(type);
         if (isCollection) flags |= ParameterFlags.Collection;
 
         // Determine bound name based on explicit attribute or default to parameter name
-        var boundName = DetermineBoundName(parameter, flags, context);
+        var boundName = DetermineBoundName(parameter, flags);
 
         var serviceKey = flags.HasFlag(ParameterFlags.FromKeyedServices)
             ? ExtractKeyFromKeyedServiceAttribute(parameter)
@@ -35,19 +34,19 @@ public sealed partial class ErrorOrEndpointGenerator
         return new ParameterMeta(
             parameter.Name,
             typeFqn,
-            TryGetRoutePrimitiveKind(type, context),
+            TryGetRoutePrimitiveKind(type),
             flags,
             specialKind,
             serviceKey,
             boundName,
             itemType?.GetFullyQualifiedName(),
             itemPrimitiveKind,
-            DetectCustomBinding(type, context),
+            DetectCustomBinding(type),
             DetectEmptyBodyBehavior(parameter),
             validatableProperties);
     }
 
-    private static ParameterFlags BuildFlags(IParameterSymbol parameter, ITypeSymbol type, ErrorOrContext context)
+    private static ParameterFlags BuildFlags(IParameterSymbol parameter, ITypeSymbol type)
     {
         var flags = ParameterFlags.None;
 
@@ -85,7 +84,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return flags;
     }
 
-    private static SpecialParameterKind DetectSpecialKind(ITypeSymbol type, ErrorOrContext context)
+    private static SpecialParameterKind DetectSpecialKind(ITypeSymbol type)
     {
         if (ErrorOrContext.IsHttpContext(type)) return SpecialParameterKind.HttpContext;
 
@@ -102,23 +101,23 @@ public sealed partial class ErrorOrEndpointGenerator
         return ErrorOrContext.IsPipeReader(type) ? SpecialParameterKind.PipeReader : SpecialParameterKind.None;
     }
 
-    private static string DetermineBoundName(ISymbol parameter, ParameterFlags flags, ErrorOrContext context)
+    private static string DetermineBoundName(ISymbol parameter, ParameterFlags flags)
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
-            return TryGetAttributeName(parameter, context, WellKnownTypes.FromRouteAttribute) ??
+            return TryGetAttributeName(parameter, WellKnownTypes.FromRouteAttribute) ??
                    parameter.Name;
 
         if (flags.HasFlag(ParameterFlags.FromQuery))
-            return TryGetAttributeName(parameter, context, WellKnownTypes.FromQueryAttribute) ??
+            return TryGetAttributeName(parameter, WellKnownTypes.FromQueryAttribute) ??
                    parameter.Name;
 
         if (flags.HasFlag(ParameterFlags.FromHeader))
-            return TryGetAttributeName(parameter, context, WellKnownTypes.FromHeaderAttribute) ??
+            return TryGetAttributeName(parameter, WellKnownTypes.FromHeaderAttribute) ??
                    parameter.Name;
 
         if (flags.HasFlag(ParameterFlags.FromForm))
-            return TryGetAttributeName(parameter, context, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
+            return TryGetAttributeName(parameter, WellKnownTypes.FromFormAttribute) ?? parameter.Name;
 
         return parameter.Name;
     }

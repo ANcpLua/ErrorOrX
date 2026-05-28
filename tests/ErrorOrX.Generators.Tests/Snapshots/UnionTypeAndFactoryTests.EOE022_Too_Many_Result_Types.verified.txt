@@ -333,7 +333,7 @@ global using ErrorOr.Generated;
 // JSON serialization context for Native AOT support.
 #nullable enable
 
-[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
 [System.Text.Json.Serialization.JsonSerializable(typeof(string))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]
@@ -344,8 +344,8 @@ internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonS
   Diagnostics: [
     {
       Id: EOE022,
-      Severity: Info,
-      Message: Endpoint 'global::DiagnosticTest.TodoApi.GetById' has 8 possible response types, exceeding Results<...> max arity of 6. OpenAPI documentation may be incomplete.
+      Severity: Warning,
+      Message: Endpoint 'global::DiagnosticTest.TodoApi.GetById' has 8 response outcomes (Results<...> supports 6) or uses Error.Custom(...). Generator emits Task<IResult> instead of the typed union — OpenAPI documentation will be missing status codes and response shapes for this endpoint. Fix by: (a) reducing the variety of errors the handler returns, (b) replacing Error.Custom with one of the built-in ErrorTypes, or (c) accepting the loss and adding [ProducesResponseType] attributes manually if OpenAPI matters.
     }
   ]
 }

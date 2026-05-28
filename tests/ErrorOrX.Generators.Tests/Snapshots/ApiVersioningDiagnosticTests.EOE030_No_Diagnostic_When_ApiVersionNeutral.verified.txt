@@ -127,7 +127,11 @@ namespace ErrorOr.Generated
             var result = global::DiagnosticTest.NeutralApi.GetNeutral();
             if (result.IsError)
             {
-                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 }));
+                if (result.Errors.Count is 0)
+                    throw new global::System.InvalidOperationException(
+                        "ErrorOrX: handler 'global::DiagnosticTest.NeutralApi.GetNeutral' returned an ErrorOr<T> with IsError=true but Errors.Count=0. " +
+                        "This is an invariant violation in the ErrorOr<T> instance — likely a default(ErrorOr<T>) leak or a custom constructor bug. " +
+                        "Fix the handler to return a fully-constructed Error, or use the Error/T implicit converters.");
                 var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {
@@ -140,7 +144,10 @@ namespace ErrorOr.Generated
                 switch (first.Type)
                 {
                     default:
-                        return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem));
+                        throw new global::System.InvalidOperationException(
+                            $"ErrorOrX: handler 'global::DiagnosticTest.NeutralApi.GetNeutral' returned Error.Type={first.Type} (Code='{first.Code}') which was not inferred at generation time. " +
+                            "Add [ReturnsError(ErrorType." + first.Type + ", \"" + first.Code + "\")] to the handler or its interface method, " +
+                            "or remove the unreachable Error.Type from the handler. Generation-time inference cannot see this code path.");
                 }
             }
 
@@ -157,7 +164,11 @@ namespace ErrorOr.Generated
             var result = global::DiagnosticTest.VersionedApi.GetVersioned();
             if (result.IsError)
             {
-                if (result.Errors.Count is 0) return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(new global::Microsoft.AspNetCore.Mvc.ProblemDetails { Title = "Error", Detail = "An error occurred but no details were provided.", Status = 500 }));
+                if (result.Errors.Count is 0)
+                    throw new global::System.InvalidOperationException(
+                        "ErrorOrX: handler 'global::DiagnosticTest.VersionedApi.GetVersioned' returned an ErrorOr<T> with IsError=true but Errors.Count=0. " +
+                        "This is an invariant violation in the ErrorOr<T> instance — likely a default(ErrorOr<T>) leak or a custom constructor bug. " +
+                        "Fix the handler to return a fully-constructed Error, or use the Error/T implicit converters.");
                 var first = result.Errors[0];
                 var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
                 {
@@ -170,7 +181,10 @@ namespace ErrorOr.Generated
                 switch (first.Type)
                 {
                     default:
-                        return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem));
+                        throw new global::System.InvalidOperationException(
+                            $"ErrorOrX: handler 'global::DiagnosticTest.VersionedApi.GetVersioned' returned Error.Type={first.Type} (Code='{first.Code}') which was not inferred at generation time. " +
+                            "Add [ReturnsError(ErrorType." + first.Type + ", \"" + first.Code + "\")] to the handler or its interface method, " +
+                            "or remove the unreachable Error.Type from the handler. Generation-time inference cannot see this code path.");
                 }
             }
 
@@ -392,7 +406,7 @@ global using ErrorOr.Generated;
 // JSON serialization context for Native AOT support.
 #nullable enable
 
-[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
 [System.Text.Json.Serialization.JsonSerializable(typeof(string))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails))]

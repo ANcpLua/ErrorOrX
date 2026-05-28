@@ -21,6 +21,13 @@ public sealed partial class ErrorOrEndpointGenerator
             ImmutableArray<DiagnosticInfo>.Builder diagnostics,
             bool hasExplicitProducesError)
     {
+        // Endpoint handlers are static methods with bodies — neither abstract nor partial-without-impl
+        // is valid (the [Get]/[Post]/etc. attributes only apply to static methods that compile to real
+        // code). Expression-bodied handlers (=> svc.GetAll()) are caught by GetMethodBody. The only way
+        // GetMethodBody returns null is when the handler ISN'T a valid endpoint shape — which is
+        // already an EOE002 / EOE001 (handler must be static, invalid return type) error elsewhere.
+        // Returning empty here is the right behavior: those other diagnostics will block the build, and
+        // inference shouldn't double-report by raising its own diagnostic for the same root cause.
         if (GetMethodBody(method) is not { } body) return (default, default);
 
         var methodName = method.Name;
@@ -96,7 +103,6 @@ public sealed partial class ErrorOrEndpointGenerator
                 errorTypeNames,
                 customErrors,
                 seenCustomCodes,
-                context,
                 diagnostics))
             return;
 
@@ -104,7 +110,6 @@ public sealed partial class ErrorOrEndpointGenerator
         if (TryDetectUndocumentedInterfaceCall(
                 semanticModel,
                 child,
-                context,
                 endpointMethodName,
                 hasExplicitProducesError,
                 diagnostics,
@@ -131,10 +136,9 @@ public sealed partial class ErrorOrEndpointGenerator
         ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes,
-        ErrorOrContext context,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
-        if (!IsErrorFactoryInvocation(semanticModel, node, context, out var factoryName, out var invocation))
+        if (!IsErrorFactoryInvocation(semanticModel, node, out var factoryName, out var invocation))
             return false;
 
         // Validate and return the factory name if it's a known ErrorType
@@ -222,7 +226,6 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool IsErrorFactoryInvocation(
         SemanticModel semanticModel,
         SyntaxNode node,
-        ErrorOrContext context,
         out string factoryName,
         out InvocationExpressionSyntax? invocation)
     {

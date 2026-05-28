@@ -19,13 +19,13 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Extracts the ErrorOr return type information from a method's return type.
     ///     Returns null SuccessTypeFqn for invalid types (anonymous, inaccessible).
     /// </summary>
-    private static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType, ErrorOrContext context)
+    private static ErrorOrReturnTypeInfo ExtractErrorOrReturnType(ITypeSymbol returnType)
     {
         var resultType = returnType.GetTaskResultType();
         var unwrapped = resultType ?? returnType;
         var isAsync = resultType is not null;
 
-        if (!IsErrorOrType(unwrapped, context, out var errorOrType))
+        if (!IsErrorOrType(unwrapped, out var errorOrType))
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload);
 
         var innerType = errorOrType.TypeArguments[0];
@@ -70,9 +70,9 @@ public sealed partial class ErrorOrEndpointGenerator
         else if (ErrorOrContext.MatchesType(innerType, WellKnownTypes.Deleted))
             kind = SuccessKind.Deleted;
 
-        if (TryUnwrapAsyncEnumerable(innerType, context, out var elementType))
+        if (TryUnwrapAsyncEnumerable(innerType, out var elementType))
         {
-            if (TryUnwrapSseItem(elementType, context, out var sseDataType))
+            if (TryUnwrapSseItem(elementType, out var sseDataType))
             {
                 var sseDataFqn = sseDataType.GetFullyQualifiedName();
                 var asyncEnumFqn = innerType.GetFullyQualifiedName();
@@ -125,7 +125,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool TryUnwrapAsyncEnumerable(
         ITypeSymbol type,
-        ErrorOrContext context,
         [NotNullWhen(true)] out ITypeSymbol? elementType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
@@ -141,7 +140,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool TryUnwrapSseItem(
         ITypeSymbol type,
-        ErrorOrContext context,
         [NotNullWhen(true)] out ITypeSymbol? dataType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
@@ -157,7 +155,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static bool IsErrorOrType(
         ITypeSymbol type,
-        ErrorOrContext context,
         [NotNullWhen(true)] out INamedTypeSymbol? errorOrType)
     {
         if (type is INamedTypeSymbol { IsGenericType: true } named &&
@@ -172,8 +169,7 @@ public sealed partial class ErrorOrEndpointGenerator
     }
 
     private static EquatableArray<ProducesErrorInfo> ExtractProducesErrorAttributes(
-        ISymbol method,
-        ErrorOrContext context)
+        ISymbol method)
     {
         var results = new List<ProducesErrorInfo>();
 
@@ -190,7 +186,7 @@ public sealed partial class ErrorOrEndpointGenerator
     /// <summary>
     ///     Checks if the method has the [AcceptedResponse] attribute for 202 Accepted responses.
     /// </summary>
-    private static bool HasAcceptedResponseAttribute(ISymbol method, ErrorOrContext context)
+    private static bool HasAcceptedResponseAttribute(ISymbol method)
     {
         return ErrorOrContext.HasAttribute(method, WellKnownTypes.AcceptedResponseAttribute);
     }

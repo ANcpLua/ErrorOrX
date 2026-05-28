@@ -25,7 +25,7 @@ internal static class ErrorMapping
     /// <summary>
     ///     All known error type names in deterministic order for reproducible code generation.
     /// </summary>
-    private static readonly IReadOnlyList<string> AllErrorTypes =
+    private static readonly IReadOnlyList<string> s_allErrorTypes =
     [
         Failure,
         Unexpected,
@@ -39,12 +39,12 @@ internal static class ErrorMapping
     /// <summary>
     ///     Fast lookup set for O(1) membership testing.
     /// </summary>
-    private static readonly HashSet<string> ErrorTypeSet = new(AllErrorTypes, StringComparer.Ordinal);
+    private static readonly HashSet<string> s_errorTypeSet = new(s_allErrorTypes, StringComparer.Ordinal);
 
     /// <summary>
     ///     All ErrorType name → Entry mappings. This is the CANONICAL source.
     /// </summary>
-    private static readonly Dictionary<string, Entry> Mappings = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, Entry> s_mappings = new(StringComparer.Ordinal)
     {
         // 4xx Client Errors
         // Validation: errors parameter is Dictionary<string, string[]>?
@@ -80,13 +80,11 @@ internal static class ErrorMapping
             500)
     };
 
-    /// <summary>
-    ///     Default entry for unknown ErrorTypes (500 Internal Server Error).
-    /// </summary>
-    private static readonly Entry DefaultEntry = new(
-        $"{WellKnownTypes.Fqn.HttpResults.InternalServerError}<{WellKnownTypes.Fqn.ProblemDetails}>",
-        $"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(problem)",
-        500);
+    // Previously: DefaultEntry — silent fallback to 500 InternalServerError for unknown ErrorType
+    // names. Removed: callers (EmitErrorTypeSwitch, AddInferredError, CollectInferredErrorStatuses)
+    // only ever pass names pre-filtered by IsKnownErrorType, so the default arm was dead defensive
+    // code that could mask a future caller-contract violation. Get(...) now throws on unknown
+    // names — surfacing any breakage at generation time instead of silently mapping it to 500.
 
     /// <summary>
     ///     Canonical mapping of HTTP status codes to TypedResults factories.
@@ -95,7 +93,7 @@ internal static class ErrorMapping
     ///     additional HTTP semantics for specialized validation scenarios.
     ///     Used by GenerateStatusToFactoryCases().
     /// </summary>
-    private static readonly Dictionary<int, CustomEntry> StatusToFactory = new()
+    private static readonly Dictionary<int, CustomEntry> s_statusToFactory = new()
     {
         [400] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.BadRequest}(problem)"),
         [401] = new CustomEntry($"{WellKnownTypes.Fqn.TypedResults.Unauthorized}()"),
@@ -111,15 +109,26 @@ internal static class ErrorMapping
     /// </summary>
     public static bool IsKnownErrorType(string name)
     {
-        return ErrorTypeSet.Contains(name);
+        return s_errorTypeSet.Contains(name);
     }
 
     /// <summary>
-    ///     Gets the mapping entry for an ErrorType name.
+    ///     Gets the mapping entry for an ErrorType name. Throws on unknown name — callers must
+    ///     pre-filter through <see cref="IsKnownErrorType"/> (the inference layer does this already).
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <paramref name="errorTypeName"/> is not a registered ErrorType. Indicates a
+    ///     caller-contract violation: the inference layer added an unknown name to its result set.
+    /// </exception>
     public static Entry Get(string errorTypeName)
     {
-        return Mappings.TryGetValue(errorTypeName, out var entry) ? entry : DefaultEntry;
+        if (s_mappings.TryGetValue(errorTypeName, out var entry)) return entry;
+
+        throw new InvalidOperationException(
+            $"ErrorOrX generator: unknown ErrorType name '{errorTypeName}'. " +
+            $"Valid names: {string.Join(", ", s_mappings.Keys)}. " +
+            "Callers must filter input through IsKnownErrorType — this throw indicates the " +
+            "inference layer leaked an unrecognized name into its result set (bug in extractor or factory detection).");
     }
 
     /// <summary>
@@ -144,7 +153,7 @@ internal static class ErrorMapping
     /// </summary>
     public static string GenerateStatusSwitch(string errorTypeFqn, string variableName = "first")
     {
-        var cases = Mappings
+        var cases = s_mappings
             .Select(kvp => $"{errorTypeFqn}.{kvp.Key} => {kvp.Value.StatusCode}");
         return string.Join(", ", cases) +
                $", _ => (int){variableName}.Type is >= 100 and <= 599 ? (int){variableName}.Type : 500";
@@ -156,7 +165,7 @@ internal static class ErrorMapping
     /// </summary>
     public static IEnumerable<string> GenerateStatusToFactoryCases()
     {
-        foreach (var kvp in StatusToFactory.OrderBy(static x => x.Key))
+        foreach (var kvp in s_statusToFactory.OrderBy(static x => x.Key))
             yield return $"{kvp.Key} => {kvp.Value.Factory}";
     }
 

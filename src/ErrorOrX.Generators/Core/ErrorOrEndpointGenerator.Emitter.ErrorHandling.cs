@@ -17,10 +17,14 @@ public sealed partial class ErrorOrEndpointGenerator
         in EndpointDescriptor ep,
         in InvokerContext ctx)
     {
+        var handlerFqn = $"{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}";
         code.AppendLine("            if (result.IsError)");
         code.AppendLine("            {");
-        code.AppendLine(
-            $"                if (result.Errors.Count is 0) return {ctx.WrapReturn($"{WellKnownTypes.Fqn.TypedResults.InternalServerError}(new {WellKnownTypes.Fqn.ProblemDetails} {{ Title = \"Error\", Detail = \"An error occurred but no details were provided.\", Status = 500 }})")};");
+        code.AppendLine("                if (result.Errors.Count is 0)");
+        code.AppendLine("                    throw new global::System.InvalidOperationException(");
+        code.AppendLine($"                        \"ErrorOrX: handler '{handlerFqn}' returned an ErrorOr<T> with IsError=true but Errors.Count=0. \" +");
+        code.AppendLine("                        \"This is an invariant violation in the ErrorOr<T> instance — likely a default(ErrorOr<T>) leak or a custom constructor bug. \" +");
+        code.AppendLine("                        \"Fix the handler to return a fully-constructed Error, or use the Error/T implicit converters.\");");
         code.AppendLine("                var first = result.Errors[0];");
 
         EmitValidationHandling(code, in ep, in ctx);
@@ -82,6 +86,7 @@ public sealed partial class ErrorOrEndpointGenerator
     private static void EmitErrorTypeSwitch(StringBuilder code, in EndpointDescriptor ep,
         in InvokerContext ctx)
     {
+        var handlerFqn = $"{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}";
         code.AppendLine("                switch (first.Type)");
         code.AppendLine("                {");
 
@@ -97,9 +102,15 @@ public sealed partial class ErrorOrEndpointGenerator
                 code.AppendLine($"                        return {ctx.WrapReturn(factory)};");
             }
 
+        // No silent default → 500 Failure fallback. If a handler returns an Error.Type
+        // the generator-time analyzer didn't infer (dead-code branch, dynamic dispatch,
+        // unwalkable method body), throw so the gap surfaces in logs with the specific
+        // Error.Type + handler identity — instead of being papered over with a generic 500.
         code.AppendLine("                    default:");
-        code.AppendLine(
-            $"                        return {ctx.WrapReturn(ErrorMapping.GetFactory(ErrorMapping.Failure))};");
+        code.AppendLine("                        throw new global::System.InvalidOperationException(");
+        code.AppendLine($"                            $\"ErrorOrX: handler '{handlerFqn}' returned Error.Type={{first.Type}} (Code='{{first.Code}}') which was not inferred at generation time. \" +");
+        code.AppendLine("                            \"Add [ReturnsError(ErrorType.\" + first.Type + \", \\\"\" + first.Code + \"\\\")] to the handler or its interface method, \" +");
+        code.AppendLine("                            \"or remove the unreachable Error.Type from the handler. Generation-time inference cannot see this code path.\");");
         code.AppendLine("                }");
     }
 }

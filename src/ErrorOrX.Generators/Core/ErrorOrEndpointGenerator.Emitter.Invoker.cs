@@ -178,10 +178,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (useValidationProblem)
         {
             // Use ValidationProblem to match the Results<..., ValidationProblem, ...> union type
-            const string validationProblemExpr =
+            const string ValidationProblemExpr =
                 $"{WellKnownTypes.Fqn.TypedResults.ValidationProblem}(new {WellKnownTypes.Fqn.Dictionary}<string, string[]> {{ [param] = [reason] }})";
             var returnExpr =
-                isAsync ? validationProblemExpr : $"Task.FromResult<{returnTypeFqn}>({validationProblemExpr})";
+                isAsync ? ValidationProblemExpr : $"Task.FromResult<{returnTypeFqn}>({ValidationProblemExpr})";
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
             code.AppendLine($"                => {returnExpr};");
@@ -200,9 +200,9 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine("            };");
             code.AppendLine();
 
-            const string badRequestExpr =
+            const string BadRequestExpr =
                 $"{WellKnownTypes.Fqn.TypedResults.BadRequest}(CreateBindProblem(param, reason))";
-            var returnExpr = isAsync ? badRequestExpr : $"Task.FromResult<{returnTypeFqn}>({badRequestExpr})";
+            var returnExpr = isAsync ? BadRequestExpr : $"Task.FromResult<{returnTypeFqn}>({BadRequestExpr})";
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
             code.AppendLine($"                => {returnExpr};");
@@ -212,8 +212,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static void EmitBindFail415Helper(StringBuilder code, string returnTypeFqn, bool isAsync)
     {
-        const string expr = $"{WellKnownTypes.Fqn.TypedResults.StatusCode}(415)";
-        var returnExpr = isAsync ? expr : $"Task.FromResult<{returnTypeFqn}>({expr})";
+        const string Expr = $"{WellKnownTypes.Fqn.TypedResults.StatusCode}(415)";
+        var returnExpr = isAsync ? Expr : $"Task.FromResult<{returnTypeFqn}>({Expr})";
         var returnType = isAsync ? returnTypeFqn : $"Task<{returnTypeFqn}>";
 
         code.AppendLine($"            static {returnType} BindFail415()");

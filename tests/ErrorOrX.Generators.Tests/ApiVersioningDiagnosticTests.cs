@@ -156,7 +156,7 @@ public class ApiVersioningDiagnosticTests : GeneratorTestBase
     }
 
     [Fact]
-    public Task EOE030_Endpoint_Missing_Versioning_In_Versioned_Project_Reports_Info()
+    public Task EOE030_Endpoint_Missing_Versioning_In_Versioned_Project_Reports_Warning()
     {
         // When project has versioned endpoints, unversioned endpoints should be warned
         const string Source = """

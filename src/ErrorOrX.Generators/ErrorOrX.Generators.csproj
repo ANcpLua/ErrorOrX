@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="ANcpLua.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <PackageId>ErrorOrX.Generators</PackageId>
@@ -47,12 +47,22 @@
         ANcpLua.Roslyn.Utilities.Sources ships async/disposable helpers requiring
         newer BCL shapes unavailable in netstandard2.0. Exclude until the upstream
         package gates these files by TFM.
+
+        TimeProvider.cs / ExpiringCache.cs / ByteSize.cs trip RS0030 (banned API:
+        DateTimeOffset.UtcNow, Math.Round without MidpointRounding) — they're part of
+        the upstream Sources content set but we don't reference any of those types
+        from the generator. Excluding them keeps the project RS0030-clean without
+        suppressing the rule project-wide (which would mask a real banned-API hit if
+        we ever wrote one ourselves).
     -->
     <ItemGroup>
         <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Async/AsyncSequenceExtensions.cs"/>
         <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Async/ParallelAsyncExtensions.cs"/>
         <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/DelegateDisposable.cs"/>
         <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Enumerator.cs"/>
+        <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Polyfills/TimeProvider/TimeProvider.cs"/>
+        <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Caching/ExpiringCache.cs"/>
+        <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Text/ByteSize.cs"/>
     </ItemGroup>
 
     <ItemGroup>

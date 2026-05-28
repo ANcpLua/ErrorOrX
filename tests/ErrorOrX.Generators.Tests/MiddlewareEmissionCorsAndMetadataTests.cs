@@ -71,8 +71,11 @@ public class MiddlewareEmissionCorsAndMetadataTests : GeneratorTestBase
 
         result.Diagnostics.Should().BeEmpty();
         var generated = result.Files.First(static f => f.HintName == "ErrorOrEndpointMappings.cs").Content;
-        // DisableCors should be emitted
-        generated.Should().Match("*Cors*");
+        // CorsEndpointConventionBuilderExtensions has no .DisableCors() helper. The framework
+        // recognises DisableCorsAttribute as metadata, so the generator emits a WithMetadata call.
+        generated.Should()
+            .Contain(".WithMetadata(new global::Microsoft.AspNetCore.Cors.DisableCorsAttribute())");
+        generated.Should().NotContain(".DisableCors()");
     }
 
     [Fact]

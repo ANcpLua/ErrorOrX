@@ -56,7 +56,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
     /// </summary>
     private static bool IsFormatOnlyConstraint(string constraint)
     {
-        return RouteValidator.FormatOnlyConstraints.Contains(constraint);
+        return RouteValidator.s_formatOnlyConstraints.Contains(constraint);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
 
     /// <summary>
     ///     Validates that a typed constraint matches the bound parameter type.
-    ///     Uses shared RouteValidator.ConstraintToTypes to avoid duplication.
+    ///     Uses shared RouteValidator.s_constraintToTypes to avoid duplication.
     /// </summary>
     private static void ValidateTypedConstraint(
         in SymbolAnalysisContext context,
@@ -93,7 +93,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
         Location attributeLocation)
     {
         // Look up expected types for this constraint using shared RouteValidator
-        if (!RouteValidator.ConstraintToTypes.TryGetValue(constraint,
+        if (!RouteValidator.s_constraintToTypes.TryGetValue(constraint,
                 out var expectedTypes))
             return; // Unknown constraint (e.g., custom) - skip validation
 

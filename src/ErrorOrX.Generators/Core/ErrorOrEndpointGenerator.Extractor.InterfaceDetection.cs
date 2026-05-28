@@ -22,7 +22,6 @@ public sealed partial class ErrorOrEndpointGenerator
     private static bool TryDetectUndocumentedInterfaceCall(
         SemanticModel semanticModel,
         SyntaxNode node,
-        ErrorOrContext context,
         string endpointMethodName,
         bool hasExplicitProducesError,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
@@ -37,7 +36,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (symbolInfo.Symbol is not IMethodSymbol methodSymbol) return false;
 
         // Check if method returns ErrorOr<T>
-        if (!ReturnsErrorOr(methodSymbol, context)) return false;
+        if (!ReturnsErrorOr(methodSymbol)) return false;
 
         // Check if it's an interface or abstract method (no implementation to scan)
         var containingType = methodSymbol.ContainingType;
@@ -49,7 +48,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Try to extract [ReturnsError] attributes from the interface method
         var hasReturnsError = TryExtractReturnsErrorAttributes(
-            methodSymbol, context, errorTypeNames, customErrors, seenCustomCodes);
+            methodSymbol, errorTypeNames, customErrors, seenCustomCodes);
 
         if (hasReturnsError) return true; // Successfully extracted errors from interface
 
@@ -73,7 +72,6 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static bool TryExtractReturnsErrorAttributes(
         ISymbol method,
-        ErrorOrContext context,
         ISet<string> errorTypeNames,
         ICollection<CustomErrorInfo> customErrors,
         ISet<string> seenCustomCodes)
@@ -129,10 +127,10 @@ public sealed partial class ErrorOrEndpointGenerator
         };
     }
 
-    private static bool ReturnsErrorOr(IMethodSymbol method, ErrorOrContext context)
+    private static bool ReturnsErrorOr(IMethodSymbol method)
     {
         // Reuse existing helpers - unwrap Task/ValueTask, then check for ErrorOr<T>
         var unwrapped = method.ReturnType.GetTaskResultType() ?? method.ReturnType;
-        return IsErrorOrType(unwrapped, context, out _);
+        return IsErrorOrType(unwrapped, out _);
     }
 }

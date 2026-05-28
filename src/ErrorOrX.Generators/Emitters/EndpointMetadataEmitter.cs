@@ -157,15 +157,22 @@ internal static class EndpointMetadataEmitter
 
     /// <summary>
     ///     Emits rate limiting middleware: [EnableRateLimiting("policy")] / [DisableRateLimiting].
+    ///     There is no parameterless `.RequireRateLimiting()` endpoint convention overload —
+    ///     `RateLimiterEndpointConventionBuilderExtensions` requires either a policy name (string)
+    ///     or an `IRateLimiterPolicy&lt;T&gt;` instance. `EnableRateLimitingAttribute` mirrors that
+    ///     contract by exposing only a `string`-arg constructor, so a missing policy can only arise
+    ///     from `[EnableRateLimiting(null!)]` — deliberate null-forgiving by the consumer. In that
+    ///     case the emitter refuses to emit anything: producing `.RequireRateLimiting()` would fail
+    ///     the consumer's build with CS1061, and producing `.RequireRateLimiting("")` would attach
+    ///     a non-existent policy at runtime. Both are worse than silently dropping a state the C#
+    ///     attribute contract already disallows.
     /// </summary>
     private static void EmitRateLimitingMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
         if (middleware.DisableRateLimiting)
             code.AppendLine($"{indent}.DisableRateLimiting()");
-        else if (middleware.EnableRateLimiting)
-            code.AppendLine(middleware.RateLimitingPolicy is not null
-                ? $"{indent}.RequireRateLimiting(\"{middleware.RateLimitingPolicy}\")"
-                : $"{indent}.RequireRateLimiting()");
+        else if (middleware is { EnableRateLimiting: true, RateLimitingPolicy: { } policy })
+            code.AppendLine($"{indent}.RequireRateLimiting(\"{policy}\")");
     }
 
     /// <summary>
@@ -186,11 +193,16 @@ internal static class EndpointMetadataEmitter
 
     /// <summary>
     ///     Emits CORS middleware: [EnableCors("policy")] / [EnableCors] / [DisableCors].
+    ///     [DisableCors] has no fluent endpoint convention — `CorsEndpointConventionBuilderExtensions`
+    ///     exposes only `RequireCors` overloads. The framework-supported way to disable CORS on a
+    ///     single endpoint is to attach a `DisableCorsAttribute` instance as endpoint metadata; the
+    ///     CORS middleware checks `ICorsMetadata` and short-circuits on `IDisableCorsAttribute`.
+    ///     A naive `.DisableCors()` emission would fail the consumer's build with CS1061.
     /// </summary>
     private static void EmitCorsMiddleware(StringBuilder code, in MiddlewareInfo middleware, string indent)
     {
         if (middleware.DisableCors)
-            code.AppendLine($"{indent}.DisableCors()");
+            code.AppendLine($"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Cors.DisableCorsAttribute())");
         else if (middleware.EnableCors)
             code.AppendLine(middleware.CorsPolicy is not null
                 ? $"{indent}.RequireCors(\"{middleware.CorsPolicy}\")"

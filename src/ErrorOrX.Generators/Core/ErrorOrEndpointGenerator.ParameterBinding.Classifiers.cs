@@ -18,7 +18,6 @@ public sealed partial class ErrorOrEndpointGenerator
     /// </summary>
     private static ParameterClassificationResult ClassifyFromRouteParameter(
         in ParameterMeta meta,
-        ImmutableHashSet<string> routeParameters,
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics)
     {
@@ -125,8 +124,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static ParameterClassificationResult ClassifyFromFormParameter(
         in ParameterMeta meta,
-        ITypeSymbol type,
-        ErrorOrContext context)
+        ITypeSymbol type)
     {
         if (meta.IsFormFile) return ParameterSuccess(in meta, ParameterSource.FormFile, formName: meta.BoundName);
 
@@ -140,13 +138,12 @@ public sealed partial class ErrorOrEndpointGenerator
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
 
         // Complex DTO - let BCL handle form binding
-        return ClassifyFormDtoParameter(in meta, type, context);
+        return ClassifyFormDtoParameter(in meta, type);
     }
 
     private static ParameterClassificationResult ClassifyFormDtoParameter(
         in ParameterMeta meta,
-        ITypeSymbol type,
-        ErrorOrContext context)
+        ITypeSymbol type)
     {
         // For complex form DTOs, analyze the constructor to build child parameter info
         // BCL handles actual binding - we just need structure for code generation
@@ -168,7 +165,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         foreach (var paramSymbol in constructor.Parameters)
         {
-            var childMeta = CreateParameterMeta(paramSymbol, context);
+            var childMeta = CreateParameterMeta(paramSymbol);
 
             ParameterSource childSource;
             if (childMeta.IsFormFile)
@@ -270,7 +267,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var children = ImmutableArray.CreateBuilder<EndpointParameter>();
         foreach (var paramSymbol in constructor.Parameters)
         {
-            var childMeta = CreateParameterMeta(paramSymbol, context);
+            var childMeta = CreateParameterMeta(paramSymbol);
 
             // EOE016 (ctor-param level): Nested [AsParameters] not supported
             if (childMeta.HasAsParameters)

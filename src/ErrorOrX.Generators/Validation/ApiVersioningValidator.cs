@@ -13,13 +13,13 @@ internal static class ApiVersioningValidator
 {
     // Valid formats: "1", "1.0", "2", "2.0-beta", "1.0-preview.1"
     // Invalid: "v1", "v2.0", "1.0.0" (semver), "version1", empty
-    private static readonly Regex ValidVersionPattern = new(
+    private static readonly Regex s_validVersionPattern = new(
         @"^(\d+)(?:\.(\d+))?(?:-[a-zA-Z0-9.]+)?$",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture,
         TimeSpan.FromSeconds(1));
 
     // Versioning attribute names for EOE029 detection (without type resolution)
-    private static readonly string[] VersioningAttributeNames =
+    private static readonly string[] s_versioningAttributeNames =
     [
         "ApiVersionAttribute",
         "ApiVersionNeutralAttribute",
@@ -177,7 +177,7 @@ internal static class ApiVersioningValidator
             // "1.0.0-beta" splits as ["1", "0", "0-beta"] - 3 parts, still invalid (semver)
             return false;
 
-        return ValidVersionPattern.IsMatch(v);
+        return s_validVersionPattern.IsMatch(v);
     }
 
     /// <summary>
@@ -211,7 +211,7 @@ internal static class ApiVersioningValidator
 
             // Check by name since we can't resolve the type
             var attrName = attrClass.Name;
-            foreach (var versioningAttrName in VersioningAttributeNames)
+            foreach (var versioningAttrName in s_versioningAttributeNames)
                 if (string.Equals(attrName, versioningAttrName, StringComparison.Ordinal))
                     return true;
         }

@@ -11,7 +11,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Pattern matchers for DI service detection using ANcpLua.Roslyn.Utilities.
     ///     These patterns identify types that should be resolved from DI container.
     /// </summary>
-    private static readonly TypeMatcher ServiceNameMatcher = SymbolMatch.Type()
+    private static readonly TypeMatcher s_serviceNameMatcher = SymbolMatch.Type()
         .Where(static t => t.Name.EndsWithOrdinal("Service") ||
                            t.Name.EndsWithOrdinal("Repository") ||
                            t.Name.EndsWithOrdinal("Handler") ||
@@ -20,7 +20,7 @@ public sealed partial class ErrorOrEndpointGenerator
                            t.Name.EndsWithOrdinal("Factory") ||
                            t.Name.EndsWithOrdinal("Client"));
 
-    private static readonly TypeMatcher DbContextMatcher = SymbolMatch.Type()
+    private static readonly TypeMatcher s_dbContextMatcher = SymbolMatch.Type()
         .Where(static t => t.Name.EndsWithOrdinal("Context") &&
                            (t.Name.Contains("Db") || t.Name.StartsWithOrdinal("Db")));
 
@@ -31,7 +31,7 @@ public sealed partial class ErrorOrEndpointGenerator
             : EmptyBodyBehavior.Default;
     }
 
-    private static RoutePrimitiveKind? TryGetRoutePrimitiveKind(ITypeSymbol type, ErrorOrContext context)
+    private static RoutePrimitiveKind? TryGetRoutePrimitiveKind(ITypeSymbol type)
     {
         type = type.UnwrapNullable();
 
@@ -50,11 +50,11 @@ public sealed partial class ErrorOrEndpointGenerator
             SpecialType.System_Decimal => RoutePrimitiveKind.Decimal,
             SpecialType.System_Double => RoutePrimitiveKind.Double,
             SpecialType.System_Single => RoutePrimitiveKind.Single,
-            _ => TryGetRoutePrimitiveKindBySymbol(type, context)
+            _ => TryGetRoutePrimitiveKindBySymbol(type)
         };
     }
 
-    private static RoutePrimitiveKind? TryGetRoutePrimitiveKindBySymbol(ISymbol type, ErrorOrContext context)
+    private static RoutePrimitiveKind? TryGetRoutePrimitiveKindBySymbol(ISymbol type)
     {
         if (ErrorOrContext.MatchesType(type, WellKnownTypes.Guid)) return RoutePrimitiveKind.Guid;
 
@@ -72,18 +72,18 @@ public sealed partial class ErrorOrEndpointGenerator
         return null;
     }
 
-    private static CustomBindingMethod DetectCustomBinding(ITypeSymbol type, ErrorOrContext context)
+    private static CustomBindingMethod DetectCustomBinding(ITypeSymbol type)
     {
-        if (type is not INamedTypeSymbol namedType || IsPrimitiveOrWellKnownType(namedType, context))
+        if (type is not INamedTypeSymbol namedType || IsPrimitiveOrWellKnownType(namedType))
             return CustomBindingMethod.None;
 
-        if (ImplementsBindableInterface(namedType, context)) return CustomBindingMethod.Bindable;
+        if (ImplementsBindableInterface(namedType)) return CustomBindingMethod.Bindable;
 
-        var bindAsyncMethod = DetectBindAsyncMethod(namedType, context);
-        return bindAsyncMethod != CustomBindingMethod.None ? bindAsyncMethod : DetectTryParseMethod(namedType, context);
+        var bindAsyncMethod = DetectBindAsyncMethod(namedType);
+        return bindAsyncMethod != CustomBindingMethod.None ? bindAsyncMethod : DetectTryParseMethod(namedType);
     }
 
-    private static bool IsPrimitiveOrWellKnownType(ITypeSymbol type, ErrorOrContext context)
+    private static bool IsPrimitiveOrWellKnownType(ITypeSymbol type)
     {
         type = type.UnwrapNullable();
 
@@ -91,26 +91,26 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType is not SpecialType.None) return true;
 
         // Check for well-known non-primitive types that have built-in conversions
-        return TryGetRoutePrimitiveKindBySymbol(type, context) is not null;
+        return TryGetRoutePrimitiveKindBySymbol(type) is not null;
     }
 
-    private static bool ImplementsBindableInterface(ITypeSymbol type, ErrorOrContext context)
+    private static bool ImplementsBindableInterface(ITypeSymbol type)
     {
         return ErrorOrContext.IsOrImplements(type, WellKnownTypes.BindableFromHttpContext);
     }
 
-    private static CustomBindingMethod DetectBindAsyncMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
+    private static CustomBindingMethod DetectBindAsyncMethod(INamespaceOrTypeSymbol type)
     {
         foreach (var member in type.GetMembers("BindAsync"))
         {
-            var result = ClassifyBindAsyncMember(member, context);
+            var result = ClassifyBindAsyncMember(member);
             if (result != CustomBindingMethod.None) return result;
         }
 
         return CustomBindingMethod.None;
     }
 
-    private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member, ErrorOrContext context)
+    private static CustomBindingMethod ClassifyBindAsyncMember(ISymbol member)
     {
         if (member is not IMethodSymbol { IsStatic: true, ReturnsVoid: false } method ||
             !method.ReturnType.IsTaskType() || method.Parameters.Length < 1 ||
@@ -123,33 +123,33 @@ public sealed partial class ErrorOrEndpointGenerator
         return CustomBindingMethod.BindAsync;
     }
 
-    private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type, ErrorOrContext context)
+    private static CustomBindingMethod DetectTryParseMethod(INamespaceOrTypeSymbol type)
     {
         foreach (var member in type.GetMembers("TryParse"))
         {
-            var result = ClassifyTryParseMember(member, context);
+            var result = ClassifyTryParseMember(member);
             if (result != CustomBindingMethod.None) return result;
         }
 
         return CustomBindingMethod.None;
     }
 
-    private static CustomBindingMethod ClassifyTryParseMember(ISymbol member, ErrorOrContext context)
+    private static CustomBindingMethod ClassifyTryParseMember(ISymbol member)
     {
         if (member is not IMethodSymbol { IsStatic: true, ReturnType.SpecialType: SpecialType.System_Boolean } method ||
-            method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type, context) ||
+            method.Parameters.Length < 2 || !IsStringOrCharSpan(method.Parameters[0].Type) ||
             method.Parameters[^1].RefKind != RefKind.Out)
             return CustomBindingMethod.None;
 
         if (method.Parameters.Length >= 3)
             for (var i = 1; i < method.Parameters.Length - 1; i++)
-                if (IsFormatProvider(method.Parameters[i].Type, context))
+                if (IsFormatProvider(method.Parameters[i].Type))
                     return CustomBindingMethod.TryParseWithFormat;
 
         return CustomBindingMethod.TryParse;
     }
 
-    private static bool IsStringOrCharSpan(ITypeSymbol type, ErrorOrContext context)
+    private static bool IsStringOrCharSpan(ITypeSymbol type)
     {
         if (type.SpecialType == SpecialType.System_String) return true;
 
@@ -160,14 +160,14 @@ public sealed partial class ErrorOrEndpointGenerator
         return false;
     }
 
-    private static bool IsFormatProvider(ITypeSymbol type, ErrorOrContext context)
+    private static bool IsFormatProvider(ITypeSymbol type)
     {
         type = type.UnwrapNullable();
         return ErrorOrContext.MatchesType(type, WellKnownTypes.IFormatProvider);
     }
 
     private static (bool IsCollection, ITypeSymbol? ItemType, RoutePrimitiveKind? Kind) AnalyzeCollectionType(
-        ITypeSymbol type, ErrorOrContext context)
+        ITypeSymbol type)
     {
         type = type.UnwrapNullable();
         if (type.SpecialType == SpecialType.System_String) return (false, null, null);
@@ -180,15 +180,15 @@ public sealed partial class ErrorOrEndpointGenerator
         else if (type is INamedTypeSymbol { IsGenericType: true } named)
         {
             var origin = named.ConstructedFrom;
-            if (IsWellKnownCollection(origin, context)) itemType = named.TypeArguments[0];
+            if (IsWellKnownCollection(origin)) itemType = named.TypeArguments[0];
         }
 
         return itemType is not null
-            ? (true, itemType, TryGetRoutePrimitiveKind(itemType, context))
+            ? (true, itemType, TryGetRoutePrimitiveKind(itemType))
             : (false, null, null);
     }
 
-    private static bool IsWellKnownCollection(ISymbol origin, ErrorOrContext context)
+    private static bool IsWellKnownCollection(ISymbol origin)
     {
         return ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.ListT) ||
                ErrorOrContext.MatchesConstructedFrom(origin as ITypeSymbol, WellKnownTypes.IListT) ||
@@ -228,7 +228,7 @@ public sealed partial class ErrorOrEndpointGenerator
         return ErrorOrContext.HasAttribute(parameter, attributeName);
     }
 
-    private static string? TryGetAttributeName(ISymbol parameter, ErrorOrContext context, string attributeName)
+    private static string? TryGetAttributeName(ISymbol parameter, string attributeName)
     {
         var attributes = parameter.GetAttributes();
 
@@ -277,7 +277,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Check using fluent matchers for common DI naming patterns
         if (type is INamedTypeSymbol namedType)
-            if (ServiceNameMatcher.Matches(namedType) || DbContextMatcher.Matches(namedType))
+            if (s_serviceNameMatcher.Matches(namedType) || s_dbContextMatcher.Matches(namedType))
                 return true;
 
         return false;
@@ -287,7 +287,7 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Determines if a type is a complex type (DTO) that should be bound from body.
     ///     Returns true for types that are NOT: primitives, special types, route-bindable, or collections of primitives.
     /// </summary>
-    private static bool IsComplexType(ITypeSymbol type, ErrorOrContext context)
+    private static bool IsComplexType(ITypeSymbol type)
     {
         type = type.UnwrapNullable();
 
@@ -295,7 +295,7 @@ public sealed partial class ErrorOrEndpointGenerator
         if (type.SpecialType is not SpecialType.None) return false;
 
         // Well-known types (Guid, DateTime, etc.) are not complex
-        if (TryGetRoutePrimitiveKindBySymbol(type, context) is not null) return false;
+        if (TryGetRoutePrimitiveKindBySymbol(type) is not null) return false;
 
         // Form file types are not complex (have special binding)
         if (ErrorOrContext.IsFormFile(type) || ErrorOrContext.IsFormFileCollection(type) ||
@@ -309,14 +309,14 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ErrorOrContext.IsHttpContext(type) || ErrorOrContext.IsCancellationToken(type)) return false;
 
         // Types with TryParse or BindAsync are route-bindable, not complex
-        if (type is INamedTypeSymbol namedType && !IsPrimitiveOrWellKnownType(namedType, context))
+        if (type is INamedTypeSymbol namedType && !IsPrimitiveOrWellKnownType(namedType))
         {
-            var customBinding = DetectCustomBinding(namedType, context);
+            var customBinding = DetectCustomBinding(namedType);
             if (customBinding != CustomBindingMethod.None) return false;
         }
 
         // Collections of primitives are not complex
-        var (isCollection, _, itemKind) = AnalyzeCollectionType(type, context);
+        var (isCollection, _, itemKind) = AnalyzeCollectionType(type);
         if (isCollection && itemKind is not null) return false;
 
         // Interface or abstract types are services, not complex DTOs

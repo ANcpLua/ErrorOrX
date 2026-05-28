@@ -57,6 +57,39 @@ namespace ErrorOr
         public string Route { get; }
     }
 
+    /// <summary>
+    /// Marks a static method as a HEAD endpoint. ASP.NET Core has no MapHead
+    /// dedicated overload — the generator emits MapMethods(route, new[] { "HEAD" }, ...).
+    /// </summary>
+    [global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = false)]
+    public sealed class HeadAttribute : global::System.Attribute
+    {
+        public HeadAttribute(string route) => Route = route;
+        public string Route { get; }
+    }
+
+    /// <summary>
+    /// Marks a static method as an OPTIONS endpoint. ASP.NET Core has no MapOptions
+    /// dedicated overload — the generator emits MapMethods(route, new[] { "OPTIONS" }, ...).
+    /// </summary>
+    [global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = false)]
+    public sealed class OptionsAttribute : global::System.Attribute
+    {
+        public OptionsAttribute(string route) => Route = route;
+        public string Route { get; }
+    }
+
+    /// <summary>
+    /// Marks a static method as a TRACE endpoint. ASP.NET Core has no MapTrace
+    /// dedicated overload — the generator emits MapMethods(route, new[] { "TRACE" }, ...).
+    /// </summary>
+    [global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = false)]
+    public sealed class TraceAttribute : global::System.Attribute
+    {
+        public TraceAttribute(string route) => Route = route;
+        public string Route { get; }
+    }
+
     [global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = true)]
     public sealed class ProducesErrorAttribute : global::System.Attribute
     {

@@ -60,15 +60,34 @@ namespace ErrorOr.Generated
 
             var __endpointBuilders = new System.Collections.Generic.List<IEndpointConventionBuilder>();
 
-            // GET /todos/{id:int} -> global::DiagnosticTest.TodoApi.GetById
-            var __ep0 = app.MapGet(@"/todos/{id:int}", (Delegate)Invoke_Ep0)
-                .WithName("DiagnosticTest_TodoApi_GetById")
-                .WithTags("TodoApi")
+            // API Versioning: Build version set for all endpoints
+            var versionSet = app.NewApiVersionSet()
+                .HasApiVersion(new global::Asp.Versioning.ApiVersion(1, 0))
+                .ReportApiVersions()
+                .Build();
+
+            // GET /unversioned -> global::DiagnosticTest.UnversionedApi.GetUnversioned
+            var __ep0 = app.MapGet(@"/unversioned", (Delegate)Invoke_Ep0)
+                .WithName("DiagnosticTest_UnversionedApi_GetUnversioned")
+                .WithApiVersionSet(versionSet)
+                .WithTags("UnversionedApi")
                 .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(200, typeof(string), new[] { "application/json" }))
                 .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(400, typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails), new[] { "application/problem+json" }))
                 .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(500, typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails), new[] { "application/problem+json" }))
                 ;
             __endpointBuilders.Add(__ep0);
+
+            // GET /versioned -> global::DiagnosticTest.VersionedApi.GetVersioned
+            var __ep1 = app.MapGet(@"/versioned", (Delegate)Invoke_Ep1)
+                .WithName("DiagnosticTest_VersionedApi_GetVersioned")
+                .WithApiVersionSet(versionSet)
+                .MapToApiVersion(new global::Asp.Versioning.ApiVersion(1, 0))
+                .WithTags("VersionedApi")
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(200, typeof(string), new[] { "application/json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(400, typeof(global::Microsoft.AspNetCore.Http.HttpValidationProblemDetails), new[] { "application/problem+json" }))
+                .WithMetadata(new global::Microsoft.AspNetCore.Http.ProducesResponseTypeMetadata(500, typeof(global::Microsoft.AspNetCore.Mvc.ProblemDetails), new[] { "application/problem+json" }))
+                ;
+            __endpointBuilders.Add(__ep1);
 
 
             return new CompositeEndpointConventionBuilder(__endpointBuilders);
@@ -105,24 +124,12 @@ namespace ErrorOr.Generated
 
         private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
         {
-            static global::Microsoft.AspNetCore.Mvc.ProblemDetails CreateBindProblem(string param, string reason) => new()
-            {
-                Title = "Bad Request",
-                Detail = $"Parameter '{param}' {reason}.",
-                Status = 400,
-                Type = "https://httpstatuses.io/400",
-            };
-
-            static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> BindFail(string param, string reason)
-                => Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason)));
-
-            if (!TryGetRouteValue(ctx, "id", out var p0)) return BindFail("id", "is missing from route");
-            var result = global::DiagnosticTest.TodoApi.GetById(p0!);
+            var result = global::DiagnosticTest.UnversionedApi.GetUnversioned();
             if (result.IsError)
             {
                 if (result.Errors.Count is 0)
                     throw new global::System.InvalidOperationException(
-                        "ErrorOrX: handler 'global::DiagnosticTest.TodoApi.GetById' returned an ErrorOr<T> with IsError=true but Errors.Count=0. " +
+                        "ErrorOrX: handler 'global::DiagnosticTest.UnversionedApi.GetUnversioned' returned an ErrorOr<T> with IsError=true but Errors.Count=0. " +
                         "This is an invariant violation in the ErrorOr<T> instance — likely a default(ErrorOr<T>) leak or a custom constructor bug. " +
                         "Fix the handler to return a fully-constructed Error, or use the Error/T implicit converters.");
                 var first = result.Errors[0];
@@ -138,7 +145,44 @@ namespace ErrorOr.Generated
                 {
                     default:
                         throw new global::System.InvalidOperationException(
-                            $"ErrorOrX: handler 'global::DiagnosticTest.TodoApi.GetById' returned Error.Type={first.Type} (Code='{first.Code}') which was not inferred at generation time. " +
+                            $"ErrorOrX: handler 'global::DiagnosticTest.UnversionedApi.GetUnversioned' returned Error.Type={first.Type} (Code='{first.Code}') which was not inferred at generation time. " +
+                            "Add [ReturnsError(ErrorType." + first.Type + ", \"" + first.Code + "\")] to the handler or its interface method, " +
+                            "or remove the unreachable Error.Type from the handler. Generation-time inference cannot see this code path.");
+                }
+            }
+
+            return Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.Ok(result.Value));
+        }
+
+        private static async Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep1(HttpContext ctx)
+        {
+            return await Invoke_Ep1_Core(ctx);
+        }
+
+        private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
+        {
+            var result = global::DiagnosticTest.VersionedApi.GetVersioned();
+            if (result.IsError)
+            {
+                if (result.Errors.Count is 0)
+                    throw new global::System.InvalidOperationException(
+                        "ErrorOrX: handler 'global::DiagnosticTest.VersionedApi.GetVersioned' returned an ErrorOr<T> with IsError=true but Errors.Count=0. " +
+                        "This is an invariant violation in the ErrorOr<T> instance — likely a default(ErrorOr<T>) leak or a custom constructor bug. " +
+                        "Fix the handler to return a fully-constructed Error, or use the Error/T implicit converters.");
+                var first = result.Errors[0];
+                var problem = new global::Microsoft.AspNetCore.Mvc.ProblemDetails
+                {
+                    Title = first.Code,
+                    Detail = first.Description,
+                    Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => (int)first.Type is >= 100 and <= 599 ? (int)first.Type : 500 }
+                };
+                problem.Type = $"https://httpstatuses.io/{problem.Status}";
+
+                switch (first.Type)
+                {
+                    default:
+                        throw new global::System.InvalidOperationException(
+                            $"ErrorOrX: handler 'global::DiagnosticTest.VersionedApi.GetVersioned' returned Error.Type={first.Type} (Code='{first.Code}') which was not inferred at generation time. " +
                             "Add [ReturnsError(ErrorType." + first.Type + ", \"" + first.Code + "\")] to the handler or its interface method, " +
                             "or remove the unreachable Error.Type from the handler. Generation-time inference cannot see this code path.");
                 }
@@ -372,9 +416,9 @@ internal partial class ErrorOrJsonContext : System.Text.Json.Serialization.JsonS
   ],
   Diagnostics: [
     {
-      Id: EOE020,
+      Id: EOE030,
       Severity: Warning,
-      Message: Route parameter '{id:int}' expects System.Int32, but method parameter 'id' is string
+      Message: Endpoint 'GetUnversioned' has no version information but other endpoints use API versioning. Add [ApiVersion("X.Y")] or [ApiVersionNeutral] to declare its version scope.
     }
   ]
 }

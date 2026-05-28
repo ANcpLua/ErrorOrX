@@ -78,6 +78,9 @@ internal static class HttpVerbExtensions
             "PutAttribute" or "Put" => HttpVerb.Put,
             "DeleteAttribute" or "Delete" => HttpVerb.Delete,
             "PatchAttribute" or "Patch" => HttpVerb.Patch,
+            "HeadAttribute" or "Head" => HttpVerb.Head,
+            "OptionsAttribute" or "Options" => HttpVerb.Options,
+            "TraceAttribute" or "Trace" => HttpVerb.Trace,
             "ErrorOrEndpointAttribute" or "ErrorOrEndpoint" when args is [{ Value: string m }, ..] =>
                 ParseMethodString(m),
             _ => null

@@ -127,10 +127,24 @@ internal static partial class BindingCodeEmitter
             code.AppendLine($"                var {paramName}List = new {WellKnownTypes.Fqn.List}<{itemType}>();");
             code.AppendLine($"                foreach (var item in {paramName}Raw)");
             code.AppendLine("                {");
-            code.AppendLine(
-                itemType.IsStringType()
-                    ? $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);"
-                    : $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
+            if (itemType.IsStringType())
+            {
+                // Empty header values are dropped (BCL convention for HTTP collections); non-empty
+                // strings always succeed because the type IS string. No failure mode for strings.
+                code.AppendLine(
+                    $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+            }
+            else
+            {
+                // Mirror EmitCollectionQueryBinding (line 52-55) — silently dropping non-empty
+                // unparseable header items hid bad input. Non-empty + unparseable → BindFail.
+                // Empty items still drop (BCL convention, same as query).
+                usesBindFail = true;
+                code.AppendLine(
+                    $"                    if ({GetTryParseExpression(itemType, "item", "parsedItem")}) {paramName}List.Add(parsedItem);");
+                code.AppendLine(
+                    $"                    else if (!string.IsNullOrEmpty(item)) return {bindFailFn}(\"{param.Name}\", \"has invalid item format\");");
+            }
             code.AppendLine("                }");
             var isArray = param.TypeFqn.EndsWithOrdinal("[]");
             var assignment = isArray ? $"{paramName}List.ToArray()" : $"{paramName}List";

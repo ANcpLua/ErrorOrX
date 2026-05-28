@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 
@@ -90,6 +91,12 @@ public abstract class GeneratorTestBase
     /// <summary>
     ///     Runs the generator and verifies output using Verify snapshots.
     ///     Excludes the shared attributes file (tested once in GeneratorCachingTests).
+    ///     Also asserts the generated code COMPILES when the generator didn't report any error-severity
+    ///     diagnostics — catches "snapshot matches but emit is syntactically invalid" bugs that would
+    ///     otherwise slip past every test in this suite (previously only GeneratorCachingTests called
+    ///     <c>.Compiles()</c>; the other ~150 snapshot tests only string-matched the recorded output).
+    ///     Tests that exercise diagnostic-error paths intentionally emit invalid sources, so the
+    ///     compile-check is gated on "no error diagnostics" — those tests prove the diagnostic instead.
     /// </summary>
     protected static async Task VerifyAsync(string source)
     {
@@ -105,6 +112,9 @@ public abstract class GeneratorTestBase
                 .Select(static d => new { d.Id, Severity = d.Severity.ToString(), Message = d.GetMessage() })
                 .OrderBy(static d => d.Id)
         }).UseDirectory("Snapshots");
+
+        if (!result.Diagnostics.Any(static d => d.Severity == DiagnosticSeverity.Error))
+            result.Compiles();
     }
 
     /// <summary>
