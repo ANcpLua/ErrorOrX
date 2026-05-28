@@ -21,7 +21,7 @@
 
     <!-- Samples -->
     <!-- ErrorOrX.Samples.Diagnostics is intentionally excluded — it contains deliberately-broken code
-         that triggers EOE001-EOE041 diagnostics. Open it in your IDE for squiggles, or
+         that triggers EOE001-EOE036 diagnostics. Open it in your IDE for squiggles, or
          `dotnet build samples/ErrorOrX.Samples.Diagnostics/` to see the errors at the CLI. -->
     <Folder Name="/samples/">
         <Project Path="samples/ErrorOrX.Samples.Api/ErrorOrX.Samples.Api.csproj" />

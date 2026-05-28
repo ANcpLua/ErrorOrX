@@ -40,8 +40,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
+        {
             return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
+        }
 
         switch (innerType)
         {
@@ -104,6 +106,7 @@ public sealed partial class ErrorOrEndpointGenerator
         string? bestMatch = null;
 
         for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
+        {
             foreach (var member in current.GetMembers())
             {
                 // Pattern-as-spec: public readable property
@@ -111,7 +114,9 @@ public sealed partial class ErrorOrEndpointGenerator
                     {
                         DeclaredAccessibility: Accessibility.Public, GetMethod: not null
                     } property)
+                {
                     continue;
+                }
 
                 // Exact match "Id" is preferred - return immediately
                 if (property.Name == "Id") return "Id";
@@ -119,6 +124,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 // Case-insensitive match for fallback
                 if (string.Equals(property.Name, "Id", StringComparison.OrdinalIgnoreCase)) bestMatch ??= property.Name;
             }
+        }
 
         return bestMatch;
     }
@@ -174,9 +180,13 @@ public sealed partial class ErrorOrEndpointGenerator
         var results = new List<ProducesErrorInfo>();
 
         foreach (var attr in method.GetAttributes())
+        {
             if (ErrorOrContext.MatchesType(attr.AttributeClass, WellKnownTypes.ProducesErrorAttribute) &&
                 attr.ConstructorArguments is [{ Value: int statusCode }, ..])
+            {
                 results.Add(new ProducesErrorInfo(statusCode));
+            }
+        }
 
         return results.Count > 0
             ? new EquatableArray<ProducesErrorInfo>([.. results])

@@ -24,8 +24,10 @@ internal static class ResultsUnionTypeBuilder
         if (referenceArities.IsDefaultOrEmpty) return maxArity;
 
         foreach (var arity in referenceArities)
+        {
             if (arity > maxArity)
                 maxArity = arity;
+        }
 
         return maxArity;
     }
@@ -62,11 +64,13 @@ internal static class ResultsUnionTypeBuilder
     {
         // Handle [AcceptedResponse] attribute first (highest precedence)
         if (isAcceptedResponse)
+        {
             return new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Accepted}<{successTypeFqn}>",
                 202,
                 true,
                 $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)");
+        }
 
         // Map marker types to their correct status codes
         return successKind switch
@@ -150,8 +154,10 @@ internal static class ResultsUnionTypeBuilder
         var canUseUnion = unionEntries.Count >= 2 && unionEntries.Count <= maxArity && !hasCustom;
 
         if (!canUseUnion)
+        {
             return BuildFallbackResult(inferredErrorTypeNames, declaredProducesErrors, in middleware,
                 hasValidationError);
+        }
 
         // 6. Sort by status code (2xx, then 4xx, then 5xx) for consistent OpenAPI output
         var sortedTypes = unionEntries
@@ -196,12 +202,14 @@ internal static class ResultsUnionTypeBuilder
 
         // [EnableRateLimiting] adds 429 Too Many Requests
         if (middleware is { EnableRateLimiting: true, DisableRateLimiting: false })
+        {
             if (!includedStatuses.Contains(429))
             {
                 // StatusCodeHttpResult is used for 429 since there's no typed TooManyRequestsHttpResult
                 unionEntries.Add((429, WellKnownTypes.Fqn.HttpResults.StatusCodeHttpResult));
                 includedStatuses.Add(429);
             }
+        }
     }
 
     private static void AddSuccessAndBindingOutcomes(
@@ -319,8 +327,10 @@ internal static class ResultsUnionTypeBuilder
         if (declaredProducesErrors.IsDefaultOrEmpty) return false;
 
         foreach (var producesError in declaredProducesErrors)
+        {
             if (!includedStatuses.Contains(producesError.StatusCode))
                 return true; // Found a status code not in our static union mapping
+        }
 
         return false;
     }

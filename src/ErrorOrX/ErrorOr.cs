@@ -33,9 +33,11 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         _ = Guard.NotNull(errors);
 
         if (errors.Count is 0)
+        {
             throw new ArgumentException(
                 "Cannot create an ErrorOr<TValue> from an empty collection of errors. Provide at least one error.",
                 nameof(errors));
+        }
 
         _errors = [.. errors];
     }
@@ -140,8 +142,10 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         {
             ThrowIfDefault();
             if (_errors.Length > 0)
+            {
                 throw new InvalidOperationException(
                     "The Value property cannot be accessed when errors have been recorded. Check IsError before accessing Value.");
+            }
 
             // _value is guaranteed non-null here: the value constructor uses Guard.NotNull, and
             // ThrowIfDefault above eliminated the only path where _value could be default(TValue?).
@@ -161,8 +165,10 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
         {
             ThrowIfDefault();
             if (_errors.Length is 0)
+            {
                 throw new InvalidOperationException(
                     "The FirstError property cannot be accessed when no errors have been recorded. Check IsError before accessing FirstError.");
+            }
 
             return _errors[0];
         }
@@ -197,10 +203,12 @@ public readonly partial record struct ErrorOr<TValue> : IErrorOr<TValue>
     private void ThrowIfDefault()
     {
         if (_errors.IsDefault)
+        {
             throw new InvalidOperationException(
                 $"Access on default(ErrorOr<{typeof(TValue).Name}>) is invalid. " +
                 "An uninitialized ErrorOr<TValue> struct cannot be inspected. " +
                 "Construct via implicit conversion from TValue/Error, or via factory methods. " +
                 "Common cause: a struct field declared without initialization, e.g. `private ErrorOr<int> _result;` — assign before reading.");
+        }
     }
 }

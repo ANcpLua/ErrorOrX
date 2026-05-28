@@ -44,8 +44,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ep.HttpVerb == HttpVerb.Post
             && successInfo is { StatusCode: 201, HasBody: true }
             && ep.LocationIdPropertyName is { Length: > 0 } idProp)
+        {
             return
                 $"{WellKnownTypes.Fqn.TypedResults.Created}($\"{{ctx.Request.Path}}/{{result.Value.{idProp}}}\", result.Value)";
+        }
 
         return successInfo.Factory;
     }
@@ -91,6 +93,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                {");
 
         if (!ep.ErrorInference.InferredErrorTypeNames.IsDefaultOrEmpty)
+        {
             foreach (var errorTypeName in ep.ErrorInference.InferredErrorTypeNames.AsImmutableArray()
                          .Where(static e => e != ErrorMapping.Validation)
                          .Distinct()
@@ -101,6 +104,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 code.AppendLine($"                    case {WellKnownTypes.Fqn.ErrorType}.{errorTypeName}:");
                 code.AppendLine($"                        return {ctx.WrapReturn(factory)};");
             }
+        }
 
         // No silent default → 500 Failure fallback. If a handler returns an Error.Type
         // the generator-time analyzer didn't infer (dead-code branch, dynamic dispatch,

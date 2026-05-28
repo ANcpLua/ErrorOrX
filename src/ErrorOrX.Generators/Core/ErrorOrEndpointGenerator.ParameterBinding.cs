@@ -91,20 +91,26 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
+        {
             return ClassifyAsParameters(in meta, parameter.Type, routeParameters, method, diagnostics, context,
                 httpVerb);
+        }
 
         if (meta.HasFromBody)
+        {
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                 validatableProperties: meta.ValidatableProperties);
+        }
 
         if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type);
 
         if (meta.HasFromServices) return ParameterSuccess(in meta, ParameterSource.Service);
 
         if (meta.HasFromKeyedServices)
+        {
             return ParameterSuccess(in meta, ParameterSource.KeyedService,
                 keyedServiceKey: meta.ServiceKey);
+        }
 
         if (meta.HasFromHeader) return ClassifyFromHeaderParameter(in meta, method, diagnostics);
 
@@ -185,8 +191,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Documented inference rule #2: POST/PUT/PATCH with complex DTO → Body.
         if (IsComplexType(type) && !httpVerb.IsBodyless())
+        {
             return ParameterSuccess(in meta, ParameterSource.Body, emptyBodyBehavior: meta.EmptyBodyBehavior,
                 validatableProperties: meta.ValidatableProperties);
+        }
 
         // Everything else: bodyless + complex, or concrete-non-service-non-DTO catch-all.
         // EOE021 fires (Error severity) AND we refuse to generate — no silent Service fallback that

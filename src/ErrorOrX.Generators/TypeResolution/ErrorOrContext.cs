@@ -55,8 +55,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     public static bool HasAttribute(ISymbol symbol, string attributeMetadataName)
     {
         foreach (var attribute in symbol.GetAttributes())
+        {
             if (MatchesType(attribute.AttributeClass, attributeMetadataName))
                 return true;
+        }
 
         return false;
     }
@@ -69,8 +71,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         if (MatchesType(type, metadataName)) return true;
 
         foreach (var interfaceType in type.AllInterfaces)
+        {
             if (MatchesType(interfaceType, metadataName))
                 return true;
+        }
 
         return false;
     }
@@ -81,8 +85,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         if (type is null) return false;
 
         for (var current = type; current is not null; current = current.BaseType)
+        {
             if (MatchesType(current, metadataName))
                 return true;
+        }
 
         return false;
     }
@@ -155,7 +161,9 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 
         if (type.SpecialType is not SpecialType.None ||
             type.TypeKind is TypeKind.Enum or TypeKind.Interface)
+        {
             return false;
+        }
 
         if (IsOrImplements(type, WellKnownTypes.IValidatableObject)) return true;
 
@@ -261,8 +269,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     private static bool HasValidationAttribute(ISymbol symbol)
     {
         foreach (var attribute in symbol.GetAttributes())
+        {
             if (IsOrInheritsFrom(attribute.AttributeClass, WellKnownTypes.ValidationAttribute))
                 return true;
+        }
 
         return false;
     }
@@ -270,13 +280,17 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     private static bool HasValidationAttributeOnConstructorParam(INamedTypeSymbol namedType)
     {
         foreach (var ctor in namedType.InstanceConstructors)
-        foreach (var param in ctor.Parameters)
+        {
+            foreach (var param in ctor.Parameters)
         {
             if (!HasValidationAttribute(param)) continue;
 
             foreach (var member in namedType.GetMembers(param.Name))
-                if (member is IPropertySymbol)
+                {
+                    if (member is IPropertySymbol)
                     return true;
+                }
+            }
         }
 
         return false;
@@ -285,9 +299,11 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     private static IParameterSymbol? FindMatchingConstructorParam(INamedTypeSymbol type, string propertyName)
     {
         foreach (var ctor in type.InstanceConstructors)
-        foreach (var param in ctor.Parameters)
+        {
+            foreach (var param in ctor.Parameters)
             if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
                 return param;
+        }
 
         return null;
     }
@@ -363,6 +379,7 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
     {
         var sb = new StringBuilder(s.Length);
         foreach (var c in s)
+        {
             switch (c)
             {
                 case '\\': sb.Append(@"\\"); break;
@@ -383,6 +400,7 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
 
                     break;
             }
+        }
 
         return sb.ToString();
     }

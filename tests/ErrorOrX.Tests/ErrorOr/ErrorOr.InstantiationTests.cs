@@ -356,6 +356,64 @@ public class ErrorOrInstantiationTests
         action.Should().ThrowExactly<InvalidOperationException>();
     }
 
+    // default(ErrorOr<T>) is a distinct path from new ErrorOr<T>(): no constructor runs, so the guard
+    // lives in property access (ThrowIfDefault), while ToString/Equals/GetHashCode stay safe by design.
+    [Fact]
+    public void Default_WhenAccessingIsError_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var result = default(ErrorOr<int>);
+
+        // Act
+        var act = () => result.IsError;
+
+        // Assert
+        act.Should().ThrowExactly<InvalidOperationException>()
+            .WithMessage("*Access on default(ErrorOr*) is invalid*");
+    }
+
+    [Fact]
+    public void Default_WhenCallingToString_ShouldNotThrowAndReturnSentinel()
+    {
+        // Arrange
+        var result = default(ErrorOr<int>);
+
+        // Act
+        string? text = null;
+        var act = () => text = result.ToString();
+
+        // Assert
+        act.Should().NotThrow();
+        text.Should().Contain("uninitialized");
+    }
+
+    [Fact]
+    public void Default_WhenComparedWithEquals_ShouldNotThrowAndTreatDefaultsAsEqual()
+    {
+        // Arrange
+        var first = default(ErrorOr<int>);
+        var second = default(ErrorOr<int>);
+        ErrorOr<int> success = 42;
+
+        // Act & Assert
+        first.Equals(second).Should().BeTrue();
+        first.Equals(success).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Default_WhenGettingHashCode_ShouldNotThrowAndReturnZero()
+    {
+        // Arrange
+        var result = default(ErrorOr<int>);
+
+        // Act
+        var act = () => result.GetHashCode();
+
+        // Assert
+        act.Should().NotThrow();
+        result.GetHashCode().Should().Be(0);
+    }
+
     [Fact]
     public void CreateErrorOr_WhenEmptyErrorsList_ShouldThrow()
     {

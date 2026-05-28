@@ -80,8 +80,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Query, queryName: meta.BoundName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE011: [FromQuery] only supports primitives or collections of primitives
         diagnostics.Add(DiagnosticInfo.Create(
@@ -110,8 +112,10 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Valid: has TryParse
         if (meta.CustomBinding is CustomBindingMethod.TryParse or CustomBindingMethod.TryParseWithFormat)
+        {
             return ParameterSuccess(in meta, ParameterSource.Header, headerName: meta.BoundName,
                 customBinding: meta.CustomBinding);
+        }
 
         // EOE014: [FromHeader] requires string, primitive with TryParse, or collection thereof
         diagnostics.Add(DiagnosticInfo.Create(
@@ -148,8 +152,10 @@ public sealed partial class ErrorOrEndpointGenerator
         // For complex form DTOs, analyze the constructor to build child parameter info
         // BCL handles actual binding - we just need structure for code generation
         if (type is not INamedTypeSymbol typeSymbol)
+        {
             // Non-named types get simple form binding - BCL will handle/fail at runtime
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
+        }
 
         var constructor = typeSymbol.Constructors
             .Where(static c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -157,8 +163,10 @@ public sealed partial class ErrorOrEndpointGenerator
             .FirstOrDefault();
 
         if (constructor is null || constructor.Parameters.Length is 0)
+        {
             // No suitable constructor - simple form binding
             return ParameterSuccess(in meta, ParameterSource.Form, formName: meta.BoundName);
+        }
 
         // Build child parameters for DTO constructor
         var children = ImmutableArray.CreateBuilder<EndpointParameter>(constructor.Parameters.Length);

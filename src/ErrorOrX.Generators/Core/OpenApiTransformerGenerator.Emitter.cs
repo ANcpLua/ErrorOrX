@@ -135,8 +135,10 @@ public sealed partial class OpenApiTransformerGenerator
             code.AppendLine($"            [\"{op.OperationId}\"] = new Dictionary<string, string>");
             code.AppendLine("            {");
             foreach (var (paramName, paramDesc) in op.ParameterDocs.AsImmutableArray())
+            {
                 code.AppendLine(
                     $"                [\"{paramName.EscapeCSharpString()}\"] = \"{paramDesc.EscapeCSharpString()}\",");
+            }
 
             code.AppendLine("            }.ToFrozenDictionary(StringComparer.Ordinal),");
         }

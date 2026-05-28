@@ -105,16 +105,22 @@ public sealed partial class ErrorOrEndpointGenerator
     {
         // Try to get explicit name from binding attribute
         if (flags.HasFlag(ParameterFlags.FromRoute))
+        {
             return TryGetAttributeName(parameter, WellKnownTypes.FromRouteAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromQuery))
+        {
             return TryGetAttributeName(parameter, WellKnownTypes.FromQueryAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromHeader))
+        {
             return TryGetAttributeName(parameter, WellKnownTypes.FromHeaderAttribute) ??
                    parameter.Name;
+        }
 
         if (flags.HasFlag(ParameterFlags.FromForm))
             return TryGetAttributeName(parameter, WellKnownTypes.FromFormAttribute) ?? parameter.Name;

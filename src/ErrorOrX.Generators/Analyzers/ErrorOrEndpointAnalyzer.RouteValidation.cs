@@ -36,7 +36,9 @@ public sealed partial class ErrorOrEndpointAnalyzer
         // Skip if no constraint or not bound to a method parameter
         if (rp.Constraint is not { } constraint ||
             !methodParamsByRouteName.TryGetValue(rp.Name, out var mp))
+        {
             return;
+        }
 
         if (mp.TypeFqn is not { } typeFqn) return;
 
@@ -70,6 +72,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
         Location attributeLocation)
     {
         if (!IsStringType(typeFqn))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.RouteConstraintTypeMismatch,
                 attributeLocation,
@@ -78,6 +81,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
                 "string",
                 mp.Name,
                 NormalizeTypeName(typeFqn)));
+        }
     }
 
     /// <summary>
@@ -95,13 +99,16 @@ public sealed partial class ErrorOrEndpointAnalyzer
         // Look up expected types for this constraint using shared RouteValidator
         if (!RouteValidator.s_constraintToTypes.TryGetValue(constraint,
                 out var expectedTypes))
+        {
             return; // Unknown constraint (e.g., custom) - skip validation
+        }
 
         // Get the actual type, unwrapping Nullable<T> for optional parameters
         var actualTypeFqn = typeFqn.UnwrapNullable(rp.IsOptional || mp.IsNullable);
 
         // Check if actual type matches any expected type
         if (!DoesTypeMatchConstraint(actualTypeFqn, expectedTypes))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.RouteConstraintTypeMismatch,
                 attributeLocation,
@@ -110,6 +117,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
                 expectedTypes[0],
                 mp.Name,
                 NormalizeTypeName(typeFqn)));
+        }
     }
 
     /// <summary>
@@ -118,8 +126,10 @@ public sealed partial class ErrorOrEndpointAnalyzer
     private static bool DoesTypeMatchConstraint(string actualTypeFqn, IEnumerable<string> expectedTypes)
     {
         foreach (var expected in expectedTypes)
+        {
             if (TypeNamesMatch(actualTypeFqn, expected))
                 return true;
+        }
 
         return false;
     }
@@ -150,8 +160,10 @@ public sealed partial class ErrorOrEndpointAnalyzer
         // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rp in RouteValidator.ExtractRouteParameters(pattern))
+        {
             if (!paramNames.Add(rp.Name))
                 issues.Add($"Route contains duplicate parameter '{{{rp.Name}}}'");
+        }
 
         return issues;
     }

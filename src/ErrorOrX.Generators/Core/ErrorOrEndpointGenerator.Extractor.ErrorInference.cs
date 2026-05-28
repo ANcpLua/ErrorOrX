@@ -81,8 +81,10 @@ public sealed partial class ErrorOrEndpointGenerator
         bool hasExplicitProducesError)
     {
         foreach (var child in node.DescendantNodes())
+        {
             ProcessNode(semanticModel, child, errorTypeNames, customErrors, visitedSymbols, seenCustomCodes, context,
                 diagnostics, endpointMethodName, hasExplicitProducesError);
+        }
     }
 
     private static void ProcessNode(
@@ -104,7 +106,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 customErrors,
                 seenCustomCodes,
                 diagnostics))
+        {
             return;
+        }
 
         // Check for interface/abstract method calls that return ErrorOr
         if (TryDetectUndocumentedInterfaceCall(
@@ -116,7 +120,9 @@ public sealed partial class ErrorOrEndpointGenerator
                 errorTypeNames,
                 customErrors,
                 seenCustomCodes))
+        {
             return;
+        }
 
         if (!TryGetReferencedSymbol(semanticModel, child, visitedSymbols, out var symbol)) return;
 
@@ -124,9 +130,11 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             var bodyToScan = GetBodyToScan(reference.GetSyntax());
             if (bodyToScan is not null)
+            {
                 CollectErrorTypesRecursive(semanticModel, bodyToScan, errorTypeNames, customErrors,
                     visitedSymbols, seenCustomCodes, context, diagnostics, endpointMethodName,
                     hasExplicitProducesError);
+            }
         }
     }
 
@@ -250,7 +258,9 @@ public sealed partial class ErrorOrEndpointGenerator
         // Semantic fallback: resolve invoked method and ensure it's actually ErrorOr.Error.<X>
         if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol symbol ||
             !ErrorOrContext.MatchesType(symbol.ContainingType, WellKnownTypes.ErrorStruct))
+        {
             return false;
+        }
 
         factoryName = symbol.Name;
         return true;

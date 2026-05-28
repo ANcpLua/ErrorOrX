@@ -86,18 +86,22 @@ public sealed partial class ErrorOrEndpointGenerator
 
                 // EOE018: Inaccessible return type
                 if (returnInfo.IsInaccessibleType)
+                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.InaccessibleTypeNotSupported, location,
                             returnInfo.InaccessibleTypeName ?? "unknown",
                             m.Name,
                             returnInfo.InaccessibleTypeAccessibility ?? "private"));
+                }
 
                 // EOE019: Type parameter in return type
                 if (returnInfo.IsTypeParameter)
+                {
                     return DiagnosticFlow.Fail<(IMethodSymbol, ErrorOrReturnTypeInfo)>(
                         DiagnosticInfo.Create(Descriptors.TypeParameterNotSupported, location,
                             m.Name,
                             returnInfo.TypeParameterName ?? "T"));
+                }
 
                 return returnInfo.SuccessTypeFqn is not null
                     ? DiagnosticFlow.Ok((m, returnInfo))

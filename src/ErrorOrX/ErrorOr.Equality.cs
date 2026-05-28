@@ -52,8 +52,10 @@ public readonly partial record struct ErrorOr<TValue>
         if (errors1.Length != errors2.Length) return false;
 
         for (var i = 0; i < errors1.Length; i++)
+        {
             if (!errors1[i].Equals(errors2[i]))
                 return false;
+        }
 
         return true;
     }

@@ -58,7 +58,9 @@ public sealed partial class OpenApiTransformerGenerator : IIncrementalGenerator
     {
         if (attr.GetConstructorArgument<string>(0) is { } p &&
             !string.IsNullOrWhiteSpace(p))
+        {
             return p;
+        }
 
         return "/";
     }

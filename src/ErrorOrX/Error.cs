@@ -191,9 +191,11 @@ public readonly record struct Error
         if (metadata.Count != otherMetadata.Count) return false;
 
         foreach (var kvp in metadata)
+        {
             if (!otherMetadata.TryGetValue(kvp.Key, out var otherValue) ||
                 !Equals(kvp.Value, otherValue))
                 return false;
+        }
 
         return true;
     }

@@ -99,11 +99,13 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE005: Invalid route pattern
         var patternDiagnostics = ValidateRoutePattern(pattern);
         foreach (var message in patternDiagnostics)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.InvalidRoutePattern,
                 attributeLocation,
                 pattern,
                 message));
+        }
 
         // If pattern is invalid, skip further route analysis
         if (patternDiagnostics.Count > 0) return;
@@ -131,12 +133,16 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
                 // EOE003: Route parameter not bound
                 foreach (var routeParam in routeParams)
+                {
                     if (!methodParamsByRouteName.ContainsKey(routeParam.Name))
+                    {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Descriptors.RouteParameterNotBound,
                             attributeLocation,
                             pattern,
                             routeParam.Name));
+                    }
+                }
 
                 // EOE020: Route constraint type mismatch
                 ValidateConstraintTypes(in context, routeParams, methodParamsByRouteName, attributeLocation);
@@ -146,28 +152,34 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         // EOE006: Multiple body sources
         var bodyCount = CountBodySources(method);
         if (bodyCount > 1)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MultipleBodySources,
                 method.Locations.FirstOrDefault(),
                 method.Name));
+        }
 
         // EOE008: Body on read-only HTTP method
         var isBodyless = verb?.IsBodyless() ?? WellKnownTypes.HttpMethod.IsBodyless(httpMethod);
         var hasBody = bodyCount > 0;
         if (hasBody && isBodyless)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.BodyOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
+        }
 
         // EOE009: [AcceptedResponse] on read-only method
         if (HasAcceptedResponseAttribute(method) && isBodyless)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.AcceptedOnReadOnlyMethod,
                 attributeLocation,
                 method.Name,
                 httpMethod.ToUpperInvariant()));
+        }
 
         // EOE034: DataAnnotations validation uses reflection
         CheckForValidationAttributes(in context, method);

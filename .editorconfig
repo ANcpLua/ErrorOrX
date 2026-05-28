@@ -23,6 +23,7 @@ dotnet_diagnostic.CA1308.severity = none
 # Meziantou — suppress opinionated style rules
 dotnet_diagnostic.MA0002.severity = none # StringBuilder — generator code uses IndentedTextWriter
 dotnet_diagnostic.MA0006.severity = none # string.Equals — string == is ordinal, explicit enough
+dotnet_diagnostic.MA0007.severity = none # Trailing comma after last value — purely stylistic, left to author preference
 dotnet_diagnostic.MA0008.severity = none # StructLayoutAttribute — unnecessary for managed types
 dotnet_diagnostic.MA0011.severity = none # IFormatProvider on TryParse — netstandard2.0 is fine
 dotnet_diagnostic.MA0048.severity = none # File name must match type — partial classes + DTOs are intentional

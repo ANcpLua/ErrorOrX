@@ -28,11 +28,15 @@ internal static partial class BindingCodeEmitter
 
         if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: true })
+        {
             return paramName + ".Value";
+        }
 
         if (source is ParameterSource.Query or ParameterSource.Header
             && param is { IsNullable: false, IsNonNullableValueType: false })
+        {
             return paramName + "!";
+        }
 
         return paramName;
     }

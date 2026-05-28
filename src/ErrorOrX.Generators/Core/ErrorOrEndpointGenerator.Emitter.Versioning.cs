@@ -69,6 +69,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // If endpoint has specific versions to map to, emit MapToApiVersion calls
         var effectiveVersions = versioning.EffectiveVersions;
         if (!effectiveVersions.IsDefaultOrEmpty)
+        {
             foreach (var v in effectiveVersions.AsImmutableArray())
             {
                 var versionExpr = v.MinorVersion.HasValue
@@ -76,6 +77,7 @@ public sealed partial class ErrorOrEndpointGenerator
                     : $"new {WellKnownTypes.Fqn.ApiVersion}({v.MajorVersion})";
                 code.AppendLine($"                .MapToApiVersion({versionExpr})");
             }
+        }
     }
 
     /// <summary>
