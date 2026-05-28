@@ -5,9 +5,12 @@ namespace ErrorOr.Generators;
 public sealed partial class ErrorOrEndpointGenerator
 {
     /// <summary>
-    ///     Extracts middleware configuration from BCL attributes on the method.
+    ///     Extracts middleware configuration from BCL attributes, reading class-level attributes
+    ///     first so they apply to every endpoint in the type, then method-level attributes which
+    ///     accumulate or override (e.g. method <c>[AllowAnonymous]</c> beats class <c>[Authorize]</c>).
     ///     Detects [Authorize], [AllowAnonymous], [EnableRateLimiting], [DisableRateLimiting],
-    ///     [OutputCache], [EnableCors], [DisableCors].
+    ///     [OutputCache], [EnableCors], [DisableCors]. Mirrors the class-then-method merge in
+    ///     <see cref="ExtractVersioningAttributes" />.
     /// </summary>
     private static MiddlewareInfo ExtractMiddlewareAttributes(ISymbol method)
     {
@@ -16,7 +19,33 @@ public sealed partial class ErrorOrEndpointGenerator
         var cache = default(OutputCacheInfo);
         var cors = default(CorsInfo);
 
-        foreach (var attr in method.GetAttributes())
+        // Class-level first (applies to all endpoints in the type), then method-level overrides/adds.
+        if (method.ContainingType is { } containingType)
+            AccumulateMiddleware(containingType, ref auth, ref rateLimit, ref cache, ref cors);
+
+        AccumulateMiddleware(method, ref auth, ref rateLimit, ref cache, ref cors);
+
+        // Canonical (ordinal) order: attribute source order is not stable across partial
+        // declarations, so sort accumulated policies to keep emit and the cache key deterministic.
+        var policies = auth.Policies.IsDefaultOrEmpty
+            ? auth.Policies
+            : [.. auth.Policies.OrderBy(static p => p, StringComparer.Ordinal)];
+
+        return new MiddlewareInfo(
+            auth.Required, new EquatableArray<string>(policies), auth.AllowAnonymous,
+            rateLimit.Enabled, rateLimit.Policy, rateLimit.Disabled,
+            cache.Enabled, cache.Policy, cache.Duration,
+            cors.Enabled, cors.Policy, cors.Disabled);
+    }
+
+    private static void AccumulateMiddleware(
+        ISymbol symbol,
+        ref AuthInfo auth,
+        ref RateLimitInfo rateLimit,
+        ref OutputCacheInfo cache,
+        ref CorsInfo cors)
+    {
+        foreach (var attr in symbol.GetAttributes())
         {
             if (attr.AttributeClass is not { } attrClass) continue;
 
@@ -25,12 +54,6 @@ public sealed partial class ErrorOrEndpointGenerator
             cache = TryExtractOutputCache(attr, attrClass, cache);
             cors = TryExtractCors(attr, attrClass, cors);
         }
-
-        return new MiddlewareInfo(
-            auth.Required, new EquatableArray<string>(auth.Policies), auth.AllowAnonymous,
-            rateLimit.Enabled, rateLimit.Policy, rateLimit.Disabled,
-            cache.Enabled, cache.Policy, cache.Duration,
-            cors.Enabled, cors.Policy, cors.Disabled);
     }
 
     private static AuthInfo TryExtractAuth(
