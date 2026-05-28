@@ -23,7 +23,7 @@
     <!-- Dependency versions -->
     <PropertyGroup>
         <MeziantouAnalyzerVersion>3.0.93</MeziantouAnalyzerVersion>
-        <ANcpLuaRoslynUtilitiesVersion>2.2.22</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>2.2.23</ANcpLuaRoslynUtilitiesVersion>
         <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
         <MicrosoftCodeAnalysisCSharpVersion>5.3.0</MicrosoftCodeAnalysisCSharpVersion>
         <MicrosoftSbomTargetsVersion>4.1.5</MicrosoftSbomTargetsVersion>
