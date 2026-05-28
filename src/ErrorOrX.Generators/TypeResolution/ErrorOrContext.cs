@@ -282,13 +282,13 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         foreach (var ctor in namedType.InstanceConstructors)
         {
             foreach (var param in ctor.Parameters)
-        {
-            if (!HasValidationAttribute(param)) continue;
+            {
+                if (!HasValidationAttribute(param)) continue;
 
-            foreach (var member in namedType.GetMembers(param.Name))
+                foreach (var member in namedType.GetMembers(param.Name))
                 {
                     if (member is IPropertySymbol)
-                    return true;
+                        return true;
                 }
             }
         }
@@ -301,8 +301,10 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
         foreach (var ctor in type.InstanceConstructors)
         {
             foreach (var param in ctor.Parameters)
-            if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
-                return param;
+            {
+                if (string.Equals(param.Name, propertyName, StringComparison.Ordinal))
+                    return param;
+            }
         }
 
         return null;

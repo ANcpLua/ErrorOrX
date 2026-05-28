@@ -31,9 +31,9 @@ public sealed partial class ErrorOrEndpointGenerator : IIncrementalGenerator
         var endpoints = CombineHttpMethodProviders(context, errorOrContextProvider);
         var jsonContexts = JsonContextProvider.Create(context).CollectAsEquatableArray();
         var generateJsonContextOption = context.AnalyzerConfigOptionsProvider
-            .IsToggleEnabled("ErrorOrGenerateJsonContext", true);
+            .IsToggleEnabled("ErrorOrGenerateJsonContext", defaultValue: true);
         var publishAotOption = context.AnalyzerConfigOptionsProvider
-            .IsToggleEnabled("PublishAot", false);
+            .IsToggleEnabled("PublishAot", defaultValue: false);
         var referenceArities = context.MetadataReferencesProvider
             .Select(static (reference, _) => ResultsUnionTypeBuilder.GetResultsUnionArity(reference))
             .CollectAsEquatableArray();

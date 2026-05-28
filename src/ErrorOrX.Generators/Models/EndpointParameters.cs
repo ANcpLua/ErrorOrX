@@ -170,6 +170,6 @@ internal readonly struct ParameterMeta(
 /// </summary>
 internal readonly record struct ParameterBindingResult(bool IsValid, EquatableArray<EndpointParameter> Parameters)
 {
-    public static readonly ParameterBindingResult Empty = new(true, default);
-    public static readonly ParameterBindingResult Invalid = new(false, default);
+    public static readonly ParameterBindingResult Empty = new(IsValid: true, default);
+    public static readonly ParameterBindingResult Invalid = new(IsValid: false, default);
 }

@@ -68,7 +68,7 @@ internal static class ResultsUnionTypeBuilder
             return new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Accepted}<{successTypeFqn}>",
                 202,
-                true,
+HasBody: true,
                 $"{WellKnownTypes.Fqn.TypedResults.Accepted}(string.Empty, result.Value)");
         }
 
@@ -78,25 +78,25 @@ internal static class ResultsUnionTypeBuilder
             SuccessKind.Success => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.Ok,
                 200,
-                false,
+HasBody: false,
                 $"{WellKnownTypes.Fqn.TypedResults.Ok}()"),
 
             SuccessKind.Created => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.Created,
                 201,
-                false,
+HasBody: false,
                 $"{WellKnownTypes.Fqn.TypedResults.Created}(string.Empty)"),
 
             SuccessKind.Updated => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
-                false,
+HasBody: false,
                 $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             SuccessKind.Deleted => new SuccessResponseInfo(
                 WellKnownTypes.Fqn.HttpResults.NoContent,
                 204,
-                false,
+HasBody: false,
                 $"{WellKnownTypes.Fqn.TypedResults.NoContent}()"),
 
             // Not a marker type - use default 200 OK regardless of method (Minimal API parity)
@@ -104,7 +104,7 @@ internal static class ResultsUnionTypeBuilder
             _ => new SuccessResponseInfo(
                 $"{WellKnownTypes.Fqn.HttpResults.Ok}<{successTypeFqn}>",
                 200,
-                true,
+HasBody: true,
                 $"{WellKnownTypes.Fqn.TypedResults.Ok}(result.Value)")
         };
     }
@@ -168,7 +168,7 @@ internal static class ResultsUnionTypeBuilder
         // Include error status codes for explicit Produces metadata (needed because the wrapper
         // uses RequestDelegate signature, so union types don't provide metadata automatically)
         return new UnionTypeResult(
-            true,
+CanUseUnion: true,
             $"{WellKnownTypes.Fqn.HttpResults.Results}<{string.Join(", ", sortedTypes)}>",
             new EquatableArray<int>([
                 .. unionEntries.Where(static e => e.Status >= 400).Select(static e => e.Status).OrderBy(static x => x)
@@ -351,7 +351,7 @@ internal static class ResultsUnionTypeBuilder
         CollectMiddlewareStatuses(in middleware, allStatuses);
 
         return new UnionTypeResult(
-            false,
+CanUseUnion: false,
             WellKnownTypes.Fqn.Result,
             new EquatableArray<int>([.. allStatuses.OrderBy(static x => x)]),
             hasValidationError);

@@ -40,10 +40,12 @@ public sealed partial class ErrorOrEndpointAnalyzer
             return;
         }
 
-        if (mp.TypeFqn is not { } typeFqn) return;
+        if (mp.TypeFqn is not { } typeFqn)
+            return;
 
         // Skip format-only constraints
-        if (IsFormatOnlyConstraint(constraint)) return;
+        if (IsFormatOnlyConstraint(constraint))
+            return;
 
         // Validate based on constraint type
         if (rp.IsCatchAll)
@@ -155,7 +157,8 @@ public sealed partial class ErrorOrEndpointAnalyzer
         // Check for unclosed braces
         var openCount = escapedStripped.Count(static c => c == '{');
         var closeCount = escapedStripped.Count(static c => c == '}');
-        if (openCount != closeCount) issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
+        if (openCount != closeCount)
+            issues.Add($"Route has mismatched braces: {openCount} '{{' and {closeCount} '}}'");
 
         // Check for duplicate parameter names using RouteValidator (single source of truth)
         var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

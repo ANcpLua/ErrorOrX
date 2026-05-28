@@ -148,8 +148,10 @@ public sealed partial class ErrorOrEndpointGenerator
         if (method.Parameters.Length >= 3)
         {
             for (var i = 1; i < method.Parameters.Length - 1; i++)
+            {
                 if (IsFormatProvider(method.Parameters[i].Type))
                     return CustomBindingMethod.TryParseWithFormat;
+            }
         }
 
         return CustomBindingMethod.TryParse;
@@ -253,7 +255,9 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (string.Equals(namedArg.Key, "Name", StringComparison.OrdinalIgnoreCase) &&
                 namedArg.Value.Value is string name && !string.IsNullOrWhiteSpace(name))
+            {
                 return name;
+            }
         }
 
         if (attr.GetConstructorArgument<string>(0) is { } ctorArg &&

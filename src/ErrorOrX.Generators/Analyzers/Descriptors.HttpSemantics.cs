@@ -11,7 +11,7 @@ public static partial class Descriptors
         "Endpoint '{0}' has multiple body sources. Use only one of: [FromBody], [FromForm], Stream, or PipeReader.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE008 — GET/HEAD/DELETE/OPTIONS should not carry a request body per HTTP semantics.</summary>
     public static readonly DiagnosticDescriptor BodyOnReadOnlyMethod = new(
@@ -20,7 +20,7 @@ public static partial class Descriptors
         "Endpoint '{0}' uses {1} with a request body. Consider using POST/PUT/PATCH instead.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE009 — [AcceptedResponse] (HTTP 202) is for async POST/PUT operations, not GET/DELETE.</summary>
     public static readonly DiagnosticDescriptor AcceptedOnReadOnlyMethod = new(
@@ -29,5 +29,5 @@ public static partial class Descriptors
         "Endpoint '{0}' uses [AcceptedResponse] with {1}. 202 Accepted is typically for async POST/PUT operations.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 }

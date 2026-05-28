@@ -17,7 +17,7 @@ public static partial class Descriptors
         "Use a concrete payload type, or register typeof(object) in your JsonSerializerContext and suppress this warning.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE018 — private/protected types cannot appear in endpoint signatures (generated code cannot access them).</summary>
     public static readonly DiagnosticDescriptor InaccessibleTypeNotSupported = new(
@@ -26,7 +26,7 @@ public static partial class Descriptors
         "Type '{0}' used by endpoint '{1}' is {2} and cannot be accessed by generated code. Make it internal or public.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE019 — open generic type parameters cannot appear in endpoint return types.</summary>
     public static readonly DiagnosticDescriptor TypeParameterNotSupported = new(
@@ -35,5 +35,5 @@ public static partial class Descriptors
         "Method '{0}' uses type parameter '{1}' in return type. Generic type parameters cannot be used with ErrorOr endpoints.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 }

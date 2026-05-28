@@ -38,8 +38,10 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ep in endpoints)
         {
             foreach (var p in ep.HandlerParameters.AsImmutableArray())
-            if (p is { RequiresValidation: true, ValidatableProperties.IsDefaultOrEmpty: false })
-                return true;
+            {
+                if (p is { RequiresValidation: true, ValidatableProperties.IsDefaultOrEmpty: false })
+                    return true;
+            }
         }
 
         return false;
@@ -142,7 +144,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in groupContexts)
         {
             foreach (var indexed in ctx.Group.Endpoints)
-            GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
+                GroupEmitter.EmitGroupedMapCall(code, in indexed, ctx.GroupVariableName, maxArity);
         }
 
         // Emit ungrouped endpoint mappings (legacy pattern)

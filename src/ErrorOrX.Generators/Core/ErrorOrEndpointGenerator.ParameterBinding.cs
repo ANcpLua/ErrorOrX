@@ -76,7 +76,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         return isValid
-            ? new ParameterBindingResult(true, builder.ToImmutable().AsEquatableArray())
+            ? new ParameterBindingResult(IsValid: true, builder.ToImmutable().AsEquatableArray())
             : ParameterBindingResult.Invalid;
     }
 
@@ -221,7 +221,7 @@ public sealed partial class ErrorOrEndpointGenerator
         EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
         EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
     {
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             source,
@@ -239,6 +239,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)
     {
-        public static readonly ParameterClassificationResult Error = new(true, default);
+        public static readonly ParameterClassificationResult Error = new(IsError: true, default);
     }
 }

@@ -69,14 +69,14 @@ public sealed class MinimalApiParityTests : IntegrationTestBase
     [Fact]
     public async Task Returning_T_From_POST_Returns_200()
     {
-        var response = await Client.PostAsync("/parity/return-t-post", null, TestContext.Current.CancellationToken);
+        var response = await Client.PostAsync("/parity/return-t-post", content: null, TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Explicit_Created_TypedResult_Returns_201()
     {
-        var response = await Client.PostAsync("/parity/created", null, TestContext.Current.CancellationToken);
+        var response = await Client.PostAsync("/parity/created", content: null, TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 

@@ -21,7 +21,7 @@ public static partial class Descriptors
         "(c) accepting the loss and adding [ProducesResponseType] attributes manually if OpenAPI matters.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE023 — Error factory method does not map to a known ErrorType.</summary>
     public static readonly DiagnosticDescriptor UnknownErrorFactory = new(
@@ -30,7 +30,7 @@ public static partial class Descriptors
         "Error.Or factory method '{0}' is not a known ErrorType. Supported types: Failure, Unexpected, Validation, Conflict, NotFound, Unauthorized, Forbidden.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>
     ///     EOE024 — endpoint calls an interface/abstract method returning ErrorOr&lt;T&gt; without
@@ -44,5 +44,5 @@ public static partial class Descriptors
         "OpenAPI cannot infer errors through interfaces.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 }

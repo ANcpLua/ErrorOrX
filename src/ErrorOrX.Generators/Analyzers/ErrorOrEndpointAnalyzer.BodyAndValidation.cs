@@ -44,7 +44,8 @@ public sealed partial class ErrorOrEndpointAnalyzer
         }
 
         // Multiple [FromBody] is always an error
-        if (bodyCount > 1) return bodyCount;
+        if (bodyCount > 1)
+            return bodyCount;
 
         // Otherwise return number of distinct body source buckets used
         return (bodyCount > 0 ? 1 : 0) + (hasFromForm ? 1 : 0) + (hasStream ? 1 : 0);
@@ -76,7 +77,8 @@ public sealed partial class ErrorOrEndpointAnalyzer
     {
         foreach (var param in method.Parameters)
         {
-            if (!ErrorOrContext.HasValidationNeeds(param)) continue;
+            if (!ErrorOrContext.HasValidationNeeds(param))
+                continue;
 
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.ValidationUsesReflection,

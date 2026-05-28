@@ -132,6 +132,7 @@ internal static class ApiVersioningValidator
         if (!rawClassVersions.IsDefaultOrEmpty)
         {
             foreach (var version in rawClassVersions)
+            {
                 if (!IsValidVersionFormat(version) && reported.Add(version))
                 {
                     diagnostics.Add(DiagnosticInfo.Create(
@@ -139,11 +140,13 @@ internal static class ApiVersioningValidator
                         location,
                         version));
                 }
+            }
         }
 
         if (!rawMethodVersions.IsDefaultOrEmpty)
         {
             foreach (var version in rawMethodVersions)
+            {
                 if (!IsValidVersionFormat(version) && reported.Add(version))
                 {
                     diagnostics.Add(DiagnosticInfo.Create(
@@ -151,6 +154,7 @@ internal static class ApiVersioningValidator
                         location,
                         version));
                 }
+            }
         }
     }
 

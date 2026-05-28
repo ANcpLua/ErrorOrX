@@ -218,7 +218,7 @@ internal static class RouteValidator
         var location = method.Locations.FirstOrDefault() ?? Location.None;
 
         // Pass diagnostics to detect duplicate route parameter bindings (EOE032)
-        var methodParamsByRouteName = BuildRouteParameterLookup(methodParams, diagnostics, location, true);
+        var methodParamsByRouteName = BuildRouteParameterLookup(methodParams, diagnostics, location, requireTypeFqn: true);
 
         foreach (var rp in routeParams)
             ValidateRouteConstraint(rp, methodParamsByRouteName, location, diagnostics);
@@ -236,7 +236,7 @@ internal static class RouteValidator
         ImmutableArray<RouteMethodParameterInfo> methodParams,
         bool requireTypeFqn = false)
     {
-        return BuildRouteParameterLookup(methodParams, null, Location.None, requireTypeFqn);
+        return BuildRouteParameterLookup(methodParams, diagnostics: null, Location.None, requireTypeFqn);
     }
 
     /// <summary>

@@ -11,7 +11,7 @@ public static partial class Descriptors
         "Route '{0}' has parameter '{{{1}}}' but no method parameter captures it",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE004 — same route + HTTP method registered by multiple handlers (generator-only, cross-file).</summary>
     public static readonly DiagnosticDescriptor DuplicateRoute = new(
@@ -20,7 +20,7 @@ public static partial class Descriptors
         "Route '{0} {1}' is already registered by '{2}.{3}'",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE005 — route pattern syntax is invalid.</summary>
     public static readonly DiagnosticDescriptor InvalidRoutePattern = new(
@@ -29,7 +29,7 @@ public static partial class Descriptors
         "Route pattern '{0}' is invalid: {1}",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE020 — route constraint type does not match the bound method parameter (e.g., {id:int} bound to a Guid).</summary>
     public static readonly DiagnosticDescriptor RouteConstraintTypeMismatch = new(
@@ -38,7 +38,7 @@ public static partial class Descriptors
         "Route parameter '{{{0}:{1}}}' expects {2}, but method parameter '{3}' is {4}",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE032 — multiple method parameters bind to the same route parameter; only the first is used.</summary>
     public static readonly DiagnosticDescriptor DuplicateRouteParameterBinding = new(
@@ -47,5 +47,5 @@ public static partial class Descriptors
         "Multiple parameters bind to route parameter '{0}'. Only the first parameter ('{1}') will be bound; '{2}' will be ignored.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 }

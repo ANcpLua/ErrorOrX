@@ -58,11 +58,13 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethod(in SymbolAnalysisContext context)
     {
-        if (context.Symbol is not IMethodSymbol method) return;
+        if (context.Symbol is not IMethodSymbol method)
+            return;
 
         // Find ErrorOr endpoint attributes
         var endpointAttributes = GetEndpointAttributes(method);
-        if (endpointAttributes.Count is 0) return;
+        if (endpointAttributes.Count is 0)
+            return;
 
         // EOE002: Handler must be static
         if (!method.IsStatic)
@@ -108,7 +110,8 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
         }
 
         // If pattern is invalid, skip further route analysis
-        if (patternDiagnostics.Count > 0) return;
+        if (patternDiagnostics.Count > 0)
+            return;
 
         // Parse verb once at method scope — null for custom/unrecognized HTTP methods
         var verb = HttpVerbExtensions.ParseMethodString(httpMethod);
@@ -198,7 +201,8 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass?.Name is not { } attrName) continue;
+            if (attr.AttributeClass?.Name is not { } attrName)
+                continue;
 
             string? httpMethod = null;
             var pattern = "/";
@@ -224,17 +228,20 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 // Generic endpoint attribute - extract HTTP method from first constructor arg
                 case "ErrorOrEndpointAttribute" or "ErrorOrEndpoint":
                 {
-                    if (attr.ConstructorArguments is [{ Value: string m }, ..]) httpMethod = m.ToUpperInvariant();
+                    if (attr.ConstructorArguments is [{ Value: string m }, ..])
+                        httpMethod = m.ToUpperInvariant();
 
                     break;
                 }
             }
 
-            if (httpMethod is null) continue;
+            if (httpMethod is null)
+                continue;
 
             // Extract pattern from constructor arguments
             var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
-            if (attr.GetConstructorArgument<string>(patternIndex) is { } p) pattern = p;
+            if (attr.GetConstructorArgument<string>(patternIndex) is { } p)
+                pattern = p;
 
             var location = attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                            ?? method.Locations.FirstOrDefault()
@@ -248,10 +255,12 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
 
     private static bool IsValidReturnType(ITypeSymbol returnType)
     {
-        if (returnType is not INamedTypeSymbol named) return false;
+        if (returnType is not INamedTypeSymbol named)
+            return false;
 
         // Direct ErrorOr<T>
-        if (IsErrorOr(named)) return true;
+        if (IsErrorOr(named))
+            return true;
 
         // Task<ErrorOr<T>> or ValueTask<ErrorOr<T>>
         if (named.Name is "Task" or "ValueTask" && named is { IsGenericType: true, TypeArguments.Length: > 0 })

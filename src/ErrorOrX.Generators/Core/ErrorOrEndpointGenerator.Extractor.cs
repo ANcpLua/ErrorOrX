@@ -26,7 +26,7 @@ public sealed partial class ErrorOrEndpointGenerator
         var isAsync = resultType is not null;
 
         if (!IsErrorOrType(unwrapped, out var errorOrType))
-            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload);
+            return new ErrorOrReturnTypeInfo(SuccessTypeFqn: null, IsAsync: false, IsSse: false, SseItemTypeFqn: null, SuccessKind.Payload);
 
         var innerType = errorOrType.TypeArguments[0];
 
@@ -41,7 +41,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // EOE018: Private/protected types cannot be accessed by generated code
         if (innerType.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
         {
-            return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, true,
+            return new ErrorOrReturnTypeInfo(SuccessTypeFqn: null, IsAsync: false, IsSse: false, SseItemTypeFqn: null, SuccessKind.Payload, IdPropertyName: null, IsObjectReturn: false, IsInaccessibleType: true,
                 innerType.ToDisplayString(), innerType.DeclaredAccessibility.ToString().ToLowerInvariant());
         }
 
@@ -49,15 +49,15 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             // EOE019: Type parameters (open generics) cannot be used
             case ITypeParameterSymbol typeParam:
-                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                    null, null, true, typeParam.Name);
+                return new ErrorOrReturnTypeInfo(SuccessTypeFqn: null, IsAsync: false, IsSse: false, SseItemTypeFqn: null, SuccessKind.Payload, IdPropertyName: null, IsObjectReturn: false, IsInaccessibleType: false,
+InaccessibleTypeName: null, InaccessibleTypeAccessibility: null, IsTypeParameter: true, typeParam.Name);
             // Also check if the inner type contains type parameters (e.g., List<T>)
             case INamedTypeSymbol namedInner when
                 namedInner.TypeArguments.Any(static t => t is ITypeParameterSymbol):
             {
                 var firstTypeParam = namedInner.TypeArguments.First(static t => t is ITypeParameterSymbol);
-                return new ErrorOrReturnTypeInfo(null, false, false, null, SuccessKind.Payload, null, false, false,
-                    null, null, true, firstTypeParam.Name);
+                return new ErrorOrReturnTypeInfo(SuccessTypeFqn: null, IsAsync: false, IsSse: false, SseItemTypeFqn: null, SuccessKind.Payload, IdPropertyName: null, IsObjectReturn: false, IsInaccessibleType: false,
+InaccessibleTypeName: null, InaccessibleTypeAccessibility: null, IsTypeParameter: true, firstTypeParam.Name);
             }
         }
 
@@ -78,19 +78,19 @@ public sealed partial class ErrorOrEndpointGenerator
             {
                 var sseDataFqn = sseDataType.GetFullyQualifiedName();
                 var asyncEnumFqn = innerType.GetFullyQualifiedName();
-                return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, true, sseDataFqn, kind);
+                return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, IsSse: true, sseDataFqn, kind);
             }
             else
             {
                 var elementFqn = elementType.GetFullyQualifiedName();
                 var asyncEnumFqn = innerType.GetFullyQualifiedName();
-                return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, true, elementFqn, kind);
+                return new ErrorOrReturnTypeInfo(asyncEnumFqn, isAsync, IsSse: true, elementFqn, kind);
             }
         }
 
         var successTypeFqn = innerType.GetFullyQualifiedName();
         var idPropertyName = DetectIdProperty(innerType);
-        return new ErrorOrReturnTypeInfo(successTypeFqn, isAsync, false, null, kind, idPropertyName, isObjectReturn);
+        return new ErrorOrReturnTypeInfo(successTypeFqn, isAsync, IsSse: false, SseItemTypeFqn: null, kind, idPropertyName, isObjectReturn);
     }
 
     /// <summary>

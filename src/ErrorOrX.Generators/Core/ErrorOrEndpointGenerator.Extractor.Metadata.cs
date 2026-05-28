@@ -249,13 +249,13 @@ public sealed partial class ErrorOrEndpointGenerator
                 return ParseVersionString(versionString, isDeprecated);
             // ApiVersion(int majorVersion, int minorVersion)
             case [{ Value: int major }, { Value: int minor }]:
-                return new ApiVersionInfo(major, minor, null, isDeprecated);
+                return new ApiVersionInfo(major, minor, Status: null, isDeprecated);
             // ApiVersion(double version) - e.g., 1.0
             case [{ Value: double doubleVersion }]:
             {
                 var majorPart = (int)doubleVersion;
                 var minorPart = (int)((doubleVersion - majorPart) * 10);
-                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, null, isDeprecated);
+                return new ApiVersionInfo(majorPart, minorPart > 0 ? minorPart : null, Status: null, isDeprecated);
             }
             default:
                 return null;

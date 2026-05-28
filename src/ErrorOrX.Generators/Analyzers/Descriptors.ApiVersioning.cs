@@ -11,7 +11,7 @@ public static partial class Descriptors
         "Endpoint '{0}' is marked [ApiVersionNeutral] but also has [MapToApiVersion]. Remove one or the other.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE028 — endpoint maps to an API version not declared by [ApiVersion] on the class.</summary>
     public static readonly DiagnosticDescriptor MappedVersionNotDeclared = new(
@@ -20,7 +20,7 @@ public static partial class Descriptors
         "Endpoint '{0}' maps to version '{1}' which is not declared in [ApiVersion]. Add [ApiVersion(\"{1}\")] to the class.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE029 — [ApiVersion] used but Asp.Versioning.Http package is not referenced.</summary>
     public static readonly DiagnosticDescriptor ApiVersioningPackageNotReferenced = new(
@@ -29,7 +29,7 @@ public static partial class Descriptors
         "Endpoint '{0}' uses API versioning but Asp.Versioning.Http package is not referenced",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE030 — endpoint has no [ApiVersion] but other endpoints in the project use versioning.</summary>
     public static readonly DiagnosticDescriptor EndpointMissingVersioning = new(
@@ -39,7 +39,7 @@ public static partial class Descriptors
         "Add [ApiVersion(\"X.Y\")] or [ApiVersionNeutral] to declare its version scope.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE031 — [ApiVersion] string has invalid format; use "major.minor" or "major".</summary>
     public static readonly DiagnosticDescriptor InvalidApiVersionFormat = new(
@@ -48,5 +48,5 @@ public static partial class Descriptors
         "[ApiVersion(\"{0}\")] has invalid format. Use \"major.minor\" (e.g., \"1.0\") or \"major\" (e.g., \"2\").",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 }

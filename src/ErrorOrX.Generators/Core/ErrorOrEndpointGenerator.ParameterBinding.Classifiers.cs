@@ -195,15 +195,15 @@ public sealed partial class ErrorOrEndpointGenerator
                 default));
         }
 
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.Form,
             meta.BoundName,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-            false,
-            null,
+IsCollection: false,
+CollectionItemTypeFqn: null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,
@@ -295,15 +295,15 @@ public sealed partial class ErrorOrEndpointGenerator
             children.Add(result.Parameter);
         }
 
-        return new ParameterClassificationResult(false, new EndpointParameter(
+        return new ParameterClassificationResult(IsError: false, new EndpointParameter(
             meta.Name,
             meta.TypeFqn,
             ParameterSource.AsParameters,
-            null,
+KeyName: null,
             meta.IsNullable,
             meta.IsNonNullableValueType,
-            false,
-            null,
+IsCollection: false,
+CollectionItemTypeFqn: null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,

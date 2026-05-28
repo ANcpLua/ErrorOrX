@@ -11,7 +11,7 @@ public static partial class Descriptors
         "Parameter '{0}' with [FromRoute] must be a primitive type or implement TryParse. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE011 — [FromQuery] parameter type is not a primitive or collection of primitives.</summary>
     public static readonly DiagnosticDescriptor InvalidFromQueryType = new(
@@ -20,7 +20,7 @@ public static partial class Descriptors
         "Parameter '{0}' with [FromQuery] must be a primitive or collection of primitives. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE012 — [AsParameters] used on a non-class/struct type.</summary>
     public static readonly DiagnosticDescriptor InvalidAsParametersType = new(
@@ -29,7 +29,7 @@ public static partial class Descriptors
         "Parameter '{0}' with [AsParameters] must be a class or struct type, not '{1}'",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE013 — [AsParameters] type has no accessible constructor.</summary>
     public static readonly DiagnosticDescriptor AsParametersNoConstructor = new(
@@ -38,7 +38,7 @@ public static partial class Descriptors
         "Type '{0}' used with [AsParameters] must have an accessible constructor",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE014 — [FromHeader] type must be string, a primitive with TryParse, or a collection thereof.</summary>
     public static readonly DiagnosticDescriptor InvalidFromHeaderType = new(
@@ -47,7 +47,7 @@ public static partial class Descriptors
         "Parameter '{0}' with [FromHeader] must be string, a primitive with TryParse, or a collection thereof. Type '{1}' is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE016 — [AsParameters] type has a nested [AsParameters] property; recursive expansion not supported.</summary>
     public static readonly DiagnosticDescriptor NestedAsParametersNotSupported = new(
@@ -56,7 +56,7 @@ public static partial class Descriptors
         "Type '{0}' used with [AsParameters] has property '{1}' also marked [AsParameters]. Nested parameter expansion is not supported.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE017 — [AsParameters] cannot be applied to a nullable parameter (expansion needs a concrete instance).</summary>
     public static readonly DiagnosticDescriptor NullableAsParametersNotSupported = new(
@@ -65,7 +65,7 @@ public static partial class Descriptors
         "Parameter '{0}' with [AsParameters] cannot be nullable. Remove the '?' or use a non-nullable type.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>
     ///     EOE021 — complex-type parameter on a bodyless verb requires explicit [AsParameters], [FromBody], or
@@ -79,5 +79,5 @@ public static partial class Descriptors
         "or [FromServices] for DI injection.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 }

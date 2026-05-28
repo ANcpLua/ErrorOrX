@@ -11,7 +11,7 @@ public static partial class Descriptors
         "Type '{0}' used by '{1}' is not in any [JsonSerializable] context. Add [JsonSerializable(typeof({0}))] to your JsonSerializerContext.",
         Category,
         DiagnosticSeverity.Error,
-        true,
+        isEnabledByDefault: true,
         helpLinkUri: AotRdgUrl);
 
     /// <summary>EOE025 — user's JsonSerializerContext is missing CamelCase property naming policy.</summary>
@@ -22,7 +22,7 @@ public static partial class Descriptors
         "Add [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)] to the class.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE026 — no JsonSerializerContext found but endpoint uses a request body; AOT will fail without one.</summary>
     public static readonly DiagnosticDescriptor MissingJsonContextForBody = new(
@@ -31,7 +31,7 @@ public static partial class Descriptors
         "Endpoint '{0}' uses '{1}' as request body but no JsonSerializerContext was found. Create one with [JsonSerializable(typeof({1}))].",
         Category,
         DiagnosticSeverity.Error,
-        true,
+        isEnabledByDefault: true,
         helpLinkUri: AotRdgUrl);
 
     /// <summary>
@@ -46,7 +46,7 @@ public static partial class Descriptors
         "Consider FluentValidation with source generators or manual validation.",
         Category,
         DiagnosticSeverity.Info,
-        true,
+        isEnabledByDefault: true,
         helpLinkUri: TrimWarningsUrl);
 
     /// <summary>EOE035 — alias for EOE025; reports the CamelCase policy gap on a specific user-defined JsonSerializerContext.</summary>
@@ -56,7 +56,7 @@ public static partial class Descriptors
         "JsonSerializerContext '{0}' should use PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase for ASP.NET Core compatibility",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>
     ///     EOE036 — JsonSerializerContext is missing ProblemDetails and HttpValidationProblemDetails (needed for error
@@ -69,5 +69,5 @@ public static partial class Descriptors
         "[JsonSerializable(typeof(HttpValidationProblemDetails))] for error responses",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 }

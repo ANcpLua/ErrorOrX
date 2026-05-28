@@ -14,7 +14,7 @@ public static partial class Descriptors
         "Method '{0}' must return ErrorOr<T>, Task<ErrorOr<T>>, or ValueTask<ErrorOr<T>>",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE002 — handler methods must be static for source generation.</summary>
     public static readonly DiagnosticDescriptor NonStaticHandler = new(
@@ -23,7 +23,7 @@ public static partial class Descriptors
         "Method '{0}' must be static. Instance methods cannot be used with ErrorOr.Endpoints source generation.",
         Category,
         DiagnosticSeverity.Error,
-        true);
+        isEnabledByDefault: true);
 
     /// <summary>EOE033 — handler method name should follow PascalCase convention.</summary>
     public static readonly DiagnosticDescriptor MethodNameNotPascalCase = new(
@@ -32,5 +32,5 @@ public static partial class Descriptors
         "Method '{0}' should follow PascalCase naming convention. Consider renaming to '{1}'.",
         Category,
         DiagnosticSeverity.Warning,
-        true);
+        isEnabledByDefault: true);
 }

@@ -194,7 +194,9 @@ public readonly record struct Error
         {
             if (!otherMetadata.TryGetValue(kvp.Key, out var otherValue) ||
                 !Equals(kvp.Value, otherValue))
+            {
                 return false;
+            }
         }
 
         return true;
