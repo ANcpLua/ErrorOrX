@@ -75,6 +75,12 @@ public sealed partial class ErrorOrEndpointAnalyzer
         in SymbolAnalysisContext context,
         IMethodSymbol method)
     {
+        // EOE034 applies only to the reflection (Validator.TryValidateObject) path. When the consumer
+        // references Microsoft.Extensions.Validation, the generator emits source-generated
+        // ValidatableTypeInfo.ValidateAsync (no reflection), so the advisory must not fire.
+        if (new ErrorOrContext(context.Compilation).HasValidationResolverSupport)
+            return;
+
         foreach (var param in method.Parameters)
         {
             if (!ErrorOrContext.HasValidationNeeds(param))

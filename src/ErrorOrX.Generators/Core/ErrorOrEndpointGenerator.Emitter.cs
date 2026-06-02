@@ -160,7 +160,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
         // Emit invokers for ALL endpoints (grouped and ungrouped)
         for (var i = 0; i < endpoints.Length; i++)
-            EmitInvoker(code, endpoints[i], i, maxArity);
+            EmitInvoker(code, endpoints[i], i, maxArity, hasValidatableTypes);
 
         EmitSupportMethods(code);
         code.AppendLine("    }");

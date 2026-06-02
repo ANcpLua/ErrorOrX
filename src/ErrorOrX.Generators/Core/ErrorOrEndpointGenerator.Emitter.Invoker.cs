@@ -13,19 +13,39 @@ namespace ErrorOr.Generators;
 /// </summary>
 public sealed partial class ErrorOrEndpointGenerator
 {
-    private static void EmitInvoker(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity)
+    private static void EmitInvoker(StringBuilder code, in EndpointDescriptor ep, int index, int maxArity,
+        bool aotValidation)
     {
-        var ctx = ComputeInvokerContext(in ep, index, maxArity);
-        var (bodyCode, usesBindFail) = EmitBodyCode(in ep, in ctx);
+        var ctx = ComputeInvokerContext(in ep, index, maxArity, aotValidation);
+        var (bodyCode, usesBindFail) = EmitBodyCode(in ep, in ctx, aotValidation);
 
         EmitWrapperMethod(code, in ctx);
         EmitCoreMethod(code, bodyCode, in ctx, usesBindFail);
     }
 
+    /// <summary>
+    ///     True when AOT-safe validation applies to this endpoint — the consumer references
+    ///     Microsoft.Extensions.Validation (<paramref name="aotValidation" />) AND at least one parameter
+    ///     has a source-generated <c>ValidatableTypeInfo</c> (a type with validatable properties).
+    ///     Such a parameter is validated via the async <c>ValidatableTypeInfo.ValidateAsync</c>, which
+    ///     forces the core method to be async.
+    /// </summary>
+    private static bool UsesAotValidation(in EndpointDescriptor ep, bool aotValidation)
+    {
+        if (!aotValidation) return false;
+
+        foreach (var p in ep.HandlerParameters.AsImmutableArray())
+            if (p is { RequiresValidation: true, ValidatableProperties.IsDefaultOrEmpty: false })
+                return true;
+
+        return false;
+    }
+
     private static InvokerContext ComputeInvokerContext(
         in EndpointDescriptor ep,
         int index,
-        int maxArity)
+        int maxArity,
+        bool aotValidation)
     {
         var successInfo = ResultsUnionTypeBuilder.GetSuccessResponseInfo(
             ep.SuccessTypeFqn, ep.SuccessKind, ep.IsAcceptedResponse);
@@ -39,14 +59,15 @@ public sealed partial class ErrorOrEndpointGenerator
             ep.ErrorInference.DeclaredProducesErrors, hasBodyBinding, maxArity,
             ep.IsAcceptedResponse, ep.Middleware, ep.HasParameterValidation);
 
-        var needsAwait = ep.IsAsync || hasBodyBinding || ep.HasBindAsyncParam;
+        var needsAwait = ep.IsAsync || hasBodyBinding || ep.HasBindAsyncParam || UsesAotValidation(in ep, aotValidation);
 
         return new InvokerContext(successInfo, unionResult, hasFormBinding, hasBodyBinding, needsAwait, index);
     }
 
     private static (StringBuilder Code, bool UsesBindFail) EmitBodyCode(
         in EndpointDescriptor ep,
-        in InvokerContext ctx)
+        in InvokerContext ctx,
+        bool aotValidation)
     {
         var bodyCode = new StringBuilder();
         var usesBindFail = ctx.HasFormBinding;
@@ -54,7 +75,8 @@ public sealed partial class ErrorOrEndpointGenerator
         if (ctx.HasFormBinding) EmitFormContentTypeGuard(bodyCode);
 
         var args = new StringBuilder();
-        var validationParams = new List<(int Index, string ParamName)>();
+        var bclValidationParams = new List<(int Index, string ParamName)>();
+        var aotValidationParams = new List<(string ParamName, string TypeFqn)>();
         for (var i = 0; i < ep.HandlerParameters.Length; i++)
         {
             var param = ep.HandlerParameters[i];
@@ -63,11 +85,22 @@ public sealed partial class ErrorOrEndpointGenerator
 
             args.Append(BindingCodeEmitter.BuildArgumentExpression(in param, $"p{i}"));
 
-            if (param.RequiresValidation) validationParams.Add((i, $"p{i}"));
+            if (!param.RequiresValidation) continue;
+
+            // AOT-safe path when the consumer references Microsoft.Extensions.Validation AND a
+            // source-generated ValidatableTypeInfo exists for this type (validatable properties).
+            // Otherwise fall back to reflection-based Validator.TryValidateObject (EOE034 territory).
+            if (aotValidation && !param.ValidatableProperties.IsDefaultOrEmpty)
+                aotValidationParams.Add(($"p{i}", param.TypeFqn));
+            else
+                bclValidationParams.Add((i, $"p{i}"));
         }
 
-        if (validationParams.Count > 0)
-            EmitBclValidation(bodyCode, validationParams, ctx.UnionResult.ReturnTypeFqn, ctx.NeedsAwait);
+        if (bclValidationParams.Count > 0)
+            EmitBclValidation(bodyCode, bclValidationParams, ctx.UnionResult.ReturnTypeFqn, ctx.NeedsAwait);
+
+        if (aotValidationParams.Count > 0)
+            EmitAotValidation(bodyCode, aotValidationParams);
 
         var awaitKeyword = ep.IsAsync ? "await " : "";
         bodyCode.Append("            var result = ").Append(awaitKeyword).Append(ep.HandlerContainingTypeFqn)
@@ -165,6 +198,39 @@ public sealed partial class ErrorOrEndpointGenerator
                 : $"Task.FromResult<{returnTypeFqn}>({WellKnownTypes.Fqn.TypedResults.ValidationProblem}(validationDict))";
             code.AppendLine($"                return {returnExpr};");
             code.AppendLine("            }");
+        }
+
+        code.AppendLine();
+    }
+
+    /// <summary>
+    ///     Emits AOT-safe validation using the source-generated <c>ValidatableTypeInfo</c>
+    ///     (Microsoft.Extensions.Validation) — no reflection, so EOE034 does not apply. The generated
+    ///     <c>{type}_TypeInfo.Instance.ValidateAsync</c> walks the source-generated property metadata and
+    ///     collects errors into <c>ValidateContext.ValidationErrors</c>. Always async (the core method is
+    ///     forced async via <see cref="UsesAotValidation" />).
+    /// </summary>
+    private static void EmitAotValidation(StringBuilder code, List<(string ParamName, string TypeFqn)> validationParams)
+    {
+        code.AppendLine();
+        code.AppendLine(
+            "            // AOT-safe validation (Microsoft.Extensions.Validation, source-generated, no reflection)");
+
+        foreach (var (paramName, typeFqn) in validationParams)
+        {
+            var safeId = typeFqn.SanitizeIdentifier();
+            code.AppendLine($"            var {paramName}ValidateContext = new {WellKnownTypes.Fqn.ValidateContext}");
+            code.AppendLine("            {");
+            code.AppendLine(
+                $"                ValidationContext = new {WellKnownTypes.Fqn.ValidationContext}({paramName}!, ctx.RequestServices, null),");
+            code.AppendLine(
+                $"                ValidationOptions = ctx.RequestServices.GetRequiredService<{WellKnownTypes.Fqn.IOptions}<{WellKnownTypes.Fqn.ValidationOptions}>>().Value");
+            code.AppendLine("            };");
+            code.AppendLine(
+                $"            await {WellKnownTypes.Fqn.GeneratedValidatableInfoNamespace}.{safeId}_TypeInfo.Instance.ValidateAsync({paramName}!, {paramName}ValidateContext, ctx.RequestAborted);");
+            code.AppendLine($"            if ({paramName}ValidateContext.ValidationErrors is {{ Count: > 0 }})");
+            code.AppendLine(
+                $"                return {WellKnownTypes.Fqn.TypedResults.ValidationProblem}({paramName}ValidateContext.ValidationErrors);");
         }
 
         code.AppendLine();

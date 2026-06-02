@@ -165,6 +165,9 @@ internal static class WellKnownTypes
 
         public const string IValidatableInfo = "global::Microsoft.Extensions.Validation.IValidatableInfo";
         public const string ValidationOptions = "global::Microsoft.Extensions.Validation.ValidationOptions";
+        public const string ValidateContext = "global::Microsoft.Extensions.Validation.ValidateContext";
+        public const string IOptions = "global::Microsoft.Extensions.Options.IOptions";
+        public const string GeneratedValidatableInfoNamespace = "global::ErrorOr.Generated";
 
         public const string JsonException = "global::System.Text.Json.JsonException";
 
