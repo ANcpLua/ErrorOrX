@@ -46,12 +46,21 @@ public sealed partial class ErrorOrEndpointGenerator
             $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
         code.AppendLine("            };");
         code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
+        code.AppendLine("            ApplyProblemMetadata(problem, first);");
         code.AppendLine("            return problem.Status switch");
         code.AppendLine("            {");
         foreach (var caseExpr in ErrorMapping.GenerateStatusToFactoryCases())
             code.AppendLine($"                {caseExpr},");
         code.AppendLine($"                _ => {ErrorMapping.GetDefaultProblemFactory()}");
         code.AppendLine("            };");
+        code.AppendLine("        }");
+        code.AppendLine();
+        code.AppendLine(
+            $"        private static void ApplyProblemMetadata({WellKnownTypes.Fqn.ProblemDetails} problem, {WellKnownTypes.Fqn.Error} error)");
+        code.AppendLine("        {");
+        code.AppendLine("            if (error.Metadata is { Count: > 0 } metadata)");
+        code.AppendLine("                foreach (var kvp in metadata)");
+        code.AppendLine("                    problem.Extensions[kvp.Key] = kvp.Value;");
         code.AppendLine("        }");
     }
 

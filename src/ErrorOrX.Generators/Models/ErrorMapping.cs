@@ -170,12 +170,14 @@ internal static class ErrorMapping
     }
 
     /// <summary>
-    ///     Gets the default Problem() factory expression for unknown status codes.
+    ///     Gets the default Problem() factory expression for status codes not in the factory table
+    ///     (e.g. a custom 5xx such as 503 via <c>Error.Custom</c>). Passes the already-built
+    ///     <c>problem</c> so its Status, Type, and Extensions (error metadata) are preserved instead
+    ///     of being rebuilt from scalars (which dropped Extensions).
     /// </summary>
     public static string GetDefaultProblemFactory()
     {
-        return
-            $"{WellKnownTypes.Fqn.TypedResults.Problem}(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)";
+        return $"{WellKnownTypes.Fqn.TypedResults.Problem}(problem)";
     }
 
     /// <summary>
