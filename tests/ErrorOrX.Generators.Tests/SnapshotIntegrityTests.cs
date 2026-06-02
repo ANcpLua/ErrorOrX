@@ -4,6 +4,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using ANcpLua.Roslyn.Utilities;
 
 namespace ErrorOrX.Generators.Tests;
 
@@ -19,10 +20,6 @@ namespace ErrorOrX.Generators.Tests;
 ///         <c>Diagnostics:</c> array — OR the filename must contain one of the project's
 ///         negative-case markers (<c>_No_Diagnostic</c>, <c>_No_Diagnostics</c>, <c>_Is_Valid</c>,
 ///         <c>_Do_Not_Report</c>, <c>_Allowed</c>) to opt out as an intentional absence test.
-///     </para>
-///     <para>
-///         Snapshots tracked under <see cref="s_pendingDecisions" /> are temporarily skipped
-///         pending a design decision; that list should empty out as those decisions land.
 ///     </para>
 /// </remarks>
 public class SnapshotIntegrityTests
@@ -43,11 +40,6 @@ public class SnapshotIntegrityTests
         "_Allowed"
     ];
 
-    // Snapshots pending a design decision before they can either fire their named diagnostic
-    // OR be renamed to the negative-case convention. Keep this list small and time-bounded —
-    // every entry is a known-broken test silenced for review, not a long-term suppression.
-    private static readonly HashSet<string> s_pendingDecisions = new(StringComparer.Ordinal);
-
     [Fact]
     public void EOE_Snapshots_Contain_Their_Own_Diagnostic_Id()
     {
@@ -55,28 +47,15 @@ public class SnapshotIntegrityTests
         Assert.True(Directory.Exists(snapshotsDir),
             $"Snapshots directory not found at '{snapshotsDir}'.");
 
-        var failures = new List<string>();
-
-        foreach (var path in Directory.EnumerateFiles(snapshotsDir, "*.verified.txt"))
-        {
-            var filename = Path.GetFileName(path);
-
-            if (s_pendingDecisions.Contains(filename))
-                continue;
-
-            if (IsNegativeCase(filename))
-                continue;
-
-            var match = s_eoeIdInFilename.Match(filename);
-            if (!match.Success)
-                continue;
-
-            var promisedId = $"EOE{match.Groups["id"].Value}";
-            var content = File.ReadAllText(path);
-
-            if (!content.Contains($"Id: {promisedId}", StringComparison.Ordinal))
-                failures.Add($"  {filename} -> promises {promisedId} but Diagnostics array does not contain it");
-        }
+        var failures = Directory.EnumerateFiles(snapshotsDir, "*.verified.txt")
+            .Select(static path => (Filename: Path.GetFileName(path), Path: path))
+            .Where(static f => !IsNegativeCase(f.Filename))
+            .Select(static f => (f.Filename, Match: s_eoeIdInFilename.Match(f.Filename), f.Path))
+            .Where(static f => f.Match.Success)
+            .Select(static f => (f.Filename, PromisedId: $"EOE{f.Match.Groups["id"].Value}", Content: File.ReadAllText(f.Path)))
+            .Where(static f => !f.Content.ContainsOrdinal($"Id: {f.PromisedId}"))
+            .Select(static f => $"  {f.Filename} -> promises {f.PromisedId} but Diagnostics array does not contain it")
+            .ToList();
 
         if (failures.Count > 0)
         {
@@ -92,16 +71,8 @@ public class SnapshotIntegrityTests
         }
     }
 
-    private static bool IsNegativeCase(string filename)
-    {
-        foreach (var marker in s_negativeCaseMarkers)
-        {
-            if (filename.Contains(marker, StringComparison.Ordinal))
-                return true;
-        }
-
-        return false;
-    }
+    private static bool IsNegativeCase(string filename) =>
+        s_negativeCaseMarkers.Any(marker => filename.ContainsOrdinal(marker));
 
     private static string GetCallerFilePath([CallerFilePath] string path = "") => path;
 }
