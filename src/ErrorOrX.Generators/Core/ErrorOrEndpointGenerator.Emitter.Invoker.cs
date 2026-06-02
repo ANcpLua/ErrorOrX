@@ -70,8 +70,8 @@ public sealed partial class ErrorOrEndpointGenerator
             EmitBclValidation(bodyCode, validationParams, ctx.UnionResult.ReturnTypeFqn, ctx.NeedsAwait);
 
         var awaitKeyword = ep.IsAsync ? "await " : "";
-        bodyCode.AppendLine(
-            $"            var result = {awaitKeyword}{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}({args});");
+        bodyCode.Append("            var result = ").Append(awaitKeyword).Append(ep.HandlerContainingTypeFqn)
+            .Append('.').Append(ep.HandlerMethodName).Append('(').Append(args).AppendLine(");");
 
         EmitErrorHandling(bodyCode, in ep, in ctx);
 

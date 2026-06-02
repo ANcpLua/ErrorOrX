@@ -56,7 +56,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in userContexts)
         {
             foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+                registeredTypes.Add(typeFqn);
         }
 
         // Find missing types
@@ -65,7 +65,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Check endpoint types
         foreach (var type in jsonTypes)
         {
-            if (!registeredTypes.Any(rt => type.TypeNamesEqual(rt)))
+            if (!registeredTypes.Any(type.TypeNamesEqual))
                 missingTypes.Add(type);
         }
 
