@@ -134,7 +134,7 @@ internal static partial class BindingCodeEmitter
 
         code.AppendLine($"{pad}var {dictName} = new {WellKnownTypes.Fqn.Dictionary}<string, string[]>();");
         code.AppendLine($"{pad}foreach (var {iteratorVar} in {iteratorSource})");
-        code.AppendLine($"{pad}{{");
+        code.Append(pad).AppendLine("{");
 
         if (filterExpr is not null) code.AppendLine($"{pad4}if ({filterExpr}) continue;");
 
@@ -143,12 +143,12 @@ internal static partial class BindingCodeEmitter
         code.AppendLine($"{pad4}if (!{dictName}.TryGetValue({keyExpr}, out var existing))");
         code.AppendLine($"{pad8}{dictName}[{keyExpr}] = new[] {{ {valueExpr} }};");
         code.AppendLine($"{pad4}else");
-        code.AppendLine($"{pad4}{{");
+        code.Append(pad4).AppendLine("{");
         code.AppendLine($"{pad8}var arr = new string[existing.Length + 1];");
         code.AppendLine($"{pad8}existing.CopyTo(arr, 0);");
         code.AppendLine($"{pad8}arr[existing.Length] = {valueExpr};");
         code.AppendLine($"{pad8}{dictName}[{keyExpr}] = arr;");
-        code.AppendLine($"{pad4}}}");
-        code.AppendLine($"{pad}}}");
+        code.Append(pad4).AppendLine("}");
+        code.Append(pad).AppendLine("}");
     }
 }

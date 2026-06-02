@@ -27,8 +27,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("        {");
         code.AppendLine($"            if (errors.Count is 0) return {WellKnownTypes.Fqn.TypedResults.Problem}();");
         code.AppendLine("            var hasValidation = false;");
-        code.AppendLine(
-            $"            for (var i = 0; i < errors.Count; i++) if (errors[i].Type == {WellKnownTypes.Fqn.ErrorType}.Validation) {{ hasValidation = true; break; }}");
+        code.Append("            for (var i = 0; i < errors.Count; i++) if (errors[i].Type == ").Append(WellKnownTypes.Fqn.ErrorType).AppendLine(".Validation) { hasValidation = true; break; }");
         code.AppendLine("            if (hasValidation)");
         code.AppendLine("            {");
         BindingCodeEmitter.EmitValidationDictBuilder(
@@ -42,8 +41,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("            {");
         code.AppendLine("                Title = first.Code,");
         code.AppendLine("                Detail = first.Description,");
-        code.AppendLine(
-            $"                Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
+        code.Append("                Status = first.Type switch { ").Append(ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)).AppendLine(" }");
         code.AppendLine("            };");
         code.AppendLine("            problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
         code.AppendLine("            ApplyProblemMetadata(problem, first);");

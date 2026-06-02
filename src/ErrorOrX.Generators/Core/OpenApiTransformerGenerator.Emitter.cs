@@ -70,7 +70,7 @@ public sealed partial class OpenApiTransformerGenerator
         // OpenApiDocument.Tags setter auto-wraps with OpenApiTagComparer.Instance
         // which handles deduplication by Name - no manual .Any() check needed
         code.AppendLine("        document.Tags ??= new HashSet<OpenApiTag>();");
-        code.AppendLine($"        document.Tags.Add(new OpenApiTag {{ Name = \"{tagName}\" }});");
+        code.Append("        document.Tags.Add(new OpenApiTag { Name = \"").Append(tagName).AppendLine("\" });");
         code.AppendLine("        return Task.CompletedTask;");
         code.AppendLine("    }");
         code.AppendLine("}");

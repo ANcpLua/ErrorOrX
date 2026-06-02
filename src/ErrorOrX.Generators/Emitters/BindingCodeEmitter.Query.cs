@@ -43,8 +43,7 @@ internal static partial class BindingCodeEmitter
         var usesBindFail = false;
         if (itemType.IsStringType())
         {
-            code.AppendLine(
-                $"                if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+            code.Append("                if (item is { Length: > 0 } validItem) ").Append(paramName).AppendLine("List.Add(validItem);");
         }
         else
         {
@@ -131,8 +130,7 @@ internal static partial class BindingCodeEmitter
             {
                 // Empty header values are dropped (BCL convention for HTTP collections); non-empty
                 // strings always succeed because the type IS string. No failure mode for strings.
-                code.AppendLine(
-                    $"                    if (item is {{ Length: > 0 }} validItem) {paramName}List.Add(validItem);");
+                code.Append("                    if (item is { Length: > 0 } validItem) ").Append(paramName).AppendLine("List.Add(validItem);");
             }
             else
             {

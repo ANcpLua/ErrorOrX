@@ -88,7 +88,7 @@ public sealed partial class ErrorOrEndpointGenerator
         foreach (var ctx in userContexts)
         {
             foreach (var typeFqn in ctx.SerializableTypes)
-            registeredTypes.Add(typeFqn);
+                registeredTypes.Add(typeFqn);
         }
 
         // Combine all needed types
@@ -109,7 +109,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             if (kvp.Key.IsPrimitiveJsonType()) continue;
 
-            var isRegistered = registeredTypes.Any(rt => kvp.Key.TypeNamesEqual(rt));
+            var isRegistered = registeredTypes.Any(kvp.Key.TypeNamesEqual);
             if (!isRegistered)
             {
                 var displayType = kvp.Key.StripGlobalPrefix();

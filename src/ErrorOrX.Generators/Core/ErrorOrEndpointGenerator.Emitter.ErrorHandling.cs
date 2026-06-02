@@ -78,8 +78,7 @@ public sealed partial class ErrorOrEndpointGenerator
         code.AppendLine("                {");
         code.AppendLine("                    Title = first.Code,");
         code.AppendLine("                    Detail = first.Description,");
-        code.AppendLine(
-            $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
+        code.Append("                    Status = first.Type switch { ").Append(ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)).AppendLine(" }");
         code.AppendLine("                };");
         code.AppendLine("                problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
         code.AppendLine("                ApplyProblemMetadata(problem, first);");

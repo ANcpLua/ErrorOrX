@@ -185,7 +185,6 @@ public sealed partial class ErrorOrEndpointGenerator
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
             code.AppendLine($"                => {returnExpr};");
-            code.AppendLine();
         }
         else
         {
@@ -206,8 +205,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
             code.AppendLine($"            static {returnType} BindFail(string param, string reason)");
             code.AppendLine($"                => {returnExpr};");
-            code.AppendLine();
         }
+
+        code.AppendLine();
     }
 
     private static void EmitBindFail415Helper(StringBuilder code, string returnTypeFqn, bool isAsync)
