@@ -31,6 +31,7 @@ dotnet_diagnostic.MA0049.severity = none # Type name ≠ namespace — ErrorOr i
 dotnet_diagnostic.MA0004.severity = none # ConfigureAwait — ASP.NET Core has no SynchronizationContext
 dotnet_diagnostic.MA0016.severity = none # Collection abstraction — contradicts CA1859 (use concrete types)
 dotnet_diagnostic.MA0051.severity = none # Method too long — source generators have legitimate long methods
+dotnet_diagnostic.MA0028.severity = none # Optimize StringBuilder — interpolated emit templates mirror the generated code 1:1 across ~143 sites; readability beats negligible build-time gen0 alloc (cf. MA0002)
 
 # Roslynator — suppress rules that fight ErrorOr<T> union-type semantics
 # RCS1084: "Use coalesce instead of conditional" rewrites

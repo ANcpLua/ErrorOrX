@@ -49,12 +49,20 @@ internal static class EndpointMetadataEmitter
         var bodyParam = ep.HandlerParameters.AsImmutableArray()
             .FirstOrDefault(static p => p.Source == ParameterSource.Body);
 
+        // Append form (not interpolation) so the emitted `new[] { "..." }` braces stay literal
+        // instead of needing `{{ }}` escaping.
         if (bodyParam.Name is not null)
-            code.AppendLine(
-                $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeJson}\" }}, typeof({bodyParam.TypeFqn})))");
+            code.Append(indent)
+                .Append(".WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] { \"")
+                .Append(WellKnownTypes.Constants.ContentTypeJson)
+                .Append("\" }, typeof(")
+                .Append(bodyParam.TypeFqn)
+                .AppendLine(")))");
         else if (ep.HasFormParams)
-            code.AppendLine(
-                $"{indent}.WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] {{ \"{WellKnownTypes.Constants.ContentTypeFormData}\" }}, typeof(object)))");
+            code.Append(indent)
+                .Append(".WithMetadata(new global::Microsoft.AspNetCore.Http.Metadata.AcceptsMetadata(new[] { \"")
+                .Append(WellKnownTypes.Constants.ContentTypeFormData)
+                .AppendLine("\" }, typeof(object)))");
     }
 
     /// <summary>
@@ -66,8 +74,10 @@ internal static class EndpointMetadataEmitter
         // SSE endpoints have special content type
         if (ep.Sse.IsSse)
         {
-            code.AppendLine(
-                $"{indent}.WithMetadata(new {WellKnownTypes.Fqn.ProducesResponseTypeMetadata}(200, null, new[] {{ \"text/event-stream\" }}))");
+            code.Append(indent)
+                .Append(".WithMetadata(new ")
+                .Append(WellKnownTypes.Fqn.ProducesResponseTypeMetadata)
+                .AppendLine("(200, null, new[] { \"text/event-stream\" }))");
             return;
         }
 
