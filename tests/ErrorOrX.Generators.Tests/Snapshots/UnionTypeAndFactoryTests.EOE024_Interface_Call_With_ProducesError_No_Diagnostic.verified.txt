@@ -166,6 +166,7 @@ namespace ErrorOr.Generated
                 Status = first.Type switch { global::ErrorOr.ErrorType.Validation => 400, global::ErrorOr.ErrorType.Unauthorized => 401, global::ErrorOr.ErrorType.Forbidden => 403, global::ErrorOr.ErrorType.NotFound => 404, global::ErrorOr.ErrorType.Conflict => 409, global::ErrorOr.ErrorType.Failure => 500, global::ErrorOr.ErrorType.Unexpected => 500, _ => (int)first.Type is >= 100 and <= 599 ? (int)first.Type : 500 }
             };
             problem.Type = $"https://httpstatuses.io/{problem.Status}";
+            ApplyProblemMetadata(problem, first);
             return problem.Status switch
             {
                 400 => global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(problem),
@@ -175,8 +176,15 @@ namespace ErrorOr.Generated
                 409 => global::Microsoft.AspNetCore.Http.TypedResults.Conflict(problem),
                 422 => global::Microsoft.AspNetCore.Http.TypedResults.UnprocessableEntity(problem),
                 500 => global::Microsoft.AspNetCore.Http.TypedResults.InternalServerError(problem),
-                _ => global::Microsoft.AspNetCore.Http.TypedResults.Problem(detail: first.Description, statusCode: problem.Status ?? 500, title: first.Code, type: problem.Type)
+                _ => global::Microsoft.AspNetCore.Http.TypedResults.Problem(problem)
             };
+        }
+
+        private static void ApplyProblemMetadata(global::Microsoft.AspNetCore.Mvc.ProblemDetails problem, global::ErrorOr.Error error)
+        {
+            if (error.Metadata is { Count: > 0 } metadata)
+                foreach (var kvp in metadata)
+                    problem.Extensions[kvp.Key] = kvp.Value;
         }
     }
 }

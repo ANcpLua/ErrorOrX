@@ -82,6 +82,7 @@ public sealed partial class ErrorOrEndpointGenerator
             $"                    Status = first.Type switch {{ {ErrorMapping.GenerateStatusSwitch(WellKnownTypes.Fqn.ErrorType)} }}");
         code.AppendLine("                };");
         code.AppendLine("                problem.Type = $\"https://httpstatuses.io/{problem.Status}\";");
+        code.AppendLine("                ApplyProblemMetadata(problem, first);");
         code.AppendLine();
     }
 
