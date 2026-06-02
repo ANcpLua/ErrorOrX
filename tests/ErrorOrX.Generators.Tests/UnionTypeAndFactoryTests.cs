@@ -13,11 +13,8 @@ public class UnionTypeAndFactoryTests : GeneratorTestBase
     [Fact]
     public Task EOE023_Error_Custom_Is_Known_Factory_No_Diagnostic()
     {
-        // Error.Custom(code, ...) is a first-class recognized factory (ErrorInference.cs:147),
-        // so EOE023 should NOT fire here. The snapshot intentionally records EOE022 only
-        // (the custom code pushes the Results<...> union arity over 6). EOE023's actual
-        // reachable path — user-defined Error shadowing types via the semantic fallback at
-        // ErrorInference.cs:248-253 — deserves its own fixture, tracked separately.
+        // Error.Custom is a recognized factory, so EOE023 must not fire; this snapshot records
+        // EOE022 only (the custom code pushes the Results<...> union arity over 6).
         const string Source = """
                               using ErrorOr;
 

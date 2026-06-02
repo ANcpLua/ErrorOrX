@@ -1,3 +1,5 @@
+using ANcpLua.Roslyn.Utilities;
+
 namespace ErrorOrX.Generators.Tests;
 
 /// <summary>
@@ -146,7 +148,7 @@ public class MiddlewareEmissionCorsAndMetadataTests : GeneratorTestBase
         // Also verify the endpoint builder chain includes auth
         var lines = generated.Split('\n');
         var endpointLine = lines.FirstOrDefault(static l =>
-            l.Contains("MapGet", StringComparison.Ordinal) && l.Contains("/admin/secrets", StringComparison.Ordinal));
+            l.ContainsOrdinal("MapGet") && l.ContainsOrdinal("/admin/secrets"));
 
         // The RequireAuthorization should be in the fluent chain
         generated.Should().Match("*MapGet*admin/secrets*RequireAuthorization*SuperAdmin*");
