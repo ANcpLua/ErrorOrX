@@ -23,11 +23,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="ANcpLua.Roslyn.Utilities"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Using Include="ANcpLua.Roslyn.Utilities"/>
     </ItemGroup>
 </Project>

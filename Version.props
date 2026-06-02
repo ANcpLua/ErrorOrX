@@ -4,7 +4,7 @@
         <!-- Major.Minor.Patch — synced manually before each release; CI overrides at pack time
              via -p:Version=${tag}, so this only affects local `dotnet pack` output. Keep in sync
              with the latest tag to avoid producing stale-versioned packages locally. -->
-        <VersionPrefix>5.0.0</VersionPrefix>
+        <VersionPrefix>5.1.1</VersionPrefix>
 
         <!-- Pre-release suffix (e.g., -beta1, -ci.123) -->
         <VersionSuffix></VersionSuffix>
