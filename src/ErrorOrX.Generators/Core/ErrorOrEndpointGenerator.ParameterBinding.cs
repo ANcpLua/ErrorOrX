@@ -64,8 +64,8 @@ public sealed partial class ErrorOrEndpointGenerator
 
         for (var i = 0; i < metas.Length; i++)
         {
-            var result = ClassifyParameter(in metas[i], parameters[i], routeParameters, method, diagnostics, context,
-                httpVerb);
+            var result = ClassifyParameter(in metas[i], parameters[i].Type, routeParameters, method, diagnostics,
+                context, httpVerb);
             if (result.IsError)
             {
                 isValid = false;
@@ -82,7 +82,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static ParameterClassificationResult ClassifyParameter(
         in ParameterMeta meta,
-        IParameterSymbol parameter,
+        ITypeSymbol parameterType,
         ImmutableHashSet<string> routeParameters,
         ISymbol method,
         ImmutableArray<DiagnosticInfo>.Builder diagnostics,
@@ -92,7 +92,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // Explicit attribute bindings first
         if (meta.HasAsParameters)
         {
-            return ClassifyAsParameters(in meta, parameter.Type, routeParameters, method, diagnostics, context,
+            return ClassifyAsParameters(in meta, parameterType, routeParameters, method, diagnostics, context,
                 httpVerb);
         }
 
@@ -102,7 +102,7 @@ public sealed partial class ErrorOrEndpointGenerator
                 validatableProperties: meta.ValidatableProperties);
         }
 
-        if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameter.Type);
+        if (meta.HasFromForm) return ClassifyFromFormParameter(in meta, parameterType);
 
         if (meta.HasFromServices) return ParameterSuccess(in meta, ParameterSource.Service);
 
@@ -162,7 +162,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Smart inference based on HTTP method and type analysis
-        return InferParameterSource(in meta, parameter.Type, httpVerb, method, diagnostics);
+        return InferParameterSource(in meta, parameterType, httpVerb, method, diagnostics);
     }
 
     /// <summary>
@@ -234,7 +234,8 @@ public sealed partial class ErrorOrEndpointGenerator
             customBinding,
             meta.RequiresValidation,
             emptyBodyBehavior,
-            validatableProperties));
+            validatableProperties,
+            meta.DefaultValueExpression));
     }
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)

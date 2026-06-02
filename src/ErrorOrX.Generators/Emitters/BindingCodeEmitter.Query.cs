@@ -70,7 +70,13 @@ internal static partial class BindingCodeEmitter
         code.AppendLine($"            {declType} {paramName};");
         code.AppendLine($"            if (!TryGetQueryValue(ctx, \"{queryKey}\", out var {paramName}Raw))");
         code.AppendLine("            {");
-        if (param.IsNullable)
+        if (param.DefaultValueExpression is { } defaultExpr)
+        {
+            // Optional via a constructor/method parameter default (minimal-API rule: a default value
+            // makes the parameter optional across all binding sources). Absent ⇒ use the declared default.
+            code.AppendLine($"                {paramName} = {defaultExpr};");
+        }
+        else if (param.IsNullable)
         {
             code.AppendLine($"                {paramName} = default;");
         }

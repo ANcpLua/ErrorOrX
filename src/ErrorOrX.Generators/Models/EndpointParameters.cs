@@ -106,7 +106,9 @@ internal readonly record struct EndpointParameter(
     CustomBindingMethod CustomBinding = CustomBindingMethod.None,
     bool RequiresValidation = false,
     EmptyBodyBehavior EmptyBodyBehavior = EmptyBodyBehavior.Default,
-    EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties = default);
+    EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties = default,
+    string? DefaultValueExpression = null,
+    EquatableArray<EndpointParameter> InitProperties = default);
 
 /// <summary>
 ///     Raw metadata extracted from a method parameter for binding classification.
@@ -123,7 +125,8 @@ internal readonly struct ParameterMeta(
     RoutePrimitiveKind? collectionItemPrimitiveKind,
     CustomBindingMethod customBinding,
     EmptyBodyBehavior emptyBodyBehavior = EmptyBodyBehavior.Default,
-    EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default)
+    EquatableArray<ValidatablePropertyDescriptor> validatableProperties = default,
+    string? defaultValueExpression = null)
 {
     public string Name { get; } = name;
     public string TypeFqn { get; } = typeFqn;
@@ -137,6 +140,7 @@ internal readonly struct ParameterMeta(
     public CustomBindingMethod CustomBinding { get; } = customBinding;
     public EmptyBodyBehavior EmptyBodyBehavior { get; } = emptyBodyBehavior;
     public EquatableArray<ValidatablePropertyDescriptor> ValidatableProperties { get; } = validatableProperties;
+    public string? DefaultValueExpression { get; } = defaultValueExpression;
 
     public bool HasFromBody => Flags.HasFlag(ParameterFlags.FromBody);
     public bool HasFromRoute => Flags.HasFlag(ParameterFlags.FromRoute);

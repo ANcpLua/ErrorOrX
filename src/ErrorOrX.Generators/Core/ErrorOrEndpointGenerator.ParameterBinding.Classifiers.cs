@@ -287,12 +287,46 @@ CollectionItemTypeFqn: null,
                 return ParameterClassificationResult.Error;
             }
 
-            var result = ClassifyParameter(in childMeta, paramSymbol, routeParameters, method, diagnostics, context,
-                httpVerb);
+            var result = ClassifyParameter(in childMeta, paramSymbol.Type, routeParameters, method, diagnostics,
+                context, httpVerb);
 
             if (result.IsError) return ParameterClassificationResult.Error;
 
             children.Add(result.Parameter);
+        }
+
+        // [AsParameters] binds public settable/init properties too (ASP.NET parity via PropertyAsParameterInfo),
+        // not just constructor parameters. Properties already provided positionally by the constructor
+        // (records' primary-ctor properties) are skipped so they aren't bound twice. Each remaining property
+        // is classified like a top-level parameter and assigned through an object initializer at emit time —
+        // which also satisfies `required` members, lifting the prior "can't bind required init-only" limitation.
+        var ctorBoundNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var ctorParam in constructor.Parameters)
+            ctorBoundNames.Add(ctorParam.Name);
+
+        var initProperties = ImmutableArray.CreateBuilder<EndpointParameter>();
+        foreach (var member in typeSymbol.GetMembers())
+        {
+            if (member is not IPropertySymbol property
+                || property.IsStatic
+                || property.IsIndexer
+                || property.DeclaredAccessibility != Accessibility.Public)
+                continue;
+
+            // Must be assignable via an object initializer (public set or init accessor).
+            if (property.SetMethod is not { DeclaredAccessibility: Accessibility.Public })
+                continue;
+
+            if (ctorBoundNames.Contains(property.Name))
+                continue;
+
+            var propMeta = CreateParameterMetaFromProperty(property);
+            var propResult = ClassifyParameter(in propMeta, property.Type, routeParameters, method, diagnostics,
+                context, httpVerb);
+
+            if (propResult.IsError) return ParameterClassificationResult.Error;
+
+            initProperties.Add(propResult.Parameter);
         }
 
         return new ParameterClassificationResult(IsError: false, new EndpointParameter(
@@ -307,6 +341,7 @@ CollectionItemTypeFqn: null,
             new EquatableArray<EndpointParameter>(children.ToImmutable()),
             CustomBindingMethod.None,
             meta.RequiresValidation,
-            ValidatableProperties: meta.ValidatableProperties));
+            ValidatableProperties: meta.ValidatableProperties,
+            InitProperties: new EquatableArray<EndpointParameter>(initProperties.ToImmutable())));
     }
 }

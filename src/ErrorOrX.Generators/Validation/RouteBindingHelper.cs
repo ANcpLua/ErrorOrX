@@ -60,9 +60,13 @@ internal static class RouteBindingHelper
                 parameter.IsNullable));
         }
 
-        if (parameter.Children.IsDefaultOrEmpty) return;
+        if (!parameter.Children.IsDefaultOrEmpty)
+            foreach (var child in parameter.Children.AsImmutableArray())
+                CollectRouteMethodParameters(in child, builder);
 
-        foreach (var child in parameter.Children.AsImmutableArray())
-            CollectRouteMethodParameters(in child, builder);
+        // [AsParameters] init-bound properties can also carry route bindings ([FromRoute] on a property).
+        if (!parameter.InitProperties.IsDefaultOrEmpty)
+            foreach (var prop in parameter.InitProperties.AsImmutableArray())
+                CollectRouteMethodParameters(in prop, builder);
     }
 }

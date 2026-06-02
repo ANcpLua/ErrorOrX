@@ -105,7 +105,37 @@ namespace ErrorOr.Generated
 
         private static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> Invoke_Ep0_Core(HttpContext ctx)
         {
-            var p0 = new global::DiagnosticTest.SearchFilter();
+            static global::Microsoft.AspNetCore.Mvc.ProblemDetails CreateBindProblem(string param, string reason) => new()
+            {
+                Title = "Bad Request",
+                Detail = $"Parameter '{param}' {reason}.",
+                Status = 400,
+                Type = "https://httpstatuses.io/400",
+            };
+
+            static Task<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>> BindFail(string param, string reason)
+                => Task.FromResult<global::Microsoft.AspNetCore.Http.HttpResults.Results<global::Microsoft.AspNetCore.Http.HttpResults.Ok<string>, global::Microsoft.AspNetCore.Http.HttpResults.BadRequest<global::Microsoft.AspNetCore.Mvc.ProblemDetails>, global::Microsoft.AspNetCore.Http.HttpResults.InternalServerError<global::Microsoft.AspNetCore.Mvc.ProblemDetails>>>(global::Microsoft.AspNetCore.Http.TypedResults.BadRequest(CreateBindProblem(param, reason)));
+
+            string? p0_p0;
+            if (!TryGetQueryValue(ctx, "Query", out var p0_p0Raw))
+            {
+                return BindFail("Query", "is required");
+            }
+            else
+            {
+                p0_p0 = p0_p0Raw;
+            }
+            int? p0_p1;
+            if (!TryGetQueryValue(ctx, "Page", out var p0_p1Raw))
+            {
+                return BindFail("Page", "is required");
+            }
+            else
+            {
+                if (!int.TryParse(p0_p1Raw, out var p0_p1Temp)) return BindFail("Page", "has invalid format");
+                p0_p1 = p0_p1Temp;
+            }
+            var p0 = new global::DiagnosticTest.SearchFilter() { Query = p0_p0!, Page = p0_p1.Value };
             var result = global::DiagnosticTest.TodoApi.Search(p0);
             if (result.IsError)
             {

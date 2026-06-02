@@ -136,7 +136,24 @@ internal static partial class BindingCodeEmitter
             childVars.Add(BuildArgumentExpression(in child, childVarName));
         }
 
-        code.AppendLine($"            var {paramName} = new {param.TypeFqn}({string.Join(", ", childVars)});");
+        // Properties (non-constructor) bind into an object initializer: new T(ctorArgs) { Prop = value, ... }.
+        var initAssignments = new List<string>();
+        if (!param.InitProperties.IsDefaultOrEmpty)
+        {
+            for (var i = 0; i < param.InitProperties.Length; i++)
+            {
+                var prop = param.InitProperties[i];
+                var propVarName = $"{paramName}_p{i}";
+                usesBindFail |= EmitParameterBinding(code, in prop, propVarName, bindFailFn);
+                initAssignments.Add($"{prop.Name} = {BuildArgumentExpression(in prop, propVarName)}");
+            }
+        }
+
+        var initializer = initAssignments.Count > 0
+            ? " { " + string.Join(", ", initAssignments) + " }"
+            : "";
+        code.AppendLine(
+            $"            var {paramName} = new {param.TypeFqn}({string.Join(", ", childVars)}){initializer};");
         return usesBindFail;
     }
 }
