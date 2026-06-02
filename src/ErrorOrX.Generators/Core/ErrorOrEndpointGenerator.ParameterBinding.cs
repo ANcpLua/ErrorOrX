@@ -234,8 +234,7 @@ public sealed partial class ErrorOrEndpointGenerator
             customBinding,
             meta.RequiresValidation,
             emptyBodyBehavior,
-            validatableProperties,
-            meta.DefaultValueExpression));
+            validatableProperties));
     }
 
     private readonly record struct ParameterClassificationResult(bool IsError, EndpointParameter Parameter)

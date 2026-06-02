@@ -43,16 +43,14 @@ public sealed partial class ErrorOrEndpointGenerator
             itemPrimitiveKind,
             DetectCustomBinding(type),
             DetectEmptyBodyBehavior(parameter),
-            validatableProperties,
-            FormatDefaultValue(parameter));
+            validatableProperties);
     }
 
     /// <summary>
     ///     Extracts binding metadata from a public settable/init property of an <c>[AsParameters]</c> type.
     ///     Mirrors <see cref="CreateParameterMeta" /> but reads from an <see cref="IPropertySymbol" />.
     ///     Per ASP.NET Core's <c>PropertyAsParameterInfo</c>, a property's field initializer is NOT a binding
-    ///     default — optionality comes from nullability only (non-nullable property ⇒ required) — so no
-    ///     default-value expression is produced here.
+    ///     default — optionality comes from nullability only (a non-nullable property is required).
     /// </summary>
     private static ParameterMeta CreateParameterMetaFromProperty(IPropertySymbol property)
     {
@@ -84,33 +82,6 @@ public sealed partial class ErrorOrEndpointGenerator
             DetectCustomBinding(type),
             DetectEmptyBodyBehavior(property),
             default);
-    }
-
-    /// <summary>
-    ///     Renders a constructor/method parameter's compile-time default into a C# literal the binder
-    ///     can assign when a query value is absent (making the parameter optional, per the minimal-API
-    ///     rule that nullability OR a default value applies to all binding sources). Returns null when
-    ///     the parameter has no explicit default or the constant is not representable as a literal.
-    /// </summary>
-    private static string? FormatDefaultValue(IParameterSymbol parameter)
-    {
-        if (!parameter.HasExplicitDefaultValue) return null;
-
-        var value = parameter.ExplicitDefaultValue;
-        if (value is null) return "null";
-
-        if (parameter.Type is INamedTypeSymbol { TypeKind: TypeKind.Enum })
-        {
-            var underlying = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatPrimitive(
-                value, quoteStrings: false, useHexadecimalNumbers: false);
-            if (underlying is null) return null;
-
-            var enumFqn = parameter.Type.GetFullyQualifiedName();
-            return $"({enumFqn}){underlying}";
-        }
-
-        return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatPrimitive(
-            value, quoteStrings: true, useHexadecimalNumbers: false);
     }
 
     private static ParameterFlags BuildFlags(ISymbol parameter, ITypeSymbol type, NullableAnnotation nullableAnnotation)
