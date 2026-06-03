@@ -11,7 +11,7 @@ public static partial class ErrorOrExtensions
     /// <param name="onValue">The function to execute if the state is a value.</param>
     /// <param name="error">
     ///     The <see cref="Error" /> to return if the given <paramref name="onValue" /> function returned
-    ///     true..
+    ///     true.
     /// </param>
     /// <typeparam name="TValue">The type of the underlying value in the <paramref name="errorOr" />.</typeparam>
     /// <returns>

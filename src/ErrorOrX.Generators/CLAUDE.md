@@ -44,7 +44,7 @@ private static async Task<Results<Ok<T>, ...>> Invoke_Ep1(HttpContext ctx)
     return await Invoke_Ep1_Core(ctx);
 }
 
-// Core - returns typed Results<...> for OpenAPI
+// Core - runs the handler logic; the OpenAPI-visible typed Results<...> is the wrapper's job (above)
 private static Task<IResult> Invoke_Ep1_Core(HttpContext ctx)
 {
     Guid id = Guid.Parse((string)ctx.Request.RouteValues["id"]!);

@@ -195,7 +195,7 @@ app.MapErrorOrEndpoints();
 |---------------------|----------------------------------------------------|
 | `Descriptors.cs`    | All diagnostics (EOE001-EOE036)                    |
 | `ErrorMapping.cs`   | ErrorType names, HTTP codes, TypedResult factories |
-| `EndpointModels.cs` | All data structures                                |
+| `Models/*.cs`       | All data structures (EndpointDescriptor, EndpointParameters, RouteModels, ValidationModels, …) |
 | `WellKnownTypes.cs` | All FQN string constants                           |
 | `RouteValidator.cs` | Route validation, parameter lookup building        |
 
@@ -220,7 +220,7 @@ tests/
 | ANcpLua.Analyzers                | 2.0.2   | Code quality analyzers          |
 | Microsoft.CodeAnalysis.CSharp    | 5.3.0   | Roslyn APIs                     |
 | xunit.v3.mtp-v2                  | 3.2.2   | Testing framework               |
-| AwesomeAssertions                | 9.4.0   | Fluent assertions               |
+| AwesomeAssertions                | (SDK)   | Fluent assertions (version from ANcpLua.NET.Sdk) |
 
 ## Before Writing New Code
 

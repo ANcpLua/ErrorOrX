@@ -72,4 +72,4 @@ Snapshots stored in `Snapshots/` directory.
 | ANcpLua.Roslyn.Utilities.Testing | Generator test framework |
 | xunit.v3.mtp-v2                  | xUnit v3 with MTP        |
 | AwesomeAssertions                | Fluent assertions        |
-| Verify.Xunit                     | Snapshot testing         |
+| Verify.XunitV3                   | Snapshot testing         |

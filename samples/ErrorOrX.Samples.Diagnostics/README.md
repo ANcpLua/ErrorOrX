@@ -24,7 +24,7 @@ dotnet build samples/ErrorOrX.Samples.Diagnostics/ErrorOrX.Samples.Diagnostics.c
 
 Source generators have two paths to surface a diagnostic: the **`DiagnosticAnalyzer`** (per-symbol, lightweight, fast) and the **generator pipeline** (cross-file, needs full compilation). The interesting diagnostics here exercise both — `EOE003`/`EOE020` come from the analyzer, `EOE004`/`EOE007`/`EOE021`/`EOE024` come from the generator. Together they show the library does work no per-method analyzer could do on its own.
 
-The other 33 descriptors are mostly:
+The other 29 descriptors are mostly:
 - **dry compile-error territory** (`EOE001`/`EOE002`/`EOE005`/`EOE018`) — caught by the C# compiler shape rules anyway,
 - **attribute-misuse minutiae** (`EOE010`–`EOE014`/`EOE015`–`EOE017`) — cataloging not showcasing,
 - **API-versioning specific** (`EOE027`–`EOE031`) — niche unless you do versioning,
