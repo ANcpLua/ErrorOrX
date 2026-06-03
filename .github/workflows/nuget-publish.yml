@@ -49,9 +49,19 @@ jobs:
       - name: Pack ErrorOrX.Generators
         run: dotnet pack src/ErrorOrX.Generators/ErrorOrX.Generators.csproj -c Release -o artifacts -p:Version=${{ steps.version.outputs.version }} --no-build
 
-      - name: Push to NuGet (Trusted Publishing)
+      # Trusted Publishing (OIDC): exchange the GitHub Actions id-token for a short-lived (1h) NuGet key.
+      # No stored NUGET_API_KEY secret — nothing to expire or leak. `user` is the public package-owner
+      # account, matching the nuget.org trusted-publishing policy (repo ANcpLua/ErrorOrX, this workflow,
+      # environment 'nuget'). Requires permissions.id-token: write (set above) and environment: nuget.
+      - name: NuGet login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ANcpLua
+
+      - name: Push to NuGet
         run: |
           dotnet nuget push artifacts/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
             --skip-duplicate
