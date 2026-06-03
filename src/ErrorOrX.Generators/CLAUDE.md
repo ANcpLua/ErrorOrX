@@ -37,20 +37,21 @@ return result.Match(value => TypedResults.Ok(value), errors => ToProblem(errors)
 ### AOT Wrapper Pattern
 
 ```csharp
-// Wrapper - returns typed Results<...> for OpenAPI visibility
-// MapGet passes (Delegate)Invoke_Ep1 to force Delegate overload
-private static async Task<Results<Ok<T>, ...>> Invoke_Ep1(HttpContext ctx)
+// Wrapper - always async; returns the typed Results<...> for OpenAPI visibility
+// MapGet passes (Delegate)Invoke_Ep1 to force the Delegate overload
+private static async Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1(HttpContext ctx)
 {
     return await Invoke_Ep1_Core(ctx);
 }
 
-// Core - runs the handler logic; the OpenAPI-visible typed Results<...> is the wrapper's job (above)
-private static Task<IResult> Invoke_Ep1_Core(HttpContext ctx)
+// Core - the SAME typed Results<...> as the wrapper (sync core wraps results with Task.FromResult)
+private static Task<Results<Ok<Todo>, NotFound<ProblemDetails>>> Invoke_Ep1_Core(HttpContext ctx)
 {
-    Guid id = Guid.Parse((string)ctx.Request.RouteValues["id"]!);
+    var id = Guid.Parse((string)ctx.Request.RouteValues["id"]!);
     var result = TodoApi.GetById(id);
-    if (result.IsError) return Task.FromResult(ToProblem(result.Errors));
-    return Task.FromResult(TypedResults.Ok(result.Value));
+    // minimal interface (IsError/Errors/Value); the error maps to the matching union member
+    if (result.IsError) return Task.FromResult<Results<Ok<Todo>, NotFound<ProblemDetails>>>(ToProblem(result.Errors));
+    return Task.FromResult<Results<Ok<Todo>, NotFound<ProblemDetails>>>(TypedResults.Ok(result.Value));
 }
 ```
 
