@@ -215,9 +215,9 @@ tests/
 
 | Package                          | Version | Purpose                         |
 |----------------------------------|---------|---------------------------------|
-| ANcpLua.Roslyn.Utilities         | 2.2.22  | Incremental generator utilities |
-| ANcpLua.Roslyn.Utilities.Testing | 2.2.22  | Generator testing framework     |
-| ANcpLua.Analyzers                | 1.29.3  | Code quality analyzers          |
+| ANcpLua.Roslyn.Utilities.Sources | 2.2.26  | Incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | 2.2.26  | Generator testing framework     |
+| ANcpLua.Analyzers                | 2.0.2   | Code quality analyzers          |
 | Microsoft.CodeAnalysis.CSharp    | 5.3.0   | Roslyn APIs                     |
 | xunit.v3.mtp-v2                  | 3.2.2   | Testing framework               |
 | AwesomeAssertions                | 9.4.0   | Fluent assertions               |

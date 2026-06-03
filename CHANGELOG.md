@@ -4,6 +4,122 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-06-03
+
+### Added
+
+- **AOT-safe validation via source-generated `ValidatableTypeInfo`.** When a .NET 10 consumer references
+  `Microsoft.Extensions.Validation`, generated endpoints validate DTO/`[AsParameters]` parameters through the
+  source-generated `{Type}_TypeInfo.Instance.ValidateAsync` path (`ValidateContext` → `ValidationErrors` →
+  `TypedResults.ValidationProblem`) instead of `Validator.TryValidateObject`. A generated
+  `ErrorOrValidatableInfoResolver : IValidatableInfoResolver` bridges the DTO types to the .NET 10 validation
+  infrastructure, which otherwise cannot see them behind the `Invoke_EpN(HttpContext)` wrappers. Without the
+  package the existing reflection path is emitted unchanged (full backward compatibility, zero snapshot churn).
+- The generated validation code is **Native-AOT-clean (0 IL2026/IL3xxx)**, mirroring .NET 10's own validation
+  generator: the per-endpoint `ValidateContext` uses the trim-safe 4-arg
+  `ValidationContext(instance, displayName, serviceProvider, items)` constructor (the 3-arg overload is
+  `[RequiresUnreferencedCode]`), and `ValidatablePropertyInfo.GetValidationAttributes()` recovers attributes at
+  runtime from a `[DynamicallyAccessedMembers]`-rooted `Type` via an emitted file-scoped cache instead of
+  constructing attribute instances (`new MinLengthAttribute(1)` calls a `[RequiresUnreferencedCode]` ctor).
+
+### Changed
+
+- **`EOE034` now fires per parameter, not per compilation.** It is suppressed only for parameters actually
+  validated through the AOT path (source-generated validatable properties), and still fires for any parameter
+  that falls to reflection — e.g. `[Required]` on a primitive, or an `IValidatableObject` with no attributed
+  properties — even when `Microsoft.Extensions.Validation` is referenced.
+- **CI `aot-publish` is now a gate, not a smoke test**: it fails on any trim/AOT `ILxxxx` warning from a Native
+  AOT publish, so a generated endpoint slipping onto the reflection `RequestDelegateFactory` path can no longer
+  pass silently.
+- **Dependencies**
+  - `ANcpLua.Analyzers` 2.0.1 → 2.0.2 (gates AL1204-AL1219 to projects referencing ANcpLua.Roslyn.Utilities,
+    removing false positives)
+  - `ANcpLua.Roslyn.Utilities` (`.Sources`/`.Testing`) 2.2.23 → 2.2.26 (allocation-free `EscapeCSharpString`,
+    added string helpers, dropped unused `Microsoft.Bcl.AsyncInterfaces`)
+  - `Meziantou.Analyzer` 3.0.97 → 3.0.98 (per-compilation symbol caching)
+  - `Verify.XunitV3` 31.18.0 → 31.19.0
+
+### Known limitations
+
+- DataAnnotations attributes whose constructors are `[RequiresUnreferencedCode]` — `[MinLength]`, `[MaxLength]`,
+  `[Length]` (they reflect for a `Count` property on non-`ICollection` types) — still surface IL2026 under
+  `PublishAot`. This is a BCL limitation independent of ErrorOrX; the same warning appears under .NET 10's own
+  validation. For Native AOT, validate collection size in the handler instead. The `ErrorOrX.Samples.Api` sample
+  uses the AOT-clean attribute set to demonstrate this.
+
+## [5.3.0] - 2026-06-02
+
+### Changed
+
+- Emitter-internals refactors on top of 5.2.0 (Append-form `{{ }}` escaping cleanup, MA0028 silencing) with no
+  generated-output change. Published to NuGet from `main`; reconciled with git tag `v5.3.0` and a GitHub release
+  after the fact.
+
+## [5.2.0] - 2026-06-02
+
+### Added
+
+- **`[AsParameters]` public property/init binding** — `[AsParameters]` now discovers and binds public
+  properties (not just constructor parameters) on DTOs and records, enabling parameter expansion over
+  `{ get; init; }` members.
+
+### Changed
+
+- Removed experimental default-value optionality handling (`DefaultValueExpression` + `FormatDefaultValue`) that
+  was deferred out of scope.
+
+## [5.1.1] - 2026-06-02
+
+### Fixed
+
+- **Removed `ANcpLua.Roslyn.Utilities` from the runtime `ErrorOrX` package.** It was used only for a single
+  `Guard.NotNull` helper but pulled `Microsoft.CodeAnalysis.CSharp` into every consumer's transitive closure
+  (conflicting with consumers on their own Roslyn version). Replaced with an internal minimal `Guard.NotNull`;
+  the runtime package now declares ZERO NuGet dependencies (framework reference only).
+
+## [5.1.0] - 2026-05-29
+
+### Changed
+
+- **Dependencies**: `Verify.XunitV3` 31.17.0 → 31.18.0; `Meziantou.Analyzer` 3.0.93 → 3.0.97;
+  `ANcpLua.Roslyn.Utilities` 2.2.22 → 2.2.23; SDK / GitHub Actions infrastructure bumps.
+
+### Fixed
+
+- RCS1001 brace sweep; `default(ErrorOr<T>)` guard test additions; dependency alignment across ANcpLua.NET.Sdk.
+
+## [5.0.0] - 2026-05-28
+
+### BREAKING
+
+- **`default(ErrorOr<T>).IsError / .Errors / .Value / .FirstError` now throw `InvalidOperationException`**
+  instead of silently reporting success. Equality and `GetHashCode` tolerate the default state for
+  dictionary/set safety.
+
+### Added
+
+- **HTTP verb attributes `[Head]`, `[Options]`, `[Trace]`** generate endpoints via
+  `MapMethods(route, new[] { "VERB" }, (Delegate)Invoke_EpN)` (ASP.NET Core has no `MapHead`/`MapOptions`/
+  `MapTrace` overloads); the `(Delegate)` cast is preserved for OpenAPI visibility.
+
+### Fixed
+
+- **Silent-fallback audit** (all eliminated): empty-`Errors` and unmapped-`ErrorType` default arms now throw
+  `InvalidOperationException` with handler FQN + Error.Type/.Code instead of silently returning
+  `InternalServerError`; unclassified parameters now raise `EOE021` (Error) instead of falling through to
+  `GetRequiredService`; `ErrorMapping.Get` throws on unknown error names; auto-emitted `ErrorOrJsonContext` now
+  sets CamelCase + WhenWritingNull; header-collection items mirror query binding (non-empty + unparseable →
+  BindFail instead of silent drop).
+- **Middleware emission**: `[DisableCors]` emits `WithMetadata(new DisableCorsAttribute())` (was the
+  non-existent `.DisableCors()` → CS1061); dead parameterless `.RequireRateLimiting()` branch removed.
+
+### Changed
+
+- Diagnostic severity: `EOE022` Info → Warning; `EOE030` Info → Warning.
+- `ErrorOrX.Generators` + `ErrorOrX.Integration.Tests` switched to `ANcpLua.NET.Sdk`.
+- Removed `ANcpLuaAnalyzersVersion` and `AwesomeAssertionsVersion` pins from `Version.props` (SDK is the source).
+- `.editorconfig` stripped of `AL00xx` dual-ID overrides (`ANcpLua.Analyzers` 2.0.x emits `AL1xxx` only).
+
 ## [4.0.0] - 2026-05-25
 
 ### BREAKING
