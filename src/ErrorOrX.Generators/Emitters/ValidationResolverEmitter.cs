@@ -39,6 +39,8 @@ internal static class ValidationResolverEmitter
             EmitPropertyInfoClasses(code, type);
         }
 
+        EmitValidationAttributeCache(code);
+
         code.AppendLine("}");
 
         spc.AddSource("ErrorOrValidationResolver.g.cs", SourceText.From(code.ToString(), Encoding.UTF8));
@@ -142,54 +144,77 @@ internal static class ValidationResolverEmitter
             code.AppendLine(
                 $"        public {propId}() : base(typeof({type.TypeFqn}), typeof({prop.TypeFqn}), \"{prop.Name}\", \"{prop.DisplayName}\") {{ }}");
             code.AppendLine();
-            code.AppendLine("        protected override ValidationAttribute[] GetValidationAttributes() =>");
-            code.AppendLine("        [");
-
-            foreach (var attr in prop.ValidationAttributes.AsImmutableArray())
-            {
-                var attrExpr = FormatAttributeInstantiation(attr);
-                code.AppendLine($"            {attrExpr},");
-            }
-
-            code.AppendLine("        ];");
+            // Recover the declared ValidationAttributes at runtime from the [DynamicallyAccessedMembers]-rooted
+            // Type instead of constructing attribute instances here. Emitting e.g. `new MinLengthAttribute(1)`
+            // calls a [RequiresUnreferencedCode] ctor and trips IL2026 under PublishAot. `typeof(T)` as a literal
+            // satisfies the cache's DAM requirement with zero trim warnings — the .NET 10 validation pattern.
+            code.AppendLine(
+                $"        protected override ValidationAttribute[] GetValidationAttributes() => ValidationAttributeCache.GetPropertyValidationAttributes(typeof({type.TypeFqn}), \"{prop.Name}\");");
             code.AppendLine("    }");
         }
     }
 
-    private static string FormatAttributeInstantiation(ValidatableAttributeInfo attr)
+    /// <summary>
+    ///     Emits a file-scoped cache that recovers a property's <c>ValidationAttribute</c>s via
+    ///     reflection over a <c>[DynamicallyAccessedMembers]</c>-rooted <c>System.Type</c> — the
+    ///     trim-safe pattern used by .NET 10's own <c>Microsoft.Extensions.Validation</c> generator (whose
+    ///     <c>ValidationAttributeCache</c> is <c>file</c>-scoped and not a public API, so each generator emits
+    ///     its own copy; the <c>file</c> modifier prevents collision when both run in one assembly). The DAM
+    ///     annotation flows through the <c>CacheKey</c> record into the reflective lookup so the trimmer
+    ///     preserves the metadata. Covers the record primary-constructor-parameter case (case-insensitive).
+    /// </summary>
+    private static void EmitValidationAttributeCache(StringBuilder code)
     {
-        var sb = new StringBuilder();
-        sb.Append($"new {attr.AttributeTypeFqn}(");
-
-        if (!attr.ConstructorArgLiterals.IsDefaultOrEmpty)
-        {
-            var first = true;
-            foreach (var arg in attr.ConstructorArgLiterals.AsImmutableArray())
-            {
-                if (!first) sb.Append(", ");
-
-                sb.Append(arg);
-                first = false;
-            }
-        }
-
-        sb.Append(')');
-
-        if (!attr.NamedArgLiterals.IsDefaultOrEmpty)
-        {
-            sb.Append(" { ");
-            var first = true;
-            foreach (var named in attr.NamedArgLiterals.AsImmutableArray())
-            {
-                if (!first) sb.Append(", ");
-
-                sb.Append($"{named.Name} = {named.Value}");
-                first = false;
-            }
-
-            sb.Append(" }");
-        }
-
-        return sb.ToString();
+        code.AppendLine();
+        code.AppendLine("    file static class ValidationAttributeCache");
+        code.AppendLine("    {");
+        code.AppendLine("        private sealed record CacheKey(");
+        code.AppendLine(
+            "            [param: global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]");
+        code.AppendLine(
+            "            [property: global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]");
+        code.AppendLine("            global::System.Type ContainingType,");
+        code.AppendLine("            string PropertyName);");
+        code.AppendLine();
+        code.AppendLine(
+            "        private static readonly global::System.Collections.Concurrent.ConcurrentDictionary<CacheKey, global::System.ComponentModel.DataAnnotations.ValidationAttribute[]> s_propertyCache = new();");
+        code.AppendLine();
+        code.AppendLine(
+            "        public static global::System.ComponentModel.DataAnnotations.ValidationAttribute[] GetPropertyValidationAttributes(");
+        code.AppendLine(
+            "            [global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties | global::System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)]");
+        code.AppendLine("            global::System.Type containingType,");
+        code.AppendLine("            string propertyName)");
+        code.AppendLine("        {");
+        code.AppendLine("            var key = new CacheKey(containingType, propertyName);");
+        code.AppendLine("            return s_propertyCache.GetOrAdd(key, static k =>");
+        code.AppendLine("            {");
+        code.AppendLine(
+            "                var results = new global::System.Collections.Generic.List<global::System.ComponentModel.DataAnnotations.ValidationAttribute>();");
+        code.AppendLine();
+        code.AppendLine("                var property = k.ContainingType.GetProperty(k.PropertyName);");
+        code.AppendLine("                if (property != null)");
+        code.AppendLine(
+            "                    results.AddRange(global::System.Reflection.CustomAttributeExtensions.GetCustomAttributes<global::System.ComponentModel.DataAnnotations.ValidationAttribute>(property, inherit: true));");
+        code.AppendLine();
+        code.AppendLine("                // Records place validation attributes on the primary-constructor parameter.");
+        code.AppendLine("                foreach (var constructor in k.ContainingType.GetConstructors())");
+        code.AppendLine("                {");
+        code.AppendLine("                    var parameter = global::System.Linq.Enumerable.FirstOrDefault(");
+        code.AppendLine("                        constructor.GetParameters(),");
+        code.AppendLine(
+            "                        p => string.Equals(p.Name, k.PropertyName, global::System.StringComparison.OrdinalIgnoreCase));");
+        code.AppendLine("                    if (parameter != null)");
+        code.AppendLine("                    {");
+        code.AppendLine(
+            "                        results.AddRange(global::System.Reflection.CustomAttributeExtensions.GetCustomAttributes<global::System.ComponentModel.DataAnnotations.ValidationAttribute>(parameter, inherit: true));");
+        code.AppendLine("                        break;");
+        code.AppendLine("                    }");
+        code.AppendLine("                }");
+        code.AppendLine();
+        code.AppendLine("                return results.ToArray();");
+        code.AppendLine("            });");
+        code.AppendLine("        }");
+        code.AppendLine("    }");
     }
 }

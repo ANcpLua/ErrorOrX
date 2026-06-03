@@ -14,13 +14,15 @@ internal readonly record struct ValidatableAttributeInfo(
     EquatableArray<NamedArgLiteral> NamedArgLiterals);
 
 /// <summary>
-///     Represents a property on a validatable type, with its validation attribute metadata.
+///     Represents a property on a validatable type. The validation attributes are NOT carried here —
+///     the generated <c>ValidatablePropertyInfo</c> recovers them at runtime from the
+///     <c>[DynamicallyAccessedMembers]</c>-rooted <see cref="System.Type" /> (trim-safe), so only the
+///     compile-time "is this property validatable?" gate decision needs to flow through the pipeline.
 /// </summary>
 internal readonly record struct ValidatablePropertyDescriptor(
     string Name,
     string TypeFqn,
-    string DisplayName,
-    EquatableArray<ValidatableAttributeInfo> ValidationAttributes);
+    string DisplayName);
 
 /// <summary>
 ///     Represents a type that requires validation, along with its validatable properties.

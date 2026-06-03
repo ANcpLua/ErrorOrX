@@ -222,7 +222,7 @@ public sealed partial class ErrorOrEndpointGenerator
             code.AppendLine($"            var {paramName}ValidateContext = new {WellKnownTypes.Fqn.ValidateContext}");
             code.AppendLine("            {");
             code.AppendLine(
-                $"                ValidationContext = new {WellKnownTypes.Fqn.ValidationContext}({paramName}!, ctx.RequestServices, null),");
+                $"                ValidationContext = new {WellKnownTypes.Fqn.ValidationContext}({paramName}!, \"{paramName}\", ctx.RequestServices, null),");
             code.AppendLine(
                 $"                ValidationOptions = ctx.RequestServices.GetRequiredService<{WellKnownTypes.Fqn.IOptions}<{WellKnownTypes.Fqn.ValidationOptions}>>().Value");
             code.AppendLine("            };");

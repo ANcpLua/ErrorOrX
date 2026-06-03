@@ -217,8 +217,7 @@ internal sealed class ErrorOrContext : IEquatable<ErrorOrContext>
                 properties.Add(new ValidatablePropertyDescriptor(
                     property.Name,
                     property.Type.GetFullyQualifiedName(),
-                    property.Name,
-                    attrs));
+                    property.Name));
             }
 
             current = namedType.BaseType;

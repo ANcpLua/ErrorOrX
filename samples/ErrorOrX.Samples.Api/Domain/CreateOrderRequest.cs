@@ -7,7 +7,10 @@ public sealed record CreateOrderRequest(
     [StringLength(200, MinimumLength = 1)]
     string CustomerName,
     [Required] [EmailAddress] string Email,
-    [Required] [MinLength(1)] IReadOnlyList<OrderItem> Items);
+    // NOTE: [MinLength]/[MaxLength]/[Length] carry a [RequiresUnreferencedCode] constructor (they reflect
+    // for a 'Count' property on non-ICollection types), so they trip IL2026 under PublishAot. For Native
+    // AOT, validate collection size in the handler (ErrorOr.Validation) instead; [Required] is AOT-clean.
+    [Required] IReadOnlyList<OrderItem> Items);
 
 public sealed record OrderItem(
     [Required] [StringLength(100)] string ProductName,

@@ -75,15 +75,21 @@ public sealed partial class ErrorOrEndpointAnalyzer
         in SymbolAnalysisContext context,
         IMethodSymbol method)
     {
-        // EOE034 applies only to the reflection (Validator.TryValidateObject) path. When the consumer
-        // references Microsoft.Extensions.Validation, the generator emits source-generated
-        // ValidatableTypeInfo.ValidateAsync (no reflection), so the advisory must not fire.
-        if (new ErrorOrContext(context.Compilation).HasValidationResolverSupport)
-            return;
+        // EOE034 applies to the reflection (Validator.TryValidateObject) path. The AOT-safe
+        // source-generated ValidatableTypeInfo path applies only when the consumer references
+        // Microsoft.Extensions.Validation AND the parameter's type contributes source-generated
+        // validatable properties; a parameter without them (e.g. [Required] on a primitive, or an
+        // IValidatableObject with no attributed properties) still falls to reflection — so the advisory
+        // fires per-parameter rather than being globally suppressed by mere package presence.
+        var errorOrContext = new ErrorOrContext(context.Compilation);
 
         foreach (var param in method.Parameters)
         {
             if (!ErrorOrContext.HasValidationNeeds(param))
+                continue;
+
+            if (errorOrContext.HasValidationResolverSupport
+                && !ErrorOrContext.CollectValidatableProperties(param.Type).IsDefaultOrEmpty)
                 continue;
 
             context.ReportDiagnostic(Diagnostic.Create(

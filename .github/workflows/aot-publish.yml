@@ -107,6 +107,18 @@ jobs:
           </Project>
           EOF
 
-      - name: Publish AOT
-        run: dotnet publish -c Release -r linux-x64 -p:PublishAot=true --self-contained --configfile nuget.config
+      # Gate, not smoke test: a green `dotnet publish` is not enough. The regenerated sample lives in
+      # $RUNNER_TEMP (outside the repo's TreatWarningsAsErrors), so trim/AOT IL warnings stay warnings and
+      # the publish exits 0 — they would hide a regression where a generated endpoint slips onto the
+      # reflection RequestDelegateFactory path or emits a [RequiresUnreferencedCode] call site. Fail on any
+      # ILxxxx. ErrorOrX-generated code must publish AOT-clean; fix the generator, never suppress.
+      - name: Publish AOT (fail on trim/AOT IL warnings)
         working-directory: ${{ runner.temp }}/errororx-aot-sample
+        run: |
+          set -o pipefail
+          dotnet publish -c Release -r linux-x64 -p:PublishAot=true --self-contained --configfile nuget.config 2>&1 | tee publish.log
+          if grep -nE 'IL[0-9]{4}' publish.log; then
+            echo "::error::Native AOT publish surfaced trim/AOT (ILxxxx) warnings (above). Fix the generator — do not suppress."
+            exit 1
+          fi
+          echo "Native AOT publish clean — 0 ILxxxx warnings."

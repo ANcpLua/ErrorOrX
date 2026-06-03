@@ -125,24 +125,27 @@ public sealed partial class ErrorOrEndpointGenerator
                     builder.Add(DiagnosticInfo.Create(Descriptors.ObjectReturnTypeNotSupported, location, m.Name));
 
                 // EOE034: DataAnnotations validation uses reflection (Info severity).
-                // Only fires on the reflection (Validator.TryValidateObject) path — i.e. when the consumer
-                // does NOT reference Microsoft.Extensions.Validation. With that package present the generator
-                // emits source-generated ValidatableTypeInfo.ValidateAsync (no reflection), so the advisory
-                // does not apply. Dual-reports with the analyzer for build-output + snapshot visibility.
-                // ErrorOrContext.HasValidationNeeds is the shared predicate — covers [Required] on the
-                // parameter and on a property of the parameter's type (records, DTOs, IValidatableObject).
-                if (!errorOrContext.HasValidationResolverSupport)
+                // Fires per-parameter on the reflection (Validator.TryValidateObject) path. The AOT-safe
+                // source-generated ValidatableTypeInfo path applies only when the consumer references
+                // Microsoft.Extensions.Validation AND the parameter's type contributes source-generated
+                // validatable properties; a parameter without them (e.g. [Required] on a primitive, or an
+                // IValidatableObject with no attributed properties) still falls to reflection — so the
+                // advisory must NOT be globally suppressed by mere package presence. Dual-reports with the
+                // analyzer for build-output + snapshot visibility. ErrorOrContext.HasValidationNeeds is the
+                // shared predicate — covers [Required] on the parameter and on its type's properties/ctor.
+                foreach (var param in m.Parameters)
                 {
-                    foreach (var param in m.Parameters)
-                    {
-                        if (!ErrorOrContext.HasValidationNeeds(param)) continue;
+                    if (!ErrorOrContext.HasValidationNeeds(param)) continue;
 
-                        builder.Add(DiagnosticInfo.Create(
-                            Descriptors.ValidationUsesReflection,
-                            param.Locations.FirstOrDefault() ?? location,
-                            param.Name,
-                            m.Name));
-                    }
+                    if (errorOrContext.HasValidationResolverSupport
+                        && !ErrorOrContext.CollectValidatableProperties(param.Type).IsDefaultOrEmpty)
+                        continue;
+
+                    builder.Add(DiagnosticInfo.Create(
+                        Descriptors.ValidationUsesReflection,
+                        param.Locations.FirstOrDefault() ?? location,
+                        param.Name,
+                        m.Name));
                 }
 
                 // Extract method-level attributes first (needed for interface call detection)
