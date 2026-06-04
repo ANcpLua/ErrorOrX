@@ -8,14 +8,6 @@
         <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all"/>
         <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all"/>
         <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all"/>
-        <PackageReference Include="JonSkeet.RoslynAnalyzers" PrivateAssets="all" Condition="'@(PackageReference->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <!-- JonSkeet.RoslynAnalyzers is not in the SDK; Update overrides any inherited version, conditional
-             Include adds it where missing. Cannot live in Directory.Packages.props because of NU1506
-             conflicts with the SDK's GlobalPackageReference injections. -->
-        <PackageVersion Update="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)"/>
-        <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)" Condition="'@(PackageVersion->WithMetadataValue('Identity', 'JonSkeet.RoslynAnalyzers'))' == ''"/>
+        <PackageReference Include="JonSkeet.RoslynAnalyzers" PrivateAssets="all"/>
     </ItemGroup>
 </Project>

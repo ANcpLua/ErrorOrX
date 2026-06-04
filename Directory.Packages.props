@@ -18,9 +18,11 @@
         <PackageVersion Include="Roslynator.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
         <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
         <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
-        <!-- ANcpLua.Analyzers and JonSkeet.RoslynAnalyzers: defined via Update+conditional Include
-             in Directory.Build.targets because ANcpLua.NET.Sdk also injects them (NU1506 if duplicated here) -->
         <PackageVersion Include="Meziantou.Analyzer" Version="$(MeziantouAnalyzerVersion)"/>
+        <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)"/>
+        <!-- ANcpLua.Analyzers is omitted here on purpose: ANcpLua.NET.Sdk injects it via GlobalPackageReference
+             (NU1506 if a PackageVersion is also declared here). Its version is set through
+             $(ANcpLuaAnalyzersVersion) in Version.props, which imports after the SDK default. -->
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)"/>
         <PackageVersion Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)"/>
         <PackageVersion Include="Verify.XunitV3" Version="$(VerifyXunitV3Version)"/>
