@@ -86,6 +86,12 @@ public class GeneratorCachingTests : GeneratorTestBase
 
         using var result = await RunAsync(Source);
 
+        // Lock every tracked pipeline step by name. EndpointBindingFlow is downstream of
+        // ErrorOrContext, so a non-value-equatable ErrorOrContext would also break it — but
+        // asserting ErrorOrContext directly guards the exact step the original caching bug
+        // regressed, and ResultsUnionMaxArity is otherwise unguarded.
+        result.IsCached("ErrorOrContext");
+        result.IsCached("ResultsUnionMaxArity");
         result.IsCached("EndpointBindingFlow");
     }
 }
