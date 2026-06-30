@@ -306,7 +306,7 @@ public sealed partial class ErrorOrEndpointGenerator
         // For ErrorOrEndpointAttribute with unrecognized methods (e.g., "CONNECT", "PROPFIND"),
         // store the raw method string so we can emit MapMethods with it
         string? customMethod = null;
-        var isErrorOrEndpoint = attrName.Contains("ErrorOrEndpoint");
+        var isErrorOrEndpoint = attrName.ContainsOrdinal("ErrorOrEndpoint");
         if (verb is null && isErrorOrEndpoint &&
             attr.ConstructorArguments is [{ Value: string rawMethod }, ..])
         {

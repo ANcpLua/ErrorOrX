@@ -22,7 +22,7 @@ public sealed partial class ErrorOrEndpointGenerator
 
     private static readonly TypeMatcher s_dbContextMatcher = SymbolMatch.Type()
         .Where(static t => t.Name.EndsWithOrdinal("Context") &&
-                           (t.Name.Contains("Db") || t.Name.StartsWithOrdinal("Db")));
+                           (t.Name.ContainsOrdinal("Db") || t.Name.StartsWithOrdinal("Db")));
 
     private static EmptyBodyBehavior DetectEmptyBodyBehavior(ISymbol parameter)
     {

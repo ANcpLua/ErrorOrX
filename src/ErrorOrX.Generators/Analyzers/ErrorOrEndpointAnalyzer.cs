@@ -239,7 +239,7 @@ public sealed partial class ErrorOrEndpointAnalyzer : DiagnosticAnalyzer
                 continue;
 
             // Extract pattern from constructor arguments
-            var patternIndex = attrName.Contains("ErrorOrEndpoint") ? 1 : 0;
+            var patternIndex = attrName.ContainsOrdinal("ErrorOrEndpoint") ? 1 : 0;
             if (attr.GetConstructorArgument<string>(patternIndex) is { } p)
                 pattern = p;
 

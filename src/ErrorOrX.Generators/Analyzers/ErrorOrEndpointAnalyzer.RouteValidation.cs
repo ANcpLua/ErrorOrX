@@ -151,7 +151,7 @@ public sealed partial class ErrorOrEndpointAnalyzer
         var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
 
         // Check for empty parameter names: {}
-        if (escapedStripped.Contains("{}"))
+        if (escapedStripped.ContainsOrdinal("{}"))
             issues.Add("Route contains empty parameter '{}'. Parameter names are required");
 
         // Check for unclosed braces

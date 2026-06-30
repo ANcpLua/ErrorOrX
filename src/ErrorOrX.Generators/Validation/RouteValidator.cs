@@ -135,7 +135,7 @@ internal static class RouteValidator
         }
 
         var escapedStripped = pattern.Replace("{{", "").Replace("}}", "");
-        if (escapedStripped.Contains("{}"))
+        if (escapedStripped.ContainsOrdinal("{}"))
         {
             diagnostics.Add(DiagnosticInfo.Create(
                 Descriptors.InvalidRoutePattern,
