@@ -23,7 +23,7 @@
     <!-- Dependency versions -->
     <PropertyGroup>
         <MeziantouAnalyzerVersion>3.0.117</MeziantouAnalyzerVersion>
-        <ANcpLuaRoslynUtilitiesVersion>2.2.27</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>2.2.29</ANcpLuaRoslynUtilitiesVersion>
         <!-- Override the SDK-default analyzer version. ANcpLua.NET.Sdk injects ANcpLua.Analyzers via
              GlobalPackageReference Version="$(ANcpLuaAnalyzersVersion)"; Version.props imports after the SDK
              default so this wins. 2.0.2 gates AL1204-AL1219 to projects referencing ANcpLua.Roslyn.Utilities. -->
@@ -41,6 +41,12 @@
         <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
         <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.9</MicrosoftAspNetCoreOpenApiVersion>
+        <!-- Transitive pin: Microsoft.AspNetCore.OpenApi 10.0.9 pulls in Microsoft.OpenApi 2.0.0, which is
+             vulnerable to CVE-2026-49451 (GHSA-v5pm-xwqc-g5wc, stack overflow on circular schema refs).
+             Patched in the 2.x line at 2.7.5; pin to the latest 2.x to satisfy NU1903 (warnings-as-errors)
+             while staying API-compatible with AspNetCore.OpenApi 10.x. Remove once the ASP.NET package
+             references a patched Microsoft.OpenApi transitively. -->
+        <MicrosoftOpenApiVersion>2.9.0</MicrosoftOpenApiVersion>
         <MicrosoftAspNetCoreMvcTestingVersion>10.0.8</MicrosoftAspNetCoreMvcTestingVersion>
         <MicrosoftAspNetCoreTestHostVersion>10.0.8</MicrosoftAspNetCoreTestHostVersion>
         <AspVersioningHttpVersion>10.0.0</AspVersioningHttpVersion>
