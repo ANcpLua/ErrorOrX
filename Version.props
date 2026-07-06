@@ -22,7 +22,7 @@
 
     <!-- Dependency versions -->
     <PropertyGroup>
-        <MeziantouAnalyzerVersion>3.0.114</MeziantouAnalyzerVersion>
+        <MeziantouAnalyzerVersion>3.0.117</MeziantouAnalyzerVersion>
         <ANcpLuaRoslynUtilitiesVersion>2.2.29</ANcpLuaRoslynUtilitiesVersion>
         <!-- Override the SDK-default analyzer version. ANcpLua.NET.Sdk injects ANcpLua.Analyzers via
              GlobalPackageReference Version="$(ANcpLuaAnalyzersVersion)"; Version.props imports after the SDK
