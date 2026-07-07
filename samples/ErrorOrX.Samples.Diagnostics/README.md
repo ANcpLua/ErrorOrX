@@ -1,6 +1,6 @@
 # ErrorOrX.Samples.Diagnostics
 
-Realistic-looking API code that deliberately triggers ErrorOrX diagnostics. This project is **excluded from `ErrorOrX.slnx`** — the source-generator-reported errors halt compilation, which is the entire point. Open the project in your IDE for live squiggles, or build it explicitly:
+Realistic-looking API code that deliberately triggers ErrorOrX diagnostics. This project is **in `ErrorOrX.slnx` but excluded from the solution build** (`<Build Solution="*|*" Project="false" />`) — the source-generator-reported errors halt compilation, which is the entire point. Open the solution in your IDE for live squiggles, or build the project explicitly:
 
 ```bash
 dotnet build samples/ErrorOrX.Samples.Diagnostics/ErrorOrX.Samples.Diagnostics.csproj
