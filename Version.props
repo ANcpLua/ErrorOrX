@@ -35,7 +35,7 @@
         <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
         <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.7</JonSkeetRoslynAnalyzersVersion>
-        <MicrosoftSourceLinkGitHubVersion>10.0.300</MicrosoftSourceLinkGitHubVersion>
+        <MicrosoftSourceLinkGitHubVersion>10.0.301</MicrosoftSourceLinkGitHubVersion>
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
         <VerifyXunitV3Version>31.20.0</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
