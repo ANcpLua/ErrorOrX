@@ -39,7 +39,7 @@
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
         <VerifyXunitV3Version>31.20.0</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.3</MicrosoftCodeAnalysisTestingVersion>
-        <XunitV3MtpV2Version>3.2.2</XunitV3MtpV2Version>
+        <XunitV3MtpV2Version>4.0.0</XunitV3MtpV2Version>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.9</MicrosoftAspNetCoreOpenApiVersion>
         <!-- Transitive pin: Microsoft.AspNetCore.OpenApi 10.0.9 pulls in Microsoft.OpenApi 2.0.0, which is
              vulnerable to CVE-2026-49451 (GHSA-v5pm-xwqc-g5wc, stack overflow on circular schema refs).
