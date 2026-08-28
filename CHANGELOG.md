@@ -13,6 +13,8 @@ All notable changes to this project are documented in this file.
   `CentralPackageTransitivePinningEnabled`): Microsoft.CodeAnalysis.* 5.3.0 -> 5.6.0 (the generator now
   requires a Roslyn 5.6+ host compiler; .NET SDK 10.0.400 ships 5.9), Microsoft.CodeAnalysis.*.Testing
   1.1.3 -> 1.1.4, Microsoft.AspNetCore.Mvc.Testing/TestHost 10.0.8 -> 10.0.10.
+- Follow-up sweep to current latest: ANcpLua.Roslyn.Utilities 2.2.45, Meziantou.Analyzer 3.0.190,
+  Verify.XunitV3 32.0.0, Microsoft.CodeAnalysis.* 5.9.0, Microsoft.AspNetCore.Mvc.Testing/TestHost 10.0.11.
 - One Verify snapshot re-accepted: Verify 31.24 now compares the trailing newline strictly
   (`GeneratorCachingTests.Generator_Emits_Shared_Attributes_File`); generated content is unchanged.
 

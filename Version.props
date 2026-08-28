@@ -22,14 +22,14 @@
 
     <!-- Dependency versions -->
     <PropertyGroup>
-        <MeziantouAnalyzerVersion>3.0.172</MeziantouAnalyzerVersion>
-        <ANcpLuaRoslynUtilitiesVersion>2.2.42</ANcpLuaRoslynUtilitiesVersion>
+        <MeziantouAnalyzerVersion>3.0.190</MeziantouAnalyzerVersion>
+        <ANcpLuaRoslynUtilitiesVersion>2.2.45</ANcpLuaRoslynUtilitiesVersion>
         <!-- Override the SDK-default analyzer version. ANcpLua.NET.Sdk injects ANcpLua.Analyzers via
              GlobalPackageReference Version="$(ANcpLuaAnalyzersVersion)"; Version.props imports after the SDK
              default so this wins. 2.0.2 gates AL1204-AL1219 to projects referencing ANcpLua.Roslyn.Utilities. -->
         <ANcpLuaAnalyzersVersion>2.0.2</ANcpLuaAnalyzersVersion>
-        <MicrosoftCodeAnalysisAnalyzersVersion>5.6.0</MicrosoftCodeAnalysisAnalyzersVersion>
-        <MicrosoftCodeAnalysisCSharpVersion>5.6.0</MicrosoftCodeAnalysisCSharpVersion>
+        <MicrosoftCodeAnalysisAnalyzersVersion>5.9.0</MicrosoftCodeAnalysisAnalyzersVersion>
+        <MicrosoftCodeAnalysisCSharpVersion>5.9.0</MicrosoftCodeAnalysisCSharpVersion>
         <MicrosoftSbomTargetsVersion>4.1.5</MicrosoftSbomTargetsVersion>
         <ErrorProneNETCoreAnalyzersVersion>0.8.2-beta.1</ErrorProneNETCoreAnalyzersVersion>
         <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
@@ -37,7 +37,7 @@
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.7</JonSkeetRoslynAnalyzersVersion>
         <MicrosoftSourceLinkGitHubVersion>10.0.400</MicrosoftSourceLinkGitHubVersion>
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
-        <VerifyXunitV3Version>31.24.2</VerifyXunitV3Version>
+        <VerifyXunitV3Version>32.0.0</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.4</MicrosoftCodeAnalysisTestingVersion>
         <XunitV3MtpV2Version>4.0.0</XunitV3MtpV2Version>
         <MicrosoftAspNetCoreOpenApiVersion>10.0.9</MicrosoftAspNetCoreOpenApiVersion>
@@ -47,8 +47,8 @@
              while staying API-compatible with AspNetCore.OpenApi 10.x. Remove once the ASP.NET package
              references a patched Microsoft.OpenApi transitively. -->
         <MicrosoftOpenApiVersion>2.9.0</MicrosoftOpenApiVersion>
-        <MicrosoftAspNetCoreMvcTestingVersion>10.0.10</MicrosoftAspNetCoreMvcTestingVersion>
-        <MicrosoftAspNetCoreTestHostVersion>10.0.10</MicrosoftAspNetCoreTestHostVersion>
+        <MicrosoftAspNetCoreMvcTestingVersion>10.0.11</MicrosoftAspNetCoreMvcTestingVersion>
+        <MicrosoftAspNetCoreTestHostVersion>10.0.11</MicrosoftAspNetCoreTestHostVersion>
         <AspVersioningHttpVersion>10.0.0</AspVersioningHttpVersion>
     </PropertyGroup>
 </Project>
