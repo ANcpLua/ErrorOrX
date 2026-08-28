@@ -394,7 +394,7 @@ internal static class RouteValidator
             if (routeMap.TryGetValue(normalizedKey, out var existing))
                 diagnostics.Add(Diagnostic.Create(
                     Descriptors.DuplicateRoute,
-                    Location.None,
+                    ep.HandlerLocation.ToLocationOrNone(),
                     ep.HttpMethod.ToUpperInvariant(),
                     ep.Pattern,
                     existing.HandlerContainingTypeFqn.ExtractShortTypeName(),

@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Output-stage diagnostics now point at the offending declaration instead of `Location.None`:
+  EOE004 (duplicate route, at the second handler), EOE007 / EOE026 (type missing from JSON context, at the
+  first handler that needs the type), EOE022 (too many result types), EOE025 / EOE036 (at the user's
+  `JsonSerializerContext`), EOE030 (unversioned handler). `EndpointDescriptor` and `JsonContextInfo` carry a
+  cache-safe `LocationInfo` snapshot (ANcpLua.Roslyn.Utilities 2.2.30+) captured in the transform stage and
+  converted back with `LocationInfo.ToLocation()` in the output stage, so incremental caching is unaffected
+  (covered by `DiagnosticLocationTests` and the existing `GeneratorCachingTests`).
+
 ### Changed
 
 - Dependency bumps (consolidates dependabot/renovate PRs #201, #204, #208, #211, #212; #193 and #194 were

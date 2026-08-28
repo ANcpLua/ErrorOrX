@@ -288,7 +288,8 @@ public sealed partial class ErrorOrEndpointGenerator
             versioning,
             routeGroup,
             metadata,
-            customMethod);
+            customMethod,
+            LocationInfo.From(location));
 
         var flow = DiagnosticFlow.Ok(descriptor);
         foreach (var diag in builder)

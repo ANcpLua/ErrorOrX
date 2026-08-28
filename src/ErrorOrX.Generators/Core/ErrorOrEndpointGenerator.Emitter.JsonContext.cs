@@ -84,7 +84,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.MissingCamelCasePolicy,
-                Location.None,
+                userContext.Location.ToLocationOrNone(),
                 fullClassName));
         }
 
@@ -93,7 +93,7 @@ public sealed partial class ErrorOrEndpointGenerator
         {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.JsonContextMissingProblemDetails,
-                Location.None,
+                userContext.Location.ToLocationOrNone(),
                 fullClassName));
         }
 

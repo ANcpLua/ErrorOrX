@@ -281,7 +281,7 @@ internal static class ApiVersioningValidator
 
             diagnostics.Add(Diagnostic.Create(
                 Descriptors.EndpointMissingVersioning,
-                Location.None,
+                ep.HandlerLocation.ToLocationOrNone(),
                 ep.HandlerMethodName));
         }
 

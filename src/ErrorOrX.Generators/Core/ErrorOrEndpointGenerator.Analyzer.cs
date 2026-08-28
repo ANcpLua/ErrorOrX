@@ -1,4 +1,5 @@
 using ErrorOr.Analyzers;
+using ANcpLua.Roslyn.Utilities.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -13,18 +14,18 @@ public sealed partial class ErrorOrEndpointGenerator
     ///     Collects all types that require JSON serialization from the endpoint descriptors.
     ///     Pure function — no diagnostics, just type collection.
     /// </summary>
-    private static (Dictionary<string, string> BodyTypes, Dictionary<string, string> ResponseTypes)
+    private static (Dictionary<string, TypeOrigin> BodyTypes, Dictionary<string, TypeOrigin> ResponseTypes)
         CollectSerializableTypes(ImmutableArray<EndpointDescriptor> endpoints)
     {
-        var bodyTypes = new Dictionary<string, string>(); // typeFqn -> endpointName
-        var responseTypes = new Dictionary<string, string>();
+        var bodyTypes = new Dictionary<string, TypeOrigin>(); // typeFqn -> first endpoint needing it
+        var responseTypes = new Dictionary<string, TypeOrigin>();
 
         foreach (var ep in endpoints)
         {
             foreach (var param in ep.HandlerParameters)
             {
                 if (param.Source == ParameterSource.Body && !bodyTypes.ContainsKey(param.TypeFqn))
-                    bodyTypes[param.TypeFqn] = ep.HandlerMethodName;
+                    bodyTypes[param.TypeFqn] = new TypeOrigin(ep.HandlerMethodName, ep.HandlerLocation);
             }
 
             if (!string.IsNullOrEmpty(ep.SuccessTypeFqn))
@@ -35,18 +36,21 @@ public sealed partial class ErrorOrEndpointGenerator
                     ep.IsAcceptedResponse);
 
                 if (successInfo.HasBody && !responseTypes.ContainsKey(ep.SuccessTypeFqn))
-                    responseTypes[ep.SuccessTypeFqn] = ep.HandlerMethodName;
+                    responseTypes[ep.SuccessTypeFqn] = new TypeOrigin(ep.HandlerMethodName, ep.HandlerLocation);
             }
         }
 
         // Always need ProblemDetails for error responses
         if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.ProblemDetails))
-            responseTypes[WellKnownTypes.Fqn.ProblemDetails] = "ErrorOr endpoints";
+            responseTypes[WellKnownTypes.Fqn.ProblemDetails] = new TypeOrigin("ErrorOr endpoints", default);
         if (!responseTypes.ContainsKey(WellKnownTypes.Fqn.HttpValidationProblemDetails))
-            responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = "ErrorOr endpoints";
+            responseTypes[WellKnownTypes.Fqn.HttpValidationProblemDetails] = new TypeOrigin("ErrorOr endpoints", default);
 
         return (bodyTypes, responseTypes);
     }
+
+    /// <summary>The first endpoint that introduced a serializable type, for diagnostic text and location.</summary>
+    private readonly record struct TypeOrigin(string EndpointName, LocationInfo Location);
 
     private static void AnalyzeJsonContextCoverage(
         SourceProductionContext spc,
@@ -74,8 +78,8 @@ public sealed partial class ErrorOrEndpointGenerator
                     var displayType = kvp.Key.StripGlobalPrefix();
                     spc.ReportDiagnostic(Diagnostic.Create(
                         Descriptors.MissingJsonContextForBody,
-                        Location.None,
-                        kvp.Value,
+                        kvp.Value.Location.ToLocationOrNone(),
+                        kvp.Value.EndpointName,
                         displayType));
                 }
             }
@@ -92,7 +96,7 @@ public sealed partial class ErrorOrEndpointGenerator
         }
 
         // Combine all needed types
-        var allNeededTypes = new Dictionary<string, string>();
+        var allNeededTypes = new Dictionary<string, TypeOrigin>();
         foreach (var kvp in bodyTypes)
         {
             if (!allNeededTypes.ContainsKey(kvp.Key))
@@ -116,9 +120,9 @@ public sealed partial class ErrorOrEndpointGenerator
 
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Descriptors.TypeNotInJsonContext,
-                    Location.None,
+                    kvp.Value.Location.ToLocationOrNone(),
                     displayType,
-                    kvp.Value));
+                    kvp.Value.EndpointName));
             }
         }
     }
@@ -162,7 +166,7 @@ public sealed partial class ErrorOrEndpointGenerator
             {
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Descriptors.TooManyResultTypes,
-                    Location.None,
+                    ep.HandlerLocation.ToLocationOrNone(),
                     $"{ep.HandlerContainingTypeFqn}.{ep.HandlerMethodName}",
                     totalTypes,
                     maxArity));
@@ -224,6 +228,9 @@ internal static class JsonContextProvider
         if (serializableTypes.IsDefaultOrEmpty) return ImmutableArray<JsonContextInfo>.Empty;
 
         var className = classSymbol.Name;
+        var location = classSymbol.Locations.FirstOrDefault() is { IsInSource: true } loc
+            ? LocationInfo.From(loc)
+            : default;
         var namespaceName = classSymbol.ContainingNamespace?.IsGlobalNamespace == true
             ? null
             : classSymbol.ContainingNamespace?.ToDisplayString();
@@ -234,7 +241,8 @@ internal static class JsonContextProvider
                 className,
                 namespaceName,
                 serializableTypes,
-                hasCamelCasePolicy)
+                hasCamelCasePolicy,
+                location)
         ];
     }
 

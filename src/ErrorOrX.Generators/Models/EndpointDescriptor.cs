@@ -1,3 +1,5 @@
+using ANcpLua.Roslyn.Utilities.Models;
+
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -55,7 +57,8 @@ internal readonly record struct EndpointDescriptor(
     VersioningInfo Versioning = default,
     RouteGroupInfo RouteGroup = default,
     EquatableArray<MetadataEntry> Metadata = default,
-    string? CustomHttpMethod = null)
+    string? CustomHttpMethod = null,
+    LocationInfo HandlerLocation = default)
 {
     /// <summary>Gets the HTTP method string for emission (e.g., "GET", "POST", or custom like "CONNECT").</summary>
     public string HttpMethod => CustomHttpMethod ?? HttpVerb.ToHttpString();

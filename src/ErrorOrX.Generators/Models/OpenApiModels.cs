@@ -1,3 +1,5 @@
+using ANcpLua.Roslyn.Utilities.Models;
+
 namespace ErrorOr.Generators;
 
 /// <summary>
@@ -7,7 +9,8 @@ internal readonly record struct JsonContextInfo(
     string ClassName,
     string? Namespace,
     EquatableArray<string> SerializableTypes,
-    bool HasCamelCasePolicy);
+    bool HasCamelCasePolicy,
+    LocationInfo Location = default);
 
 /// <summary>
 ///     Represents a parameter for OpenAPI documentation.
