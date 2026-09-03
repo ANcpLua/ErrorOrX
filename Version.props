@@ -33,7 +33,7 @@
         <MicrosoftSbomTargetsVersion>4.1.5</MicrosoftSbomTargetsVersion>
         <ErrorProneNETCoreAnalyzersVersion>0.8.2-beta.1</ErrorProneNETCoreAnalyzersVersion>
         <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
-        <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
+        <RoslynatorAnalyzersVersion>5.0.0</RoslynatorAnalyzersVersion>
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.7</JonSkeetRoslynAnalyzersVersion>
         <MicrosoftSourceLinkGitHubVersion>10.0.400</MicrosoftSourceLinkGitHubVersion>
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
