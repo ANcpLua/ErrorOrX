@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [5.4.1] - 2026-10-13
+
 ### Fixed
 
 - Output-stage diagnostics now point at the offending declaration instead of `Location.None`:
