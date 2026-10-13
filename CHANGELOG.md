@@ -25,6 +25,8 @@ All notable changes to this project are documented in this file.
   1.1.3 -> 1.1.4, Microsoft.AspNetCore.Mvc.Testing/TestHost 10.0.8 -> 10.0.10.
 - Follow-up sweep to current latest: ANcpLua.Roslyn.Utilities 2.2.45, Meziantou.Analyzer 3.0.190,
   Verify.XunitV3 32.0.0, Microsoft.CodeAnalysis.* 5.9.0, Microsoft.AspNetCore.Mvc.Testing/TestHost 10.0.11.
+- ANcpLua.Roslyn.Utilities (and .Sources, .Testing) 2.2.45 -> 2.2.48, which restores the
+  `Dictionary<TKey, TValue>` helper overloads 2.2.47 dropped; supersedes dependabot #223.
 - One Verify snapshot re-accepted: Verify 31.24 now compares the trailing newline strictly
   (`GeneratorCachingTests.Generator_Emits_Shared_Attributes_File`); generated content is unchanged.
 
