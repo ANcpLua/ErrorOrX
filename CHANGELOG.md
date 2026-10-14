@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [5.4.2] - 2026-10-14
+
+### Changed
+
+- ANcpLua.NET.Sdk 3.4.48: ANcpLua.Analyzers 2.1.4 (AL1012 no longer fires on `using` declarations) now comes
+  from the SDK; the local 2.0.2 analyzer override is gone.
+- ASP.NET Core packages (OpenApi, TestHost, Mvc.Testing) follow the runtime servicing line 10.0.13. The
+  Microsoft.OpenApi 2.9.0 pin is gone: OpenApi 10.0.13 requires a patched Microsoft.OpenApi (>= 2.12.2).
+
+### Security
+
+- System.Security.Cryptography.Pkcs pinned to the runtime line (GHSA-2fmv-rv2c-59x7, GHSA-846f-f764-76mx),
+  pulled through NuGet.Packaging by the generator tests.
+
 ## [5.4.1] - 2026-10-13
 
 ### Fixed
