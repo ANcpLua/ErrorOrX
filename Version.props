@@ -35,7 +35,7 @@
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
         <VerifyXunitV3Version>32.0.0</VerifyXunitV3Version>
         <MicrosoftCodeAnalysisTestingVersion>1.1.4</MicrosoftCodeAnalysisTestingVersion>
-        <XunitV3MtpV2Version>4.0.0</XunitV3MtpV2Version>
+        <XunitV3MtpV2Version>4.0.2</XunitV3MtpV2Version>
         <!-- ASP.NET Core packages follow the SDK's runtime servicing line (DotNetRuntimeVersion, ANcpLua.NET.Sdk 3.4.48). -->
         <MicrosoftAspNetCoreOpenApiVersion>$(DotNetRuntimeVersion)</MicrosoftAspNetCoreOpenApiVersion>
         <MicrosoftAspNetCoreMvcTestingVersion>$(DotNetRuntimeVersion)</MicrosoftAspNetCoreMvcTestingVersion>
