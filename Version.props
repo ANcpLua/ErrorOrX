@@ -39,7 +39,7 @@
         <!-- renovate: datasource=nuget depName=JonSkeet.RoslynAnalyzers -->
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.7</JonSkeetRoslynAnalyzersVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.SourceLink.GitHub -->
-        <MicrosoftSourceLinkGitHubVersion>10.0.400</MicrosoftSourceLinkGitHubVersion>
+        <MicrosoftSourceLinkGitHubVersion>10.0.402</MicrosoftSourceLinkGitHubVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.Bcl.HashCode -->
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
         <!-- renovate: datasource=nuget depName=Verify.XunitV3 -->
