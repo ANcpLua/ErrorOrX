@@ -47,7 +47,7 @@
         <!-- renovate: datasource=nuget depName=Microsoft.CodeAnalysis.CSharp.Analyzer.Testing -->
         <MicrosoftCodeAnalysisTestingVersion>1.1.4</MicrosoftCodeAnalysisTestingVersion>
         <!-- renovate: datasource=nuget depName=xunit.v3.mtp-v2 -->
-        <XunitV3MtpV2Version>4.0.0</XunitV3MtpV2Version>
+        <XunitV3MtpV2Version>4.0.2</XunitV3MtpV2Version>
         <!-- ASP.NET Core packages follow the SDK's runtime servicing line (DotNetRuntimeVersion from ANcpLua.NET.Sdk). -->
         <MicrosoftAspNetCoreOpenApiVersion>$(DotNetRuntimeVersion)</MicrosoftAspNetCoreOpenApiVersion>
         <MicrosoftAspNetCoreMvcTestingVersion>$(DotNetRuntimeVersion)</MicrosoftAspNetCoreMvcTestingVersion>
