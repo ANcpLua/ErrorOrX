@@ -35,7 +35,7 @@
         <!-- renovate: datasource=nuget depName=ErrorProne.NET.Structs -->
         <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
         <!-- renovate: datasource=nuget depName=Roslynator.Analyzers -->
-        <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
+        <RoslynatorAnalyzersVersion>5.0.1</RoslynatorAnalyzersVersion>
         <!-- renovate: datasource=nuget depName=JonSkeet.RoslynAnalyzers -->
         <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.7</JonSkeetRoslynAnalyzersVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.SourceLink.GitHub -->
