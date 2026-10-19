@@ -44,5 +44,4 @@ jobs:
           SDK_PIN_PACKAGES: |
             ANcpLua.NET.Sdk
             ANcpLua.NET.Sdk.Web
-            ANcpLua.NET.Sdk.Test
         run: bash .github/scripts/sdk-hardening.sh

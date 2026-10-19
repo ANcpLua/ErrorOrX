@@ -4,6 +4,33 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [5.4.3] - 2026-10-19
+
+### Changed
+
+- ANcpLua.NET.Sdk / ANcpLua.NET.Sdk.Web 3.4.49 -> 3.4.51 (ANcpLua.Analyzers 2.1.5 -> 2.1.8 from the SDK) and
+  .NET SDK 10.0.400 -> 10.0.402. The unused `ANcpLua.NET.Sdk.Test` msbuild-sdk pin is gone (no project uses
+  it); `sdk-hardening.yml` no longer freshness-checks it.
+- ANcpLua.Roslyn.Utilities (Sources compiled into the generator, Testing for the generator tests) 2.2.48 -> 3.0.1.
+- Every literal package version in `Version.props` carries a `renovate: datasource=nuget` annotation, so the
+  shared custom manager can update them.
+
+### Removed
+
+- Suppressions for analyzer IDs that no longer exist since ANcpLua.Analyzers 2.0 (they suppressed nothing):
+  `AL0017`/`AL0018` (`Directory.Build.props`), `AL0014`/`AL0025`/`AL0039` (Diagnostics sample),
+  `AL0039` (generator tests) and `AL0140` (generator; the rule was removed without a successor).
+- Configuration that repeated ANcpLua.NET.Sdk defaults: `Nullable`/`ImplicitUsings` in `Directory.Build.props`
+  and the Diagnostics sample, `AL1701`/`AL1702 = warning` in `.editorconfig`. Evaluated properties are unchanged.
+- The `.editorconfig` section for `ErrorOrX.Generators/Polyfills.cs`, a file deleted long ago.
+- The `Microsoft.Sbom.Targets` `PackageVersion Update` and its `MicrosoftSbomTargetsVersion` property: the Update
+  matched no item (evaluated PackageVersion/PackageReference/GlobalPackageReference items are identical without it).
+
+### Fixed
+
+- Docs named the retired ANcpLua.Analyzers IDs AL0094/AL0095/AL0101/AL0102 as successors of the old EOE034-EOE038
+  checks; they now name AL1406/AL1407/AL1408/AL1409 (`Descriptors.cs`, Diagnostics sample README).
+
 ## [5.4.2] - 2026-10-14
 
 ### Changed

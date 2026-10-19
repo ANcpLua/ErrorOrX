@@ -12,8 +12,6 @@ insert_final_newline = true
 [*.cs]
 # ANcpLua.Analyzers 2.0.0+ rule IDs
 dotnet_diagnostic.AL1700.severity = warning # Prefer static lambda
-dotnet_diagnostic.AL1701.severity = warning # DateTime.Now/UtcNow
-dotnet_diagnostic.AL1702.severity = warning # Newtonsoft.Json
 
 # CA1062: Validate arguments of public methods — Roslyn callbacks guarantee non-null
 dotnet_diagnostic.CA1062.severity = none
@@ -108,15 +106,6 @@ dotnet_diagnostic.IDE1006.severity = none # s_ prefix — demo fields use plain 
 # ============================================================================
 # Generator-Specific Suppressions
 # ============================================================================
-
-# Polyfills.cs: Types MUST live in System.* namespaces for netstandard2.0
-# compatibility (e.g., System.Runtime.CompilerServices.IsExternalInit).
-# The namespace intentionally does not match the folder structure.
-[**/ErrorOrX.Generators/Polyfills.cs]
-dotnet_diagnostic.IDE0130.severity = none
-dotnet_diagnostic.CA1019.severity = none # Polyfill attribute constructor — intentional design
-dotnet_diagnostic.CA1305.severity = none # uint.ToString() — no locale dependence
-dotnet_diagnostic.CA1812.severity = none # IsExternalInit — compiler-reserved type
 
 # Extractor.cs: AL1201 flags foreach-over-GetAttributes() loops, suggesting
 # HasAttribute() instead. These loops legitimately need to extract constructor

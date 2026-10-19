@@ -213,14 +213,14 @@ tests/
 
 ## Dependencies
 
-| Package                          | Version | Purpose                         |
-|----------------------------------|---------|---------------------------------|
-| ANcpLua.Roslyn.Utilities.Sources | 2.2.26  | Incremental generator utilities |
-| ANcpLua.Roslyn.Utilities.Testing | 2.2.26  | Generator testing framework     |
-| ANcpLua.Analyzers                | 2.0.2   | Code quality analyzers          |
-| Microsoft.CodeAnalysis.CSharp    | 5.3.0   | Roslyn APIs                     |
-| xunit.v3.mtp-v2                  | 3.2.2   | Testing framework               |
-| AwesomeAssertions                | (SDK)   | Fluent assertions (version from ANcpLua.NET.Sdk) |
+| Package                          | Version source                                         | Purpose                         |
+|----------------------------------|--------------------------------------------------------|---------------------------------|
+| ANcpLua.Roslyn.Utilities.Sources | `Version.props` `ANcpLuaRoslynUtilitiesVersion`        | Incremental generator utilities |
+| ANcpLua.Roslyn.Utilities.Testing | `Version.props` `ANcpLuaRoslynUtilitiesVersion`        | Generator testing framework     |
+| ANcpLua.Analyzers                | ANcpLua.NET.Sdk (`global.json` `msbuild-sdks`)         | Code quality analyzers          |
+| Microsoft.CodeAnalysis.CSharp    | `Version.props` `MicrosoftCodeAnalysisCSharpVersion`   | Roslyn APIs                     |
+| xunit.v3.mtp-v2                  | `Version.props` `XunitV3MtpV2Version`                  | Testing framework               |
+| AwesomeAssertions                | ANcpLua.NET.Sdk                                        | Fluent assertions               |
 
 ## Before Writing New Code
 

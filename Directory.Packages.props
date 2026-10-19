@@ -12,7 +12,6 @@
         <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
         <PackageVersion Include="ANcpLua.Roslyn.Utilities.Testing" Version="$(ANcpLuaRoslynUtilitiesVersion)"/>
 
-        <PackageVersion Update="Microsoft.Sbom.Targets" Version="$(MicrosoftSbomTargetsVersion)"/>
         <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="$(ErrorProneNETCoreAnalyzersVersion)"/>
         <PackageVersion Include="ErrorProne.NET.Structs" Version="$(ErrorProneNETStructsVersion)"/>
         <PackageVersion Include="Roslynator.Analyzers" Version="$(RoslynatorAnalyzersVersion)"/>
@@ -21,8 +20,7 @@
         <PackageVersion Include="Meziantou.Analyzer" Version="$(MeziantouAnalyzerVersion)"/>
         <PackageVersion Include="JonSkeet.RoslynAnalyzers" Version="$(JonSkeetRoslynAnalyzersVersion)"/>
         <!-- ANcpLua.Analyzers is omitted here on purpose: ANcpLua.NET.Sdk injects it via GlobalPackageReference
-             (NU1506 if a PackageVersion is also declared here). Its version is set through
-             $(ANcpLuaAnalyzersVersion) in Version.props, which imports after the SDK default. -->
+             (NU1506 if a PackageVersion is also declared here), at the SDK's $(ANcpLuaAnalyzersVersion). -->
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)"/>
         <PackageVersion Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)"/>
         <PackageVersion Include="Verify.XunitV3" Version="$(VerifyXunitV3Version)"/>

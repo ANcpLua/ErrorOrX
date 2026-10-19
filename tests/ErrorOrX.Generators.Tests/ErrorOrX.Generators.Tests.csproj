@@ -3,7 +3,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <OutputType>Exe</OutputType>
         <RootNamespace>ErrorOrX.Generators.Tests</RootNamespace>
-        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005;CS1591;AL0039</NoWarn>
+        <NoWarn>$(NoWarn);AOT001;AOT002;AOT003;AOT004;AOT005;CS1591</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="xunit.v3.mtp-v2" Condition="'@(PackageReference->WithMetadataValue('Identity', 'xunit.v3.mtp-v2'))' == ''"/>

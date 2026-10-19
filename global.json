@@ -1,13 +1,12 @@
 {
   "sdk": {
-    "version": "10.0.400",
+    "version": "10.0.402",
     "rollForward": "latestFeature",
     "allowPrerelease": true
   },
   "msbuild-sdks": {
-    "ANcpLua.NET.Sdk": "3.4.49",
-    "ANcpLua.NET.Sdk.Web": "3.4.49",
-    "ANcpLua.NET.Sdk.Test": "3.4.49"
+    "ANcpLua.NET.Sdk": "3.4.51",
+    "ANcpLua.NET.Sdk.Web": "3.4.51"
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"

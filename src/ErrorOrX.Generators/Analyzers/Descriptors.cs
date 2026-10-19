@@ -29,7 +29,7 @@ namespace ErrorOr.Analyzers;
 ///     The active ID surface is contiguous <c>EOE001–EOE036</c>. Prior versions reserved
 ///     EOE034–EOE038 for AOT-hostile call site checks (Activator.CreateInstance, Type.GetType,
 ///     Expression.Compile, dynamic) which were removed in favour of ANcpLua.Analyzers'
-///     AL0094/AL0095/AL0101/AL0102. v4.0.0 reclaims those IDs for the JSON-context diagnostics.
+///     AL1406/AL1407/AL1408/AL1409. v4.0.0 reclaims those IDs for the JSON-context diagnostics.
 /// </remarks>
 public static partial class Descriptors
 {
