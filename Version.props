@@ -25,7 +25,7 @@
         <!-- renovate: datasource=nuget depName=Meziantou.Analyzer -->
         <MeziantouAnalyzerVersion>3.0.190</MeziantouAnalyzerVersion>
         <!-- renovate: datasource=nuget depName=ANcpLua.Roslyn.Utilities -->
-        <ANcpLuaRoslynUtilitiesVersion>3.0.1</ANcpLuaRoslynUtilitiesVersion>
+        <ANcpLuaRoslynUtilitiesVersion>3.0.2</ANcpLuaRoslynUtilitiesVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.CodeAnalysis.Analyzers -->
         <MicrosoftCodeAnalysisAnalyzersVersion>5.9.0</MicrosoftCodeAnalysisAnalyzersVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.CodeAnalysis.CSharp -->
