@@ -43,7 +43,7 @@
         <!-- renovate: datasource=nuget depName=Microsoft.Bcl.HashCode -->
         <MicrosoftBclHashCodeVersion>6.0.0</MicrosoftBclHashCodeVersion>
         <!-- renovate: datasource=nuget depName=Verify.XunitV3 -->
-        <VerifyXunitV3Version>32.0.0</VerifyXunitV3Version>
+        <VerifyXunitV3Version>33.3.4</VerifyXunitV3Version>
         <!-- renovate: datasource=nuget depName=Microsoft.CodeAnalysis.CSharp.Analyzer.Testing -->
         <MicrosoftCodeAnalysisTestingVersion>1.1.4</MicrosoftCodeAnalysisTestingVersion>
         <!-- renovate: datasource=nuget depName=xunit.v3.mtp-v2 -->
