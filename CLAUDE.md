@@ -1,5 +1,7 @@
 # ErrorOrX
 
+switch to AGENTS.md
+
 Source generator converting `ErrorOr<T>` handlers into ASP.NET Core Minimal API endpoints with full Native AOT support.
 
 ## Automatic Routing (for Claude)
