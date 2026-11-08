@@ -1,6 +1,6 @@
 # ErrorOrX
 
-switch to AGENTS.md
+switch to AGENTS.md and update to .NET 11 on release, use unions
 
 Source generator converting `ErrorOr<T>` handlers into ASP.NET Core Minimal API endpoints with full Native AOT support.
 
