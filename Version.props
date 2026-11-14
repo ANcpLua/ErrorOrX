@@ -23,7 +23,7 @@
     <!-- Dependency versions -->
     <PropertyGroup>
         <!-- renovate: datasource=nuget depName=Meziantou.Analyzer -->
-        <MeziantouAnalyzerVersion>3.0.190</MeziantouAnalyzerVersion>
+        <MeziantouAnalyzerVersion>3.0.317</MeziantouAnalyzerVersion>
         <!-- renovate: datasource=nuget depName=ANcpLua.Roslyn.Utilities -->
         <ANcpLuaRoslynUtilitiesVersion>3.0.2</ANcpLuaRoslynUtilitiesVersion>
         <!-- renovate: datasource=nuget depName=Microsoft.CodeAnalysis.Analyzers -->
